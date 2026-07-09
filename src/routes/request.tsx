@@ -1,0 +1,202 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { SiteHeader } from "@/components/site-header";
+import { SERVICE_CATEGORIES } from "@/lib/mock-data";
+import { useState } from "react";
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Clock } from "lucide-react";
+import { z } from "zod";
+
+const search = z.object({ category: z.string().optional() });
+
+export const Route = createFileRoute("/request")({
+  validateSearch: search,
+  head: () => ({
+    meta: [
+      { title: "Request Service — SuCasa" },
+      { name: "description", content: "Request service from a trusted local pro." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: RequestFlow,
+});
+
+const TIMELINES = ["ASAP", "This week", "Next 2 weeks", "Flexible"];
+
+function RequestFlow() {
+  const navigate = useNavigate();
+  const { category: initial } = Route.useSearch();
+  const [step, setStep] = useState(0);
+  const [category, setCategory] = useState<string | undefined>(initial);
+  const [description, setDescription] = useState("");
+  const [budget, setBudget] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [timeline, setTimeline] = useState<string>("This week");
+  const [done, setDone] = useState(false);
+
+  const total = 5;
+  const next = () => setStep(s => Math.min(s + 1, total - 1));
+  const back = () => setStep(s => Math.max(s - 1, 0));
+  const submit = () => setDone(true);
+
+  if (done) return <Confirmation onReset={() => navigate({ to: "/dashboard" })} />;
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex-1 px-5 py-10">
+        <div className="mx-auto max-w-xl">
+          <div className="mb-6">
+            <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+              <span>Step {step + 1} of {total}</span>
+              <span>Request Service</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="h-full gradient-brand transition-all" style={{ width: `${((step + 1) / total) * 100}%` }} />
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
+            {step === 0 && (
+              <div>
+                <Header title="What do you need help with?" desc="Pick a service category to start." />
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  {SERVICE_CATEGORIES.map(c => {
+                    const active = category === c.slug;
+                    return (
+                      <button key={c.slug} onClick={() => setCategory(c.slug)} className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition ${active ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"}`}>
+                        <span className={`grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br ${c.color} text-white`}><c.icon className="h-4 w-4" /></span>
+                        <span className="text-sm font-medium">{c.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {step === 1 && (
+              <div className="space-y-4">
+                <Header title="Tell us about the project" desc="A few details help pros give a fair quote." />
+                <Field label="Describe the project">
+                  <textarea rows={5} className={inputCls} value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. My upstairs AC unit is blowing warm air." />
+                </Field>
+                <Field label="Estimated budget (optional)">
+                  <input className={inputCls} value={budget} onChange={e => setBudget(e.target.value)} placeholder="$500 – $1,500" />
+                </Field>
+              </div>
+            )}
+            {step === 2 && (
+              <div>
+                <Header title="Add photos" desc="Photos help pros scope the work faster." />
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  {photos.map((_, i) => (
+                    <div key={i} className="aspect-square rounded-2xl border border-border bg-secondary" />
+                  ))}
+                  <button onClick={() => setPhotos(p => [...p, "x"])} className="flex aspect-square flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-border text-muted-foreground hover:bg-secondary">
+                    <Camera className="h-5 w-5" />
+                    <span className="text-xs">Add photo</span>
+                  </button>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">Optional — you can skip.</p>
+              </div>
+            )}
+            {step === 3 && (
+              <div>
+                <Header title="When do you need it done?" desc="Pick a preferred timeline." />
+                <div className="mt-5 grid gap-2">
+                  {TIMELINES.map(t => {
+                    const active = timeline === t;
+                    return (
+                      <button key={t} onClick={() => setTimeline(t)} className={`flex items-center justify-between rounded-2xl border px-4 py-4 text-left text-sm transition ${active ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"}`}>
+                        <span className="flex items-center gap-2 font-medium"><Clock className="h-4 w-4 text-primary" /> {t}</span>
+                        {active && <CheckCircle2 className="h-5 w-5 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {step === 4 && (
+              <div>
+                <Header title="Review & submit" desc="Confirm your request." />
+                <div className="mt-5 space-y-3 rounded-2xl border border-border p-4 text-sm">
+                  <Row k="Category" v={SERVICE_CATEGORIES.find(c => c.slug === category)?.name ?? "—"} />
+                  <Row k="Description" v={description || "—"} />
+                  <Row k="Budget" v={budget || "—"} />
+                  <Row k="Photos" v={`${photos.length} attached`} />
+                  <Row k="Timeline" v={timeline} />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-8 flex items-center justify-between gap-3">
+              {step > 0 ? (
+                <button onClick={back} className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium">
+                  <ArrowLeft className="h-4 w-4" /> Back
+                </button>
+              ) : (
+                <Link to="/services" className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium">
+                  <ArrowLeft className="h-4 w-4" /> Services
+                </Link>
+              )}
+              {step < total - 1 ? (
+                <button onClick={next} disabled={step === 0 && !category} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-50">
+                  Continue <ArrowRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <button onClick={submit} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft">
+                  Submit request <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function Confirmation({ onReset }: { onReset: () => void }) {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex flex-1 items-center justify-center px-5 py-16">
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-elevated">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full gradient-growth text-white shadow-soft">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
+          <h1 className="mt-6 text-2xl font-semibold tracking-tight">Request submitted</h1>
+          <p className="mt-2 text-sm text-muted-foreground">We are matching you with trusted professionals. You’ll get notifications as pros respond.</p>
+          <div className="mt-6 flex flex-col gap-2">
+            <button onClick={onReset} className="rounded-full gradient-brand px-5 py-3 text-sm font-semibold text-white shadow-soft">Back to dashboard</button>
+            <Link to="/services" className="rounded-full border border-border px-5 py-3 text-sm font-medium">Submit another request</Link>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const inputCls = "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+function Header({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div>
+      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+    </div>
+  );
+}
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
+      {children}
+    </label>
+  );
+}
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-border pb-2 last:border-0 last:pb-0">
+      <span className="text-muted-foreground">{k}</span>
+      <span className="text-right font-medium">{v}</span>
+    </div>
+  );
+}

@@ -1,0 +1,167 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS } from "@/lib/mock-data";
+import { ArrowRight, Bot, FileText, Home, Plus, Sparkles, TrendingUp } from "lucide-react";
+
+export const Route = createFileRoute("/dashboard")({
+  head: () => ({
+    meta: [
+      { title: "Your Home Dashboard — SuCasa" },
+      { name: "description", content: "Track your home value, maintenance tasks, service requests, and trusted professionals." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: Dashboard,
+});
+
+function Dashboard() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex-1 px-5 py-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
+              <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">123 Main St, Austin</h1>
+            </div>
+            <Link to="/request" className="inline-flex shrink-0 items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
+              <Plus className="h-4 w-4" /> Request
+            </Link>
+          </div>
+
+          {/* Value cards */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-3xl gradient-brand p-6 text-white shadow-elevated">
+              <div className="flex items-center gap-2 text-xs opacity-80"><Home className="h-3.5 w-3.5" /> Estimated home value</div>
+              <p className="mt-2 text-4xl font-semibold tracking-tight">$482,300</p>
+              <p className="mt-1 text-xs opacity-90">▲ $8,400 this month</p>
+            </div>
+            <div className="rounded-3xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><TrendingUp className="h-3.5 w-3.5" /> Estimated equity</div>
+              <p className="mt-2 text-4xl font-semibold tracking-tight text-growth">$186,000</p>
+              <p className="mt-1 text-xs text-muted-foreground">39% of value</p>
+            </div>
+            <div className="rounded-3xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles className="h-3.5 w-3.5" /> Improvement ROI</div>
+              <p className="mt-2 text-4xl font-semibold tracking-tight">$14.8k</p>
+              <p className="mt-1 text-xs text-muted-foreground">3 recommendations</p>
+            </div>
+          </div>
+
+          {/* Grid */}
+          <div className="grid gap-4 lg:grid-cols-3">
+            {/* Maintenance */}
+            <Card className="lg:col-span-2">
+              <CardHeader title="Maintenance checklist" action={<a className="text-xs font-medium text-primary" href="#">View all</a>} />
+              <ul className="mt-4 space-y-2">
+                {MAINTENANCE_TASKS.map(t => (
+                  <li key={t.title} className="flex items-center justify-between rounded-2xl border border-border p-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${t.done ? "bg-growth/15 text-growth" : t.overdue ? "bg-destructive/10 text-destructive" : "bg-secondary text-primary"}`}>
+                        <Sparkles className="h-3.5 w-3.5" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className={`truncate text-sm font-medium ${t.done ? "line-through opacity-60" : ""}`}>{t.title}</p>
+                        <p className="text-xs text-muted-foreground">{t.due}</p>
+                      </div>
+                    </div>
+                    <button className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary">{t.done ? "Done" : "Mark done"}</button>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            {/* AI Assistant */}
+            <Card>
+              <CardHeader title="Home Assistant" action={<span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">Beta</span>} />
+              <div className="mt-4 rounded-2xl gradient-brand p-5 text-white">
+                <div className="flex items-center gap-2 text-xs opacity-80"><Bot className="h-3.5 w-3.5" /> Ask anything about your home</div>
+                <p className="mt-2 text-sm">“When should I service my HVAC?”</p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {["Get a maintenance plan", "Estimate a remodel", "Find a warranty"].map(q => (
+                  <button key={q} className="w-full rounded-2xl border border-border p-3 text-left text-sm hover:bg-secondary">{q}</button>
+                ))}
+              </div>
+            </Card>
+
+            {/* Recent requests */}
+            <Card className="lg:col-span-2">
+              <CardHeader title="Recent service requests" action={<Link to="/request" className="text-xs font-medium text-primary">New request</Link>} />
+              <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
+                {RECENT_REQUESTS.map(r => (
+                  <div key={r.id} className="flex items-center justify-between gap-3 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{r.category} · {r.id}</p>
+                      <p className="text-xs text-muted-foreground">{r.when}</p>
+                    </div>
+                    <StatusPill status={r.status} />
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Documents */}
+            <Card>
+              <CardHeader title="Documents" action={<a className="text-xs font-medium text-primary" href="#">Upload</a>} />
+              <ul className="mt-4 space-y-2">
+                {["Home insurance policy.pdf","HVAC warranty.pdf","Property deed.pdf"].map(d => (
+                  <li key={d} className="flex items-center gap-3 rounded-2xl border border-border p-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><FileText className="h-4 w-4" /></span>
+                    <span className="truncate text-sm">{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            {/* Recommended pros */}
+            <Card className="lg:col-span-2">
+              <CardHeader title="Recommended professionals" action={<Link to="/services" className="text-xs font-medium text-primary">Browse</Link>} />
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {RECOMMENDED_PROS.map(p => (
+                  <div key={p.name} className="rounded-2xl border border-border p-4">
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">{p.badge}</span>
+                    <p className="mt-3 text-sm font-semibold">{p.name}</p>
+                    <p className="text-xs text-muted-foreground">{p.category}</p>
+                    <p className="mt-2 text-xs">★ {p.rating} · {p.reviews} reviews</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Intelligence report */}
+            <Card>
+              <CardHeader title="Home Intelligence Report" />
+              <p className="mt-2 text-sm text-muted-foreground">Your monthly deep-dive on value, equity, and improvement ROI.</p>
+              <button className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full gradient-growth px-4 py-2.5 text-sm font-semibold text-white">
+                View report <ArrowRight className="h-4 w-4" />
+              </button>
+            </Card>
+          </div>
+        </div>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`rounded-3xl border border-border bg-card p-6 shadow-soft ${className}`}>{children}</div>;
+}
+function CardHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2 className="text-base font-semibold">{title}</h2>
+      {action}
+    </div>
+  );
+}
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    Matched: "bg-primary/10 text-primary",
+    "In Progress": "bg-accent text-accent-foreground",
+    Completed: "bg-growth/15 text-growth",
+  };
+  return <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${map[status] ?? "bg-secondary text-secondary-foreground"}`}>{status}</span>;
+}
