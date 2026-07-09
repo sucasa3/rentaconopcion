@@ -13,11 +13,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white shadow-soft">
-            <Home className="h-4 w-4" />
-          </span>
-          <span className="text-lg font-semibold tracking-tight">SuCasa</span>
+        <Link to="/" className="flex items-center gap-2" aria-label="SuCasa home">
+          <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(l => (
