@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Menu, X, Home } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -12,11 +13,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white shadow-soft">
-            <Home className="h-4 w-4" />
-          </span>
-          <span className="text-lg font-semibold tracking-tight">SuCasa</span>
+        <Link to="/" className="flex items-center gap-2" aria-label="SuCasa home">
+          <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
         </Link>
         <nav className="hidden items-center gap-1 md:flex">
           {links.map(l => (
@@ -55,10 +53,7 @@ export function SiteFooter() {
     <footer className="border-t border-border bg-surface">
       <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white"><Home className="h-4 w-4" /></span>
-            <span className="text-lg font-semibold">SuCasa</span>
-          </div>
+          <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
         <FooterCol title="Homeowners" links={[["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
