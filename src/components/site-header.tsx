@@ -53,10 +53,7 @@ export function SiteFooter() {
     <footer className="border-t border-border bg-surface">
       <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl gradient-brand text-white"><Home className="h-4 w-4" /></span>
-            <span className="text-lg font-semibold">SuCasa</span>
-          </div>
+          <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
         <FooterCol title="Homeowners" links={[["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
