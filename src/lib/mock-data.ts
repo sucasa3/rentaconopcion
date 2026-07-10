@@ -1,4 +1,4 @@
-import { Wrench, Droplets, Home as HomeIcon, Zap, Paintbrush, Trees, Flame, Hammer, type LucideIcon } from "lucide-react";
+import { Wrench, Droplets, Home as HomeIcon, Zap, Paintbrush, Trees, Flame, Hammer, Layers, ShieldAlert, Trash2, Truck, type LucideIcon } from "lucide-react";
 
 export type ServiceCategory = {
   slug: string;
@@ -16,8 +16,12 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
   { slug: "electrical", name: "Electrical", icon: Zap, description: "Licensed electricians for any project.", color: "from-yellow-400 to-amber-600", avgResponse: "2h avg response" },
   { slug: "painting", name: "Painting", icon: Paintbrush, description: "Interior and exterior painting pros.", color: "from-pink-400 to-fuchsia-600", avgResponse: "4h avg response" },
   { slug: "landscaping", name: "Landscaping", icon: Trees, description: "Lawn, garden and hardscape design.", color: "from-lime-400 to-emerald-600", avgResponse: "5h avg response" },
-  { slug: "restoration", name: "Restoration", icon: Flame, description: "Water, fire and storm damage restoration.", color: "from-rose-400 to-red-600", avgResponse: "30m avg response" },
+  { slug: "restoration", name: "Restoration", icon: Flame, description: "Fire and storm damage restoration.", color: "from-rose-400 to-red-600", avgResponse: "30m avg response" },
   { slug: "handyman", name: "Handyman", icon: Hammer, description: "Small fixes and multi-project days.", color: "from-violet-400 to-indigo-600", avgResponse: "3h avg response" },
+  { slug: "flooring", name: "Flooring", icon: Layers, description: "Hardwood, tile, vinyl and carpet installation.", color: "from-amber-400 to-orange-600", avgResponse: "4h avg response" },
+  { slug: "water-mold", name: "Water & Mold Restoration", icon: ShieldAlert, description: "Water damage cleanup and mold remediation.", color: "from-teal-400 to-cyan-700", avgResponse: "30m avg response" },
+  { slug: "junk-removal", name: "Junk Removal", icon: Trash2, description: "Haul away debris, appliances and clutter.", color: "from-stone-400 to-stone-600", avgResponse: "3h avg response" },
+  { slug: "movers", name: "Movers", icon: Truck, description: "Local and long-distance moving crews.", color: "from-indigo-400 to-blue-700", avgResponse: "6h avg response" },
 ];
 
 export const RECOMMENDED_PROS = [
