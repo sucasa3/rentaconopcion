@@ -105,11 +105,15 @@ function Dashboard() {
             {/* Documents */}
             <Card>
               <CardHeader title="Documents" action={<a className="text-xs font-medium text-primary" href="#">Upload</a>} />
+              <p className="mt-2 text-xs text-muted-foreground">Upload your inspection report so our AI can analyze your home and recommend the right services and vendors.</p>
               <ul className="mt-4 space-y-2">
-                {["Home insurance policy.pdf","HVAC warranty.pdf","Property deed.pdf"].map(d => (
+                {["Home inspection report.pdf","Home insurance policy.pdf","HVAC warranty.pdf","Property deed.pdf"].map(d => (
                   <li key={d} className="flex items-center gap-3 rounded-2xl border border-border p-3">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><FileText className="h-4 w-4" /></span>
                     <span className="truncate text-sm">{d}</span>
+                    {d.startsWith("Home inspection") && (
+                      <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">AI‑analyzed</span>
+                    )}
                   </li>
                 ))}
               </ul>
