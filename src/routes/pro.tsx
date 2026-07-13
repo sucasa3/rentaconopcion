@@ -57,7 +57,7 @@ function ProDashboard() {
             <div className="rounded-3xl gradient-brand p-6 text-white shadow-elevated">
               <div className="flex items-center gap-2 text-xs opacity-80"><BarChart3 className="h-3.5 w-3.5" /> Membership</div>
               <p className="mt-2 text-lg font-semibold">Founding Partner</p>
-              <p className="mt-1 text-xs opacity-90">$149/mo · renews Feb 12</p>
+              <p className="mt-1 text-xs opacity-90">$397/mo · renews Feb 12</p>
               <div className="mt-5 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="opacity-80">This month</span><span>$18.4k revenue</span></div>
                 <div className="flex justify-between"><span className="opacity-80">Opportunities</span><span>38</span></div>
