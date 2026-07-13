@@ -1,67 +1,88 @@
-# SuCasa: GHL Sync + Lofty Homes Subdomain
+# SuCasa × GHL × Lofty — Revised Architecture
 
-Two integrations. GHL is the real build; the homes subdomain is a DNS + link job now that Lofty already hosts the listings.
+Adopting your refinement: **GHL owns people + lifecycle marketing. Supabase owns product data.** No pro/vendor pipeline sync from the app, no per-request opportunity mirroring. GHL only sees the homeowner's lifecycle stage.
 
 ---
 
-## Part 1 — GoHighLevel Sync (Private Integration API)
+## Part 1 — GHL Homeowner Lifecycle Sync
 
-### What syncs
+### What lives where
 
-| Trigger in SuCasa | GHL action | Direction |
-|---|---|---|
-| New homeowner signup / profile update | Upsert Contact, tag `homeowner`, custom fields: city, state, zip, home value | App → GHL |
-| New pro signup / update | Upsert Contact, tag `pro`, custom fields: category, service area, plan, membership status | App → GHL |
-| New `service_request` | Create Opportunity in "SuCasa Service Requests" pipeline, stage = New | App → GHL |
-| `service_request.status` change (assigned/claimed/completed/cancelled) | Move opportunity stage | App → GHL |
-| Opportunity stage changed in GHL by sales | Update `service_requests.status` in app | GHL → App |
-| Claim accepted/rejected | Update opportunity + add note | App → GHL |
+| Concern | System |
+|---|---|
+| Homeowner contact record + lifecycle stage | GHL |
+| Marketing email/SMS, nurture, re-engagement campaigns | GHL |
+| Homes, inspection reports, AI analysis, maintenance, documents, service requests, pros, claims, reviews | Supabase |
+| Vendor / Lender / Agent / Enterprise sales pipelines | GHL (manual, not touched by the app) |
+
+### Lifecycle stages the app writes to
+
+Only these six, on the **SuCasa Homeowners** pipeline:
+
+1. `NEW_SIGNUP` — auth account created
+2. `ONBOARDING` — profile started but home profile not complete OR no first service yet
+3. `ACTIVE_HOMEOWNER` — home profile complete AND (inspection uploaded OR first service booked)
+4. `NEEDS_REENGAGEMENT` — no activity 60+ days (batch job flips this)
+5. `PREMIUM_MEMBER` — future paid plan flag (wired now, unused until billing lands)
+6. `INACTIVE` — soft-deleted / opted-out
+
+Everything else (inspection uploaded, AI complete, vendor recommended, service booked) is a **note or tag** on the GHL contact, not a stage change. That way the pipeline stays clean for marketing while your sales/CS team still sees signal.
+
+### Secrets I'll request
+
+- `GHL_API_KEY` — Private Integration token
+- `GHL_LOCATION_ID`
+- `GHL_HOMEOWNERS_PIPELINE_ID`
+- `GHL_STAGE_NEW_SIGNUP_ID`
+- `GHL_STAGE_ONBOARDING_ID`
+- `GHL_STAGE_ACTIVE_ID`
+- `GHL_STAGE_REENGAGEMENT_ID`
+- `GHL_STAGE_PREMIUM_ID`
+- `GHL_STAGE_INACTIVE_ID`
+- `GHL_WEBHOOK_SECRET` (already generated)
 
 ### Backend pieces
 
-1. **Secrets** (requested via `add_secret` when we hit build mode):
-   - `GHL_API_KEY` — Private Integration token
-   - `GHL_LOCATION_ID`
-   - `GHL_PIPELINE_ID` (Service Requests pipeline)
-   - `GHL_WEBHOOK_SECRET` — you generate a strong random string and paste it into the GHL workflow webhook + here
-2. **New table `ghl_sync_queue`** — `entity_type`, `entity_id`, `op`, `attempts`, `last_error`, `processed_at`. RLS: service_role only.
-3. **New table `ghl_sync_state`** — `entity_type`, `entity_id`, `ghl_contact_id`, `ghl_opportunity_id`, `last_synced_at`.
-4. **DB triggers** on `profiles`, `pros`, `service_requests`, `claims` → enqueue into `ghl_sync_queue` (never call HTTP from a trigger).
-5. **Server functions** in `src/lib/ghl.functions.ts`:
-   - `drainGhlQueue()` — run by pg_cron every minute; processes queued rows, upserts contact/opportunity via GHL REST, records IDs in `ghl_sync_state`, backs off on error.
-   - `syncHomeownerToGhl` / `syncProToGhl` / `syncRequestToGhl` — internal helpers + manual admin actions.
-   - `backfillGhl()` — one-time admin action to enqueue all existing rows.
-6. **Inbound webhook**: public route `src/routes/api/public/ghl-webhook.ts`. HMAC-verifies with `GHL_WEBHOOK_SECRET`, maps opportunity stage → `service_requests.status`.
-7. **Admin UI** on `/admin`: "GHL Sync" card — queue depth, last error per entity, per-row **Resync** button, one-click **Backfill**.
+1. **`profiles.lifecycle_stage`** column (enum) + `profiles.ghl_last_synced_at`. Existing rows default to `NEW_SIGNUP`.
+2. **`ghl_sync_queue`** and **`ghl_sync_state`** tables already exist from the earlier migration — I'll narrow their scope to `entity_type = 'homeowner'` only and drop the pro/request/claim triggers we won't use.
+3. **Lifecycle computation** — a Postgres function `compute_lifecycle_stage(user_id)` that reads profile + service_requests + inspection docs and returns the correct stage. Called from a trigger on `profiles`, `service_requests`, and (later) `documents` inserts. Trigger only enqueues a sync job if the computed stage changed.
+4. **`src/lib/ghl.functions.ts`** — server functions using `supabaseAdmin`:
+   - `drainGhlQueue()` — cron every minute; per queued homeowner: upsert Contact (name, email, phone, city, `sucasa_user_id` custom field, `homeowner` tag) → move to stage → record `ghl_contact_id`. Retries with backoff, records `last_error`.
+   - `addGhlContactNote(userId, note)` — used by AI-complete, vendor-recommended, first-service-booked hooks to leave a note without stage change.
+   - `resyncHomeowner(userId)` — admin action.
+   - `backfillGhl()` — enqueues all existing homeowners.
+5. **Nightly re-engagement job** — cron sets `lifecycle_stage = NEEDS_REENGAGEMENT` for active homeowners with no activity in 60 days.
+6. **Inbound webhook** `src/routes/api/public/ghl-webhook.ts` — HMAC-verified. Handles unsubscribes / manual stage overrides from CS team: sets `profiles.lifecycle_stage` to match GHL. This is the GHL → App direction; kept narrow (stage + opt-out flags only).
+7. **Admin UI** on `/admin` — "GHL Sync" panel: queue depth, last error per homeowner, per-row **Resync** button, one-click **Backfill**.
 
-### Field mapping (created once in GHL, then referenced by ID)
+### What we're explicitly NOT doing
 
-Contact custom fields: `sucasa_role`, `sucasa_city`, `sucasa_home_value`, `sucasa_category`, `sucasa_membership_status`, `sucasa_user_id`.
-Opportunity custom fields: `sucasa_request_id`, `sucasa_category`, `sucasa_budget`, `sucasa_timeline`.
-
-I'll produce a short setup checklist for you to run in the GHL UI before we flip it on.
+- No GHL Opportunity per service request. Requests live in Supabase; ops team works them in the SuCasa admin.
+- No sync of `pros` to GHL from the app. Vendor Partners pipeline is manual sales workflow.
+- No lender / agent / enterprise pipeline awareness in code.
+- No per-milestone stage moves (inspection uploaded, AI complete, etc.). Those become **contact notes + tags**, not stages.
 
 ---
 
-## Part 2 — homes.sucasa.com → Lofty (DNS only)
+## Part 2 — homes.sucasa.com → Lofty (unchanged)
 
-Since Lofty already hosts working IDX search + listing pages, we don't build any of that. We just point a subdomain at it and link into it from the SuCasa app.
+DNS + Lofty custom domain + in-app links. No app code owns listings.
 
-### Steps
+1. `CNAME homes.sucasa.com → <Lofty target>` at your registrar.
+2. Add `homes.sucasa.com` as custom domain in Lofty; SSL auto-provisioned.
+3. App linking: header "Homes for Sale" link, homepage CTA, footer link — all external to `https://homes.sucasa.com`.
+4. Sitemap mentions the subdomain.
 
-1. **DNS**: in your domain registrar, add a `CNAME` record for `homes` pointing to the target Lofty gives you (typically something like `<yoursite>.loftywebsites.com` or their masking host — Lofty support confirms the exact target and any TXT verification record).
-2. **Lofty config**: in Lofty → Website settings → add `homes.sucasa.com` as a custom domain and let it provision SSL.
-3. **App linking**: update the SuCasa app so anywhere we mention listings/search, we link out to `https://homes.sucasa.com`. Specific changes:
-   - Header nav: add a "Homes for Sale" link → `https://homes.sucasa.com` (external, opens in same tab).
-   - Homepage: add a "Browse homes for sale" CTA section linking to the subdomain.
-   - Footer: link under "Buy / Sell".
-4. **SEO**: add `<link rel="alternate">` and mention `homes.sucasa.com` in the app's sitemap index so crawlers find it.
-5. **No app code owns listings data** — no schema, no cron, no IDX credentials on our side. If you later want listing cards embedded inside the SuCasa dashboard (e.g. "homes near you"), Lofty exposes a JS widget we can drop into a route; out of scope for this plan.
+---
 
-### What I need from you before build
+## Build order once you approve
 
-1. Confirm the GHL pipeline name + stages ("New → Assigned → Claimed → Completed → Cancelled") or give me your preferred names.
-2. Confirm you'll paste the **GHL Private Integration token**, **Location ID**, **Pipeline ID**, and a **generated webhook secret** when I request them.
-3. The CNAME target Lofty gives you for `homes.sucasa.com` (or just tell me "I'll set the DNS myself" and I'll only do the in-app linking).
+1. Request the GHL secrets (Location ID, API key, Pipeline ID, 6 stage IDs).
+2. Migration: add `lifecycle_stage` + `ghl_last_synced_at` to `profiles`, drop pro/request/claim sync triggers, add lifecycle trigger, seed existing profiles.
+3. `src/lib/ghl.functions.ts` + `src/lib/ghl.server.ts` (REST wrapper) + cron for `drainGhlQueue` and re-engagement.
+4. Inbound webhook route.
+5. Admin GHL Sync panel.
+6. Lofty subdomain links in header, homepage CTA, footer, sitemap.
+7. Setup checklist you'll run in the GHL UI (create pipeline, name stages, create custom field `sucasa_user_id`, generate Private Integration token, create webhook workflow with the secret).
 
-Reply with those and I'll switch to build and start with GHL.
+Reply "go" and I'll switch to build and start with the secret request.
