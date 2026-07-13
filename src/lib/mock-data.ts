@@ -1,4 +1,4 @@
-import { Wrench, Droplets, Home as HomeIcon, Zap, Paintbrush, Trees, Flame, Hammer, Layers, ShieldAlert, Trash2, Truck, type LucideIcon } from "lucide-react";
+import { Wrench, Droplets, Home as HomeIcon, Zap, Paintbrush, Trees, Flame, Hammer, Layers, ShieldAlert, Trash2, Truck, Landmark, Building, type LucideIcon } from "lucide-react";
 
 export type ServiceCategory = {
   slug: string;
