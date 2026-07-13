@@ -38,6 +38,9 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
+          <a href="https://sucasa.lofty.com" target="_blank" rel="noopener noreferrer" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+            Browse Homes
+          </a>
           {session ? (
             <button onClick={signOut} className="ml-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-secondary">
               Sign out
@@ -65,6 +68,9 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
+            <a href="https://sucasa.lofty.com" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-sm text-foreground hover:bg-secondary">
+              Browse Homes
+            </a>
             {session ? (
               <button onClick={() => { setOpen(false); signOut(); }} className="mt-2 rounded-xl border border-border px-4 py-3 text-center text-sm font-medium">
                 Sign out
@@ -94,7 +100,7 @@ export function SiteFooter() {
           <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
-        <FooterCol title="Homeowners" links={[["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
+        <FooterCol title="Homeowners" links={[["Browse Homes", "https://sucasa.lofty.com"], ["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
         <FooterCol title="Professionals" links={[["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
         <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
       </div>
@@ -109,7 +115,13 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
       <h4 className="text-sm font-semibold text-foreground">{title}</h4>
       <ul className="mt-3 space-y-2">
         {links.map(([label, href]) => (
-          <li key={href}><Link to={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link></li>
+          <li key={href}>
+            {href.startsWith("http") ? (
+              <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">{label}</a>
+            ) : (
+              <Link to={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link>
+            )}
+          </li>
         ))}
       </ul>
     </div>
