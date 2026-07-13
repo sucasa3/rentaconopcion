@@ -68,6 +68,9 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
+            <a href="https://sucasa.lofty.com" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-sm text-foreground hover:bg-secondary">
+              Browse Homes
+            </a>
             {session ? (
               <button onClick={() => { setOpen(false); signOut(); }} className="mt-2 rounded-xl border border-border px-4 py-3 text-center text-sm font-medium">
                 Sign out
