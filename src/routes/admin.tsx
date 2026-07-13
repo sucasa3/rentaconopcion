@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { GhlSyncPanel } from "@/components/ghl-sync-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS, PRO_OPPORTUNITIES } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign } from "lucide-react";
 
@@ -46,6 +47,8 @@ function Admin() {
               />
             </Panel>
           </div>
+
+          <GhlSyncPanel />
 
           <Panel title="Service requests — routing queue">
             <div className="overflow-x-auto">
