@@ -62,6 +62,75 @@ export type Database = {
           },
         ]
       }
+      ghl_sync_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          last_error: string | null
+          op: string
+          processed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          last_error?: string | null
+          op: string
+          processed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          last_error?: string | null
+          op?: string
+          processed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ghl_sync_state: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          ghl_contact_id: string | null
+          ghl_opportunity_id: string | null
+          id: string
+          last_synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          ghl_contact_id?: string | null
+          ghl_opportunity_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          ghl_contact_id?: string | null
+          ghl_opportunity_id?: string | null
+          id?: string
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -220,6 +289,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      enqueue_ghl_sync: {
+        Args: { _entity_id: string; _entity_type: string; _op?: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
