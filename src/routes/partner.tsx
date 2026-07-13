@@ -65,7 +65,7 @@ function Partner() {
               <h2 className="mt-2 text-2xl font-semibold">Simple monthly pricing</h2>
               <p className="mt-2 text-sm text-muted-foreground">One flat rate. No per-lead fees. No bidding.</p>
               <div className="mt-6 flex items-baseline gap-2">
-                <span className="text-5xl font-semibold tracking-tight">$149</span>
+                <span className="text-5xl font-semibold tracking-tight">$397</span>
                 <span className="text-sm text-muted-foreground">/month</span>
               </div>
               <ul className="mt-6 space-y-3 text-sm">
