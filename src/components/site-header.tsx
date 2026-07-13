@@ -1,10 +1,26 @@
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/" });
+  }
+
   const links = [
     { to: "/services", label: "Services" },
     { to: "/partner", label: "For Pros" },
@@ -22,9 +38,20 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
-          <Link to="/onboarding" className="ml-2 rounded-full gradient-brand px-4 py-2 text-sm font-medium text-white shadow-soft">
-            Get Started
-          </Link>
+          {session ? (
+            <button onClick={signOut} className="ml-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-secondary">
+              Sign out
+            </button>
+          ) : (
+            <>
+              <Link to="/auth" className="ml-2 rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary">
+                Sign in
+              </Link>
+              <Link to="/onboarding" className="rounded-full gradient-brand px-4 py-2 text-sm font-medium text-white shadow-soft">
+                Get Started
+              </Link>
+            </>
+          )}
         </nav>
         <button onClick={() => setOpen(v => !v)} className="grid h-10 w-10 place-items-center rounded-full border border-border md:hidden" aria-label="Toggle menu">
           {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -38,9 +65,20 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <Link to="/onboarding" onClick={() => setOpen(false)} className="mt-2 rounded-xl gradient-brand px-4 py-3 text-center text-sm font-medium text-white">
-              Create Free Home Profile
-            </Link>
+            {session ? (
+              <button onClick={() => { setOpen(false); signOut(); }} className="mt-2 rounded-xl border border-border px-4 py-3 text-center text-sm font-medium">
+                Sign out
+              </button>
+            ) : (
+              <>
+                <Link to="/auth" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-center text-sm font-medium">
+                  Sign in
+                </Link>
+                <Link to="/onboarding" onClick={() => setOpen(false)} className="mt-1 rounded-xl gradient-brand px-4 py-3 text-center text-sm font-medium text-white">
+                  Create Free Home Profile
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -58,7 +96,7 @@ export function SiteFooter() {
         </div>
         <FooterCol title="Homeowners" links={[["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
         <FooterCol title="Professionals" links={[["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
-        <FooterCol title="Company" links={[["Services", "/services"], ["Admin", "/admin"]]} />
+        <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
       </div>
       <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} SuCasa. All rights reserved.</div>
     </footer>
