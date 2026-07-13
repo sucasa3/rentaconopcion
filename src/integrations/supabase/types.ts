@@ -136,8 +136,12 @@ export type Database = {
           address: string | null
           city: string | null
           created_at: string
+          email: string | null
           full_name: string | null
+          ghl_last_synced_at: string | null
           id: string
+          last_activity_at: string
+          lifecycle_stage: Database["public"]["Enums"]["lifecycle_stage"]
           phone: string | null
           state: string | null
           updated_at: string
@@ -147,8 +151,12 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
+          ghl_last_synced_at?: string | null
           id: string
+          last_activity_at?: string
+          lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
           phone?: string | null
           state?: string | null
           updated_at?: string
@@ -158,8 +166,12 @@ export type Database = {
           address?: string | null
           city?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
+          ghl_last_synced_at?: string | null
           id?: string
+          last_activity_at?: string
+          lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
           phone?: string | null
           state?: string | null
           updated_at?: string
@@ -289,6 +301,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      compute_lifecycle_stage: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["lifecycle_stage"]
+      }
       enqueue_ghl_sync: {
         Args: { _entity_id: string; _entity_type: string; _op?: string }
         Returns: undefined
@@ -303,6 +319,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "homeowner" | "pro"
+      lifecycle_stage:
+        | "new_signup"
+        | "onboarding"
+        | "active_homeowner"
+        | "needs_reengagement"
+        | "premium_member"
+        | "inactive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -431,6 +454,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "homeowner", "pro"],
+      lifecycle_stage: [
+        "new_signup",
+        "onboarding",
+        "active_homeowner",
+        "needs_reengagement",
+        "premium_member",
+        "inactive",
+      ],
     },
   },
 } as const
