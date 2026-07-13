@@ -115,7 +115,13 @@ function FooterCol({ title, links }: { title: string; links: [string, string][] 
       <h4 className="text-sm font-semibold text-foreground">{title}</h4>
       <ul className="mt-3 space-y-2">
         {links.map(([label, href]) => (
-          <li key={href}><Link to={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link></li>
+          <li key={href}>
+            {href.startsWith("http") ? (
+              <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-muted-foreground hover:text-foreground">{label}</a>
+            ) : (
+              <Link to={href} className="text-sm text-muted-foreground hover:text-foreground">{label}</Link>
+            )}
+          </li>
         ))}
       </ul>
     </div>
