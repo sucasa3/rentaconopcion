@@ -22,6 +22,8 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
   { slug: "water-mold", name: "Water & Mold Restoration", icon: ShieldAlert, description: "Water damage cleanup and mold remediation.", color: "from-teal-400 to-cyan-700", avgResponse: "30m avg response" },
   { slug: "junk-removal", name: "Junk Removal", icon: Trash2, description: "Haul away debris, appliances and clutter.", color: "from-stone-400 to-stone-600", avgResponse: "3h avg response" },
   { slug: "movers", name: "Movers", icon: Truck, description: "Local and long-distance moving crews.", color: "from-indigo-400 to-blue-700", avgResponse: "6h avg response" },
+  { slug: "mortgage-lender", name: "Mortgage Lender", icon: Landmark, description: "Refinance, HELOC and purchase loan experts.", color: "from-emerald-400 to-green-700", avgResponse: "1d avg response" },
+  { slug: "real-estate-agent", name: "Real Estate Agent", icon: Building, description: "Trusted local agents for buying or selling.", color: "from-blue-400 to-indigo-700", avgResponse: "1d avg response" },
 ];
 
 export const RECOMMENDED_PROS = [
