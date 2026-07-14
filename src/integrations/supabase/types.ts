@@ -331,7 +331,7 @@ export type Database = {
           reviews_count: number
           service_area: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           accepting_leads?: boolean
@@ -350,7 +350,7 @@ export type Database = {
           reviews_count?: number
           service_area?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           accepting_leads?: boolean
@@ -369,7 +369,7 @@ export type Database = {
           reviews_count?: number
           service_area?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

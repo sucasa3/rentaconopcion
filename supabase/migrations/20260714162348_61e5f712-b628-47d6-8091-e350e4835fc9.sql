@@ -1,0 +1,1 @@
+ALTER TABLE public.pros ALTER COLUMN user_id DROP NOT NULL;
