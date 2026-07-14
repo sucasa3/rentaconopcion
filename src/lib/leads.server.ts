@@ -76,12 +76,21 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
   });
   if (offErr) throw offErr;
 
-  const cursorRow = useMetro
-    ? { category: req.category, metro: key, zip: "", last_pro_id: next.id, updated_at: new Date().toISOString() }
-    : { category: req.category, metro: null, zip: key, last_pro_id: next.id, updated_at: new Date().toISOString() };
-  await supabaseAdmin
-    .from("rr_cursor")
-    .upsert(cursorRow, { onConflict: useMetro ? "category,metro" : "category,zip" });
+  if (useMetro) {
+    await supabaseAdmin
+      .from("rr_cursor")
+      .upsert(
+        { category: req.category, metro: key, zip: "", last_pro_id: next.id, updated_at: new Date().toISOString() },
+        { onConflict: "category,metro" },
+      );
+  } else {
+    await supabaseAdmin
+      .from("rr_cursor")
+      .upsert(
+        { category: req.category, zip: key, last_pro_id: next.id, updated_at: new Date().toISOString() },
+        { onConflict: "category,zip" },
+      );
+  }
   await supabaseAdmin.from("service_requests").update({ routing_status: "offered" }).eq("id", requestId);
 
   // Best-effort SMS via GHL (skipped silently if not configured)
