@@ -35,6 +35,7 @@ const fmtPct = (n: number, digits = 1) => `${n >= 0 ? "+" : ""}${(n * 100).toFix
 
 function ReportPage() {
   const r = OCTOBER_REPORT;
+  const { isPremium, setPremium, hydrated } = usePremium();
 
   const projection = useMemo(() => {
     return Array.from({ length: 13 }).map((_, i) => {
