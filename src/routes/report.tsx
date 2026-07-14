@@ -173,6 +173,10 @@ function ReportPage() {
             </div>
           </Card>
 
+          {hydrated && !isPremium && <UpsellCard onUnlock={() => setPremium(true)} />}
+
+          {(!hydrated || isPremium) ? (
+          <>
           {/* Score breakdown + Zones */}
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-1">
