@@ -39,10 +39,20 @@ export const MAINTENANCE_TASKS = [
   { title: "Flush water heater", due: "Completed", done: true },
 ];
 
-export const RECENT_REQUESTS = [
-  { id: "REQ-1042", category: "Plumbing", status: "Matched", when: "Yesterday" },
-  { id: "REQ-1039", category: "HVAC", status: "In Progress", when: "3 days ago" },
-  { id: "REQ-1021", category: "Handyman", status: "Completed", when: "Last month" },
+export type RecentRequest = {
+  id: string;
+  category: string;
+  status: string;
+  when: string;
+  source?: "sucasa" | "external";
+  vendorName?: string;
+  amountCents?: number;
+};
+
+export const RECENT_REQUESTS: RecentRequest[] = [
+  { id: "REQ-1042", category: "Plumbing", status: "Matched", when: "Yesterday", source: "sucasa" },
+  { id: "REQ-1039", category: "HVAC", status: "In Progress", when: "3 days ago", source: "sucasa" },
+  { id: "REQ-1021", category: "Handyman", status: "Completed", when: "Last month", source: "sucasa" },
 ];
 
 export const PRO_OPPORTUNITIES = [

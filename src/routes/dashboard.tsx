@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
-import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS } from "@/lib/mock-data";
-import { ArrowRight, Bot, FileText, Plus, Sparkles } from "lucide-react";
+import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
+import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
+import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -16,6 +18,8 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
+  const [logOpen, setLogOpen] = useState(false);
+  const [requests, setRequests] = useState<RecentRequest[]>(RECENT_REQUESTS);
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -72,19 +76,65 @@ function Dashboard() {
 
             {/* Recent requests */}
             <Card className="lg:col-span-2">
-              <CardHeader title="Recent service requests" action={<Link to="/request" className="text-xs font-medium text-primary">New request</Link>} />
+              <CardHeader
+                title="Recent service requests"
+                action={
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setLogOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                    >
+                      <PenLine className="h-3 w-3" /> Log outside service
+                    </button>
+                    <Link to="/request" className="text-xs font-medium text-primary">New request</Link>
+                  </div>
+                }
+              />
               <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
-                {RECENT_REQUESTS.map(r => (
+                {requests.map(r => (
                   <div key={r.id} className="flex items-center justify-between gap-3 p-4">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{r.category} · {r.id}</p>
-                      <p className="text-xs text-muted-foreground">{r.when}</p>
+                      <p className="truncate text-sm font-medium">
+                        {r.category} <span className="text-muted-foreground">· {r.id.slice(0, 8)}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {r.vendorName ? `${r.vendorName} · ` : ""}{r.when}
+                        {typeof r.amountCents === "number" ? ` · $${(r.amountCents / 100).toLocaleString()}` : ""}
+                      </p>
                     </div>
-                    <StatusPill status={r.status} />
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {r.source === "external" && (
+                        <span className="rounded-full border border-border bg-secondary px-2 py-1 text-[10px] font-medium text-muted-foreground">External</span>
+                      )}
+                      <StatusPill status={r.status} />
+                    </div>
                   </div>
                 ))}
               </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Track work done outside SuCasa to build your full home history.
+              </p>
             </Card>
+
+            <LogExternalServiceDialog
+              open={logOpen}
+              onOpenChange={setLogOpen}
+              onLogged={(row) => {
+                setRequests((prev) => [
+                  {
+                    id: row.id,
+                    category: row.category,
+                    status: row.status,
+                    when: "Just now",
+                    source: "external",
+                    vendorName: row.vendorName ?? undefined,
+                    amountCents: row.amountCents ?? undefined,
+                  },
+                  ...prev,
+                ]);
+              }}
+            />
+
 
             {/* Documents */}
             <Card>
