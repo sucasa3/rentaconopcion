@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/fello/webhook")({
           event_type: eventType,
           fello_contact_id: felloContactId,
           user_id: userId,
-          payload: body,
+          payload: body as unknown as never,
         });
 
         // On enrichment events, refresh valuation on the profile.
