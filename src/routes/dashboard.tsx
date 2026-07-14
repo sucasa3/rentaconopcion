@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS } from "@/lib/mock-data";
-import { ArrowRight, Bot, FileText, Home, Plus, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowRight, Bot, FileText, Plus, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
