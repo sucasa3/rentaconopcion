@@ -119,7 +119,12 @@ export const setProFlags = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      is_founding_partner?: boolean;
+      monthly_price_cents?: number;
+      accepting_leads?: boolean;
+      active?: boolean;
+    } = {};
     if (data.is_founding_partner !== undefined) {
       patch.is_founding_partner = data.is_founding_partner;
       patch.monthly_price_cents = data.is_founding_partner ? 29700 : 39700;
