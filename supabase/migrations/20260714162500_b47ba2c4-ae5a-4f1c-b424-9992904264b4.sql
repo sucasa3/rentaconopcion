@@ -1,0 +1,1 @@
+ALTER TABLE public.pro_coverage ALTER COLUMN zip DROP NOT NULL;

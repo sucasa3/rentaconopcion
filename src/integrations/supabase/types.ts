@@ -237,7 +237,7 @@ export type Database = {
           id: string
           metro: string | null
           pro_id: string
-          zip: string
+          zip: string | null
         }
         Insert: {
           category: string
@@ -245,7 +245,7 @@ export type Database = {
           id?: string
           metro?: string | null
           pro_id: string
-          zip: string
+          zip?: string | null
         }
         Update: {
           category?: string
@@ -253,7 +253,7 @@ export type Database = {
           id?: string
           metro?: string | null
           pro_id?: string
-          zip?: string
+          zip?: string | null
         }
         Relationships: [
           {
