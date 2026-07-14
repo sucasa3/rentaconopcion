@@ -63,7 +63,12 @@ function ReportPage() {
               <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{r.monthLabel}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{r.address} · Generated {r.generatedAt}</p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {hydrated && isPremium && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
+                  <Crown className="h-3 w-3" /> Premium
+                </span>
+              )}
               <button
                 onClick={() => toast.info("PDF export coming soon")}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2 text-xs font-medium hover:bg-secondary"
