@@ -131,6 +131,137 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_assignments: {
+        Row: {
+          claimed_at: string
+          created_at: string
+          ghl_opportunity_id: string | null
+          id: string
+          pro_id: string
+          service_request_id: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string
+          created_at?: string
+          ghl_opportunity_id?: string | null
+          id?: string
+          pro_id: string
+          service_request_id: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string
+          created_at?: string
+          ghl_opportunity_id?: string | null
+          id?: string
+          pro_id?: string
+          service_request_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_assignments_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_assignments_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: true
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_offers: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          offered_at: string
+          position: number
+          pro_id: string
+          responded_at: string | null
+          service_request_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          offered_at?: string
+          position?: number
+          pro_id: string
+          responded_at?: string | null
+          service_request_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          offered_at?: string
+          position?: number
+          pro_id?: string
+          responded_at?: string | null
+          service_request_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_offers_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_offers_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pro_coverage: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          pro_id: string
+          zip: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          pro_id: string
+          zip: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          pro_id?: string
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pro_coverage_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -181,12 +312,17 @@ export type Database = {
       }
       pros: {
         Row: {
+          accepting_leads: boolean
           active: boolean
           business_name: string
           category: string
           claimed_count: number
           created_at: string
+          email: string | null
           id: string
+          is_founding_partner: boolean
+          monthly_price_cents: number
+          phone: string | null
           plan: string
           rating: number | null
           reviews_count: number
@@ -195,12 +331,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          accepting_leads?: boolean
           active?: boolean
           business_name: string
           category: string
           claimed_count?: number
           created_at?: string
+          email?: string | null
           id?: string
+          is_founding_partner?: boolean
+          monthly_price_cents?: number
+          phone?: string | null
           plan?: string
           rating?: number | null
           reviews_count?: number
@@ -209,12 +350,17 @@ export type Database = {
           user_id: string
         }
         Update: {
+          accepting_leads?: boolean
           active?: boolean
           business_name?: string
           category?: string
           claimed_count?: number
           created_at?: string
+          email?: string | null
           id?: string
+          is_founding_partner?: boolean
+          monthly_price_cents?: number
+          phone?: string | null
           plan?: string
           rating?: number | null
           reviews_count?: number
@@ -223,6 +369,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      rr_cursor: {
+        Row: {
+          category: string
+          last_pro_id: string | null
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          category: string
+          last_pro_id?: string | null
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          category?: string
+          last_pro_id?: string | null
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rr_cursor_last_pro_id_fkey"
+            columns: ["last_pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_requests: {
         Row: {
@@ -239,6 +414,7 @@ export type Database = {
           id: string
           notes: string | null
           receipt_path: string | null
+          routing_status: string
           source: string
           state: string | null
           status: string
@@ -261,6 +437,7 @@ export type Database = {
           id?: string
           notes?: string | null
           receipt_path?: string | null
+          routing_status?: string
           source?: string
           state?: string | null
           status?: string
@@ -283,6 +460,7 @@ export type Database = {
           id?: string
           notes?: string | null
           receipt_path?: string | null
+          routing_status?: string
           source?: string
           state?: string | null
           status?: string

@@ -112,3 +112,66 @@ export async function addContactNote(contactId: string, body: string): Promise<v
     body: JSON.stringify({ userId: undefined, body }),
   });
 }
+
+// === SERVICE LEADS PIPELINE (per-request opportunities) ===
+// Called after a pro claims a lead. Best-effort — returns null if pipeline
+// env vars are not configured yet.
+export async function createServiceLeadOpportunity(
+  serviceRequestId: string,
+  proId: string,
+): Promise<string | null> {
+  const pipelineId = process.env.GHL_SERVICE_LEADS_PIPELINE_ID;
+  const claimedStageId = process.env.GHL_LEAD_STAGE_CLAIMED_ID;
+  if (!pipelineId || !claimedStageId) return null;
+
+  // Lookup homeowner + pro details via admin client
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: req } = await supabaseAdmin
+    .from("service_requests")
+    .select("id, category, city, zip, description, homeowner_id")
+    .eq("id", serviceRequestId)
+    .maybeSingle();
+  if (!req) return null;
+
+  // Resolve homeowner's GHL contact id (created by the homeowner sync flow)
+  const { data: state } = await supabaseAdmin
+    .from("ghl_sync_state")
+    .select("ghl_contact_id")
+    .eq("entity_type", "homeowner")
+    .eq("entity_id", req.homeowner_id)
+    .maybeSingle();
+  if (!state?.ghl_contact_id) return null;
+
+  const { data: pro } = await supabaseAdmin
+    .from("pros")
+    .select("business_name")
+    .eq("id", proId)
+    .maybeSingle();
+
+  const r = await ghlFetch(`/opportunities/`, {
+    method: "POST",
+    body: JSON.stringify({
+      pipelineId,
+      pipelineStageId: claimedStageId,
+      locationId: env("GHL_LOCATION_ID"),
+      name: `${req.category} — ${req.city ?? req.zip ?? "SuCasa lead"} → ${pro?.business_name ?? "Pro"}`,
+      status: "open",
+      contactId: state.ghl_contact_id,
+    }),
+  });
+  return r?.opportunity?.id ?? r?.id ?? null;
+}
+
+// Best-effort SMS to a pro via GHL conversations API. Silently skips if
+// GHL_LOCATION_ID is missing. Errors bubble to caller (which logs them).
+export async function sendProSms(toPhone: string, message: string): Promise<void> {
+  await ghlFetch(`/conversations/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      type: "SMS",
+      locationId: env("GHL_LOCATION_ID"),
+      message,
+      toNumber: toPhone,
+    }),
+  });
+}

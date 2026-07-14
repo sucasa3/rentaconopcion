@@ -61,20 +61,25 @@ function Partner() {
         <section className="px-5 pb-16">
           <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-2">
             <div className="rounded-3xl border border-border bg-card p-8">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Membership</p>
-              <h2 className="mt-2 text-2xl font-semibold">Simple monthly pricing</h2>
-              <p className="mt-2 text-sm text-muted-foreground">One flat rate. No per-lead fees. No bidding.</p>
-              <div className="mt-6 flex items-baseline gap-2">
-                <span className="text-5xl font-semibold tracking-tight">$397</span>
-                <span className="text-sm text-muted-foreground">/month</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">Founding Partner</span>
+                <span className="text-xs text-muted-foreground">2 of 3 spots left</span>
               </div>
+              <h2 className="mt-3 text-2xl font-semibold">Simple monthly pricing</h2>
+              <p className="mt-2 text-sm text-muted-foreground">Locked in for life. No per-lead fees. No bidding.</p>
+              <div className="mt-6 flex items-baseline gap-2">
+                <span className="text-5xl font-semibold tracking-tight">$297</span>
+                <span className="text-sm text-muted-foreground">/month</span>
+                <span className="ml-2 text-xs text-muted-foreground line-through">$397</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Standard membership goes to $397/mo after the first 3 partners.</p>
               <ul className="mt-6 space-y-3 text-sm">
-                {["Unlimited opportunity notifications","Founding Partner badge on profile","Priority claim window","Performance dashboard","Homeowner reviews & ratings"].map(t => (
+                {["Round-robin lead assignment in your service area","25-minute claim window before auto-reassign","Founding Partner badge on profile","Performance dashboard","Homeowner reviews & ratings"].map(t => (
                   <li key={t} className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-growth" /><span>{t}</span></li>
                 ))}
               </ul>
               <Link to="/pro" className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full gradient-brand px-6 py-3.5 text-sm font-semibold text-white shadow-soft">
-                Join as a Founding Partner
+                Claim a Founding Partner spot
               </Link>
             </div>
 
