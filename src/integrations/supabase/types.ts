@@ -227,50 +227,68 @@ export type Database = {
       service_requests: {
         Row: {
           address: string | null
+          amount_cents: number | null
           budget_max: number | null
           budget_min: number | null
           category: string
           city: string | null
+          completed_at: string | null
           created_at: string
           description: string | null
           homeowner_id: string
           id: string
+          notes: string | null
+          receipt_path: string | null
+          source: string
           state: string | null
           status: string
           timeline: string | null
           updated_at: string
+          vendor_name: string | null
           zip: string | null
         }
         Insert: {
           address?: string | null
+          amount_cents?: number | null
           budget_max?: number | null
           budget_min?: number | null
           category: string
           city?: string | null
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           homeowner_id: string
           id?: string
+          notes?: string | null
+          receipt_path?: string | null
+          source?: string
           state?: string | null
           status?: string
           timeline?: string | null
           updated_at?: string
+          vendor_name?: string | null
           zip?: string | null
         }
         Update: {
           address?: string | null
+          amount_cents?: number | null
           budget_max?: number | null
           budget_min?: number | null
           category?: string
           city?: string | null
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           homeowner_id?: string
           id?: string
+          notes?: string | null
+          receipt_path?: string | null
+          source?: string
           state?: string | null
           status?: string
           timeline?: string | null
           updated_at?: string
+          vendor_name?: string | null
           zip?: string | null
         }
         Relationships: []
