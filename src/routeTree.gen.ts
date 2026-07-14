@@ -22,6 +22,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
+import { Route as ApiPublicFelloWebhookRouteImport } from './routes/api/public/fello.webhook'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -88,6 +89,11 @@ const ApiPublicGhlDrainRoute = ApiPublicGhlDrainRouteImport.update({
   path: '/api/public/ghl/drain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFelloWebhookRoute = ApiPublicFelloWebhookRouteImport.update({
+  id: '/api/public/fello/webhook',
+  path: '/api/public/fello/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
+    | '/api/public/fello/webhook'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
   fileRoutesByTo: FileRoutesByTo
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
+    | '/api/public/fello/webhook'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
   id:
@@ -179,6 +190,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
+    | '/api/public/fello/webhook'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
   fileRoutesById: FileRoutesById
@@ -195,6 +207,7 @@ export interface RootRouteChildren {
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicFelloWebhookRoute: typeof ApiPublicFelloWebhookRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
 }
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGhlDrainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/fello/webhook': {
+      id: '/api/public/fello/webhook'
+      path: '/api/public/fello/webhook'
+      fullPath: '/api/public/fello/webhook'
+      preLoaderRoute: typeof ApiPublicFelloWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -307,6 +327,7 @@ const rootRouteChildren: RootRouteChildren = {
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicFelloWebhookRoute: ApiPublicFelloWebhookRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
 }
