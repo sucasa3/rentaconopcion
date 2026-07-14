@@ -1,27 +1,8 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
-import { Home, TrendingUp, Sparkles, Activity } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Home, TrendingUp, Sparkles, Activity, MapPin } from "lucide-react";
 import { HOME_HERO, projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroData } from "@/lib/home-hero-data";
 import { useCountUp } from "./useCountUp";
-
-const HomeScene = lazy(() => import("./HomeScene"));
-
-function useHydrated() {
-  const [h, setH] = useState(false);
-  useEffect(() => setH(true), []);
-  return h;
-}
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const cb = () => setReduced(mq.matches);
-    mq.addEventListener("change", cb);
-    return () => mq.removeEventListener("change", cb);
-  }, []);
-  return reduced;
-}
+import heroPhoto from "@/assets/home-hero-photo.jpg.asset.json";
 
 const fmtUsd = (n: number, compact = false) =>
   new Intl.NumberFormat("en-US", {
@@ -32,11 +13,11 @@ const fmtUsd = (n: number, compact = false) =>
   }).format(n);
 
 export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
-  const hydrated = useHydrated();
-  const reducedMotion = usePrefersReducedMotion();
   const [years, setYears] = useState(0);
-
-  const projected = useMemo(() => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)), [data, years]);
+  const projected = useMemo(
+    () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
+    [data, years],
+  );
 
   const value = useCountUp(projected.value);
   const equity = useCountUp(projected.equity);
@@ -44,137 +25,117 @@ export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
   const score = useCountUp(data.homeScore);
 
   return (
-    <section className="relative overflow-hidden rounded-[2rem] border border-border shadow-elevated gradient-hero">
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-primary/15 blur-3xl" aria-hidden />
-      <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-growth/20 blur-3xl" aria-hidden />
+    <section className="relative overflow-hidden rounded-[2rem] border border-border bg-neutral-950 shadow-elevated">
+      {/* Photo */}
+      <div className="relative h-[520px] w-full sm:h-[560px] lg:h-[620px]">
+        <img
+          src={heroPhoto.url}
+          alt={`Twilight photo of ${data.address}`}
+          width={1920}
+          height={1200}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        {/* Cinematic gradients */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/40" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" aria-hidden />
 
-      <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-6 lg:p-7">
-        {/* Scene */}
-        <div className="relative">
-          <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-primary/80">
-            <Home className="h-3.5 w-3.5" /> Your home, live
+        {/* Top-left address chip */}
+        <div className="absolute left-5 top-5 sm:left-7 sm:top-7">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white/90 backdrop-blur-md ring-1 ring-white/20">
+            <MapPin className="h-3.5 w-3.5" /> Your home
           </div>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-xl">{data.address}</h2>
+          <h2 className="mt-3 max-w-[22ch] text-2xl font-semibold leading-tight tracking-tight text-white drop-shadow-lg sm:text-3xl lg:text-4xl">
+            {data.address}
+          </h2>
+          <p className="mt-1.5 text-sm text-white/70">
+            Home Score <span className="font-semibold text-white">{Math.round(score)}</span> · Top 18% in ZIP
+          </p>
+        </div>
 
-          {/* Value watermark chart behind the scene */}
-          <div className="relative mt-3 aspect-[4/3] w-full overflow-hidden rounded-2xl bg-white/40 ring-1 ring-white/60 backdrop-blur-sm dark:bg-white/5 dark:ring-white/10 sm:aspect-[16/10]">
-            <ValueWatermark series={data.valueSeries} years={years} />
-            <div className="absolute inset-0">
-              {hydrated ? (
-                <Suspense fallback={<SceneFallback />}>
-                  <HomeScene data={{ ...data, equityPct: projected.equityPct }} reducedMotion={reducedMotion} />
-                </Suspense>
-              ) : (
-                <SceneFallback />
-              )}
-            </div>
-
-            {/* Zone legend */}
-            <div className="absolute bottom-3 left-3 flex flex-wrap gap-1.5">
-              {(Object.keys(data.zones) as Array<keyof typeof data.zones>).map((k) => (
-                <span
-                  key={k}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/85 px-2 py-1 text-[10px] font-medium capitalize text-foreground shadow-soft dark:bg-black/50 dark:text-white"
-                  title={ZONE_LABEL[data.zones[k]]}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: ZONE_COLOR[data.zones[k]] }} />
-                  {k}
-                </span>
-              ))}
-            </div>
-
-            {/* Projection badge */}
-            {years > 0 && (
-              <div className="absolute right-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground shadow-soft">
-                Projected +{years}y
+        {/* Top-right score ring */}
+        <div className="absolute right-5 top-5 sm:right-7 sm:top-7">
+          <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-2 backdrop-blur-md ring-1 ring-white/20">
+            <ScoreRing value={score} />
+            <div className="pr-1 text-white">
+              <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/70">
+                <Activity className="h-3 w-3" /> Score
               </div>
-            )}
-          </div>
-
-          {/* Projection scrubber */}
-          <div className="mt-4 rounded-2xl border border-white/60 bg-white/60 p-3 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground/80">Project your home</span>
-              <span className="tabular-nums text-muted-foreground">
-                {years === 0 ? "Today" : `+${years} year${years === 1 ? "" : "s"}`}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={10}
-              step={1}
-              value={years}
-              onChange={(e) => setYears(Number(e.target.value))}
-              aria-label="Projection years"
-              className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-gradient-to-r from-primary via-primary/70 to-growth accent-primary"
-            />
-            <div className="mt-2 flex gap-1.5">
-              {[0, 1, 5, 10].map((y) => (
-                <button
-                  key={y}
-                  onClick={() => setYears(y)}
-                  className={`flex-1 rounded-full px-2 py-1 text-[10px] font-semibold transition ${
-                    years === y ? "bg-primary text-primary-foreground shadow-soft" : "bg-white/70 text-foreground/70 hover:bg-white dark:bg-white/10 dark:text-white/70"
-                  }`}
-                >
-                  {y === 0 ? "Today" : `${y}yr`}
-                </button>
-              ))}
+              <div className="text-lg font-semibold tabular-nums leading-none">{Math.round(score)}</div>
             </div>
           </div>
         </div>
 
-        {/* Stat rail */}
-        <div className="flex flex-col gap-3">
-          {/* Home score */}
-          <div className="relative overflow-hidden rounded-2xl gradient-brand p-5 text-white shadow-soft">
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-wider opacity-80">
-              <Activity className="h-3.5 w-3.5" /> Home Score
-            </div>
-            <div className="mt-2 flex items-end gap-4">
-              <ScoreRing value={score} />
-              <div className="pb-1">
-                <p className="text-5xl font-semibold tabular-nums leading-none">{Math.round(score)}</p>
-                <p className="mt-1 text-xs opacity-90">Excellent · top 18% in ZIP</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Value */}
-          <div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <Home className="h-3.5 w-3.5" /> Estimated value
+        {/* Zone chips */}
+        <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 sm:left-auto sm:right-7 sm:top-auto sm:bottom-[280px] sm:translate-y-0">
+          <div className="flex flex-wrap gap-1.5 sm:justify-end">
+            {(Object.keys(data.zones) as Array<keyof typeof data.zones>).map((k) => (
+              <span
+                key={k}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium capitalize text-white backdrop-blur-md ring-1 ring-white/20"
+                title={ZONE_LABEL[data.zones[k]]}
+              >
+                <PulseDot color={ZONE_COLOR[data.zones[k]]} />
+                {k} · {ZONE_LABEL[data.zones[k]]}
               </span>
-              <span className="text-[11px] font-medium text-growth">▲ {fmtUsd(8400)}</span>
-            </div>
-            <p className="mt-1.5 text-3xl font-semibold tabular-nums tracking-tight">{fmtUsd(value)}</p>
-            <Sparkline series={data.valueSeries} className="mt-2 h-8 w-full" />
+            ))}
           </div>
+        </div>
 
-          {/* Equity + ROI */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
-              <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <TrendingUp className="h-3.5 w-3.5" /> Equity
-              </span>
-              <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight text-growth">{fmtUsd(equity, true)}</p>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full gradient-growth transition-all duration-700"
-                  style={{ width: `${Math.round(projected.equityPct * 100)}%` }}
+        {/* Bottom glass stat bar */}
+        <div className="absolute inset-x-4 bottom-4 sm:inset-x-6 sm:bottom-6">
+          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-xl ring-1 ring-white/20 sm:p-5">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Stat
+                icon={<Home className="h-3.5 w-3.5" />}
+                label="Estimated value"
+                value={fmtUsd(value)}
+                trend={years === 0 ? "▲ +$8,400 · 30d" : `Projected +${years}y`}
+                trendColor="text-emerald-300"
+              />
+              <Stat
+                icon={<TrendingUp className="h-3.5 w-3.5" />}
+                label="Equity"
+                value={fmtUsd(equity, true)}
+                trend={`${Math.round(projected.equityPct * 100)}% of value`}
+                bar={projected.equityPct}
+              />
+              <Stat
+                icon={<Sparkles className="h-3.5 w-3.5" />}
+                label="Upgrade ROI"
+                value={fmtUsd(roi, true)}
+                trend="3 smart picks"
+              />
+              <div className="col-span-2 flex flex-col justify-between sm:col-span-1">
+                <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-white/70">
+                  <span>Project</span>
+                  <span className="tabular-nums text-white/90">
+                    {years === 0 ? "Today" : `+${years}y`}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={10}
+                  step={1}
+                  value={years}
+                  onChange={(e) => setYears(Number(e.target.value))}
+                  aria-label="Projection years"
+                  className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/25 accent-white"
                 />
+                <div className="mt-2 flex gap-1">
+                  {[0, 1, 5, 10].map((y) => (
+                    <button
+                      key={y}
+                      onClick={() => setYears(y)}
+                      className={`flex-1 rounded-full px-2 py-1 text-[10px] font-semibold transition ${
+                        years === y ? "bg-white text-neutral-900" : "bg-white/10 text-white/80 hover:bg-white/20"
+                      }`}
+                    >
+                      {y === 0 ? "Today" : `${y}y`}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">{Math.round(projected.equityPct * 100)}% of value</p>
-            </div>
-            <div className="rounded-2xl border border-white/60 bg-white/70 p-4 backdrop-blur-sm dark:border-white/10 dark:bg-white/5">
-              <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <Sparkles className="h-3.5 w-3.5" /> Upgrade ROI
-              </span>
-              <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight">{fmtUsd(roi, true)}</p>
-              <p className="mt-2 text-[10px] text-muted-foreground">3 smart recommendations</p>
             </div>
           </div>
         </div>
@@ -183,88 +144,80 @@ export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
   );
 }
 
-function SceneFallback() {
+function Stat({
+  icon,
+  label,
+  value,
+  trend,
+  trendColor = "text-white/70",
+  bar,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  trend?: string;
+  trendColor?: string;
+  bar?: number;
+}) {
   return (
-    <div className="grid h-full w-full place-items-center bg-gradient-to-br from-primary/10 via-transparent to-growth/15">
-      <div className="text-xs text-muted-foreground">Loading home…</div>
+    <div className="min-w-0">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-white/70">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 truncate text-xl font-semibold tabular-nums tracking-tight text-white sm:text-2xl">
+        {value}
+      </div>
+      {bar !== undefined ? (
+        <>
+          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/15">
+            <div
+              className="h-full rounded-full bg-emerald-400 transition-all duration-700"
+              style={{ width: `${Math.round(bar * 100)}%` }}
+            />
+          </div>
+          {trend && <p className={`mt-1 text-[10px] ${trendColor}`}>{trend}</p>}
+        </>
+      ) : (
+        trend && <p className={`mt-1 text-[11px] ${trendColor}`}>{trend}</p>
+      )}
     </div>
   );
 }
 
+function PulseDot({ color }: { color: string }) {
+  return (
+    <span className="relative inline-flex h-1.5 w-1.5">
+      <span
+        className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70"
+        style={{ background: color }}
+      />
+      <span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: color }} />
+    </span>
+  );
+}
+
 function ScoreRing({ value }: { value: number }) {
-  const r = 26;
+  const r = 20;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, value)) / 100;
   return (
-    <svg width={68} height={68} viewBox="0 0 68 68" className="shrink-0">
-      <circle cx={34} cy={34} r={r} stroke="rgba(255,255,255,0.25)" strokeWidth={6} fill="none" />
+    <svg width={52} height={52} viewBox="0 0 52 52" className="shrink-0">
+      <circle cx={26} cy={26} r={r} stroke="rgba(255,255,255,0.25)" strokeWidth={5} fill="none" />
       <circle
-        cx={34}
-        cy={34}
+        cx={26}
+        cy={26}
         r={r}
-        stroke="white"
-        strokeWidth={6}
+        stroke="rgb(74,222,128)"
+        strokeWidth={5}
         fill="none"
         strokeLinecap="round"
         strokeDasharray={c}
         strokeDashoffset={c * (1 - pct)}
-        transform="rotate(-90 34 34)"
+        transform="rotate(-90 26 26)"
         style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.2,0.7,0.2,1)" }}
       />
     </svg>
   );
 }
 
-function Sparkline({ series, className }: { series: number[]; className?: string }) {
-  const min = Math.min(...series);
-  const max = Math.max(...series);
-  const w = 100;
-  const h = 30;
-  const pts = series.map((v, i) => {
-    const x = (i / (series.length - 1)) * w;
-    const y = h - ((v - min) / Math.max(1, max - min)) * h;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const path = `M${pts[0]} L${pts.slice(1).join(" L")}`;
-  const area = `${path} L${w},${h} L0,${h} Z`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={className}>
-      <defs>
-        <linearGradient id="spark-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="var(--growth)" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="var(--growth)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#spark-fill)" />
-      <path d={path} fill="none" stroke="var(--growth)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function ValueWatermark({ series, years }: { series: number[]; years: number }) {
-  // extend series with projection at the tail
-  const projected = years > 0 ? [...series, ...Array.from({ length: 6 }, (_, i) => series[series.length - 1] * Math.pow(1.035, ((i + 1) / 6) * years))] : series;
-  const min = Math.min(...projected);
-  const max = Math.max(...projected);
-  const w = 100;
-  const h = 60;
-  const pts = projected.map((v, i) => {
-    const x = (i / (projected.length - 1)) * w;
-    const y = h - ((v - min) / Math.max(1, max - min)) * h * 0.7 - 6;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  const path = `M${pts[0]} L${pts.slice(1).join(" L")}`;
-  const area = `${path} L${w},${h} L0,${h} Z`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-      <defs>
-        <linearGradient id="hero-wm" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="var(--growth)" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="var(--growth)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#hero-wm)" style={{ transition: "d 800ms ease" }} />
-      <path d={path} fill="none" stroke="var(--growth)" strokeOpacity={0.55} strokeWidth="0.6" />
-    </svg>
-  );
-}
