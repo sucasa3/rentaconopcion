@@ -1,19 +1,21 @@
 ## Goal
-Shift the near-white light-blue backgrounds/surfaces to a subtly warmer, cream-tinted tone that harmonizes with SuCasa's orange logo — while keeping the deep blue primary and green growth colors intact.
+Warm the hero-section background (the light blue/mint wash at the top of the homepage) with a soft peach/orange tint that echoes the SuCasa logo, while keeping the deep-blue primary and green growth accents intact.
 
-## Changes (src/styles.css only)
-Retint the neutral tokens by moving their hue from cool blue (~250) toward warm orange (~65-70) and adding a touch more chroma. Approximate new values:
+## Change (src/styles.css, `gradient-hero` utility only)
+Replace the blue + mint radial glows with warm-orange + soft-peach glows and swap the base linear wash from cool white → warm cream:
 
-- `--background`: `oklch(0.995 0.003 240)` → `oklch(0.99 0.008 70)`
-- `--surface`: `oklch(0.98 0.005 250)` → `oklch(0.975 0.012 70)`
-- `--secondary` / `--muted`: `oklch(0.965 0.01 250)` → `oklch(0.96 0.015 70)`
-- `--border` / `--input`: `oklch(0.92 0.01 250)` → `oklch(0.915 0.014 70)`
-- Shadow tint: `oklch(0.2 0.05 250 / …)` → `oklch(0.25 0.04 60 / …)` for a warmer cast
+```css
+@utility gradient-hero {
+  background-image:
+    radial-gradient(1200px 600px at 10% -10%, oklch(0.9 0.09 60 / 0.55), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%,   oklch(0.92 0.06 45 / 0.45), transparent 60%),
+    linear-gradient(180deg, oklch(0.99 0.012 75), oklch(0.97 0.02 60));
+}
+```
 
-Primary blue (`--primary`, `--brand`), growth green, and chart colors stay unchanged so the identity remains deep-blue + green with orange accents.
-
-## Preview
-After you approve, I'll apply the token changes and you can review live on `/`, `/dashboard`, and `/report`. If the warmth is too strong or too subtle, we'll nudge chroma (0.008 ↔ 0.02) or hue (60 ↔ 80) in one quick follow-up.
+Result: the hero fades from a warm cream at the top into a subtle peach glow — a soft, muted echo of the logo's orange, not a saturated wash. Deep-blue CTA button and green growth accents stay untouched and pop more against the warm background.
 
 ## Scope
-CSS tokens only — no component, layout, or logic changes.
+- Only the `gradient-hero` utility in `src/styles.css`.
+- No changes to `gradient-brand`, `gradient-growth`, dark-mode hero, or any component.
+- If the warmth reads too strong/weak after preview, one-line nudge to chroma (0.06 ↔ 0.12) or hue (45 ↔ 75).
