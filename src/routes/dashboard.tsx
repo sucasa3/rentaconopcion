@@ -177,9 +177,9 @@ function Dashboard() {
             <Card>
               <CardHeader title="Home Intelligence Report" />
               <p className="mt-2 text-sm text-muted-foreground">Your monthly deep-dive on value, equity, and improvement ROI.</p>
-              <button className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full gradient-growth px-4 py-2.5 text-sm font-semibold text-white">
+              <Link to="/report" className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-full gradient-growth px-4 py-2.5 text-sm font-semibold text-white">
                 View report <ArrowRight className="h-4 w-4" />
-              </button>
+              </Link>
             </Card>
           </div>
         </div>
