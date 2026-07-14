@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Home, TrendingUp, Sparkles, Activity, MapPin } from "lucide-react";
 import { HOME_HERO, projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroData } from "@/lib/home-hero-data";
 import { useCountUp } from "./useCountUp";
@@ -221,7 +221,3 @@ function ScoreRing({ value }: { value: number }) {
   );
 }
 
-// Keep for potential future use
-export function _unused() {
-  useEffect(() => {}, []);
-}
