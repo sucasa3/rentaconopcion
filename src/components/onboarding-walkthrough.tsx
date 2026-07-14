@@ -320,7 +320,7 @@ function Sparkline({ data }: { data: { year: number; value: number }[] }) {
   const line = `M ${pts.join(" L ")}`;
   const area = `M 0,${h} L ${pts.join(" L ")} L ${w},${h} Z`;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-14 w-full">
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-14 w-full text-primary">
       <defs>
         <linearGradient id="sparkGrad" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="currentColor" stopOpacity="0.35" />
