@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { GhlSyncPanel } from "@/components/ghl-sync-panel";
-import { ADMIN_HOMEOWNERS, ADMIN_PROS, PRO_OPPORTUNITIES } from "@/lib/mock-data";
+import { AdminLeadsPanel } from "@/components/admin-leads-panel";
+import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
@@ -48,31 +49,9 @@ function Admin() {
             </Panel>
           </div>
 
-          <GhlSyncPanel />
+          <AdminLeadsPanel />
 
-          <Panel title="Service requests — routing queue">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    {["ID","Category","Location","Budget","Timeline","Action"].map(h => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {PRO_OPPORTUNITIES.map(o => (
-                    <tr key={o.id} className="border-t border-border">
-                      <td className="px-3 py-3 font-medium">{o.id}</td>
-                      <td className="px-3 py-3">{o.category}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{o.location}</td>
-                      <td className="px-3 py-3">{o.budget}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{o.timeline}</td>
-                      <td className="px-3 py-3"><button className="rounded-full gradient-brand px-3 py-1.5 text-xs font-semibold text-white">Assign</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Panel>
+          <GhlSyncPanel />
         </div>
       </main>
       <SiteFooter />
