@@ -1,61 +1,64 @@
-## Goal
+## Home Intelligence Report — Monthly Deep-Dive
 
-Let homeowners log a service request they arranged **outside** SuCasa (e.g. a plumber a neighbor recommended) so their dashboard reflects the full picture of home activity — not just requests routed through our pro network.
+Build a dedicated `/report` route (linked from the dashboard's **View report** button) that renders a full monthly report for one home using realistic mock data. Free for all homeowners in this pass; single month (October 2026); premium gating and month scrubbing deferred.
 
-## Why it matters
+### Route & navigation
+- New file: `src/routes/report.tsx` at `/report`, `noindex` in head.
+- Wire dashboard's **View report** button (in `src/routes/dashboard.tsx`) to `<Link to="/report">`.
 
-- Keeps the dashboard honest: today "Recent service requests" only shows things booked through SuCasa, so the home history looks thinner than reality.
-- Feeds the AI assistant and Home Intelligence Report better maintenance data (when the roof was last inspected, who did the HVAC tune-up, cost paid).
-- Creates a soft on-ramp to convert future work to SuCasa pros ("You used an outside plumber last month — want us to match one next time?").
+### Page structure (top to bottom)
 
-## What the user sees
+1. **Report header**
+   - Month label ("October 2026 · Monthly Report"), address, "Generated Nov 1, 2026" timestamp.
+   - Actions: Download PDF (stub), Share link (stub, toast on click), Back to dashboard.
 
-In the **Recent service requests** card on `/dashboard`:
+2. **Executive summary card**
+   - 3–4 sentence AI-style narrative: what changed, why, what to do. Uses mock voice ("Your home gained $6,200 in estimated value this month, driven by neighborhood comps and a new roof inspection. Electrical panel needs attention before winter.").
+   - Delta chips: Value +$6.2k (+1.3%), Equity +$4.1k, Home Score +3, ROI YTD $14.8k.
 
-1. A new secondary button next to "New request" → **"Log outside service"**.
-2. Clicking it opens a modal titled "Log a service you booked yourself" with:
-   - Category (dropdown, same 12 categories)
-   - Vendor name (optional, free text)
-   - Date completed (date picker, defaults to today)
-   - Amount paid (optional, USD)
-   - Notes (optional textarea — "what was done")
-   - Attach receipt/invoice (optional file upload, images + PDF)
-3. On save, it appears in the same list, styled subtly differently:
-   - Small **"External"** chip next to the status pill
-   - Status defaults to **Completed** (with option to pick "Scheduled" or "In Progress")
-   - Vendor name shown under the category if provided
-4. Empty-state hint under the list on first use: "Track work done outside SuCasa to build your full home history."
+3. **Value & equity trend** (primary chart)
+   - Full-width area chart, 12 months of value + equity (reuse/extend `HOME_HERO.valueSeries`).
+   - Annotations: dots on months where notable events happened (roof inspection, HVAC service, comp sale nearby) with hover/tap tooltips.
+   - Right-side legend with current, 30-day change, 12-month change.
 
-## Technical section
+4. **Home Score breakdown**
+   - Radial/ring for overall score (82) + 4 sub-scores: Structure, Systems, Safety, Curb Appeal (0–100 bars).
+   - Short "why this score" line per sub-score.
 
-- **Schema (`service_requests`)** — add three nullable columns via migration:
-  - `source` text default `'sucasa'` (values: `'sucasa' | 'external'`)
-  - `vendor_name` text
-  - `amount_cents` integer
-  - `completed_at` timestamptz
-  - `notes` text
-  - `receipt_path` text (points to Storage object)
-  - Update RLS: homeowners can insert/update rows where `source = 'external'` and `homeowner_id = auth.uid()`; the existing SuCasa-routed flow keeps its policies. GRANTs unchanged (already covers authenticated).
-- **Storage** — new private bucket `service-receipts`, RLS: owner can read/write objects under `${auth.uid()}/…`.
-- **Server function** — `src/lib/service-requests.functions.ts`:
-  - `logExternalService({ category, vendorName?, completedAt, amountCents?, notes?, receiptPath? })` — Zod-validated, uses `requireSupabaseAuth`, inserts with `source='external'`, returns the new row.
-  - Kept separate from the existing new-request flow so validation and lifecycle-stage triggers stay clean.
-- **Client**:
-  - New component `src/components/log-external-service-dialog.tsx` — shadcn `Dialog` + `Form` + Zod resolver, file input hits Supabase Storage directly (signed upload), then calls the server fn.
-  - `src/routes/dashboard.tsx` — add the "Log outside service" button to the card header, render the dialog, invalidate the `recent-requests` query on success. Update the row renderer to show the "External" chip and vendor name when present.
-  - `src/lib/mock-data.ts` — extend the `RECENT_REQUESTS` mock shape with the new optional fields so the redesign renders correctly before real data lands.
-- **GHL sync** — external service logs count as activity: the existing `tg_service_request_lifecycle` trigger already bumps `last_activity_at`, so no new sync work; just verify it fires for `source='external'` inserts.
-- **Not touched**: pro matching, claims, admin queue, request routing — external logs never enter the pro pipeline.
+5. **Zone health matrix**
+   - 4 zone cards (Roof, HVAC, Plumbing, Electrical) with status pill, last serviced, next due, one-line insight.
+   - Electrical = Action needed (matches existing `HOME_HERO.zones`).
 
-## Out of scope this pass
+6. **Market context**
+   - 3 stat tiles: Neighborhood median $/sqft, 90-day price trend, active listings within 1 mi.
+   - Small comps table (3 recent nearby sales: address abbreviated, sold price, $/sqft, delta vs your home).
 
-- Editing/deleting an external log after save (add later).
-- OCR-parsing the uploaded receipt to auto-fill amount/vendor (nice future add for the AI assistant).
-- Converting an external log into a SuCasa-routed request.
+7. **Maintenance activity this month**
+   - Timeline list: completed tasks, in-progress requests, external services logged (pull shape from `RECENT_REQUESTS`).
+   - Spend summary: total $ this month, YTD, projected annual.
 
-## Verification
+8. **Recommended next actions** (the payoff)
+   - 4–5 prioritized cards, each with: priority pill (Urgent / This month / Plan ahead), title, why it matters, est. cost range, est. ROI or risk avoided, primary CTA (Request quote → links to `/request`, or Learn more).
+   - Example items: "Replace electrical panel breaker" (Urgent, $600–$1,200), "Schedule HVAC winter tune-up" (This month, $180–$260), "Refinance check — rates dropped 0.4%" (Plan ahead), "Repaint south-facing trim" (Plan ahead).
 
-- Migration applies cleanly; homeowner can insert an `external` row from the UI, cannot insert one for another user (RLS).
-- Dashboard list shows the new entry with "External" chip and vendor name; existing SuCasa requests unchanged.
-- Receipt upload lands in `service-receipts/${uid}/…`; other users get 403 on the object.
-- Mobile (420px): dialog is scrollable, buttons don't overflow, category select is tappable.
+9. **12-month projection**
+   - Small line chart projecting value + equity forward using existing `projectHome()` helper from `src/lib/home-hero-data.ts`.
+   - Callout: "If you complete recommended actions, projected Home Score reaches 91 by next October."
+
+10. **Footer**
+    - "This report was generated using your home profile, service history, and public market data. Estimates only." + disclaimer.
+
+### Data
+- New file: `src/lib/report-mock-data.ts` — exports one `OCTOBER_REPORT` object with all sections (summary, trend series with event annotations, sub-scores, zones reuse, comps, activity, recommendations, projection meta).
+- Reuse `HOME_HERO` and `projectHome` from `src/lib/home-hero-data.ts`; reuse `RECENT_REQUESTS` shape for the activity timeline.
+
+### Charts
+- Use `recharts` (already a shadcn dependency in this template) — AreaChart for trend, LineChart for projection, simple SVG for radial score. No new packages if `recharts` is installed; otherwise fall back to hand-rolled SVG (verify during build).
+
+### Design
+- Match existing dashboard: `rounded-3xl border border-border bg-card shadow-soft`, `gradient-brand` for hero band, `gradient-growth` for CTAs.
+- Mobile-first: single column on <sm, 2-col grid on md+, executive summary and primary chart always full-width.
+- Reuse `SiteHeader` / `SiteFooter`.
+
+### Out of scope this pass
+- Real data wiring, PDF generation, share links, month scrubber, premium gating, AI generation of narrative.
