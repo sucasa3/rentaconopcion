@@ -64,43 +64,11 @@ function Hero() {
           </div>
         </div>
 
-        <HeroPreview />
+        <div className="mx-auto mt-14 max-w-5xl">
+          <HomeHero />
+        </div>
       </div>
     </section>
-  );
-}
-
-function HeroPreview() {
-  return (
-    <div className="mx-auto mt-14 max-w-md">
-      <div className="rounded-[2rem] border border-border bg-card p-4 shadow-elevated">
-        <div className="rounded-2xl gradient-brand p-5 text-white">
-          <p className="text-xs opacity-80">Estimated Home Value</p>
-          <p className="mt-1 text-3xl font-semibold tracking-tight">$482,300</p>
-          <p className="mt-1 text-xs opacity-90">▲ $8,400 this month</p>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <MiniStat label="Equity" value="$186k" tint="growth" />
-          <MiniStat label="Tasks due" value="3" tint="primary" />
-        </div>
-        <div className="mt-3 rounded-2xl border border-border p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Next: Replace HVAC filter</p>
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">Due</span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">Recommended every 90 days</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MiniStat({ label, value, tint }: { label: string; value: string; tint: "growth" | "primary" }) {
-  return (
-    <div className="rounded-2xl border border-border bg-surface p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-lg font-semibold ${tint === "growth" ? "text-growth" : "text-primary"}`}>{value}</p>
-    </div>
   );
 }
 
