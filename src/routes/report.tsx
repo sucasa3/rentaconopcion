@@ -120,17 +120,17 @@ function ReportPage() {
                 <AreaChart data={r.trend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="valFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="eqFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#22c55e" stopOpacity={0.3} />
                       <stop offset="100%" stopColor="#22c55e" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={48} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={48} />
                   <Tooltip
                     content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null;
@@ -150,20 +150,20 @@ function ReportPage() {
                       );
                     }}
                   />
-                  <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#valFill)" />
+                  <Area type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={2} fill="url(#valFill)" />
                   <Area type="monotone" dataKey="equity" stroke="#22c55e" strokeWidth={2} fill="url(#eqFill)" />
                   {r.trend.map((pt) =>
                     pt.event ? (
-                      <ReferenceDot key={pt.month} x={pt.month} y={pt.value} r={5} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={2} />
+                      <ReferenceDot key={pt.month} x={pt.month} y={pt.value} r={5} fill="var(--primary)" stroke="var(--background)" strokeWidth={2} />
                     ) : null,
                   )}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-              <LegendDot color="hsl(var(--primary))" label="Estimated value" />
+              <LegendDot color="var(--primary)" label="Estimated value" />
               <LegendDot color="#22c55e" label="Equity" />
-              <LegendDot color="hsl(var(--primary))" label="Event marker" ring />
+              <LegendDot color="var(--primary)" label="Event marker" ring />
             </div>
           </Card>
 
@@ -334,14 +334,14 @@ function ReportPage() {
             <div className="mt-4 h-56 w-full">
               <ResponsiveContainer>
                 <LineChart data={projection} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} width={48} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} width={48} />
                   <Tooltip
                     formatter={(v: number) => fmtUSD(v)}
-                    contentStyle={{ borderRadius: 12, border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", fontSize: 12 }}
+                    contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", fontSize: 12 }}
                   />
-                  <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Value" />
+                  <Line type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={2} dot={false} name="Value" />
                   <Line type="monotone" dataKey="equity" stroke="#22c55e" strokeWidth={2} dot={false} name="Equity" />
                 </LineChart>
               </ResponsiveContainer>
@@ -422,12 +422,12 @@ function ScoreRing({ score }: { score: number }) {
   const offset = c * (1 - score / 100);
   return (
     <svg width={size} height={size} className="shrink-0">
-      <circle cx={size / 2} cy={size / 2} r={r} stroke="hsl(var(--border))" strokeWidth={stroke} fill="none" />
+      <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--border)" strokeWidth={stroke} fill="none" />
       <circle
         cx={size / 2}
         cy={size / 2}
         r={r}
-        stroke="hsl(var(--primary))"
+        stroke="var(--primary)"
         strokeWidth={stroke}
         strokeLinecap="round"
         strokeDasharray={c}
