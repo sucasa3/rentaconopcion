@@ -1,5 +1,5 @@
 // Lead routing core — server-only. Uses supabaseAdmin (RLS bypass).
-// Round-robin per (category, zip), one active offer per request, 25-min SLA.
+// Round-robin per (category, metro || zip), one active offer per request, 25-min SLA.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const SLA_MINUTES = 25;
@@ -7,7 +7,7 @@ const SLA_MINUTES = 25;
 export async function offerNextPro(requestId: string): Promise<{ offered: boolean; proId?: string; reason?: string }> {
   const { data: req, error: reqErr } = await supabaseAdmin
     .from("service_requests")
-    .select("id, category, zip, routing_status")
+    .select("id, category, zip, metro, routing_status")
     .eq("id", requestId)
     .maybeSingle();
   if (reqErr) throw reqErr;
@@ -15,14 +15,19 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
   if (req.routing_status === "claimed" || req.routing_status === "cancelled") {
     return { offered: false, reason: `already_${req.routing_status}` };
   }
-  if (!req.zip) return { offered: false, reason: "missing_zip" };
 
-  // Find all eligible pros for this (category, zip)
-  const { data: coverage, error: covErr } = await supabaseAdmin
+  const useMetro = !!req.metro;
+  const key = useMetro ? req.metro! : req.zip;
+  if (!key) return { offered: false, reason: "missing_metro_or_zip" };
+
+  // Find all eligible pros for this (category, metro|zip)
+  const covQuery = supabaseAdmin
     .from("pro_coverage")
     .select("pro_id, pros!inner(id, business_name, phone, active, accepting_leads)")
-    .eq("category", req.category)
-    .eq("zip", req.zip);
+    .eq("category", req.category);
+  const { data: coverage, error: covErr } = await (useMetro
+    ? covQuery.eq("metro", key)
+    : covQuery.eq("zip", key));
   if (covErr) throw covErr;
   const eligible = (coverage ?? [])
     .map((c) => c.pros as unknown as { id: string; business_name: string; phone: string | null; active: boolean; accepting_leads: boolean })
@@ -44,13 +49,14 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
     return { offered: false, reason: "exhausted_rotation" };
   }
 
-  // Round-robin: pick the pro after the last one served for this (category, zip)
-  const { data: cursor } = await supabaseAdmin
+  // Round-robin cursor per (category, metro|zip)
+  const cursorQ = supabaseAdmin
     .from("rr_cursor")
     .select("last_pro_id")
-    .eq("category", req.category)
-    .eq("zip", req.zip)
-    .maybeSingle();
+    .eq("category", req.category);
+  const { data: cursor } = await (useMetro
+    ? cursorQ.eq("metro", key).maybeSingle()
+    : cursorQ.eq("zip", key).maybeSingle());
   const ordered = [...pool].sort((a, b) => a.id.localeCompare(b.id));
   let idx = 0;
   if (cursor?.last_pro_id) {
@@ -70,12 +76,21 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
   });
   if (offErr) throw offErr;
 
-  await supabaseAdmin
-    .from("rr_cursor")
-    .upsert(
-      { category: req.category, zip: req.zip, last_pro_id: next.id, updated_at: new Date().toISOString() },
-      { onConflict: "category,zip" },
-    );
+  if (useMetro) {
+    await supabaseAdmin
+      .from("rr_cursor")
+      .upsert(
+        { category: req.category, metro: key, zip: "", last_pro_id: next.id, updated_at: new Date().toISOString() },
+        { onConflict: "category,metro" },
+      );
+  } else {
+    await supabaseAdmin
+      .from("rr_cursor")
+      .upsert(
+        { category: req.category, zip: key, last_pro_id: next.id, updated_at: new Date().toISOString() },
+        { onConflict: "category,zip" },
+      );
+  }
   await supabaseAdmin.from("service_requests").update({ routing_status: "offered" }).eq("id", requestId);
 
   // Best-effort SMS via GHL (skipped silently if not configured)
@@ -84,7 +99,7 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
     if (next.phone) {
       await ghl.sendProSms(
         next.phone,
-        `SuCasa: New ${req.category} lead in ${req.zip}. Claim within ${SLA_MINUTES} min: https://sucasa.com/pro`,
+        `SuCasa: New ${req.category} lead in ${key}. Claim within ${SLA_MINUTES} min: https://sucasa.com/pro`,
       );
     }
   } catch (e) {
@@ -98,7 +113,6 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
 export async function expireStaleOffers(): Promise<{ expired: number; requeued: number; routed: number }> {
   const nowIso = new Date().toISOString();
 
-  // 1. Mark stale pendings expired
   const { data: stale, error: staleErr } = await supabaseAdmin
     .from("lead_offers")
     .update({ status: "expired", responded_at: nowIso })
@@ -108,7 +122,6 @@ export async function expireStaleOffers(): Promise<{ expired: number; requeued: 
   if (staleErr) throw staleErr;
   const expired = stale?.length ?? 0;
 
-  // 2. For each expired offer's request, if still unclaimed, offer next pro.
   const requestIds = Array.from(new Set((stale ?? []).map((o) => o.service_request_id)));
   let requeued = 0;
   for (const rid of requestIds) {
@@ -122,7 +135,6 @@ export async function expireStaleOffers(): Promise<{ expired: number; requeued: 
     if (r.offered) requeued++;
   }
 
-  // 3. Also route brand-new unrouted requests
   const { data: fresh } = await supabaseAdmin
     .from("service_requests")
     .select("id")

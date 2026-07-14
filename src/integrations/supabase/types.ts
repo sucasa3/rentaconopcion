@@ -235,22 +235,25 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          metro: string | null
           pro_id: string
-          zip: string
+          zip: string | null
         }
         Insert: {
           category: string
           created_at?: string
           id?: string
+          metro?: string | null
           pro_id: string
-          zip: string
+          zip?: string | null
         }
         Update: {
           category?: string
           created_at?: string
           id?: string
+          metro?: string | null
           pro_id?: string
-          zip?: string
+          zip?: string | null
         }
         Relationships: [
           {
@@ -328,7 +331,7 @@ export type Database = {
           reviews_count: number
           service_area: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           accepting_leads?: boolean
@@ -347,7 +350,7 @@ export type Database = {
           reviews_count?: number
           service_area?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           accepting_leads?: boolean
@@ -366,7 +369,7 @@ export type Database = {
           reviews_count?: number
           service_area?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -374,18 +377,21 @@ export type Database = {
         Row: {
           category: string
           last_pro_id: string | null
+          metro: string | null
           updated_at: string
           zip: string
         }
         Insert: {
           category: string
           last_pro_id?: string | null
+          metro?: string | null
           updated_at?: string
           zip: string
         }
         Update: {
           category?: string
           last_pro_id?: string | null
+          metro?: string | null
           updated_at?: string
           zip?: string
         }
@@ -412,6 +418,7 @@ export type Database = {
           description: string | null
           homeowner_id: string
           id: string
+          metro: string | null
           notes: string | null
           receipt_path: string | null
           routing_status: string
@@ -435,6 +442,7 @@ export type Database = {
           description?: string | null
           homeowner_id: string
           id?: string
+          metro?: string | null
           notes?: string | null
           receipt_path?: string | null
           routing_status?: string
@@ -458,6 +466,7 @@ export type Database = {
           description?: string | null
           homeowner_id?: string
           id?: string
+          metro?: string | null
           notes?: string | null
           receipt_path?: string | null
           routing_status?: string

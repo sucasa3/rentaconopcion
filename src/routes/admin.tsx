@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { GhlSyncPanel } from "@/components/ghl-sync-panel";
 import { AdminLeadsPanel } from "@/components/admin-leads-panel";
+import { ProSeedPanel } from "@/components/pro-seed-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign } from "lucide-react";
 
@@ -51,7 +52,10 @@ function Admin() {
 
           <AdminLeadsPanel />
 
+          <ProSeedPanel />
+
           <GhlSyncPanel />
+
         </div>
       </main>
       <SiteFooter />
