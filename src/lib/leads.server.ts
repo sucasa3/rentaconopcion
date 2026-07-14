@@ -77,8 +77,8 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
   if (offErr) throw offErr;
 
   const cursorRow = useMetro
-    ? { category: req.category, metro: key, zip: null as string | null, last_pro_id: next.id, updated_at: new Date().toISOString() }
-    : { category: req.category, metro: null as string | null, zip: key, last_pro_id: next.id, updated_at: new Date().toISOString() };
+    ? { category: req.category, metro: key, zip: "", last_pro_id: next.id, updated_at: new Date().toISOString() }
+    : { category: req.category, metro: null, zip: key, last_pro_id: next.id, updated_at: new Date().toISOString() };
   await supabaseAdmin
     .from("rr_cursor")
     .upsert(cursorRow, { onConflict: useMetro ? "category,metro" : "category,zip" });
