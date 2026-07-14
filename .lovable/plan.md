@@ -1,55 +1,61 @@
 ## Goal
 
-Replace the top of `/dashboard` with a cinematic, living "Home Hero" — a stylized 3D house that visually reflects value, equity, maintenance health, and upgrades in real time. Intensity 3/5: refined and Apple-like, but with genuine motion and depth. Mobile-first.
+Let homeowners log a service request they arranged **outside** SuCasa (e.g. a plumber a neighbor recommended) so their dashboard reflects the full picture of home activity — not just requests routed through our pro network.
 
-## What the user will see
+## Why it matters
 
-A single wide hero card at the top of the dashboard containing:
+- Keeps the dashboard honest: today "Recent service requests" only shows things booked through SuCasa, so the home history looks thinner than reality.
+- Feeds the AI assistant and Home Intelligence Report better maintenance data (when the roof was last inspected, who did the HVAC tune-up, cost paid).
+- Creates a soft on-ramp to convert future work to SuCasa pros ("You used an outside plumber last month — want us to match one next time?").
 
-1. **The house** — a stylized isometric 3D home rendered live (react-three-fiber). It gently rotates on load, then responds to scroll/tilt. Windows glow warm. A soft ground shadow anchors it. Subtle particles (leaves/pollen) drift in the background.
-2. **Living overlays on the house itself:**
-   - A rising "value" watermark behind the house — a soft area chart that fills as value grows.
-   - Roof, HVAC, plumbing zones gently pulse in green / amber / red based on maintenance status (tap a zone → jumps to that task).
-   - A glowing "equity" base ring underneath the house that fills proportionally (39% today).
-3. **Right-side stat rail** (stacks below on mobile):
-   - Animated counters for Value, Equity, ROI that count up on mount.
-   - Tiny sparkline under Value showing the last 12 months.
-   - A single "Home Score" number (0–100) with a thin circular progress ring — the one headline metric.
-4. **Projection scrubber** (below the house, collapsible): a slider "Project 1–10 years" that smoothly re-animates the value watermark and equity ring to show forecast. Presets: Today · 1yr · 5yr · 10yr.
+## What the user sees
 
-Existing three value cards, maintenance list, AI assistant, documents, pros, and intelligence report stay exactly as they are, directly under the new hero.
+In the **Recent service requests** card on `/dashboard`:
 
-## Visual language
-
-- Deep blue → green gradient sky behind the house, matching current brand tokens (`gradient-brand`, `--growth`).
-- House itself: matte off-white walls, warm terracotta roof (nods to the SuCasa logo), soft ambient + one key light, contact shadow.
-- Motion: ease-out, 600–900ms. Nothing bouncy. One idle sway every ~8s so it feels alive without being distracting.
-- Reduced-motion: respects `prefers-reduced-motion` — house renders static, counters snap, no particles.
+1. A new secondary button next to "New request" → **"Log outside service"**.
+2. Clicking it opens a modal titled "Log a service you booked yourself" with:
+   - Category (dropdown, same 12 categories)
+   - Vendor name (optional, free text)
+   - Date completed (date picker, defaults to today)
+   - Amount paid (optional, USD)
+   - Notes (optional textarea — "what was done")
+   - Attach receipt/invoice (optional file upload, images + PDF)
+3. On save, it appears in the same list, styled subtly differently:
+   - Small **"External"** chip next to the status pill
+   - Status defaults to **Completed** (with option to pick "Scheduled" or "In Progress")
+   - Vendor name shown under the category if provided
+4. Empty-state hint under the list on first use: "Track work done outside SuCasa to build your full home history."
 
 ## Technical section
 
-- **New deps:** `three`, `@react-three/fiber`, `@react-three/drei`. Client-only — dynamically imported so SSR doesn't try to render WebGL.
-- **New files:**
-  - `src/components/home-hero/HomeHero.tsx` — layout, counters, scrubber, stat rail. Client component wrapper.
-  - `src/components/home-hero/HomeScene.tsx` — react-three-fiber canvas: house model, lights, equity ring, particles, zone hotspots. Lazy-loaded via `React.lazy` + `Suspense` with a static gradient fallback so first paint is instant.
-  - `src/components/home-hero/HouseModel.tsx` — the stylized house built from primitive geometry (boxes, extruded roof) — no external GLB needed, keeps bundle small.
-  - `src/components/home-hero/useCountUp.ts` — small hook for animated counters (rAF, respects reduced motion).
-  - `src/lib/home-hero-data.ts` — mock data shape: `{ value, equity, valueSeries[12], zones: { roof, hvac, plumbing, electrical }, homeScore, projection(years) => {value, equity} }`. Wired to existing mock data; ready to swap for a server function later.
-- **Edited files:**
-  - `src/routes/dashboard.tsx` — replace the current three-card value row with `<HomeHero />`. Keep everything below untouched.
-  - `src/styles.css` — add `--gradient-hero` (deep blue → growth green), `--shadow-hero`, and a `@utility hero-glow` for the equity ring. No changes to existing tokens.
-- **Performance:** WebGL canvas is `dpr={[1, 1.75]}`, `frameloop="demand"` — only re-renders on interaction / projection change. Idle sway uses a single throttled rAF. Bundle impact isolated behind lazy load.
-- **Fallback:** if WebGL unavailable or lazy chunk fails, `HomeHero` shows a polished static SVG house with the same overlays and animated counters — same layout, no jank.
+- **Schema (`service_requests`)** — add three nullable columns via migration:
+  - `source` text default `'sucasa'` (values: `'sucasa' | 'external'`)
+  - `vendor_name` text
+  - `amount_cents` integer
+  - `completed_at` timestamptz
+  - `notes` text
+  - `receipt_path` text (points to Storage object)
+  - Update RLS: homeowners can insert/update rows where `source = 'external'` and `homeowner_id = auth.uid()`; the existing SuCasa-routed flow keeps its policies. GRANTs unchanged (already covers authenticated).
+- **Storage** — new private bucket `service-receipts`, RLS: owner can read/write objects under `${auth.uid()}/…`.
+- **Server function** — `src/lib/service-requests.functions.ts`:
+  - `logExternalService({ category, vendorName?, completedAt, amountCents?, notes?, receiptPath? })` — Zod-validated, uses `requireSupabaseAuth`, inserts with `source='external'`, returns the new row.
+  - Kept separate from the existing new-request flow so validation and lifecycle-stage triggers stay clean.
+- **Client**:
+  - New component `src/components/log-external-service-dialog.tsx` — shadcn `Dialog` + `Form` + Zod resolver, file input hits Supabase Storage directly (signed upload), then calls the server fn.
+  - `src/routes/dashboard.tsx` — add the "Log outside service" button to the card header, render the dialog, invalidate the `recent-requests` query on success. Update the row renderer to show the "External" chip and vendor name when present.
+  - `src/lib/mock-data.ts` — extend the `RECENT_REQUESTS` mock shape with the new optional fields so the redesign renders correctly before real data lands.
+- **GHL sync** — external service logs count as activity: the existing `tg_service_request_lifecycle` trigger already bumps `last_activity_at`, so no new sync work; just verify it fires for `source='external'` inserts.
+- **Not touched**: pro matching, claims, admin queue, request routing — external logs never enter the pro pipeline.
 
 ## Out of scope this pass
 
-- Gamification (XP, badges) — parked; can layer on later.
-- Homepage hero animation — parked; dashboard-only per the answer.
-- Real financial projection math — using a simple compounding mock (3.5%/yr value, principal paydown curve) until real data lands.
+- Editing/deleting an external log after save (add later).
+- OCR-parsing the uploaded receipt to auto-fill amount/vendor (nice future add for the AI assistant).
+- Converting an external log into a SuCasa-routed request.
 
 ## Verification
 
-- Build passes; `/dashboard` renders on mobile (420px) with hero above the fold and stat rail stacked below the house.
-- With devtools throttled to 4× CPU, first paint shows fallback within ~200ms, canvas hydrates after.
-- `prefers-reduced-motion: reduce` disables rotation, particles, and count-up.
-- Tapping a roof/HVAC zone scrolls to the matching maintenance task.
+- Migration applies cleanly; homeowner can insert an `external` row from the UI, cannot insert one for another user (RLS).
+- Dashboard list shows the new entry with "External" chip and vendor name; existing SuCasa requests unchanged.
+- Receipt upload lands in `service-receipts/${uid}/…`; other users get 403 on the object.
+- Mobile (420px): dialog is scrollable, buttons don't overflow, category select is tappable.
