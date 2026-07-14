@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { SERVICE_CATEGORIES } from "@/lib/mock-data";
+import { HomeHero } from "@/components/home-hero/HomeHero";
 import { ArrowRight, ShieldCheck, TrendingUp, Sparkles, CheckCircle2, Star, FileText, Wallet, Bell } from "lucide-react";
 
 export const Route = createFileRoute("/")({
