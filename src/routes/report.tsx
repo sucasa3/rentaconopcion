@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Download, Share2, TrendingUp, Info, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Share2, TrendingUp, Info, Sparkles, Lock, Crown, Check } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HOME_HERO, ZONE_COLOR, ZONE_LABEL, projectHome, type ZoneStatus } from "@/lib/home-hero-data";
 import { OCTOBER_REPORT, PRIORITY_META } from "@/lib/report-mock-data";
@@ -35,6 +35,7 @@ const fmtPct = (n: number, digits = 1) => `${n >= 0 ? "+" : ""}${(n * 100).toFix
 
 function ReportPage() {
   const r = OCTOBER_REPORT;
+  const { isPremium, setPremium, hydrated } = usePremium();
 
   const projection = useMemo(() => {
     return Array.from({ length: 13 }).map((_, i) => {
@@ -62,7 +63,12 @@ function ReportPage() {
               <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{r.monthLabel}</h1>
               <p className="mt-1 text-sm text-muted-foreground">{r.address} · Generated {r.generatedAt}</p>
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {hydrated && isPremium && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
+                  <Crown className="h-3 w-3" /> Premium
+                </span>
+              )}
               <button
                 onClick={() => toast.info("PDF export coming soon")}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-4 py-2 text-xs font-medium hover:bg-secondary"
@@ -167,6 +173,10 @@ function ReportPage() {
             </div>
           </Card>
 
+          {hydrated && !isPremium && <UpsellCard onUnlock={() => setPremium(true)} />}
+
+          {(!hydrated || isPremium) ? (
+          <>
           {/* Score breakdown + Zones */}
           <div className="grid gap-4 lg:grid-cols-3">
             <Card className="lg:col-span-1">
@@ -347,6 +357,12 @@ function ReportPage() {
               </ResponsiveContainer>
             </div>
           </Card>
+          </>
+          ) : (
+            <LockedPreview />
+          )}
+
+
 
           {/* Footer disclaimer */}
           <p className="flex items-start gap-2 rounded-2xl border border-border bg-secondary/50 p-4 text-[11px] text-muted-foreground">
@@ -464,3 +480,93 @@ function zoneInsight(zone: string, status: ZoneStatus) {
   };
   return map[zone]?.[status] ?? "Status normal.";
 }
+
+function usePremium() {
+  const [hydrated, setHydrated] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  useEffect(() => {
+    setIsPremium(localStorage.getItem("sucasa_premium") === "1");
+    setHydrated(true);
+  }, []);
+  const setPremium = (v: boolean) => {
+    setIsPremium(v);
+    if (v) localStorage.setItem("sucasa_premium", "1");
+    else localStorage.removeItem("sucasa_premium");
+  };
+  return { isPremium, setPremium, hydrated };
+}
+
+const PREMIUM_PERKS = [
+  "Full monthly Home Intelligence Report",
+  "AI-prioritized recommendations with ROI",
+  "10-year value & equity projections",
+  "Local market comps and $/sqft trends",
+  "PDF export and shareable links",
+  "Priority vendor matching",
+];
+
+function UpsellCard({ onUnlock }: { onUnlock: () => void }) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="grid gap-0 md:grid-cols-5">
+        <div className="gradient-brand p-6 text-white md:col-span-2">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold backdrop-blur">
+            <Crown className="h-3.5 w-3.5" /> Premium Member
+          </div>
+          <h3 className="mt-4 text-2xl font-semibold leading-tight">Unlock your full Home Intelligence Report</h3>
+          <p className="mt-2 text-sm opacity-90">You're seeing the free preview. Members get the full monthly deep-dive with AI recommendations, market comps, and 10-year projections.</p>
+          <div className="mt-5 flex items-baseline gap-2">
+            <span className="text-3xl font-bold">$19</span>
+            <span className="text-sm opacity-80">/ month</span>
+          </div>
+          <button
+            onClick={onUnlock}
+            className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-soft hover:bg-white/95"
+          >
+            Upgrade to Premium <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+          <p className="mt-2 text-[11px] opacity-75">Cancel anytime. First month risk-free.</p>
+        </div>
+        <div className="p-6 md:col-span-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">What's included</p>
+          <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            {PREMIUM_PERKS.map((perk) => (
+              <li key={perk} className="flex items-start gap-2 text-sm">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-growth" />
+                <span>{perk}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function LockedPreview() {
+  return (
+    <div className="relative">
+      <div className="pointer-events-none select-none space-y-4 opacity-40 blur-[3px]">
+        <div className="grid gap-4 lg:grid-cols-3">
+          <div className="h-64 rounded-3xl border border-border bg-card" />
+          <div className="h-64 rounded-3xl border border-border bg-card lg:col-span-2" />
+        </div>
+        <div className="h-56 rounded-3xl border border-border bg-card" />
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="h-40 rounded-2xl border border-border bg-card" />
+          <div className="h-40 rounded-2xl border border-border bg-card" />
+          <div className="h-40 rounded-2xl border border-border bg-card" />
+          <div className="h-40 rounded-2xl border border-border bg-card" />
+        </div>
+      </div>
+      <div className="absolute inset-0 grid place-items-center">
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card/95 px-6 py-4 text-center shadow-soft backdrop-blur">
+          <Lock className="h-5 w-5 text-primary" />
+          <p className="text-sm font-semibold">Score breakdown, market comps, recommendations & 10-year projection</p>
+          <p className="text-xs text-muted-foreground">Available to Premium Members</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
