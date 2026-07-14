@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Download, Share2, TrendingUp, Info, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Share2, TrendingUp, Info, Sparkles, Lock, Crown, Check } from "lucide-react";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HOME_HERO, ZONE_COLOR, ZONE_LABEL, projectHome, type ZoneStatus } from "@/lib/home-hero-data";
 import { OCTOBER_REPORT, PRIORITY_META } from "@/lib/report-mock-data";
