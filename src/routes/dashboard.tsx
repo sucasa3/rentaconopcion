@@ -4,6 +4,7 @@ import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
+import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -30,10 +31,14 @@ function Dashboard() {
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
               <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">Your home</h1>
             </div>
-            <Link to="/request" className="inline-flex shrink-0 items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
-              <Plus className="h-4 w-4" /> Request
-            </Link>
+            <div className="flex shrink-0 items-center gap-2">
+              <OnboardingWalkthrough triggerLabel="Take the tour" />
+              <Link to="/request" className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
+                <Plus className="h-4 w-4" /> Request
+              </Link>
+            </div>
           </div>
+
 
           <HomeHero />
 
