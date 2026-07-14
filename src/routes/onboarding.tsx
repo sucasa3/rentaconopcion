@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/site-header";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
+import { syncMyHomeToFello } from "@/lib/fello.functions";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -35,9 +37,16 @@ function Onboarding() {
 
   const toggleGoal = (id: string) => setForm(f => ({ ...f, goals: f.goals.includes(id) ? f.goals.filter(g => g !== id) : [...f.goals, id] }));
 
+  const felloSync = useServerFn(syncMyHomeToFello);
+  const [submitting, setSubmitting] = useState(false);
+  const submit = async () => {
+    setSubmitting(true);
+    try { await felloSync(); } catch { /* non-blocking */ }
+    navigate({ to: "/dashboard" });
+  };
+
   const next = () => setStep(s => Math.min(s + 1, total - 1));
   const back = () => setStep(s => Math.max(s - 1, 0));
-  const submit = () => navigate({ to: "/dashboard" });
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -126,8 +135,8 @@ function Onboarding() {
                   Continue <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
-                <button onClick={submit} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft">
-                  Create Profile <ArrowRight className="h-4 w-4" />
+                <button onClick={submit} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-60">
+                  {submitting ? "Creating…" : "Create Profile"} <ArrowRight className="h-4 w-4" />
                 </button>
               )}
             </div>
