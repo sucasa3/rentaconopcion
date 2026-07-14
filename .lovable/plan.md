@@ -1,88 +1,55 @@
-# SuCasa × GHL × Lofty — Revised Architecture
+## Goal
 
-Adopting your refinement: **GHL owns people + lifecycle marketing. Supabase owns product data.** No pro/vendor pipeline sync from the app, no per-request opportunity mirroring. GHL only sees the homeowner's lifecycle stage.
+Replace the top of `/dashboard` with a cinematic, living "Home Hero" — a stylized 3D house that visually reflects value, equity, maintenance health, and upgrades in real time. Intensity 3/5: refined and Apple-like, but with genuine motion and depth. Mobile-first.
 
----
+## What the user will see
 
-## Part 1 — GHL Homeowner Lifecycle Sync
+A single wide hero card at the top of the dashboard containing:
 
-### What lives where
+1. **The house** — a stylized isometric 3D home rendered live (react-three-fiber). It gently rotates on load, then responds to scroll/tilt. Windows glow warm. A soft ground shadow anchors it. Subtle particles (leaves/pollen) drift in the background.
+2. **Living overlays on the house itself:**
+   - A rising "value" watermark behind the house — a soft area chart that fills as value grows.
+   - Roof, HVAC, plumbing zones gently pulse in green / amber / red based on maintenance status (tap a zone → jumps to that task).
+   - A glowing "equity" base ring underneath the house that fills proportionally (39% today).
+3. **Right-side stat rail** (stacks below on mobile):
+   - Animated counters for Value, Equity, ROI that count up on mount.
+   - Tiny sparkline under Value showing the last 12 months.
+   - A single "Home Score" number (0–100) with a thin circular progress ring — the one headline metric.
+4. **Projection scrubber** (below the house, collapsible): a slider "Project 1–10 years" that smoothly re-animates the value watermark and equity ring to show forecast. Presets: Today · 1yr · 5yr · 10yr.
 
-| Concern | System |
-|---|---|
-| Homeowner contact record + lifecycle stage | GHL |
-| Marketing email/SMS, nurture, re-engagement campaigns | GHL |
-| Homes, inspection reports, AI analysis, maintenance, documents, service requests, pros, claims, reviews | Supabase |
-| Vendor / Lender / Agent / Enterprise sales pipelines | GHL (manual, not touched by the app) |
+Existing three value cards, maintenance list, AI assistant, documents, pros, and intelligence report stay exactly as they are, directly under the new hero.
 
-### Lifecycle stages the app writes to
+## Visual language
 
-Only these six, on the **SuCasa Homeowners** pipeline:
+- Deep blue → green gradient sky behind the house, matching current brand tokens (`gradient-brand`, `--growth`).
+- House itself: matte off-white walls, warm terracotta roof (nods to the SuCasa logo), soft ambient + one key light, contact shadow.
+- Motion: ease-out, 600–900ms. Nothing bouncy. One idle sway every ~8s so it feels alive without being distracting.
+- Reduced-motion: respects `prefers-reduced-motion` — house renders static, counters snap, no particles.
 
-1. `NEW_SIGNUP` — auth account created
-2. `ONBOARDING` — profile started but home profile not complete OR no first service yet
-3. `ACTIVE_HOMEOWNER` — home profile complete AND (inspection uploaded OR first service booked)
-4. `NEEDS_REENGAGEMENT` — no activity 60+ days (batch job flips this)
-5. `PREMIUM_MEMBER` — future paid plan flag (wired now, unused until billing lands)
-6. `INACTIVE` — soft-deleted / opted-out
+## Technical section
 
-Everything else (inspection uploaded, AI complete, vendor recommended, service booked) is a **note or tag** on the GHL contact, not a stage change. That way the pipeline stays clean for marketing while your sales/CS team still sees signal.
+- **New deps:** `three`, `@react-three/fiber`, `@react-three/drei`. Client-only — dynamically imported so SSR doesn't try to render WebGL.
+- **New files:**
+  - `src/components/home-hero/HomeHero.tsx` — layout, counters, scrubber, stat rail. Client component wrapper.
+  - `src/components/home-hero/HomeScene.tsx` — react-three-fiber canvas: house model, lights, equity ring, particles, zone hotspots. Lazy-loaded via `React.lazy` + `Suspense` with a static gradient fallback so first paint is instant.
+  - `src/components/home-hero/HouseModel.tsx` — the stylized house built from primitive geometry (boxes, extruded roof) — no external GLB needed, keeps bundle small.
+  - `src/components/home-hero/useCountUp.ts` — small hook for animated counters (rAF, respects reduced motion).
+  - `src/lib/home-hero-data.ts` — mock data shape: `{ value, equity, valueSeries[12], zones: { roof, hvac, plumbing, electrical }, homeScore, projection(years) => {value, equity} }`. Wired to existing mock data; ready to swap for a server function later.
+- **Edited files:**
+  - `src/routes/dashboard.tsx` — replace the current three-card value row with `<HomeHero />`. Keep everything below untouched.
+  - `src/styles.css` — add `--gradient-hero` (deep blue → growth green), `--shadow-hero`, and a `@utility hero-glow` for the equity ring. No changes to existing tokens.
+- **Performance:** WebGL canvas is `dpr={[1, 1.75]}`, `frameloop="demand"` — only re-renders on interaction / projection change. Idle sway uses a single throttled rAF. Bundle impact isolated behind lazy load.
+- **Fallback:** if WebGL unavailable or lazy chunk fails, `HomeHero` shows a polished static SVG house with the same overlays and animated counters — same layout, no jank.
 
-### Secrets I'll request
+## Out of scope this pass
 
-- `GHL_API_KEY` — Private Integration token
-- `GHL_LOCATION_ID`
-- `GHL_HOMEOWNERS_PIPELINE_ID`
-- `GHL_STAGE_NEW_SIGNUP_ID`
-- `GHL_STAGE_ONBOARDING_ID`
-- `GHL_STAGE_ACTIVE_ID`
-- `GHL_STAGE_REENGAGEMENT_ID`
-- `GHL_STAGE_PREMIUM_ID`
-- `GHL_STAGE_INACTIVE_ID`
-- `GHL_WEBHOOK_SECRET` (already generated)
+- Gamification (XP, badges) — parked; can layer on later.
+- Homepage hero animation — parked; dashboard-only per the answer.
+- Real financial projection math — using a simple compounding mock (3.5%/yr value, principal paydown curve) until real data lands.
 
-### Backend pieces
+## Verification
 
-1. **`profiles.lifecycle_stage`** column (enum) + `profiles.ghl_last_synced_at`. Existing rows default to `NEW_SIGNUP`.
-2. **`ghl_sync_queue`** and **`ghl_sync_state`** tables already exist from the earlier migration — I'll narrow their scope to `entity_type = 'homeowner'` only and drop the pro/request/claim triggers we won't use.
-3. **Lifecycle computation** — a Postgres function `compute_lifecycle_stage(user_id)` that reads profile + service_requests + inspection docs and returns the correct stage. Called from a trigger on `profiles`, `service_requests`, and (later) `documents` inserts. Trigger only enqueues a sync job if the computed stage changed.
-4. **`src/lib/ghl.functions.ts`** — server functions using `supabaseAdmin`:
-   - `drainGhlQueue()` — cron every minute; per queued homeowner: upsert Contact (name, email, phone, city, `sucasa_user_id` custom field, `homeowner` tag) → move to stage → record `ghl_contact_id`. Retries with backoff, records `last_error`.
-   - `addGhlContactNote(userId, note)` — used by AI-complete, vendor-recommended, first-service-booked hooks to leave a note without stage change.
-   - `resyncHomeowner(userId)` — admin action.
-   - `backfillGhl()` — enqueues all existing homeowners.
-5. **Nightly re-engagement job** — cron sets `lifecycle_stage = NEEDS_REENGAGEMENT` for active homeowners with no activity in 60 days.
-6. **Inbound webhook** `src/routes/api/public/ghl-webhook.ts` — HMAC-verified. Handles unsubscribes / manual stage overrides from CS team: sets `profiles.lifecycle_stage` to match GHL. This is the GHL → App direction; kept narrow (stage + opt-out flags only).
-7. **Admin UI** on `/admin` — "GHL Sync" panel: queue depth, last error per homeowner, per-row **Resync** button, one-click **Backfill**.
-
-### What we're explicitly NOT doing
-
-- No GHL Opportunity per service request. Requests live in Supabase; ops team works them in the SuCasa admin.
-- No sync of `pros` to GHL from the app. Vendor Partners pipeline is manual sales workflow.
-- No lender / agent / enterprise pipeline awareness in code.
-- No per-milestone stage moves (inspection uploaded, AI complete, etc.). Those become **contact notes + tags**, not stages.
-
----
-
-## Part 2 — homes.sucasa.com → Lofty (unchanged)
-
-DNS + Lofty custom domain + in-app links. No app code owns listings.
-
-1. `CNAME homes.sucasa.com → <Lofty target>` at your registrar.
-2. Add `homes.sucasa.com` as custom domain in Lofty; SSL auto-provisioned.
-3. App linking: header "Homes for Sale" link, homepage CTA, footer link — all external to `https://homes.sucasa.com`.
-4. Sitemap mentions the subdomain.
-
----
-
-## Build order once you approve
-
-1. Request the GHL secrets (Location ID, API key, Pipeline ID, 6 stage IDs).
-2. Migration: add `lifecycle_stage` + `ghl_last_synced_at` to `profiles`, drop pro/request/claim sync triggers, add lifecycle trigger, seed existing profiles.
-3. `src/lib/ghl.functions.ts` + `src/lib/ghl.server.ts` (REST wrapper) + cron for `drainGhlQueue` and re-engagement.
-4. Inbound webhook route.
-5. Admin GHL Sync panel.
-6. Lofty subdomain links in header, homepage CTA, footer, sitemap.
-7. Setup checklist you'll run in the GHL UI (create pipeline, name stages, create custom field `sucasa_user_id`, generate Private Integration token, create webhook workflow with the secret).
-
-Reply "go" and I'll switch to build and start with the secret request.
+- Build passes; `/dashboard` renders on mobile (420px) with hero above the fold and stat rail stacked below the house.
+- With devtools throttled to 4× CPU, first paint shows fallback within ~200ms, canvas hydrates after.
+- `prefers-reduced-motion: reduce` disables rotation, particles, and count-up.
+- Tapping a roof/HVAC zone scrolls to the matching maintenance task.
