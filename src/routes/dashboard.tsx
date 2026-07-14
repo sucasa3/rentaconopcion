@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { HomeHero } from "@/components/home-hero/HomeHero";
 import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS } from "@/lib/mock-data";
 import { ArrowRight, Bot, FileText, Home, Plus, Sparkles, TrendingUp } from "lucide-react";
 
@@ -23,31 +24,14 @@ function Dashboard() {
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
-              <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">123 Main St, Austin</h1>
+              <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">Your home</h1>
             </div>
             <Link to="/request" className="inline-flex shrink-0 items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
               <Plus className="h-4 w-4" /> Request
             </Link>
           </div>
 
-          {/* Value cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-3xl gradient-brand p-6 text-white shadow-elevated">
-              <div className="flex items-center gap-2 text-xs opacity-80"><Home className="h-3.5 w-3.5" /> Estimated home value</div>
-              <p className="mt-2 text-4xl font-semibold tracking-tight">$482,300</p>
-              <p className="mt-1 text-xs opacity-90">▲ $8,400 this month</p>
-            </div>
-            <div className="rounded-3xl border border-border bg-card p-6">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><TrendingUp className="h-3.5 w-3.5" /> Estimated equity</div>
-              <p className="mt-2 text-4xl font-semibold tracking-tight text-growth">$186,000</p>
-              <p className="mt-1 text-xs text-muted-foreground">39% of value</p>
-            </div>
-            <div className="rounded-3xl border border-border bg-card p-6">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground"><Sparkles className="h-3.5 w-3.5" /> Improvement ROI</div>
-              <p className="mt-2 text-4xl font-semibold tracking-tight">$14.8k</p>
-              <p className="mt-1 text-xs text-muted-foreground">3 recommendations</p>
-            </div>
-          </div>
+          <HomeHero />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
