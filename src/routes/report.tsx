@@ -357,6 +357,12 @@ function ReportPage() {
               </ResponsiveContainer>
             </div>
           </Card>
+          </>
+          ) : (
+            <LockedPreview />
+          )}
+
+
 
           {/* Footer disclaimer */}
           <p className="flex items-start gap-2 rounded-2xl border border-border bg-secondary/50 p-4 text-[11px] text-muted-foreground">
