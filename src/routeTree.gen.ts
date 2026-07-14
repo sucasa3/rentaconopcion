@@ -20,6 +20,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -77,6 +78,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
+  id: '/api/public/leads/tick',
+  path: '/api/public/leads/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicGhlDrainRoute = ApiPublicGhlDrainRouteImport.update({
   id: '/api/public/ghl/drain',
   path: '/api/public/ghl/drain',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
+  '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
+  '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
+  '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/api/public/ghl/drain'
+    | '/api/public/leads/tick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/api/public/ghl/drain'
+    | '/api/public/leads/tick'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/api/public/ghl/drain'
+    | '/api/public/leads/tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
+  ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/leads/tick': {
+      id: '/api/public/leads/tick'
+      path: '/api/public/leads/tick'
+      fullPath: '/api/public/leads/tick'
+      preLoaderRoute: typeof ApiPublicLeadsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ghl/drain': {
       id: '/api/public/ghl/drain'
       path: '/api/public/ghl/drain'
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
+  ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
