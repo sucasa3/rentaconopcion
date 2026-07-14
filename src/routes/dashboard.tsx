@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
-import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS } from "@/lib/mock-data";
-import { ArrowRight, Bot, FileText, Plus, Sparkles } from "lucide-react";
+import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
+import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
+import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
