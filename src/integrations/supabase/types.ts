@@ -54,6 +54,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "claims_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "claims_request_id_fkey"
             columns: ["request_id"]
             isOneToOne: false
@@ -228,6 +235,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lead_assignments_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lead_assignments_service_request_id_fkey"
             columns: ["service_request_id"]
             isOneToOne: true
@@ -282,6 +296,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lead_offers_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros_directory"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lead_offers_service_request_id_fkey"
             columns: ["service_request_id"]
             isOneToOne: false
@@ -321,6 +342,13 @@ export type Database = {
             columns: ["pro_id"]
             isOneToOne: false
             referencedRelation: "pros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pro_coverage_pro_id_fkey"
+            columns: ["pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros_directory"
             referencedColumns: ["id"]
           },
         ]
@@ -478,6 +506,13 @@ export type Database = {
             referencedRelation: "pros"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "rr_cursor_last_pro_id_fkey"
+            columns: ["last_pro_id"]
+            isOneToOne: false
+            referencedRelation: "pros_directory"
+            referencedColumns: ["id"]
+          },
         ]
       }
       service_requests: {
@@ -578,7 +613,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      pros_directory: {
+        Row: {
+          accepting_leads: boolean | null
+          active: boolean | null
+          business_name: string | null
+          category: string | null
+          created_at: string | null
+          id: string | null
+          is_founding_partner: boolean | null
+          plan: string | null
+          rating: number | null
+          reviews_count: number | null
+          service_area: string | null
+        }
+        Insert: {
+          accepting_leads?: boolean | null
+          active?: boolean | null
+          business_name?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_founding_partner?: boolean | null
+          plan?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          service_area?: string | null
+        }
+        Update: {
+          accepting_leads?: boolean | null
+          active?: boolean | null
+          business_name?: string | null
+          category?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_founding_partner?: boolean | null
+          plan?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          service_area?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       compute_lifecycle_stage: {
