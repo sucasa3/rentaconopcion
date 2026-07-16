@@ -1,76 +1,93 @@
-## Confirmed decisions
-- **Distribution**: Round-robin per (category, zip)
-- **SLA**: 25 minutes to accept, then auto-reassign to next in queue
-- **GHL push**: only after a pro claims (not on lead creation)
-- **Pricing**: $297/mo for founding partners 1–3, $397/mo after
 
-## Architecture: two databases, clear split
+# ATTOM Integration + Monetization Plan
 
-**Lovable Cloud (system of record)**
-- All lead lifecycle: creation, offers, claims, SLA timers, reassignment log
-- Round-robin cursor state per (category, zip)
-- Pro roster, coverage, founding-partner flag
+## 1. Read the pricing math first
 
-**GHL (CRM + comms)**
-- Homeowner contact records + lifecycle pipeline (already built)
-- Service Leads pipeline — opportunity created **only when claimed**, then advances through Claimed → Contacted → Scheduled → Completed
-- SMS/email to pros for offers (via GHL messaging API called from our server)
+ATTOM's tiers (annual sub, paid monthly):
 
----
+| Plan | Calls/mo | Cost/call |
+|---|---|---|
+| $500 | 5,000 | $0.10 |
+| $1,000 | 10,000 | $0.10 |
+| $1,350 | 15,000 | $0.09 |
+| $1,500 | 25,000 | $0.06 |
+| $2,000 | 50,000 | $0.04 |
+| $2,500 | 100,000 | $0.025 |
+| +$100 | Building Permits add-on | — |
 
-## Build plan
+Key insight: the **$1,500/25k tier is the sweet spot** — the price per call drops 40% vs. the $1k tier. Below that, every homeowner pull is expensive; above it, marginal cost is trivial. So the plan below is designed to **live at the $500 tier during trial, jump to $1,500 the moment we cross ~800 active homeowners**, and never pull ATTOM data we can't attribute to a revenue event.
 
-### 1. Database (migration)
-New tables:
-- `pro_coverage` — pro_id, category, zip (composite unique). Which pros serve which areas.
-- `lead_offers` — service_request_id, pro_id, offered_at, expires_at (offered_at + 25min), status (`pending|accepted|declined|expired|cancelled`), position in rotation. One row per (request, pro).
-- `lead_assignments` — service_request_id (unique), pro_id, claimed_at, ghl_opportunity_id. The winning claim.
-- `rr_cursor` — category, zip, last_pro_id, updated_at. Round-robin pointer.
+At the $500 trial tier, 5,000 calls = about **150 homeowners** if we allow ~30 calls each per month (initial enrichment + weekly AVM refresh + report). That's the ceiling we design against.
 
-Extend `pros`: `is_founding_partner boolean`, `monthly_price_cents int`, `accepting_leads boolean`.
-Extend `service_requests`: `routing_status` (`unrouted|offered|claimed|completed|cancelled`), `zip`.
+## 2. Cost-control architecture (built once, saves forever)
 
-Enum `app_role`: add `pro` if missing.
-GRANTs + RLS for every new table (pros see only their offers; admin sees all; homeowners see only their own request's assignment).
+**a. Single valuation abstraction layer** — `src/lib/valuation.server.ts` with a `getPropertyIntel(address, options)` interface. Providers behind it: `attom`, `fello`, `mock`. Callers never know which one fired. Lets us run Fello in parallel and swap providers per field without touching the dashboard.
 
-Trigger: on `service_requests` insert (source='homeowner' or 'app'), enqueue routing job.
+**b. Aggressive per-field caching in Postgres** — one `property_intel` table with columns for each ATTOM data class and a `fetched_at` per class. TTLs:
+- AVM: 30 days (refresh on-demand for premium users, or when equity ribbon changes materially)
+- Property detail (beds/baths/sqft/lot): 365 days (rarely changes)
+- Tax assessment: 365 days
+- Sales history / deed: 180 days
+- Permits: 90 days
+- Neighborhood / school / risk: 180 days
+- Owner / mortgage: 90 days
 
-### 2. Server functions (`src/lib/leads.functions.ts`)
-- `offerNextPro({ requestId })` — admin/system. Picks next pro via round-robin, inserts `lead_offers` row, sends SMS/email via GHL, sets `service_requests.routing_status='offered'`.
-- `claimLead({ offerId })` — pro-auth. Atomic: mark offer accepted, insert `lead_assignments`, expire sibling offers, create GHL opportunity in Service Leads pipeline (Claimed stage), return homeowner contact info.
-- `declineLead({ offerId })` — pro-auth. Mark declined, immediately offer to next pro.
-- `expireStaleOffers()` — cron. Any `pending` past `expires_at` → mark expired, offer next pro. Runs every 5 min via existing `pg_cron` pattern hitting `/api/public/leads/tick`.
-- `listMyOffers()` / `listMyClaims()` — pro dashboard queries.
-- `adminForceReassign({ requestId })` — admin override.
+**c. Event-driven pulls, never background sweeps** — ATTOM is only called on: signup enrichment, explicit "refresh" click, monthly report generation, and a claim event on a service request. No cron sweeps of the whole userbase.
 
-### 3. GHL integration additions (`src/lib/ghl.server.ts`)
-- `createServiceLeadOpportunity(contactId, requestSummary, stageId)` — Service Leads pipeline.
-- `advanceServiceLead(oppId, stage)` — Claimed / Contacted / Scheduled / Completed.
-- `sendPro Sms(proPhone, msg)` — via GHL conversations API.
-- New env vars needed: `GHL_SERVICE_LEADS_PIPELINE_ID`, `GHL_LEAD_STAGE_CLAIMED_ID`, `..._CONTACTED_ID`, `..._SCHEDULED_ID`, `..._COMPLETED_ID`. Will request via `add_secret` after infrastructure is built.
+**d. Per-endpoint budgeter** — `attom_call_log` table with monthly rollups + a soft cap that switches to cached/stale data with a UI badge when we hit 80% of the tier. Admin dashboard shows spend to date and projected month-end.
 
-### 4. Cron
-Public route `src/routes/api/public/leads/tick.ts` — HMAC-verified, calls `expireStaleOffers()`. Schedule via `pg_cron` every 5 min.
+**e. Pre-flight dedupe** — same address requested twice in a session hits the cache, not ATTOM. Signup enrichment for a duplicate address (roommate, spouse, second account) reuses the existing `property_intel` row.
 
-### 5. UI
-- **`/pro` dashboard**: replace mock with real data — Active offers (countdown to expiry), Claim/Decline buttons, My claims, SLA stats. Founding Partner badge if applicable.
-- **`/admin`**: Leads panel — unrouted, in-flight offers with timers, reassignment history, force-reassign button.
-- **`/partner` and `/pro` marketing pages**: update pricing block to "$297/mo for first 3 founding partners (2 remaining) — then $397/mo".
-- **Homeowner request confirmation**: show "Matching you with a pro — usually under 25 minutes" until claim, then reveal pro contact.
+## 3. Monetization stack (the actual answer to "how do we pay for it")
 
-### 6. Order of execution
-1. Migration (schema + RLS + GRANTs + trigger + enum)
-2. `ghl.server.ts` additions
-3. `leads.functions.ts` + tick route
-4. Cron job SQL (after user gives me the GHL pipeline/stage IDs via `add_secret`)
-5. Pro dashboard UI
-6. Admin leads panel
-7. Pricing copy updates on `/partner` and `/pro`
-8. Homeowner request confirmation state
+Layered so each ATTOM call has a **named revenue source** before it fires.
 
----
+### Tier 1 — Homeowner Premium: **SuCasa+ at $12/mo or $99/yr**
+Free tier gets: 1 AVM refresh/mo, static property detail, basic Home Score.
+Premium gets: weekly AVM, full mortgage/equity/tax view, permit history, neighborhood intel, risk score, unlimited monthly reports, PDF export, price-drop and equity-milestone alerts.
+- Break-even at $0.10/call: **~120 ATTOM calls per premium user per year** — well within budget.
+- Target: 8–12% of active homeowners upgrade. At 1,000 homeowners → ~$1,200/mo recurring, covers the $1,500 tier by itself.
 
-## What I need from you after the migration
-The GHL Service Leads pipeline + stage IDs (Claimed, Contacted, Scheduled, Completed). I'll prompt for them via secret storage when we hit that step. Everything else I can build now.
+### Tier 2 — Transactional unlocks (impulse buys, no subscription friction)
+- **Home Intelligence Report PDF — $4.99** one-off. Consumes ~15 ATTOM calls; margin ~$3.50.
+- **"Should I refi?" readiness report — $9.99** (AVM + mortgage + equity + rate delta).
+- **"Should I sell?" readiness report — $9.99** (AVM + comps + market timing + net-proceeds calc).
+- **Pre-listing valuation packet — $19** (bundled report for owners talking to agents).
+These convert users who won't subscribe. Each has a **1:1 cost-to-revenue mapping**.
 
-Approve and I'll start with the migration.
+### Tier 3 — Pro/Partner data add-ons (highest AOV — this is the real business)
+Enrich the leads we already sell to trades/lenders/agents with ATTOM attributes:
+- **Standard lead** ($X existing): address + name + service need.
+- **Enriched lead** (+$15–35 per accepted lead): + AVM, equity band, tenure, mortgage age, permit history relevant to the trade.
+Costs us ~3–5 ATTOM calls per enriched lead ($0.30–$0.50). Sells for **$15–35 uplift**. Best margin lever in the whole model.
+
+### Tier 4 — Lender / Agent MSA seats: **$997/mo** (already scoped)
+Portfolio dashboard powered by ATTOM: their book of past clients, refi-eligibility flags, equity-milestone alerts, listing-triggered notifications. High-ticket, RESPA-safe (flat MSA, not per-deal). Big ATTOM consumer, but they pay for the calls many times over.
+
+### Tier 5 — Data-driven product surfaces that indirectly monetize
+- **Equity milestone alerts** ("You crossed 30% equity — refi window open") → routes to a lender partner → claim fee.
+- **Permit-triggered service prompts** ("Your neighbor pulled a roof permit — get 3 quotes") → routes to trades → claim fee.
+- **Sale-triggered agent match** (nearby sale changes your comp set) → routes to agent partner → claim fee / MSA activation.
+Each of these is an ATTOM call that **directly triggers a lead offer**. The call pays for itself the first time it fires a claim.
+
+### Tier 6 — Anonymized aggregate data (later)
+Neighborhood-level trend reports for pros ("Cherokee County: 340 homes crossed 40% equity this quarter") — sellable subscription for lender/agent partners hunting territory. Aggregated from data we already paid for.
+
+## 4. Build sequence (once you send the ATTOM trial credentials)
+
+1. Add `ATTOM_API_KEY` via secure secret input.
+2. Migration: `property_intel`, `attom_call_log`, `attom_monthly_budget` tables + RLS.
+3. `src/lib/valuation.server.ts` abstraction + `src/lib/attom.server.ts` provider with per-endpoint methods (AVM, detail, tax, sales, permits).
+4. Wire the homeowner dashboard hero + Home Score to real ATTOM AVM via the abstraction (behind the cache).
+5. Free vs. Premium gating on the dashboard and `/report` route — hook into the existing `usePremium` scaffold.
+6. Admin: ATTOM spend widget (calls this month, projected total, tier utilization).
+7. Enriched-lead toggle in the pro claim flow (+$X on accept).
+8. Transactional unlock buttons on `/report` (Stripe checkout — separate turn).
+9. Keep Fello wired in parallel behind the same abstraction for engagement events (dashboard clicks, email opens) — no changes to the current Fello code.
+
+## 5. Decisions I need before build
+
+- Confirm the pricing anchors: **$12/mo SuCasa+**, **$4.99 report PDF**, **+$15–35 lead enrichment**. Adjust any.
+- Confirm we start on the **$500 trial tier** and I set the internal soft cap at 4,000 calls/mo (80%).
+- Confirm we keep Fello running in parallel (yes per your message) — I won't remove any Fello code.
+- Building Permits add-on ($100/mo) — worth turning on now since permit-triggered leads are a Tier 5 revenue driver? I'd say yes, but confirm.
