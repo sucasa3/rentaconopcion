@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      attom_call_log: {
+        Row: {
+          address_normalized: string | null
+          cache_hit: boolean
+          cost_cents: number
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          requested_by: string | null
+          revenue_source: string | null
+          status: number | null
+        }
+        Insert: {
+          address_normalized?: string | null
+          cache_hit?: boolean
+          cost_cents?: number
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          requested_by?: string | null
+          revenue_source?: string | null
+          status?: number | null
+        }
+        Update: {
+          address_normalized?: string | null
+          cache_hit?: boolean
+          cost_cents?: number
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          requested_by?: string | null
+          revenue_source?: string | null
+          status?: number | null
+        }
+        Relationships: []
+      }
+      attom_monthly_budget: {
+        Row: {
+          cache_only_mode: boolean
+          calls_used: number
+          cost_cents_used: number
+          created_at: string
+          id: string
+          month: string
+          notes: string | null
+          soft_cap_pct: number
+          tier_calls_included: number
+          tier_cost_cents: number
+          updated_at: string
+        }
+        Insert: {
+          cache_only_mode?: boolean
+          calls_used?: number
+          cost_cents_used?: number
+          created_at?: string
+          id?: string
+          month: string
+          notes?: string | null
+          soft_cap_pct?: number
+          tier_calls_included?: number
+          tier_cost_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          cache_only_mode?: boolean
+          calls_used?: number
+          cost_cents_used?: number
+          created_at?: string
+          id?: string
+          month?: string
+          notes?: string | null
+          soft_cap_pct?: number
+          tier_calls_included?: number
+          tier_cost_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claims: {
         Row: {
           created_at: string
@@ -411,6 +492,96 @@ export type Database = {
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
           phone?: string | null
           state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: []
+      }
+      property_intel: {
+        Row: {
+          address_line1: string
+          address_normalized: string
+          attom_id: string | null
+          avm: Json | null
+          avm_fetched_at: string | null
+          city: string | null
+          created_at: string
+          detail: Json | null
+          detail_fetched_at: string | null
+          id: string
+          mortgage: Json | null
+          mortgage_fetched_at: string | null
+          neighborhood: Json | null
+          neighborhood_fetched_at: string | null
+          owner: Json | null
+          owner_fetched_at: string | null
+          permits: Json | null
+          permits_fetched_at: string | null
+          risk: Json | null
+          risk_fetched_at: string | null
+          sales: Json | null
+          sales_fetched_at: string | null
+          state: string | null
+          tax: Json | null
+          tax_fetched_at: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address_line1: string
+          address_normalized: string
+          attom_id?: string | null
+          avm?: Json | null
+          avm_fetched_at?: string | null
+          city?: string | null
+          created_at?: string
+          detail?: Json | null
+          detail_fetched_at?: string | null
+          id?: string
+          mortgage?: Json | null
+          mortgage_fetched_at?: string | null
+          neighborhood?: Json | null
+          neighborhood_fetched_at?: string | null
+          owner?: Json | null
+          owner_fetched_at?: string | null
+          permits?: Json | null
+          permits_fetched_at?: string | null
+          risk?: Json | null
+          risk_fetched_at?: string | null
+          sales?: Json | null
+          sales_fetched_at?: string | null
+          state?: string | null
+          tax?: Json | null
+          tax_fetched_at?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address_line1?: string
+          address_normalized?: string
+          attom_id?: string | null
+          avm?: Json | null
+          avm_fetched_at?: string | null
+          city?: string | null
+          created_at?: string
+          detail?: Json | null
+          detail_fetched_at?: string | null
+          id?: string
+          mortgage?: Json | null
+          mortgage_fetched_at?: string | null
+          neighborhood?: Json | null
+          neighborhood_fetched_at?: string | null
+          owner?: Json | null
+          owner_fetched_at?: string | null
+          permits?: Json | null
+          permits_fetched_at?: string | null
+          risk?: Json | null
+          risk_fetched_at?: string | null
+          sales?: Json | null
+          sales_fetched_at?: string | null
+          state?: string | null
+          tax?: Json | null
+          tax_fetched_at?: string | null
           updated_at?: string
           zip?: string | null
         }
