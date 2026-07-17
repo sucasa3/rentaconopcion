@@ -5,6 +5,7 @@ import { HomeHero } from "@/components/home-hero/HomeHero";
 import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
+import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -41,6 +42,8 @@ function Dashboard() {
 
 
           <HomeHero />
+
+          <HomeIntelPanel />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
