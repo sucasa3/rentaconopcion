@@ -9,6 +9,7 @@ import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentReques
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
+import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
@@ -90,6 +91,8 @@ function Dashboard() {
           <HomeHero data={heroData} />
 
           <HomeIntelPanel />
+
+          <EquityMortgagePanel />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
