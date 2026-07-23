@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
+import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
 import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
+import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -27,6 +32,42 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const [logOpen, setLogOpen] = useState(false);
   const [requests, setRequests] = useState<RecentRequest[]>(RECENT_REQUESTS);
+
+  // Fetch profile (for address fallback) and ATTOM intel
+  const [profileAddr, setProfileAddr] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("address, city, state, zip")
+        .eq("id", u.user.id)
+        .maybeSingle();
+      if (p?.address) {
+        setProfileAddr([p.address, p.city, p.state, p.zip].filter(Boolean).join(", "));
+      }
+    })();
+  }, []);
+
+  const fetchIntel = useServerFn(getMyHomeIntel);
+  const { data: intel } = useQuery({
+    queryKey: ["home-intel-hero"],
+    queryFn: () =>
+      fetchIntel({ data: { classes: ["avm", "detail", "tax"], revenueSource: "dashboard_hero" } }),
+    staleTime: 5 * 60_000,
+  });
+
+  const heroData: HomeHeroData = {
+    ...HOME_HERO,
+    address: (intel?.ok && intel.address) || profileAddr || HOME_HERO.address,
+    value: (intel?.ok && intel.avm?.estimate) || HOME_HERO.value,
+    equity:
+      intel?.ok && intel.avm?.estimate
+        ? Math.round(intel.avm.estimate * HOME_HERO.equityPct)
+        : HOME_HERO.equity,
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -46,7 +87,7 @@ function Dashboard() {
           </div>
 
 
-          <HomeHero />
+          <HomeHero data={heroData} />
 
           <HomeIntelPanel />
 
