@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
 import { syncMyHomeToFello } from "@/lib/fello.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
