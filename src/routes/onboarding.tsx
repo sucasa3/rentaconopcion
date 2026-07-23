@@ -43,14 +43,14 @@ function Onboarding() {
   const submit = async () => {
     setSubmitting(true);
     try {
-      // Parse "Street, City, ST 12345" best-effort
       const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
       const street = m ? m[1].trim() : form.address.trim();
       const city = m ? m[2].trim() : null;
       const state = m ? m[3].toUpperCase() : null;
       const zip = m ? (m[4] ?? null) : null;
-      const { data: userRes } = await supabase.auth.getUser();
-      const uid = userRes.user?.id;
+      const { data: userRes, error: uErr } = await supabase.auth.getUser();
+      console.log("[onboarding] getUser", uErr, userRes?.user?.id);
+      const uid = userRes?.user?.id;
       if (uid) {
         const upRes = await supabase.from("profiles").upsert({
           id: uid,
@@ -60,12 +60,14 @@ function Onboarding() {
           address: street || null,
           city, state, zip,
           last_activity_at: new Date().toISOString(),
-        }, { onConflict: "id" }); console.log("PROFILE_UPSERT", JSON.stringify(upRes));
+        }, { onConflict: "id" });
+        console.log("[onboarding] upsert result", JSON.stringify(upRes));
       }
-      try { await felloSync(); } catch { /* non-blocking */ }
-    } finally {
-      navigate({ to: "/dashboard" });
+      try { await felloSync(); } catch (e) { console.log("[onboarding] fello sync failed", e); }
+    } catch (e) {
+      console.log("[onboarding] submit error", e);
     }
+    navigate({ to: "/dashboard" });
   };
 
   const next = () => setStep(s => Math.min(s + 1, total - 1));
