@@ -42,8 +42,30 @@ function Onboarding() {
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
-    try { await felloSync(); } catch { /* non-blocking */ }
-    navigate({ to: "/dashboard" });
+    try {
+      // Parse "Street, City, ST 12345" best-effort
+      const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
+      const street = m ? m[1].trim() : form.address.trim();
+      const city = m ? m[2].trim() : null;
+      const state = m ? m[3].toUpperCase() : null;
+      const zip = m ? (m[4] ?? null) : null;
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (uid) {
+        await supabase.from("profiles").upsert({
+          id: uid,
+          full_name: form.name || null,
+          email: form.email || userRes.user?.email || null,
+          phone: form.phone || null,
+          address: street || null,
+          city, state, zip,
+          last_activity_at: new Date().toISOString(),
+        }, { onConflict: "id" });
+      }
+      try { await felloSync(); } catch { /* non-blocking */ }
+    } finally {
+      navigate({ to: "/dashboard" });
+    }
   };
 
   const next = () => setStep(s => Math.min(s + 1, total - 1));
