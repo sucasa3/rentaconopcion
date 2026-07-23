@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
+import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
 import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
+import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
