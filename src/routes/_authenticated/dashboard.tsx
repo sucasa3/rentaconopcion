@@ -92,6 +92,8 @@ function Dashboard() {
 
           <HomeIntelPanel />
 
+          <EquityMortgagePanel />
+
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
             {/* Maintenance */}
