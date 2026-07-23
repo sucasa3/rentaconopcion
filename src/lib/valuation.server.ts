@@ -239,3 +239,184 @@ export function extractTax(raw: unknown): TaxSummary {
     taxYear: a?.tax?.taxyear ?? null,
   };
 }
+
+// ---------- Sales history ----------
+export interface SaleEvent {
+  date: string | null;
+  amount: number | null;
+  docType: string | null;
+}
+export interface SalesSummary {
+  lastSale: SaleEvent | null;
+  priorSales: SaleEvent[];
+  tenureYears: number | null;
+}
+export function extractSales(raw: unknown): SalesSummary {
+  const r = raw as {
+    property?: Array<{
+      salehistory?: Array<{
+        saleTransDate?: string;
+        amount?: { saleamt?: number };
+        salesearchdate?: string;
+        saleTransType?: string;
+      }>;
+    }>;
+  } | null;
+  const rows = r?.property?.[0]?.salehistory ?? [];
+  const events: SaleEvent[] = rows
+    .map((s) => ({
+      date: s.saleTransDate ?? s.salesearchdate ?? null,
+      amount: s.amount?.saleamt ?? null,
+      docType: s.saleTransType ?? null,
+    }))
+    .filter((e) => e.date || e.amount);
+  const [last, ...rest] = events;
+  const tenureYears = last?.date
+    ? Math.max(0, Math.round((Date.now() - new Date(last.date).getTime()) / (365.25 * 24 * 3600 * 1000)))
+    : null;
+  return { lastSale: last ?? null, priorSales: rest, tenureYears };
+}
+
+// ---------- Mortgage ----------
+export interface MortgageSummary {
+  loanAmount: number | null;
+  lender: string | null;
+  originationDate: string | null;
+  interestRate: number | null;
+  loanType: string | null;
+  termYears: number | null;
+}
+export function extractMortgage(raw: unknown): MortgageSummary {
+  const r = raw as {
+    property?: Array<{
+      mortgage?: {
+        FirstConcurrent?: {
+          amount?: number;
+          lender?: string;
+          date?: string;
+          interestRate?: number;
+          trustDeedDocumentNumber?: string;
+          term?: { termType?: string; termYears?: number };
+        };
+      };
+    }>;
+  } | null;
+  const m = r?.property?.[0]?.mortgage?.FirstConcurrent;
+  return {
+    loanAmount: m?.amount ?? null,
+    lender: m?.lender ?? null,
+    originationDate: m?.date ?? null,
+    interestRate: m?.interestRate ?? null,
+    loanType: m?.term?.termType ?? null,
+    termYears: m?.term?.termYears ?? null,
+  };
+}
+
+// ---------- Permits ----------
+export interface PermitEvent {
+  date: string | null;
+  type: string | null;
+  description: string | null;
+  value: number | null;
+  status: string | null;
+}
+export interface PermitsSummary {
+  events: PermitEvent[];
+  totalValue: number | null;
+  lastPermitDate: string | null;
+}
+export function extractPermits(raw: unknown): PermitsSummary {
+  const r = raw as {
+    property?: Array<{
+      building?: {
+        permits?: Array<{
+          effectiveDate?: string;
+          type?: string;
+          description?: string;
+          jobValue?: number;
+          status?: string;
+        }>;
+      };
+    }>;
+  } | null;
+  const rows = r?.property?.[0]?.building?.permits ?? [];
+  const events: PermitEvent[] = rows.map((p) => ({
+    date: p.effectiveDate ?? null,
+    type: p.type ?? null,
+    description: p.description ?? null,
+    value: p.jobValue ?? null,
+    status: p.status ?? null,
+  }));
+  const totalValue = events.reduce((sum, e) => sum + (e.value ?? 0), 0) || null;
+  return {
+    events,
+    totalValue,
+    lastPermitDate: events[0]?.date ?? null,
+  };
+}
+
+// ---------- Derived intelligence (no extra API cost) ----------
+
+export interface EquityRibbon {
+  estimatedValue: number | null;
+  loanBalanceEstimate: number | null;
+  equityDollars: number | null;
+  equityPct: number | null;
+  cashOutHeadroom80: number | null; // 80% LTV cash-out ceiling
+  refiSignal: "strong" | "moderate" | "watch" | null;
+  tenureYears: number | null;
+}
+
+/**
+ * Straight-line amortization estimate of remaining balance. ATTOM gives us
+ * origination amount + date + rate; we don't get live servicer balance, so
+ * we approximate. Good enough for the equity ribbon + refi signal.
+ */
+export function estimateLoanBalance(m: MortgageSummary): number | null {
+  if (!m.loanAmount || !m.originationDate) return null;
+  const rate = (m.interestRate ?? 6) / 100 / 12;
+  const nMonths = (m.termYears ?? 30) * 12;
+  const elapsed = Math.max(
+    0,
+    Math.min(nMonths, (Date.now() - new Date(m.originationDate).getTime()) / (30.44 * 24 * 3600 * 1000)),
+  );
+  if (rate === 0) return Math.max(0, m.loanAmount * (1 - elapsed / nMonths));
+  // Standard remaining-balance formula
+  const pow = Math.pow(1 + rate, nMonths);
+  const powE = Math.pow(1 + rate, elapsed);
+  const balance = m.loanAmount * ((pow - powE) / (pow - 1));
+  return Math.max(0, Math.round(balance));
+}
+
+export function computeEquityRibbon(
+  avm: AvmSummary | null,
+  mortgage: MortgageSummary | null,
+  sales: SalesSummary | null,
+): EquityRibbon {
+  const value = avm?.estimate ?? null;
+  const balance = mortgage ? estimateLoanBalance(mortgage) : null;
+  const equity = value != null && balance != null ? value - balance : null;
+  const equityPct = value && equity != null ? Math.max(0, Math.min(1, equity / value)) : null;
+  const cashOut = value != null && balance != null ? Math.max(0, Math.round(value * 0.8 - balance)) : null;
+
+  let refi: EquityRibbon["refiSignal"] = null;
+  if (equityPct != null && mortgage?.interestRate != null) {
+    // Refi worth exploring if 20%+ equity AND current market ~1pt below their rate.
+    // We don't have live rates yet; use a conservative 6.5% proxy.
+    const marketRate = 6.5;
+    const spread = mortgage.interestRate - marketRate;
+    if (equityPct >= 0.2 && spread >= 1) refi = "strong";
+    else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
+    else if (equityPct >= 0.15) refi = "watch";
+  }
+
+  return {
+    estimatedValue: value,
+    loanBalanceEstimate: balance,
+    equityDollars: equity,
+    equityPct,
+    cashOutHeadroom80: cashOut,
+    refiSignal: refi,
+    tenureYears: sales?.tenureYears ?? null,
+  };
+}
