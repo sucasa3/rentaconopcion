@@ -85,7 +85,7 @@ export function MaintenanceTimelinePanel() {
       installedYear,
       expectedYear,
       yearsLeft,
-      source: match ? "permit" : "year_built",
+      source: match ? ("permit" as const) : ("year_built" as const),
       status: classify(yearsLeft),
     };
   }).sort((a, b) => a.yearsLeft - b.yearsLeft);
