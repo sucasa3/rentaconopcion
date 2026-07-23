@@ -36,7 +36,16 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join(", ");
 
-    const { getPropertyIntel, extractAvm, extractDetail, extractTax } = await import("@/lib/valuation.server");
+    const {
+      getPropertyIntel,
+      extractAvm,
+      extractDetail,
+      extractTax,
+      extractSales,
+      extractMortgage,
+      extractPermits,
+      computeEquityRibbon,
+    } = await import("@/lib/valuation.server");
     const result = await getPropertyIntel(fullAddress, {
       classes: data.classes,
       revenueSource: data.revenueSource,
@@ -44,13 +53,24 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       forceRefresh: data.forceRefresh,
     });
 
-    // Return a UI-friendly summary (never raw ATTOM blobs)
+    const avm = result.classes.avm ? extractAvm(result.classes.avm.data) : null;
+    const detail = result.classes.detail ? extractDetail(result.classes.detail.data) : null;
+    const tax = result.classes.tax ? extractTax(result.classes.tax.data) : null;
+    const sales = result.classes.sales ? extractSales(result.classes.sales.data) : null;
+    const mortgage = result.classes.mortgage ? extractMortgage(result.classes.mortgage.data) : null;
+    const permits = result.classes.permits ? extractPermits(result.classes.permits.data) : null;
+    const equity = avm || mortgage ? computeEquityRibbon(avm, mortgage, sales) : null;
+
     return {
       ok: true as const,
       address: fullAddress,
-      avm: result.classes.avm ? extractAvm(result.classes.avm.data) : null,
-      detail: result.classes.detail ? extractDetail(result.classes.detail.data) : null,
-      tax: result.classes.tax ? extractTax(result.classes.tax.data) : null,
+      avm,
+      detail,
+      tax,
+      sales,
+      mortgage,
+      permits,
+      equity,
       staleClasses: Object.entries(result.classes)
         .filter(([, v]) => v?.stale)
         .map(([k]) => k),
