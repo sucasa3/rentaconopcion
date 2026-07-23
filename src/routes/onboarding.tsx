@@ -52,7 +52,7 @@ function Onboarding() {
       const { data: userRes } = await supabase.auth.getUser();
       const uid = userRes.user?.id;
       if (uid) {
-        await supabase.from("profiles").upsert({
+        const upRes = await supabase.from("profiles").upsert({
           id: uid,
           full_name: form.name || null,
           email: form.email || userRes.user?.email || null,
@@ -60,7 +60,7 @@ function Onboarding() {
           address: street || null,
           city, state, zip,
           last_activity_at: new Date().toISOString(),
-        }, { onConflict: "id" });
+        }, { onConflict: "id" }); console.log("PROFILE_UPSERT", JSON.stringify(upRes));
       }
       try { await felloSync(); } catch { /* non-blocking */ }
     } finally {
