@@ -8,12 +8,16 @@ import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
-export const Route = createFileRoute("/dashboard")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
   head: () => ({
     meta: [
       { title: "Your Home Dashboard — SuCasa" },
       { name: "description", content: "Track your home value, maintenance tasks, service requests, and trusted professionals." },
+      { property: "og:title", content: "Your Home Dashboard — SuCasa" },
+      { property: "og:description", content: "Track your home value, maintenance tasks, service requests, and trusted professionals." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
     ],
   }),
