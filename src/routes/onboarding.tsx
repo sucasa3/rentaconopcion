@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/site-header";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
 import { syncMyHomeToFello } from "@/lib/fello.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -41,7 +42,31 @@ function Onboarding() {
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
-    try { await felloSync(); } catch { /* non-blocking */ }
+    try {
+      const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
+      const street = m ? m[1].trim() : form.address.trim();
+      const city = m ? m[2].trim() : null;
+      const state = m ? m[3].toUpperCase() : null;
+      const zip = m ? (m[4] ?? null) : null;
+      const { data: userRes, error: uErr } = await supabase.auth.getUser();
+      console.log("[onboarding] getUser", uErr, userRes?.user?.id);
+      const uid = userRes?.user?.id;
+      if (uid) {
+        const upRes = await supabase.from("profiles").upsert({
+          id: uid,
+          full_name: form.name || null,
+          email: form.email || userRes.user?.email || null,
+          phone: form.phone || null,
+          address: street || null,
+          city, state, zip,
+          last_activity_at: new Date().toISOString(),
+        }, { onConflict: "id" });
+        console.log("[onboarding] upsert result", JSON.stringify(upRes));
+      }
+      try { await felloSync(); } catch (e) { console.log("[onboarding] fello sync failed", e); }
+    } catch (e) {
+      console.log("[onboarding] submit error", e);
+    }
     navigate({ to: "/dashboard" });
   };
 
