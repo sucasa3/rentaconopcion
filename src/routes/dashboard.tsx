@@ -9,6 +9,7 @@ import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Your Home Dashboard — SuCasa" },
