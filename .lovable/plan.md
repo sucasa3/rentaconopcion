@@ -1,51 +1,47 @@
+## Why the enrichment left those columns blank
 
-## Goal
+I checked the raw ATTOM payloads cached in `property_intel` against the extractor and the writer. Three separate bugs, all in `src/lib/valuation.server.ts` `extractMortgage`, plus one data limit from ATTOM itself.
 
-Make the Fello Import portfolio show real, useful data: full names for cold-lead uploads, and real close_date / loan amount / rate / term pulled from ATTOM.
+### Root causes (verified against real cached data)
 
-## 1. Show full names for cold-lead rows
+1. **Loan amount always null — wrong JSON path.**
+   Extractor reads `property[0].mortgage.FirstConcurrent.amount`, but ATTOM's `/property/detailmortgage` returns fields directly on `mortgage`:
+   ```json
+   "mortgage": { "amount": 139000, "date": "2016-09-15", "term": 360, "lender": {...} }
+   ```
+   45 of 76 addresses have `mortgage.amount` in cache — extractor returns `null` for every one, so enrichment never writes `loan_amount_at_close_cents`.
 
-In `src/lib/lender.functions.ts` (`getPortfolio` mapper), change the name rule:
+2. **Term always null — wrong shape.**
+   ATTOM returns `term` as a number of months (e.g. `360`). Extractor treats it as `{ termYears }`.
 
-- If `homeowner_id IS NULL` → cold lead → show `client_name` unmasked (lender's own record).
-- If `homeowner_id` is set AND consent is granted → unmasked.
-- If `homeowner_id` is set AND consent is pending/revoked → keep `maskName(...)`.
+3. **Rate always null — field doesn't exist in this endpoint.**
+   `/property/detailmortgage` doesn't return `interestRate` at all. Rate cannot come from this call; we'd need a different ATTOM product or estimate it from origination date × prevailing-rate table.
 
-Email stays gated by consent (only revealed when a linked homeowner grants access).
+4. **`close_date` is the only column that populated (49/76)** because it also falls back to `sales.lastSale.date`, which the sales extractor reads correctly.
 
-## 2. Enrich Fello rows from ATTOM
+### Downstream effect
+With `loan_amount_at_close_cents` null, every derived field goes blank: balance, equity, LTV, refi savings, segment. That's why the table looked mostly empty even after enrichment ran.
 
-Add a server function `enrichPortfolioFromAttom({ portfolioId })` in `src/lib/lender.functions.ts` that, for each client in the portfolio missing loan data:
+### Fix plan
 
-1. Uses the existing `attom.server.ts` helpers to resolve the property by `address_line1 + city + state + zip` and fetch the **mortgage** and **sales** endpoints (`fetchMortgage`, `fetchSales` — already used by `valuation.server.ts`).
-2. Extracts:
-   - `close_date` ← latest mortgage origination date (fallback: most recent sale date).
-   - `loan_amount_at_close_cents` ← original loan amount from the mortgage record.
-   - `rate_at_close` ← interest rate on that mortgage.
-   - `term_months` ← loan term (default 360 when ATTOM reports nothing).
-3. Writes results back to `lender_portfolio_clients` with `context.supabase.from(...).update(...)` scoped by `portfolio_id`, respecting the existing lender RLS.
-4. Skips rows already populated. Rate-limited via the existing ATTOM caching layer (`property_intel` + `attom_call_log`) so re-runs are cheap.
-5. Returns `{ enriched, skipped, failed }` for a toast.
+1. **Rewrite `extractMortgage` in `src/lib/valuation.server.ts`** to match the real payload:
+   - `loanAmount` from `property[0].mortgage.amount`
+   - `originationDate` from `property[0].mortgage.date`
+   - `termYears` from `property[0].mortgage.term` (number of months → divide by 12; keep months too)
+   - `lender` from `property[0].mortgage.lender.lastname`
+   - Keep `interestRate: null` — endpoint doesn't provide it.
+   - Update the `MortgageSummary` shape (add `termMonths`) so `enrichPortfolioFromAttom` can write months directly without the ×12.
 
-### UI wire-up
+2. **Update `enrichPortfolioFromAttom` in `src/lib/lender.functions.ts`** to use the corrected fields (write `term_months` from `termMonths`, keep rate handling but expect null).
 
-In `src/routes/_authenticated/lender/portfolio.$id.tsx`, add an **"Enrich from ATTOM"** button next to "Upload CSV" that:
+3. **Fill rate with a prevailing-rate estimate** so the refi math works. Add a small lookup table (Freddie Mac PMMS annual averages, hard-coded) keyed by year of `close_date`. When ATTOM has no rate, write the estimated rate into `rate_at_close` and note it (via a `notes` suffix like "rate est."). This keeps segments/savings meaningful.
 
-- Calls `enrichPortfolioFromAttom` via `useServerFn` + mutation.
-- Shows a spinner + progress toast (`Enriching 76 clients…`).
-- On success, invalidates `["lender-portfolio", id]` so the table refreshes with real loan/rate/close_date/equity/segment values.
+4. **Re-run enrichment** on the Fello portfolio. Existing 45 cached mortgages won't re-hit ATTOM (cache), so this is free.
 
-Only visible when at least one client has `loan_amount_at_close_cents = null`.
+5. **Verify**: query `lender_portfolio_clients` — expect ~45 rows with `loan_amount_at_close_cents` set and `rate_at_close` populated (real or estimated) for anything with a close date.
 
-## Out of scope
+### Files touched
+- `src/lib/valuation.server.ts` — fix `extractMortgage` + `MortgageSummary`.
+- `src/lib/lender.functions.ts` — use corrected fields, add prevailing-rate fallback.
 
-- Changing the CSV import contract.
-- Backfilling `homeowner_id` on cold leads (that's the consent flow, separate track).
-- Modifying the 250-client synthetic seeder.
-
-## Files touched
-
-- `src/lib/lender.functions.ts` — new mapper rule + new `enrichPortfolioFromAttom` server fn.
-- `src/routes/_authenticated/lender/portfolio.$id.tsx` — enrich button + mutation.
-
-No DB migration needed — schema already supports these columns.
+No schema or RLS changes.
