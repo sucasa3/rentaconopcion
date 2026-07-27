@@ -101,7 +101,7 @@ function Dashboard() {
 
   const heroData: HomeHeroData = {
     ...HOME_HERO,
-    address: (intel?.ok && intel.address) || profileAddr || HOME_HERO.address,
+    address: okIntel?.address || profileAddr || HOME_HERO.address,
     value: heroValue,
     equity: heroEquity,
     equityPct: heroEquityPct,
