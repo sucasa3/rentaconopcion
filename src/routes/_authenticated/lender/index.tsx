@@ -54,6 +54,16 @@ function LenderHome() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const fello = useMutation({
+    mutationFn: () => felloFn(),
+    onSuccess: (r: any) => {
+      toast.success(r.seeded ? "Imported 76 Fello homeowners" : "Fello portfolio ready");
+      qc.invalidateQueries({ queryKey: ["lender-portfolios"] });
+      navigate({ to: "/lender/portfolio/$id", params: { id: r.portfolioId } });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   return (
     <div className="flex min-h-screen flex-col">
