@@ -14,6 +14,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
