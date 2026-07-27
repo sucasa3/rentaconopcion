@@ -567,6 +567,98 @@ export const seedFelloImport = createServerFn({ method: "POST" })
       }
     }
 
+// -----------------------------------------------------------------------------
+// Enrich portfolio clients from ATTOM: fills in close_date, loan_amount,
+// rate, and term for rows missing loan data by fetching mortgage + sales.
+// Uses the cached valuation abstraction so re-runs are cheap.
+// -----------------------------------------------------------------------------
+const EnrichSchema = z.object({ portfolioId: z.string().uuid() });
+export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => EnrichSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertLenderAccess(context.supabase, context.userId);
+
+    // Verify the caller can see the portfolio (RLS-scoped read).
+    const { data: portfolio, error: pErr } = await context.supabase
+      .from("lender_portfolios")
+      .select("id")
+      .eq("id", data.portfolioId)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!portfolio) throw new Error("Portfolio not found");
+
+    const { data: rows, error: cErr } = await context.supabase
+      .from("lender_portfolio_clients")
+      .select("id, address_line1, city, state, zip, loan_amount_at_close_cents")
+      .eq("portfolio_id", data.portfolioId)
+      .is("loan_amount_at_close_cents", null);
+    if (cErr) throw new Error(cErr.message);
+
+    const { getPropertyIntel } = await import("./valuation.server");
+    const { extractMortgage, extractSales } = await import("./valuation.server");
+
+    let enriched = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const r of rows ?? []) {
+      if (!r.address_line1) {
+        skipped += 1;
+        continue;
+      }
+      const fullAddress = [
+        r.address_line1,
+        r.city,
+        [r.state, r.zip].filter(Boolean).join(" "),
+      ]
+        .filter(Boolean)
+        .join(", ");
+      try {
+        const intel = await getPropertyIntel(fullAddress, {
+          classes: ["mortgage", "sales"],
+          revenueSource: "lender_enrichment",
+          requestedBy: context.userId,
+        });
+        const mRaw = intel.classes.mortgage?.data ?? null;
+        const sRaw = intel.classes.sales?.data ?? null;
+        const m = mRaw ? extractMortgage(mRaw) : null;
+        const s = sRaw ? extractSales(sRaw) : null;
+
+        const closeDate =
+          m?.originationDate ?? s?.lastSale?.date ?? null;
+        const loanCents = m?.loanAmount ? Math.round(m.loanAmount * 100) : null;
+        const rate = m?.interestRate ?? null;
+        const termMonths = m?.termYears ? m.termYears * 12 : null;
+
+        if (loanCents == null && closeDate == null) {
+          skipped += 1;
+          continue;
+        }
+
+        const update: Record<string, unknown> = {};
+        if (closeDate) update.close_date = closeDate.slice(0, 10);
+        if (loanCents != null) update.loan_amount_at_close_cents = loanCents;
+        if (rate != null) update.rate_at_close = rate;
+        if (termMonths != null) update.term_months = termMonths;
+
+        const { error: uErr } = await context.supabase
+          .from("lender_portfolio_clients")
+          .update(update)
+          .eq("id", r.id);
+        if (uErr) {
+          failed += 1;
+          continue;
+        }
+        enriched += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+
+    return { enriched, skipped, failed, total: rows?.length ?? 0 };
+  });
+
     return { orgId, portfolioId, seeded: (count ?? 0) === 0, total: 76 };
   });
 
