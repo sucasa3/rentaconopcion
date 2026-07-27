@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
@@ -88,15 +89,22 @@ function PortfolioDetail() {
 
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id } }),
-    onSuccess: (r: any) => {
+    onMutate: () => {
+      const toastId = toast.loading(
+        `Enriching ${missingCount} clients from ATTOM… this can take a minute.`,
+      );
+      return { toastId };
+    },
+    onSuccess: (r: any, _v, ctx) => {
       toast.success(
         `Enriched ${r.enriched} of ${r.total} clients from ATTOM${
           r.skipped ? ` · ${r.skipped} no data` : ""
         }${r.failed ? ` · ${r.failed} failed` : ""}`,
+        { id: ctx?.toastId },
       );
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
 
   async function handleFile(f: File) {
@@ -329,7 +337,11 @@ function PortfolioDetail() {
                         disabled={enrich.isPending}
                         className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                       >
-                        <Sparkles className="h-3 w-3" />{" "}
+                        {enrich.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}{" "}
                         {enrich.isPending
                           ? `Enriching ${missingCount}…`
                           : `Enrich ${missingCount} from ATTOM`}
@@ -337,7 +349,7 @@ function PortfolioDetail() {
                     )}
                   </div>
                 </div>
-                <div className="mt-4 overflow-x-auto">
+                <div className={`mt-4 overflow-x-auto ${enrich.isPending ? "pointer-events-none opacity-60" : ""}`}>
                   <table className="w-full min-w-[900px] text-left text-sm">
                     <thead className="sticky top-0 bg-card">
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
