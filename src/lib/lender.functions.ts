@@ -482,3 +482,85 @@ export const seedDemoPortfolio = createServerFn({ method: "POST" })
 
     return { orgId, portfolioId, seeded: (count ?? 0) === 0 };
   });
+
+// -----------------------------------------------------------------------------
+// Fello import seeder: creates a "Fello Import" portfolio under the demo lender
+// org and inserts the 76 homeowners exported from Fello (2026-07-27).
+// Idempotent by portfolio name.
+// -----------------------------------------------------------------------------
+export const seedFelloImport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getFelloHomeowners } = await import("./fello-import.server");
+
+    const ORG_NAME = "SuCasa Demo Lender";
+    const PORTFOLIO_NAME = "Fello Import · 76 Homeowners";
+
+    // Ensure org
+    let orgId: string;
+    const { data: existingOrg } = await supabaseAdmin
+      .from("lender_orgs").select("id").eq("name", ORG_NAME).maybeSingle();
+    if (existingOrg) {
+      orgId = existingOrg.id;
+    } else {
+      const { data: newOrg, error } = await supabaseAdmin
+        .from("lender_orgs")
+        .insert({ name: ORG_NAME, plan: "demo", active: true })
+        .select("id").single();
+      if (error) throw new Error(error.message);
+      orgId = newOrg.id;
+    }
+
+    // Ensure membership
+    const { data: existingMember } = await supabaseAdmin
+      .from("lender_members").select("id")
+      .eq("lender_org_id", orgId).eq("user_id", context.userId).maybeSingle();
+    if (!existingMember) {
+      await supabaseAdmin.from("lender_members")
+        .insert({ lender_org_id: orgId, user_id: context.userId, role: "owner" });
+    }
+
+    // Ensure lender role
+    const { data: hasLenderRole } = await supabaseAdmin
+      .from("user_roles").select("id")
+      .eq("user_id", context.userId).eq("role", "lender").maybeSingle();
+    if (!hasLenderRole) {
+      await supabaseAdmin.from("user_roles")
+        .insert({ user_id: context.userId, role: "lender" });
+    }
+
+    // Ensure portfolio
+    let portfolioId: string;
+    const { data: existingPortfolio } = await supabaseAdmin
+      .from("lender_portfolios").select("id")
+      .eq("lender_org_id", orgId).eq("name", PORTFOLIO_NAME).maybeSingle();
+    if (existingPortfolio) {
+      portfolioId = existingPortfolio.id;
+    } else {
+      const { data: newP, error } = await supabaseAdmin
+        .from("lender_portfolios")
+        .insert({ lender_org_id: orgId, name: PORTFOLIO_NAME })
+        .select("id").single();
+      if (error) throw new Error(error.message);
+      portfolioId = newP.id;
+    }
+
+    // Seed only if empty
+    const { count } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("id", { count: "exact", head: true })
+      .eq("portfolio_id", portfolioId);
+    if ((count ?? 0) === 0) {
+      const rows = getFelloHomeowners().map((h) => ({ portfolio_id: portfolioId, ...h }));
+      const chunk = 100;
+      for (let i = 0; i < rows.length; i += chunk) {
+        const { error } = await supabaseAdmin
+          .from("lender_portfolio_clients").insert(rows.slice(i, i + chunk));
+        if (error) throw new Error(error.message);
+      }
+    }
+
+    return { orgId, portfolioId, seeded: (count ?? 0) === 0, total: 76 };
+  });
+

@@ -1,0 +1,762 @@
+[
+  {
+    "client_name": "Delmy Cienfuegos",
+    "client_email": "delmycienfuegos@gmail.com",
+    "client_phone": "+16783577775",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "MP ATLANTA (CSV IMPORT), PROSPECT, ENRICH"
+  },
+  {
+    "client_name": "Jhon Jairo Florez Herrera",
+    "client_email": "johnflorez3082@gmail.com",
+    "client_phone": "+14703153879",
+    "address_line1": "903 Creek Bottom Rd",
+    "city": "Loganville",
+    "state": "GA",
+    "zip": "30052",
+    "notes": "MP ATLANTA (CSV IMPORT), YADIRA HOMAN, ATLANTA METRO, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Eliseo Cortes",
+    "client_email": "ecpaintingsolutionsllc@gmail.com",
+    "client_phone": "+14049901649",
+    "address_line1": "7262 Sandpiper Way",
+    "city": "Riverdale",
+    "state": "GA",
+    "zip": "30274",
+    "notes": "MP ATLANTA (CSV IMPORT), KAREN LICKAY, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Vicente Garcia",
+    "client_email": "vicentegarcia1115@icloud.com",
+    "client_phone": "+16782300446",
+    "address_line1": "7304 Cowboy Cv",
+    "city": "Lago Vista",
+    "state": "TX",
+    "zip": "78645",
+    "notes": "MP ATLANTA (CSV IMPORT), ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Miriam Garcia Rocha",
+    "client_email": "miriamgarcia128@gmail.com",
+    "client_phone": "+17705498840",
+    "address_line1": "1301 Sweet Woods Dr",
+    "city": "Lawrenceville",
+    "state": "GA",
+    "zip": "30044",
+    "notes": "GARY FRANCISCO, MP ATLANTA (CSV IMPORT), ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Mauricio Patino",
+    "client_email": "mauricio59882@gmail.com",
+    "client_phone": "+14044532415",
+    "address_line1": "5390 Nathan Dr NW",
+    "city": "Lilburn",
+    "state": "GA",
+    "zip": "30047",
+    "notes": "REF/TAXID, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Rene Roman",
+    "client_email": "reneroman2018@yahoo.com",
+    "client_phone": "+14046358241",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "MP ATLANTA (CSV IMPORT), PROSPECT, ENRICH"
+  },
+  {
+    "client_name": "Diana Tavarez",
+    "client_email": "diana93301@yahoo.com",
+    "client_phone": "+17709905104",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "INVERSIONISTA, MP ATLANTA (CSV IMPORT), SAMANTHA AGUIRRE, ENRICH"
+  },
+  {
+    "client_name": "Yumisle Molina",
+    "client_email": "yumislealbornoz.75@gmail.com",
+    "client_phone": "+14048397831",
+    "address_line1": "1124 Shady Creek Dr",
+    "city": "Lithonia",
+    "state": "GA",
+    "zip": "30058",
+    "notes": "CHRIS ROMERO, MP ATLANTA (CSV IMPORT), ATLANTA METRO, RENTA CON OPCION, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Carolina Macias",
+    "client_email": "rola.carolina-macias@hotmail.com",
+    "client_phone": "+14705463340",
+    "address_line1": "5332 Zachary Dr",
+    "city": "Stone Mountain",
+    "state": "GA",
+    "zip": "30083",
+    "notes": "MP ATLANTA (CSV IMPORT), ABANDONO AREA DE COMPRA, REGISTRO PARA INFO, RENTA CON OPCION, TAX ID, ENRICH"
+  },
+  {
+    "client_name": "Raquel Jaquez Mancebo",
+    "client_email": "rjaquez1971@gmail.com",
+    "client_phone": "+18283197501",
+    "address_line1": "110 Harper Rd",
+    "city": "McDonough",
+    "state": "GA",
+    "zip": "30252",
+    "notes": "MP ATLANTA (CSV IMPORT), ATLANTA METRO, RENTA CON OPCION, ENRICH"
+  },
+  {
+    "client_name": "Lina Moreno",
+    "client_email": "lm.morenoruiz@gmail.com",
+    "client_phone": "+14703421550",
+    "address_line1": "2118 McDaniels Bridge Rd SW",
+    "city": "Lilburn",
+    "state": "GA",
+    "zip": "30047",
+    "notes": "MP ATLANTA (CSV IMPORT), ATLANTA METRO, RENTA CON OPCION, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Eduardo Soto",
+    "client_email": "affinityfloors@gmail.com",
+    "client_phone": "+17709009012",
+    "address_line1": "838 Southside Ave",
+    "city": "West Islip",
+    "state": "NY",
+    "zip": "11795",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, MP ATLANTA (CSV IMPORT), CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Jose Hector Munoz",
+    "client_email": "jhmunoz@comcast.net",
+    "client_phone": "+17706272027",
+    "address_line1": "465 Rocky Creek Dr",
+    "city": "Roswell",
+    "state": "GA",
+    "zip": "30075",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, TRIGGERS -> AGENT REQUEST, IMPORTED -> 6/12/2018 11:25 AM, ENRICH, OWNER MATCH PRESENT, HOME VALUE, FELLO HOME VALUE LEAD, MORTGAGE LEAD, FELLO MORTGAGE LEAD, FELLO ENGAGEMENT < TRANSACTION, FELLO SUBMISSION < TRANSACTION, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Elvia Esperanza Johnson",
+    "client_email": "elviajohnson1977@gmail.com",
+    "client_phone": "+16787806248",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Jorge Jimenez",
+    "client_email": "jorge.jimenez.4.jj.38@gmail.com",
+    "client_phone": "+16784925883",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, IMPORTED -> 5/09/2018 10:37 AM, ENRICH"
+  },
+  {
+    "client_name": "Nancy Herrera",
+    "client_email": "herreranancye@yahoo.com",
+    "client_phone": "+17703652420",
+    "address_line1": "408 River Run Dr",
+    "city": "Atlanta",
+    "state": "GA",
+    "zip": "30350",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, TRIGGERS -> AGENT REQUEST, IMPORTED -> 6/13/2018 2:14 PM, LANGUAGE -> SPANISH, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Margarito Rios",
+    "client_email": "iguana1984.com@gmail.com",
+    "client_phone": "+14705251203",
+    "address_line1": "571 Bradford Place Ct",
+    "city": "Loganville",
+    "state": "GA",
+    "zip": "30052",
+    "notes": "TRIGGERS -> AGENT REQUEST, IMPORTED -> 5/29/2018 11:00 AM, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Nelson Padilla",
+    "client_email": "nelson.padilla1976@icloud.com",
+    "client_phone": "+14702091017",
+    "address_line1": "1590 River Run Ln",
+    "city": "Dacula",
+    "state": "GA",
+    "zip": "30019",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "JUAN ARCOS TUITZA",
+    "client_email": "arutam2015@mail.com",
+    "client_phone": "+16786779542",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Stephanie Andrade",
+    "client_email": "stephanie.andrade127@gmail.com",
+    "client_phone": "+16783083006",
+    "address_line1": "248 Arbor Creek Dr",
+    "city": "Dallas",
+    "state": "GA",
+    "zip": "30157",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Zita Perez",
+    "client_email": "zitaperez530@yahoo.com",
+    "client_phone": "+16784461519",
+    "address_line1": "303 Colemans Ct",
+    "city": "Woodstock",
+    "state": "GA",
+    "zip": "30188",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT"
+  },
+  {
+    "client_name": "Brenda Sintuj",
+    "client_email": "sebastiantol2@icloud.com",
+    "client_phone": "+14702145285",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, FORM -> SUCASA LEADPAGE LEAD, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, ENRICH"
+  },
+  {
+    "client_name": "Miguel Luna",
+    "client_email": "luna2479@gmail.com",
+    "client_phone": "+14047939630",
+    "address_line1": "2295 Worthington Dr",
+    "city": "Powder Springs",
+    "state": "GA",
+    "zip": "30127",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Emely Montoya",
+    "client_email": "emelyperalta195@gmail.com",
+    "client_phone": "+14703530879",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Gerardo Moreno",
+    "client_email": "gerardomoreno.ny@gmail.com",
+    "client_phone": "+16783207039",
+    "address_line1": "3920 Charlemagne Way SW",
+    "city": "Marietta",
+    "state": "GA",
+    "zip": "30064",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> GOOD (621-740), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 0-3 MONTHS, LANGUAGE -> SPANISH, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Marlen Andrade",
+    "client_email": "marlenandrade78@yahoo.com",
+    "client_phone": "+14048849672",
+    "address_line1": "308 Horizon Trce",
+    "city": "Loganville",
+    "state": "GA",
+    "zip": "30052",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Rene Roman",
+    "client_email": "reneroman@gmail.com",
+    "client_phone": "+16786429333",
+    "address_line1": "515 Allens Landing Ct",
+    "city": "Lawrenceville",
+    "state": "GA",
+    "zip": "30045",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> DON'T KNOW, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 0-3 MONTHS, LANGUAGE -> SPANISH, ENRICH, OWNER MATCH PRESENT, FELLO ENGAGEMENT < TRANSACTION, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Jorge Zavala",
+    "client_email": "jorgendeni@yahoo.com",
+    "client_phone": "+14044884531",
+    "address_line1": "151 Bruce Rd",
+    "city": "Dawsonville",
+    "state": "GA",
+    "zip": "30534",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, FORM -> SUCASA LEADPAGE LEAD, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Ana Sepulveda",
+    "client_email": "anajackiesepulveda@hotmail.com",
+    "client_phone": "+14049143289",
+    "address_line1": "443 Brooks Rd",
+    "city": "Dallas",
+    "state": "GA",
+    "zip": "30132",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION, DNC REGISTERED"
+  },
+  {
+    "client_name": "Brenda Sandoval Sandoval",
+    "client_email": "brendaperez.bp7@gmail.com",
+    "client_phone": "+16787255139",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "TRIGGERS -> PR\u00cd\u00a9STAMO PARA COMPRAR CASA, NO CATEGORY -> RENTAR CON OPCI\u00cd_N A COMPRA, NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, BEHAVIOR -> WEBINAR REGISTRATION - MEMBRESIA VIP, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Josi Marcano",
+    "client_email": "diferencia70@hotmail.com",
+    "client_phone": "+14704182199",
+    "address_line1": "309 Woodridge Cir",
+    "city": "Athens",
+    "state": "GA",
+    "zip": "30601",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> DON'T KNOW, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 0-3 MONTHS, LANGUAGE -> SPANISH, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Claudia Nieto",
+    "client_email": "1234567.cands@gmail.com",
+    "client_phone": "+17706858549",
+    "address_line1": "5285 Derby Ct NW",
+    "city": "Lilburn",
+    "state": "GA",
+    "zip": "30047",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, LEADS -> BUYER, CREDIT SCORE -> AVERAGE (581-620), FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, FORM -> SUCASA LEADPAGE LEAD, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, ENRICH"
+  },
+  {
+    "client_name": "Olgal Lucia Lucia",
+    "client_email": "olgalps@hotmail.com",
+    "client_phone": "+18482289055",
+    "address_line1": "5736 Apple Grove Rd",
+    "city": "Buford",
+    "state": "GA",
+    "zip": "30519",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Adriana Rubio Palace Palace",
+    "client_email": "adrirubio4229@hotmail.com",
+    "client_phone": "+16787890419",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Rodrigo Sandoval Sandoval",
+    "client_email": "rodrigosandval@gmail.com",
+    "client_phone": "+14046045805",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Balmore Gomez",
+    "client_email": "balgoz@hotmail.com",
+    "client_phone": "+14693483558",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, GARY FRANCISCO, MP ATLANTA (CSV IMPORT), ATLANTA METRO, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Nerio Cruz",
+    "client_email": "neri.cruz01@gmail.com",
+    "client_phone": "+14046672967",
+    "address_line1": "822 W Louisiana St",
+    "city": "Palestine",
+    "state": "TX",
+    "zip": "75801",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Daniel Calderon Calderon",
+    "client_email": "danielc-chino@hotmail.com",
+    "client_phone": "+17705605336",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Gerardo Moreno",
+    "client_email": "gerardomoreno_ny@hotmail.com",
+    "client_phone": "+16783207039",
+    "address_line1": "3920 Charlemagne Way SW",
+    "city": "Marietta",
+    "state": "GA",
+    "zip": "30064",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Arlai Reeves",
+    "client_email": "areeves32@yahoo.com",
+    "client_phone": "+16788768741",
+    "address_line1": "115 Elizabeth Way",
+    "city": "Ellenwood",
+    "state": "GA",
+    "zip": "30294",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> CLIENT YOURCASA, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> POOR (BELOW 580), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, LANGUAGE -> ENGLISH, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Carolina Castelao",
+    "client_email": "realestate@carolinacastelao.com",
+    "client_phone": "+14047887899",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "03. TO-DOS -> SD - 20. SALES - SALES PIPELINE TO CLOSE: 01. CALL TO SCHEDULE CONSULT, 02. HISTORY -> SD - 20. SALES - SALES PIPELINE TO CLOSE: 01.0 MILESTONE - REQUESTED CONSULT, 01. STATUS -> SD - 20. SALES - SALES PIPELINE TO CLOSE: 01. REQUESTED CONSULT - NEEDS TO SCHEDULE, 05. SYSTEM -> SD - 10. MARKETING - WEBINAR TO CONVERTED: 04. BUTTON: MARK AS CONVERTED, 05. SYSTEM -> SD - 10. MARKETING - LEAD MAGNET TO CONVERTED: 03. BUTTON: MARK AS CONVERTED, FUNCTIONAL -> REQUESTED CONSULT ON SERVICE PROVIDER PAGE, PROSPECT -> LENDER, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Beltra Gomez",
+    "client_email": "beltragomez@yahoo.com",
+    "client_phone": "+14046735403",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Dorca Canizalez",
+    "client_email": "canizalez14@gmail.com",
+    "client_phone": "+16782000986",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> AVERAGE (581-620), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, LANGUAGE -> SPANISH, ENRICH"
+  },
+  {
+    "client_name": "Javi Villegas",
+    "client_email": "villegasjavi.01@gmail.com",
+    "client_phone": "+14049921358",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Kael Garcia",
+    "client_email": "kaelg1022@gmail.com",
+    "client_phone": "+14706990409",
+    "address_line1": "2245 Panstone Dr SW",
+    "city": "Marietta",
+    "state": "GA",
+    "zip": "30060",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, FORM -> SUCASA LEADPAGE LEAD, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Yanett Maldonado",
+    "client_email": "yanettmaldonado11@gmail.com",
+    "client_phone": "+17709102048",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, FORM -> 5 REQUISITOS DOWNLOAD, PROSPECT -> LENDER LEAD, PROSPECT -> AGENT LEAD, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> CITY NOT AVAILABLE, NO CATEGORY -> FINISHED HTTP POST, PROSPECT -> CLIENT - AGENT BUYERS, FORM -> NEW USER REGISTRATION, TRIGGERS -> NEW USER REGISTRATION, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Maria Ibarra",
+    "client_email": "guadalupe19727@gmail.com",
+    "client_phone": "+14047077354",
+    "address_line1": "7781 Jonesboro Rd",
+    "city": "Jonesboro",
+    "state": "GA",
+    "zip": "30236",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, TRIGGERS -> START NEW USER CAMPAIGN, NO CATEGORY -> FINISHED HTTP POST, FORM -> SUCASA LEADPAGE LEAD, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, ENRICH, FELLO EXPIRED, DNC REGISTERED"
+  },
+  {
+    "client_name": "John Jairo Mosquera Mera",
+    "client_email": "jojaimos@hotmail.com",
+    "client_phone": "+17708821758",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH"
+  },
+  {
+    "client_name": "Anibal Renoj Anibal",
+    "client_email": "ingridgomez543@gmail.com",
+    "client_phone": "+14042469603",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "IMPORTED -> WEBINAR - COMO COMPRAR CON MAL CREDITO, BEHAVIOR -> WEBINAR REGISTRATION - MEMBRESIA VIP, PROSPECT -> AGENT LEAD, TRIGGERS -> REBUILD AGENT TABLE, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH"
+  },
+  {
+    "client_name": "Faustino Neri Mendoza",
+    "client_email": "neri0215@gmail.com",
+    "client_phone": "+14044915875",
+    "address_line1": "103 McElhannon Rd SE",
+    "city": "Bethlehem",
+    "state": "GA",
+    "zip": "30620",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Antonio Islas",
+    "client_email": "joseislas528@gmail.com",
+    "client_phone": "+17708781068",
+    "address_line1": "5475 Chapel Hill Rd",
+    "city": "Douglasville",
+    "state": "GA",
+    "zip": "30135",
+    "notes": "PROSPECT -> AGENT LEAD, TRIGGERS -> REBUILD AGENT TABLE, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Dalvis Velasco",
+    "client_email": "stephaniecoria86@gmail.com",
+    "client_phone": "+17066015557",
+    "address_line1": "146 Burkett Rd",
+    "city": "Thomaston",
+    "state": "GA",
+    "zip": "30286",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, FORM -> SUCASA LEADPAGE LEAD, TRIGGERS -> START NEW USER CAMPAIGN, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> GOOD (621-740), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, LANGUAGE -> SPANISH, ENRICH"
+  },
+  {
+    "client_name": "Maria Chevere",
+    "client_email": "isabelachevere@gmail.com",
+    "client_phone": "+14043092197",
+    "address_line1": "1804 Spring Valley Cir",
+    "city": "Griffin",
+    "state": "GA",
+    "zip": "30223",
+    "notes": "PROSPECT -> AGENT LEAD, TRIGGERS -> REBUILD AGENT TABLE, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, DNC REGISTERED, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Jesus Lopez",
+    "client_email": "jesuslopez73@live.com",
+    "client_phone": "+17705438568",
+    "address_line1": "1170 Longwood Dr SW",
+    "city": "Marietta",
+    "state": "GA",
+    "zip": "30008",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> AGENT LEAD, TRIGGERS -> REBUILD AGENT TABLE, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Fernando Montes",
+    "client_email": "montes19801@hotmail.com",
+    "client_phone": "+14044682739",
+    "address_line1": "122 Longstreet Cir",
+    "city": "Oxford",
+    "state": "GA",
+    "zip": "30054",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, TRIGGERS -> START NEW USER CAMPAIGN, NO CATEGORY -> FINISHED HTTP POST, FORM -> SUCASA LEADPAGE LEAD, LANGUAGE -> SPANISH, PROSPECT -> CLIENT, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED, DNC REGISTERED"
+  },
+  {
+    "client_name": "Sergio Garcia",
+    "client_email": "garciaaguilar7678@gmail.com",
+    "client_phone": "+14044537779",
+    "address_line1": "5162 Suggs St",
+    "city": "Powder Springs",
+    "state": "GA",
+    "zip": "30127",
+    "notes": "TRIGGERS -> PR\u00cd\u00a9STAMO PARA COMPRAR CASA, NO CATEGORY -> RENTAR CON OPCI\u00cd_N A COMPRA, NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, PROSPECT -> AGENT LEAD, TRIGGERS -> START NEW USER CAMPAIGN, NO CATEGORY -> FINISHED HTTP POST, PROSPECT -> CLIENT - AGENT BUYERS, FORM -> NEW USER REGISTRATION, TRIGGERS -> NEW USER REGISTRATION, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, LANGUAGE -> SPANISH, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Balmorw Gomez",
+    "client_email": "balgoz79@gmail.com",
+    "client_phone": "+14693483558",
+    "address_line1": "3322 Callie Still Rd",
+    "city": "Lawrenceville",
+    "state": "GA",
+    "zip": "30045",
+    "notes": "NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, TRIGGERS -> START NEW USER CAMPAIGN, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> EXCELLENT (ABOVE 740), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, LANGUAGE -> SPANISH, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Juan Arcos Tuitza",
+    "client_email": "arutam@me.com",
+    "client_phone": "+16786779542",
+    "address_line1": "3316 Alcazar Dr SW",
+    "city": "Lilburn",
+    "state": "GA",
+    "zip": "30047",
+    "notes": "PROSPECT -> LENDER LEAD, TRIGGERS -> START NEW USER CAMPAIGN, TRIGGERS -> NEW USER REGISTRATION, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, LANGUAGE -> SPANISH, ENRICH, FELLO ENGAGEMENT < TRANSACTION, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Crystal Sanchez",
+    "client_email": "csanche3@amfam.com",
+    "client_phone": "+16789888245",
+    "address_line1": "501 Kirkwood Ave",
+    "city": "Des Moines",
+    "state": "IA",
+    "zip": "50315",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> DON'T KNOW, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 12 MONTHS, ENRICH, FELLO EXPIRED, DNC REGISTERED"
+  },
+  {
+    "client_name": "Sasha Perez",
+    "client_email": "sstgo2629@gmail.com",
+    "client_phone": "+15555555555",
+    "address_line1": "1588 Denver Way",
+    "city": "Locust Grove",
+    "state": "GA",
+    "zip": "30248",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> AVERAGE (581-620), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Raquel Jaquez",
+    "client_email": "rjaquezm@hotmail.com",
+    "client_phone": "+18283197501",
+    "address_line1": "110 Harper Rd",
+    "city": "McDonough",
+    "state": "GA",
+    "zip": "30252",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> DON'T KNOW, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, ENRICH"
+  },
+  {
+    "client_name": "Rafael Morillo",
+    "client_email": "rafaelmorillon62@gmail.com",
+    "client_phone": "+16789886466",
+    "address_line1": "31 Cline Dr SW",
+    "city": "Cartersville",
+    "state": "GA",
+    "zip": "30120",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, CREDIT SCORE -> DON'T KNOW, NO CATEGORY -> 0-3 MONTHS, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "F Ramos Guzman",
+    "client_email": "ramostreeservice@gmail.com",
+    "client_phone": "+17702561159",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> YAYA INICIO LIST, IMPORTED -> 8/16/2018 2:43 PM, NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, PROSPECT -> CLIENT, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, FORM -> 5 REQUISITOS DOWNLOAD, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Dorca Canizalez",
+    "client_email": "canizal98@hotmail.com",
+    "client_phone": "+16782000983",
+    "address_line1": "1457 Rockview Ln",
+    "city": "Loganville",
+    "state": "GA",
+    "zip": "30052",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> DON'T KNOW, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 0-3 MONTHS, ENRICH, CONTACT CREATED < TRANSACTION, DNC REGISTERED"
+  },
+  {
+    "client_name": "Leonardo Bautista",
+    "client_email": "lalo61733@gmail.com",
+    "client_phone": "+16789282437",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> YAYA INICIO LIST, IMPORTED -> 8/16/2018 2:43 PM, NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> LENDER LEAD, NO CATEGORY -> FINISHED HTTP POST, CREDIT SCORE -> AVERAGE (581-620), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, LANGUAGE -> ENGLISH, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Ivelisse Hernandez",
+    "client_email": "velani29@yahoo.com",
+    "client_phone": "+16784090449",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> AVERAGE (581-620), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Miguel Luna",
+    "client_email": "evillasenor35@gmail.com",
+    "client_phone": "+14047939792",
+    "address_line1": "2295 Worthington Dr",
+    "city": "Powder Springs",
+    "state": "GA",
+    "zip": "30127",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> GOOD (621-740), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, DNC REGISTERED"
+  },
+  {
+    "client_name": "Rene Roman",
+    "client_email": "reneroman81@gmail.com",
+    "client_phone": "+16786429333",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "NO CATEGORY -> TONY INICIO LIST, IMPORTED -> 8/16/2018 2:12 PM, NO CATEGORY -> LISTAS &QUOT;COMPRAR O RENTAR CON OPCI\u00cd_N A COMPRA&QUOT;, PROSPECT -> CLIENT, TRIGGERS -> START NEW USER CAMPAIGN, PROSPECT -> LENDER LEAD, PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH"
+  },
+  {
+    "client_name": "Gilberto Castillo",
+    "client_email": "gil_cg12@hotmail.com",
+    "client_phone": "+13057427111",
+    "address_line1": "3715 SW Ridge Bluff Overlook",
+    "city": "Gainesville",
+    "state": "GA",
+    "zip": "30507",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> GOOD (621-740), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 0-3 MONTHS, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Norma Valero",
+    "client_email": "normavalero7196@hotmail.com",
+    "client_phone": "+17703746566",
+    "address_line1": "5614 Hawthorn Dr",
+    "city": "Gillsville",
+    "state": "GA",
+    "zip": "30543",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Ana Duque",
+    "client_email": "analandaverde1@hotmail.com",
+    "client_phone": "+16784636926",
+    "address_line1": "2181 Rodao Dr SW",
+    "city": "Lilburn",
+    "state": "GA",
+    "zip": "30047",
+    "notes": "FORM -> 5 REQUISITOS DOWNLOAD, FORM -> PREQUAL LEAD PAGE FORM, IMPORTED -> 1/13/2016 4:16 PM, IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> DON'T KNOW, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, ENRICH, FELLO EXPIRED"
+  },
+  {
+    "client_name": "Sandra Gutierrez",
+    "client_email": "sandra370785@gmail.com",
+    "client_phone": "+17708462572",
+    "address_line1": "257 Iberian Rd",
+    "city": "Dahlonega",
+    "state": "GA",
+    "zip": "30533",
+    "notes": "PROSPECT -> AGENT LEAD, PROSPECT -> CLIENT - AGENT BUYERS, NO CATEGORY -> FINISHED HTTP POST, ENRICH, OWNER MATCH PRESENT, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Kevin Dejesus",
+    "client_email": "vkdejesus@gmail.com",
+    "client_phone": "+14046607232",
+    "address_line1": "1280 W Peachtree St NW",
+    "city": "Atlanta",
+    "state": "GA",
+    "zip": "30309",
+    "notes": "IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> AVERAGE (581-620), NO CATEGORY -> 0-3 MONTHS, FORM -> 5 REQUISITOS DOWNLOAD, FORM -> PREQUAL LEAD PAGE FORM, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, IMPORTED -> 1/13/2016 4:16 PM, ENRICH"
+  },
+  {
+    "client_name": "Jose Argueta",
+    "client_email": "madaiya@hotmail.com",
+    "client_phone": "+12024230518",
+    "address_line1": "Address on file",
+    "city": null,
+    "state": null,
+    "zip": null,
+    "notes": "FORM -> 5 REQUISITOS DOWNLOAD, FORM -> PREQUAL LEAD PAGE FORM, IMPORTED -> 1/13/2016 4:16 PM, IMMIGRATION STATUS/TYPE OF LOAN -> TAX ID, CREDIT SCORE -> AVERAGE (581-620), PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, NO CATEGORY -> 6-12 MONTHS, ENRICH, OWNER MATCH PRESENT, FELLO EXPIRED, CONTACT CREATED < TRANSACTION"
+  },
+  {
+    "client_name": "Rogelio Salazar",
+    "client_email": "royslandscape@yahoo.com",
+    "client_phone": "+16784109768",
+    "address_line1": "1601 Athens Hwy",
+    "city": "Gainesville",
+    "state": "GA",
+    "zip": "30507",
+    "notes": "FORM -> PREQUAL LEAD PAGE FORM, PROSPECT -> CLIENT, FORM -> CLIENT SUBMITTED  FROM WEBSITE, IMPORTED -> 1/13/2016 4:16 PM, FORM -> 5 REQUISITOS DOWNLOAD, ENRICH"
+  }
+]
