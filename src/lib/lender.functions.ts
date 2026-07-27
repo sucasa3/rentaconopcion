@@ -565,9 +565,11 @@ export const seedFelloImport = createServerFn({ method: "POST" })
           .from("lender_portfolio_clients").insert(rows.slice(i, i + chunk));
         if (error) throw new Error(error.message);
       }
+    }
 
     return { orgId, portfolioId, seeded: (count ?? 0) === 0, total: 76 };
   });
+
 
 
 
