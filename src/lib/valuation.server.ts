@@ -285,32 +285,71 @@ export interface MortgageSummary {
   interestRate: number | null;
   loanType: string | null;
   termYears: number | null;
+  termMonths: number | null;
 }
 export function extractMortgage(raw: unknown): MortgageSummary {
   const r = raw as {
     property?: Array<{
       mortgage?: {
+        // ATTOM /property/detailmortgage returns fields directly on `mortgage`.
+        amount?: number;
+        date?: string;
+        term?: number | { termType?: string; termYears?: number };
+        interestRate?: number;
+        loantypecode?: string;
+        deedtype?: string;
+        lender?: { lastname?: string } | string;
+        // Some payloads may wrap under FirstConcurrent — kept as fallback.
         FirstConcurrent?: {
           amount?: number;
           lender?: string;
           date?: string;
           interestRate?: number;
-          trustDeedDocumentNumber?: string;
           term?: { termType?: string; termYears?: number };
         };
       };
     }>;
   } | null;
-  const m = r?.property?.[0]?.mortgage?.FirstConcurrent;
+  const mtg = r?.property?.[0]?.mortgage;
+  const fc = mtg?.FirstConcurrent;
+
+  const amount = mtg?.amount ?? fc?.amount ?? null;
+  const date = mtg?.date ?? fc?.date ?? null;
+  const interestRate = mtg?.interestRate ?? fc?.interestRate ?? null;
+
+  // `term` may be a number of months, or `{ termYears }`, or absent.
+  let termMonths: number | null = null;
+  let termYears: number | null = null;
+  const rawTerm = mtg?.term ?? fc?.term ?? null;
+  if (typeof rawTerm === "number") {
+    termMonths = rawTerm;
+    termYears = Math.round(rawTerm / 12);
+  } else if (rawTerm && typeof rawTerm === "object" && rawTerm.termYears) {
+    termYears = rawTerm.termYears;
+    termMonths = rawTerm.termYears * 12;
+  }
+
+  const lender =
+    typeof mtg?.lender === "object"
+      ? mtg?.lender?.lastname ?? null
+      : (mtg?.lender as string | undefined) ?? (fc?.lender ?? null);
+
+  const loanType =
+    mtg?.loantypecode ??
+    (typeof rawTerm === "object" ? rawTerm?.termType ?? null : null);
+
   return {
-    loanAmount: m?.amount ?? null,
-    lender: m?.lender ?? null,
-    originationDate: m?.date ?? null,
-    interestRate: m?.interestRate ?? null,
-    loanType: m?.term?.termType ?? null,
-    termYears: m?.term?.termYears ?? null,
+    loanAmount: amount ?? null,
+    lender: lender ?? null,
+    originationDate: date ?? null,
+    interestRate: interestRate ?? null,
+    loanType: loanType ?? null,
+    termYears,
+    termMonths,
   };
 }
+
+
 
 // ---------- Permits ----------
 export interface PermitEvent {
