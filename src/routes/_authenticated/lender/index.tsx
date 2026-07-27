@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { createPortfolio, listMyPortfolios } from "@/lib/lender.functions";
-import { Building2, Plus, Users } from "lucide-react";
+import { createPortfolio, listMyPortfolios, seedDemoPortfolio } from "@/lib/lender.functions";
+import { Building2, Plus, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/")({
   head: () => ({
@@ -21,7 +21,9 @@ export const Route = createFileRoute("/_authenticated/lender/")({
 function LenderHome() {
   const listFn = useServerFn(listMyPortfolios);
   const createFn = useServerFn(createPortfolio);
+  const seedFn = useServerFn(seedDemoPortfolio);
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
     queryKey: ["lender-portfolios"],
     queryFn: () => listFn(),
@@ -38,6 +40,19 @@ function LenderHome() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const seed = useMutation({
+    mutationFn: () => seedFn(),
+    onSuccess: (r: any) => {
+      toast.success(
+        r.seeded ? "Seeded 250-client demo portfolio" : "Demo portfolio ready",
+      );
+      qc.invalidateQueries({ queryKey: ["lender-portfolios"] });
+      navigate({ to: "/lender/portfolio/$id", params: { id: r.portfolioId } });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
 
   return (
     <div className="flex min-h-screen flex-col">
