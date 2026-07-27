@@ -380,3 +380,105 @@ export const listAllOrgs = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
+// -----------------------------------------------------------------------------
+// Demo seeder: creates a "SuCasa Demo Lender" org, adds the caller as a member,
+// grants them the lender role, and inserts 250 realistic clients into a demo
+// portfolio. Idempotent by portfolio name — running it twice does not duplicate.
+// -----------------------------------------------------------------------------
+export const seedDemoPortfolio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { generateDemoClients } = await import("./lender-demo.server");
+
+    const DEMO_ORG_NAME = "SuCasa Demo Lender";
+    const DEMO_PORTFOLIO_NAME = "Demo Book · 250 Clients";
+
+    // 1. Find or create the demo org.
+    let orgId: string;
+    const { data: existingOrg } = await supabaseAdmin
+      .from("lender_orgs")
+      .select("id")
+      .eq("name", DEMO_ORG_NAME)
+      .maybeSingle();
+    if (existingOrg) {
+      orgId = existingOrg.id;
+    } else {
+      const { data: newOrg, error: oErr } = await supabaseAdmin
+        .from("lender_orgs")
+        .insert({ name: DEMO_ORG_NAME, plan: "demo", active: true })
+        .select("id")
+        .single();
+      if (oErr) throw new Error(oErr.message);
+      orgId = newOrg.id;
+    }
+
+    // 2. Ensure the caller is a member.
+    const { data: existingMember } = await supabaseAdmin
+      .from("lender_members")
+      .select("id")
+      .eq("lender_org_id", orgId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!existingMember) {
+      await supabaseAdmin
+        .from("lender_members")
+        .insert({ lender_org_id: orgId, user_id: context.userId, role: "owner" });
+    }
+
+    // 3. Grant lender role (idempotent — user_roles has unique(user_id, role)).
+    const { data: hasLenderRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("role", "lender")
+      .maybeSingle();
+    if (!hasLenderRole) {
+      await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: context.userId, role: "lender" });
+    }
+
+    // 4. Find or create the demo portfolio.
+    let portfolioId: string;
+    const { data: existingPortfolio } = await supabaseAdmin
+      .from("lender_portfolios")
+      .select("id")
+      .eq("lender_org_id", orgId)
+      .eq("name", DEMO_PORTFOLIO_NAME)
+      .maybeSingle();
+    if (existingPortfolio) {
+      portfolioId = existingPortfolio.id;
+    } else {
+      const { data: newP, error: pErr } = await supabaseAdmin
+        .from("lender_portfolios")
+        .insert({ lender_org_id: orgId, name: DEMO_PORTFOLIO_NAME })
+        .select("id")
+        .single();
+      if (pErr) throw new Error(pErr.message);
+      portfolioId = newP.id;
+    }
+
+    // 5. Seed 250 clients only if the portfolio is empty.
+    const { count } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("id", { count: "exact", head: true })
+      .eq("portfolio_id", portfolioId);
+    if ((count ?? 0) === 0) {
+      const rows = generateDemoClients(250).map((c) => ({
+        portfolio_id: portfolioId,
+        ...c,
+      }));
+      // Insert in chunks to stay well under any row-size limits.
+      const chunkSize = 100;
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const { error: iErr } = await supabaseAdmin
+          .from("lender_portfolio_clients")
+          .insert(rows.slice(i, i + chunkSize));
+        if (iErr) throw new Error(iErr.message);
+      }
+    }
+
+    return { orgId, portfolioId, seeded: (count ?? 0) === 0 };
+  });
