@@ -24,6 +24,7 @@ export function SiteHeader() {
   const links = [
     { to: "/services", label: "Services" },
     { to: "/partner", label: "For Pros" },
+    { to: "/lender", label: "For Lenders" },
     { to: "/dashboard", label: "Dashboard" },
   ] as const;
   return (
