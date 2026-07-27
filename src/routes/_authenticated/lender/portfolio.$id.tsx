@@ -112,9 +112,8 @@ function PortfolioDetail() {
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Name</th>
                         <th className="py-2 pr-3 font-medium">Address</th>
-                        <th className="py-2 pr-3 font-medium">Est. value</th>
-                        <th className="py-2 pr-3 font-medium">Loan bal.</th>
-                        <th className="py-2 pr-3 font-medium">Refi</th>
+                        <th className="py-2 pr-3 font-medium">Loan @ close</th>
+                        <th className="py-2 pr-3 font-medium">Rate</th>
                         <th className="py-2 pr-3 font-medium">Consent</th>
                       </tr>
                     </thead>
@@ -125,11 +124,8 @@ function PortfolioDetail() {
                           <td className="py-3 pr-3 text-muted-foreground">
                             {[c.address, c.city, c.state].filter(Boolean).join(", ")}
                           </td>
-                          <td className="py-3 pr-3">{money(c.estimated_value_cents)}</td>
                           <td className="py-3 pr-3">{money(c.loan_balance_cents)}</td>
-                          <td className="py-3 pr-3">
-                            <RefiPill signal={c.refi_signal} />
-                          </td>
+                          <td className="py-3 pr-3">{c.rate_at_close ? `${c.rate_at_close}%` : "—"}</td>
                           <td className="py-3 pr-3">
                             <ConsentPill state={c.consent_state} />
                           </td>
@@ -137,7 +133,7 @@ function PortfolioDetail() {
                       ))}
                       {data.clients.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="py-8 text-center text-muted-foreground">
+                          <td colSpan={5} className="py-8 text-center text-muted-foreground">
                             No clients yet — upload a CSV above.
                           </td>
                         </tr>
