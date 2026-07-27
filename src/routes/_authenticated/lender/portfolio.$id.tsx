@@ -63,6 +63,7 @@ function PortfolioDetail() {
   const { id } = Route.useParams();
   const getFn = useServerFn(getPortfolio);
   const ingestFn = useServerFn(ingestPortfolioCsv);
+  const enrichFn = useServerFn(enrichPortfolioFromAttom);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
