@@ -151,19 +151,6 @@ function PortfolioDetail() {
   );
 }
 
-function RefiPill({ signal }: { signal: string | null }) {
-  if (!signal) return <span className="text-xs text-muted-foreground">—</span>;
-  const map: Record<string, string> = {
-    strong: "bg-growth/15 text-growth",
-    possible: "bg-accent text-accent-foreground",
-    none: "bg-secondary text-secondary-foreground",
-  };
-  return (
-    <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${map[signal] ?? "bg-secondary"}`}>
-      {signal}
-    </span>
-  );
-}
 
 function ConsentPill({ state }: { state: string }) {
   if (state === "granted")
