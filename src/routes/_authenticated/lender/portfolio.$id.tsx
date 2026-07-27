@@ -323,6 +323,18 @@ function PortfolioDetail() {
                       <Upload className="h-3 w-3" />{" "}
                       {ingest.isPending ? "Importing…" : "Upload CSV"}
                     </button>
+                    {missingCount > 0 && (
+                      <button
+                        onClick={() => enrich.mutate()}
+                        disabled={enrich.isPending}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                      >
+                        <Sparkles className="h-3 w-3" />{" "}
+                        {enrich.isPending
+                          ? `Enriching ${missingCount}…`
+                          : `Enrich ${missingCount} from ATTOM`}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 overflow-x-auto">
