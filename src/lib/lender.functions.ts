@@ -665,6 +665,4 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
     return { enriched, skipped, failed, total: rows?.length ?? 0 };
   });
 
-    return { orgId, portfolioId, seeded: (count ?? 0) === 0, total: 76 };
-  });
 
