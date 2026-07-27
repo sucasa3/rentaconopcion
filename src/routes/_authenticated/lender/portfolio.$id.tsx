@@ -86,6 +86,19 @@ function PortfolioDetail() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const enrich = useMutation({
+    mutationFn: () => enrichFn({ data: { portfolioId: id } }),
+    onSuccess: (r: any) => {
+      toast.success(
+        `Enriched ${r.enriched} of ${r.total} clients from ATTOM${
+          r.skipped ? ` · ${r.skipped} no data` : ""
+        }${r.failed ? ` · ${r.failed} failed` : ""}`,
+      );
+      qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   async function handleFile(f: File) {
     const text = await f.text();
     ingest.mutate(text);
