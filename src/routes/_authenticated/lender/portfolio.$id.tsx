@@ -122,6 +122,10 @@ function PortfolioDetail() {
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const missingCount = data
+    ? data.clients.filter((c: any) => c.missing_loan_data).length
+    : 0;
+
 
   return (
     <div className="flex min-h-screen flex-col">
