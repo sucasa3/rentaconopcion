@@ -36,7 +36,27 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const [logOpen, setLogOpen] = useState(false);
-  const [requests, setRequests] = useState<RecentRequest[]>(RECENT_REQUESTS);
+  const [requests, setRequests] = useState<RecentRequest[]>([]);
+
+  const listReqFn = useServerFn(listMyRequests);
+  const { data: dbRequests } = useQuery({
+    queryKey: ["my-requests"],
+    queryFn: () => listReqFn(),
+  });
+  useEffect(() => {
+    if (!dbRequests) return;
+    setRequests(
+      dbRequests.map((r: any) => ({
+        id: r.id,
+        category: r.category,
+        status: r.status,
+        when: new Date(r.created_at).toLocaleDateString(),
+        source: r.source === "external" ? "external" : "sucasa",
+        vendorName: r.vendor_name ?? undefined,
+        amountCents: r.amount_cents ?? undefined,
+      })),
+    );
+  }, [dbRequests]);
 
   // Fetch profile (for address fallback) and ATTOM intel
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
@@ -99,6 +119,8 @@ function Dashboard() {
           <EquityMortgagePanel />
 
           <MaintenanceTimelinePanel />
+
+          <SuggestedServicesPanel />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
