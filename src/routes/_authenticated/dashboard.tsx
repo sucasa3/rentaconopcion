@@ -88,14 +88,14 @@ function Dashboard() {
     staleTime: 5 * 60_000,
   });
 
-  const heroValue = (intel?.ok && intel.avm?.estimate) || HOME_HERO.value;
-  const heroEquity =
-    (intel?.ok && intel.equity?.equityDollars) ??
+  const heroValue: number = (intel?.ok && intel.avm?.estimate) || HOME_HERO.value;
+  const heroEquity: number =
+    (intel?.ok ? intel.equity?.equityDollars ?? null : null) ??
     (intel?.ok && intel.avm?.estimate
       ? Math.round(intel.avm.estimate * HOME_HERO.equityPct)
       : HOME_HERO.equity);
-  const heroEquityPct =
-    (intel?.ok && intel.equity?.equityPct) ??
+  const heroEquityPct: number =
+    (intel?.ok ? intel.equity?.equityPct ?? null : null) ??
     (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
 
   const heroData: HomeHeroData = {
