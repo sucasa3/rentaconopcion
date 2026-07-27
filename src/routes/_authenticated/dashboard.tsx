@@ -79,18 +79,31 @@ function Dashboard() {
   const { data: intel } = useQuery({
     queryKey: ["home-intel-hero"],
     queryFn: () =>
-      fetchIntel({ data: { classes: ["avm", "detail", "tax"], revenueSource: "dashboard_hero" } }),
+      fetchIntel({
+        data: {
+          classes: ["avm", "detail", "tax", "sales", "mortgage"],
+          revenueSource: "dashboard_hero",
+        },
+      }),
     staleTime: 5 * 60_000,
   });
+
+  const heroValue = (intel?.ok && intel.avm?.estimate) || HOME_HERO.value;
+  const heroEquity =
+    (intel?.ok && intel.equity?.equityDollars) ??
+    (intel?.ok && intel.avm?.estimate
+      ? Math.round(intel.avm.estimate * HOME_HERO.equityPct)
+      : HOME_HERO.equity);
+  const heroEquityPct =
+    (intel?.ok && intel.equity?.equityPct) ??
+    (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
 
   const heroData: HomeHeroData = {
     ...HOME_HERO,
     address: (intel?.ok && intel.address) || profileAddr || HOME_HERO.address,
-    value: (intel?.ok && intel.avm?.estimate) || HOME_HERO.value,
-    equity:
-      intel?.ok && intel.avm?.estimate
-        ? Math.round(intel.avm.estimate * HOME_HERO.equityPct)
-        : HOME_HERO.equity,
+    value: heroValue,
+    equity: heroEquity,
+    equityPct: heroEquityPct,
   };
 
   return (
