@@ -176,7 +176,11 @@ export const getPortfolio = createServerFn({ method: "GET" })
 
     const now = new Date();
     const enriched = (clients ?? []).map((c: any) => {
+      const isColdLead = !c.homeowner_id;
       const consented = c.homeowner_id ? consentedIds.has(c.homeowner_id) : false;
+      // Cold leads are the lender's own uploads → always show full name.
+      // Linked homeowners are masked until they grant consent.
+      const showName = isColdLead || consented;
       const monthsSinceClose = monthsBetween(c.close_date, now);
       const termMonths = c.term_months ?? 360;
       const balance = remainingBalanceCents(
@@ -196,7 +200,7 @@ export const getPortfolio = createServerFn({ method: "GET" })
 
       return {
         id: c.id,
-        full_name: consented ? c.client_name : maskName(c.client_name ?? ""),
+        full_name: showName ? c.client_name : maskName(c.client_name ?? ""),
         email: consented ? c.client_email : null,
         address: c.address_line1,
         city: c.city,
@@ -215,8 +219,10 @@ export const getPortfolio = createServerFn({ method: "GET" })
         note: c.notes,
         segment,
         consent_state: c.homeowner_id ? (consented ? "granted" : "pending") : "cold-lead",
+        missing_loan_data: c.loan_amount_at_close_cents == null,
       };
     });
+
 
     // Aggregates.
     const total = enriched.length;
