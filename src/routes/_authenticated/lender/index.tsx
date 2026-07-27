@@ -22,6 +22,7 @@ function LenderHome() {
   const listFn = useServerFn(listMyPortfolios);
   const createFn = useServerFn(createPortfolio);
   const seedFn = useServerFn(seedDemoPortfolio);
+  const felloFn = useServerFn(seedFelloImport);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
