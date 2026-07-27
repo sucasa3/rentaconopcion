@@ -77,15 +77,26 @@ function LenderHome() {
                 Your portfolios
               </h1>
             </div>
-            <button
-              onClick={() => seed.mutate()}
-              disabled={seed.isPending}
-              className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
-            >
-              <Sparkles className="h-3 w-3" />
-              {seed.isPending ? "Seeding…" : "Preview 250-client demo"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => fello.mutate()}
+                disabled={fello.isPending}
+                className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60"
+              >
+                <Sparkles className="h-3 w-3" />
+                {fello.isPending ? "Importing…" : "Import 76 Fello homeowners"}
+              </button>
+              <button
+                onClick={() => seed.mutate()}
+                disabled={seed.isPending}
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+              >
+                <Sparkles className="h-3 w-3" />
+                {seed.isPending ? "Seeding…" : "Preview 250-client demo"}
+              </button>
+            </div>
           </div>
+
 
           {error ? (
             <div className="rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground">
