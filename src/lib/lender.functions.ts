@@ -634,8 +634,29 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
         const closeDate =
           m?.originationDate ?? s?.lastSale?.date ?? null;
         const loanCents = m?.loanAmount ? Math.round(m.loanAmount * 100) : null;
-        const rate = m?.interestRate ?? null;
-        const termMonths = m?.termYears ? m.termYears * 12 : null;
+        const termMonths = m?.termMonths ?? null;
+
+        // ATTOM's detailmortgage endpoint doesn't return interest rate.
+        // Fall back to Freddie Mac PMMS annual average 30-yr rates by
+        // origination year so refi math / segments are meaningful.
+        // https://www.freddiemac.com/pmms/pmms30
+        const PMMS_ANNUAL: Record<number, number> = {
+          2000: 8.05, 2001: 6.97, 2002: 6.54, 2003: 5.83, 2004: 5.84,
+          2005: 5.87, 2006: 6.41, 2007: 6.34, 2008: 6.03, 2009: 5.04,
+          2010: 4.69, 2011: 4.45, 2012: 3.66, 2013: 3.98, 2014: 4.17,
+          2015: 3.85, 2016: 3.65, 2017: 3.99, 2018: 4.54, 2019: 3.94,
+          2020: 3.11, 2021: 2.96, 2022: 5.34, 2023: 6.81, 2024: 6.72,
+          2025: 6.80, 2026: 6.50,
+        };
+        let rate = m?.interestRate ?? null;
+        let rateEstimated = false;
+        if (rate == null && closeDate) {
+          const yr = Number(closeDate.slice(0, 4));
+          if (PMMS_ANNUAL[yr] != null) {
+            rate = PMMS_ANNUAL[yr];
+            rateEstimated = true;
+          }
+        }
 
         if (loanCents == null && closeDate == null) {
           skipped += 1;
@@ -647,12 +668,15 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
           loan_amount_at_close_cents?: number;
           rate_at_close?: number;
           term_months?: number;
+          notes?: string;
         } = {};
 
         if (closeDate) update.close_date = closeDate.slice(0, 10);
         if (loanCents != null) update.loan_amount_at_close_cents = loanCents;
         if (rate != null) update.rate_at_close = rate;
         if (termMonths != null) update.term_months = termMonths;
+        if (rateEstimated) update.notes = "rate est. (PMMS)";
+
 
         const { error: uErr } = await context.supabase
           .from("lender_portfolio_clients")
