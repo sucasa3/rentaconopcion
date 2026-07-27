@@ -17,21 +17,20 @@ export const listMyPortfolios = createServerFn({ method: "GET" })
     await assertLenderAccess(context.supabase, context.userId);
     const { data: memberships, error: mErr } = await context.supabase
       .from("lender_members")
-      .select("org_id, role, lender_orgs(id, name)")
+      .select("lender_org_id, role, lender_orgs(id, name)")
       .eq("user_id", context.userId);
     if (mErr) throw new Error(mErr.message);
 
-    const orgIds = (memberships ?? []).map((m: any) => m.org_id);
-    if (orgIds.length === 0) return { orgs: [], portfolios: [] };
+    const orgIds = (memberships ?? []).map((m: any) => m.lender_org_id);
+    if (orgIds.length === 0) return { orgs: [], portfolios: [] as any[] };
 
     const { data: portfolios, error: pErr } = await context.supabase
       .from("lender_portfolios")
-      .select("id, name, org_id, created_at")
-      .in("org_id", orgIds)
+      .select("id, name, lender_org_id, created_at")
+      .in("lender_org_id", orgIds)
       .order("created_at", { ascending: false });
     if (pErr) throw new Error(pErr.message);
 
-    // Aggregate counts per portfolio
     const withCounts = await Promise.all(
       (portfolios ?? []).map(async (p: any) => {
         const { count } = await context.supabase
@@ -44,7 +43,7 @@ export const listMyPortfolios = createServerFn({ method: "GET" })
 
     return {
       orgs: (memberships ?? []).map((m: any) => ({
-        id: m.org_id,
+        id: m.lender_org_id,
         name: m.lender_orgs?.name ?? "Org",
         role: m.role,
       })),
@@ -63,7 +62,7 @@ export const createPortfolio = createServerFn({ method: "POST" })
     await assertLenderAccess(context.supabase, context.userId);
     const { data: row, error } = await context.supabase
       .from("lender_portfolios")
-      .insert({ org_id: data.orgId, name: data.name, created_by: context.userId })
+      .insert({ lender_org_id: data.orgId, name: data.name })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -77,7 +76,7 @@ export const getPortfolio = createServerFn({ method: "GET" })
     await assertLenderAccess(context.supabase, context.userId);
     const { data: portfolio, error } = await context.supabase
       .from("lender_portfolios")
-      .select("id, name, org_id, created_at, lender_orgs(name)")
+      .select("id, name, lender_org_id, created_at, lender_orgs(name)")
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -86,55 +85,55 @@ export const getPortfolio = createServerFn({ method: "GET" })
     const { data: clients, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
       .select(
-        "id, full_name, address, city, state, zip, email, loan_balance_cents, interest_rate_bps, note, homeowner_user_id, estimated_value_cents, refi_signal, created_at",
+        "id, client_name, client_email, address_line1, city, state, zip, loan_amount_at_close_cents, rate_at_close, close_date, notes, homeowner_id, created_at",
       )
       .eq("portfolio_id", data.id)
       .order("created_at", { ascending: false });
     if (cErr) throw new Error(cErr.message);
 
-    // Consent gating: PII (name/email/address) hidden unless a consent row exists for that homeowner
     const homeownerIds = (clients ?? [])
-      .map((c: any) => c.homeowner_user_id)
+      .map((c: any) => c.homeowner_id)
       .filter(Boolean) as string[];
     let consentedIds = new Set<string>();
     if (homeownerIds.length) {
       const { data: consents } = await context.supabase
         .from("homeowner_lender_consents")
-        .select("homeowner_user_id")
-        .in("homeowner_user_id", homeownerIds)
-        .eq("org_id", portfolio.org_id)
-        .eq("revoked", false);
-      consentedIds = new Set((consents ?? []).map((c: any) => c.homeowner_user_id));
+        .select("homeowner_id")
+        .in("homeowner_id", homeownerIds)
+        .eq("lender_org_id", (portfolio as any).lender_org_id)
+        .is("revoked_at", null);
+      consentedIds = new Set((consents ?? []).map((c: any) => c.homeowner_id));
     }
 
     return {
       portfolio: {
-        id: portfolio.id,
-        name: portfolio.name,
-        orgName: portfolio.lender_orgs?.name ?? "Org",
+        id: (portfolio as any).id,
+        name: (portfolio as any).name,
+        orgName: (portfolio as any).lender_orgs?.name ?? "Org",
       },
       clients: (clients ?? []).map((c: any) => {
-        const consented = c.homeowner_user_id ? consentedIds.has(c.homeowner_user_id) : false;
-        // PII hidden by default; address kept (needed for enrichment) but names/email masked
+        const consented = c.homeowner_id ? consentedIds.has(c.homeowner_id) : false;
         return {
-          ...c,
-          consent_state: c.homeowner_user_id
-            ? consented
-              ? "granted"
-              : "pending"
-            : "cold-lead",
-          full_name: consented ? c.full_name : maskName(c.full_name),
-          email: consented ? c.email : null,
+          id: c.id,
+          full_name: consented ? c.client_name : maskName(c.client_name ?? ""),
+          email: consented ? c.client_email : null,
+          address: c.address_line1,
+          city: c.city,
+          state: c.state,
+          zip: c.zip,
+          loan_balance_cents: c.loan_amount_at_close_cents,
+          rate_at_close: c.rate_at_close,
+          note: c.notes,
+          consent_state: c.homeowner_id ? (consented ? "granted" : "pending") : "cold-lead",
         };
       }),
     };
   });
 
 function maskName(name: string): string {
+  if (!name) return "—";
   const parts = name.split(" ");
-  return parts
-    .map((p, i) => (i === parts.length - 1 ? `${p.charAt(0)}.` : p))
-    .join(" ");
+  return parts.map((p, i) => (i === parts.length - 1 ? `${p.charAt(0)}.` : p)).join(" ");
 }
 
 const IngestSchema = z.object({
@@ -151,25 +150,19 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
 
     const payload = rows.map((r) => ({
       portfolio_id: data.portfolioId,
-      full_name: r.full_name,
-      address: r.address,
-      city: r.city,
-      state: r.state,
-      zip: r.zip,
-      email: r.email,
-      loan_balance_cents: r.loan_balance_cents,
-      interest_rate_bps: r.interest_rate_bps,
-      note: r.note,
+      client_name: r.full_name,
+      client_email: r.email ?? null,
+      address_line1: r.address,
+      city: r.city ?? null,
+      state: r.state ?? null,
+      zip: r.zip ?? null,
+      loan_amount_at_close_cents: r.loan_balance_cents ?? null,
+      rate_at_close:
+        r.interest_rate_bps != null ? Number((r.interest_rate_bps / 100).toFixed(3)) : null,
+      notes: r.note ?? null,
     }));
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
-
-    await context.supabase.from("lender_activity").insert({
-      actor_user_id: context.userId,
-      portfolio_id: data.portfolioId,
-      action: "csv_ingest",
-      detail: { count: rows.length },
-    });
 
     return { inserted: rows.length };
   });
@@ -186,7 +179,7 @@ export const createLenderOrg = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden: admin only");
     const { data: row, error } = await context.supabase
       .from("lender_orgs")
-      .insert({ name: data.name, created_by: context.userId })
+      .insert({ name: data.name })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -209,7 +202,6 @@ export const addLenderMember = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden: admin only");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Look up user by email via profiles table
     const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("id")
@@ -217,16 +209,12 @@ export const addLenderMember = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!profile) throw new Error("No user found with that email — they must sign up first.");
 
-    // Insert membership
     const { error: mErr } = await supabaseAdmin
       .from("lender_members")
-      .insert({ org_id: data.orgId, user_id: profile.id, role: data.role });
+      .insert({ lender_org_id: data.orgId, user_id: profile.id, role: data.role });
     if (mErr && !mErr.message.includes("duplicate")) throw new Error(mErr.message);
 
-    // Grant lender role
-    await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: profile.id, role: "lender" });
+    await supabaseAdmin.from("user_roles").insert({ user_id: profile.id, role: "lender" });
 
     return { ok: true, userId: profile.id };
   });
