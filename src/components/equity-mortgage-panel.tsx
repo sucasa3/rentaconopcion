@@ -92,14 +92,24 @@ export function EquityMortgagePanel() {
           label="Permits on file"
           primary={String(permits?.events.length ?? 0)}
           secondary={
-            permits?.lastPermitDate
-              ? `Last ${new Date(permits.lastPermitDate).toLocaleDateString()}`
+            permits && permits.events.length > 0
+              ? permits.lastPermitDate
+                ? `Last ${new Date(permits.lastPermitDate).toLocaleDateString()}`
+                : "Recorded"
               : sales?.tenureYears != null
-                ? `Owned ~${sales.tenureYears} yr`
-                : "—"
+                ? `Owned ~${sales.tenureYears} yr · none in ATTOM feed`
+                : "None in ATTOM feed"
           }
         />
       </div>
+
+      {permits && permits.events.length === 0 && (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          No permits returned by ATTOM for this address. Building Permits is a
+          separate ATTOM data package — some jurisdictions and trial plans
+          don't include it, even when permits exist locally.
+        </p>
+      )}
 
       {equity?.refiSignal === "strong" && (
         <div className="mt-4 rounded-2xl border border-growth/30 bg-growth/5 p-4">
