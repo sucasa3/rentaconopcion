@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { createPortfolio, listMyPortfolios } from "@/lib/lender.functions";
-import { Building2, Plus, Users } from "lucide-react";
+import { createPortfolio, listMyPortfolios, seedDemoPortfolio } from "@/lib/lender.functions";
+import { Building2, Plus, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/")({
   head: () => ({
@@ -21,7 +21,9 @@ export const Route = createFileRoute("/_authenticated/lender/")({
 function LenderHome() {
   const listFn = useServerFn(listMyPortfolios);
   const createFn = useServerFn(createPortfolio);
+  const seedFn = useServerFn(seedDemoPortfolio);
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
     queryKey: ["lender-portfolios"],
     queryFn: () => listFn(),
@@ -39,16 +41,39 @@ function LenderHome() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const seed = useMutation({
+    mutationFn: () => seedFn(),
+    onSuccess: (r: any) => {
+      toast.success(
+        r.seeded ? "Seeded 250-client demo portfolio" : "Demo portfolio ready",
+      );
+      qc.invalidateQueries({ queryKey: ["lender-portfolios"] });
+      navigate({ to: "/lender/portfolio/$id", params: { id: r.portfolioId } });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1 px-5 py-8">
         <div className="mx-auto max-w-6xl space-y-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Lender Portal</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Your portfolios
-            </h1>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Lender Portal</p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+                Your portfolios
+              </h1>
+            </div>
+            <button
+              onClick={() => seed.mutate()}
+              disabled={seed.isPending}
+              className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+            >
+              <Sparkles className="h-3 w-3" />
+              {seed.isPending ? "Seeding…" : "Preview 250-client demo"}
+            </button>
           </div>
 
           {error ? (
@@ -61,8 +86,10 @@ function LenderHome() {
             <>
               {data && data.orgs.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-                  No organizations yet. An admin needs to add you to a lender org.
+                  No organizations yet — click <strong>Preview 250-client demo</strong> above to
+                  create a demo lender org with a seeded book.
                 </div>
+
               ) : (
                 <>
                   <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">

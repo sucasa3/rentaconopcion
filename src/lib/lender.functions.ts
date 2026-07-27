@@ -69,11 +69,80 @@ export const createPortfolio = createServerFn({ method: "POST" })
     return row;
   });
 
+// Assumed current 30-yr benchmark rate used for savings math in the demo.
+const BENCHMARK_RATE_DEFAULT = 6.25;
+
+function monthlyPayment(principalCents: number, ratePct: number, termMonths: number): number {
+  if (!principalCents || !ratePct || !termMonths) return 0;
+  const r = ratePct / 100 / 12;
+  const n = termMonths;
+  const p = principalCents / 100;
+  return (p * r) / (1 - Math.pow(1 + r, -n));
+}
+
+function monthsBetween(from: string | null, to: Date): number {
+  if (!from) return 0;
+  const d = new Date(from);
+  if (Number.isNaN(d.getTime())) return 0;
+  return Math.max(0, Math.round((to.getTime() - d.getTime()) / (1000 * 60 * 60 * 24 * 30.44)));
+}
+
+// Rough amortization: how much principal is left after `elapsed` months.
+function remainingBalanceCents(
+  origCents: number | null,
+  ratePct: number | null,
+  termMonths: number | null,
+  elapsedMonths: number,
+): number | null {
+  if (!origCents || !ratePct || !termMonths || elapsedMonths <= 0) return origCents ?? null;
+  const r = ratePct / 100 / 12;
+  const n = termMonths;
+  const k = Math.min(elapsedMonths, n);
+  const factor = (Math.pow(1 + r, n) - Math.pow(1 + r, k)) / (Math.pow(1 + r, n) - 1);
+  return Math.round(origCents * factor);
+}
+
+// Simple appreciation heuristic: 4%/yr compounded, capped at 60%.
+function estimatedValueCents(origCents: number | null, monthsSinceClose: number): number | null {
+  if (!origCents) return null;
+  const years = monthsSinceClose / 12;
+  const growth = Math.min(0.6, Math.pow(1.04, years) - 1);
+  // Assume LTV at close ~80% -> value at close = loan / 0.80.
+  const valueAtClose = origCents / 0.8;
+  return Math.round(valueAtClose * (1 + growth));
+}
+
+type Segment = "refi-ready" | "rate-and-term" | "cash-out" | "watchlist";
+
+function segmentFor(
+  ratePct: number | null,
+  balanceCents: number | null,
+  valueCents: number | null,
+  monthsSinceClose: number,
+  benchmark: number,
+): Segment {
+  const equity = (valueCents ?? 0) - (balanceCents ?? 0);
+  const seasoned = monthsSinceClose >= 12;
+  if (ratePct && seasoned && ratePct - benchmark >= 1) return "refi-ready";
+  if (ratePct && seasoned && ratePct - benchmark >= 0.5) return "rate-and-term";
+  if (equity >= 75_000 * 100) return "cash-out";
+  return "watchlist";
+}
+
 export const getPortfolio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        benchmarkRate: z.number().min(1).max(20).optional(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
+    const benchmark = data.benchmarkRate ?? BENCHMARK_RATE_DEFAULT;
+
     const { data: portfolio, error } = await context.supabase
       .from("lender_portfolios")
       .select("id, name, lender_org_id, created_at, lender_orgs(name)")
@@ -85,10 +154,10 @@ export const getPortfolio = createServerFn({ method: "GET" })
     const { data: clients, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
       .select(
-        "id, client_name, client_email, address_line1, city, state, zip, loan_amount_at_close_cents, rate_at_close, close_date, notes, homeowner_id, created_at",
+        "id, client_name, client_email, address_line1, city, state, zip, loan_amount_at_close_cents, rate_at_close, close_date, term_months, notes, homeowner_id, created_at",
       )
       .eq("portfolio_id", data.id)
-      .order("created_at", { ascending: false });
+      .order("close_date", { ascending: false });
     if (cErr) throw new Error(cErr.message);
 
     const homeownerIds = (clients ?? [])
@@ -105,28 +174,105 @@ export const getPortfolio = createServerFn({ method: "GET" })
       consentedIds = new Set((consents ?? []).map((c: any) => c.homeowner_id));
     }
 
+    const now = new Date();
+    const enriched = (clients ?? []).map((c: any) => {
+      const consented = c.homeowner_id ? consentedIds.has(c.homeowner_id) : false;
+      const monthsSinceClose = monthsBetween(c.close_date, now);
+      const termMonths = c.term_months ?? 360;
+      const balance = remainingBalanceCents(
+        c.loan_amount_at_close_cents,
+        c.rate_at_close,
+        termMonths,
+        monthsSinceClose,
+      );
+      const value = estimatedValueCents(c.loan_amount_at_close_cents, monthsSinceClose);
+      const equity = (value ?? 0) - (balance ?? 0);
+      const ltv =
+        value && balance ? Math.round((balance / value) * 1000) / 10 : null; // %
+      const currentPmt = monthlyPayment(balance ?? 0, c.rate_at_close ?? 0, termMonths);
+      const refiPmt = monthlyPayment(balance ?? 0, benchmark, termMonths);
+      const savingsPerMonth = Math.max(0, Math.round(currentPmt - refiPmt));
+      const segment = segmentFor(c.rate_at_close, balance, value, monthsSinceClose, benchmark);
+
+      return {
+        id: c.id,
+        full_name: consented ? c.client_name : maskName(c.client_name ?? ""),
+        email: consented ? c.client_email : null,
+        address: c.address_line1,
+        city: c.city,
+        state: c.state,
+        zip: c.zip,
+        loan_at_close_cents: c.loan_amount_at_close_cents,
+        loan_balance_cents: balance,
+        estimated_value_cents: value,
+        equity_cents: equity,
+        ltv_pct: ltv,
+        rate_at_close: c.rate_at_close,
+        close_date: c.close_date,
+        months_since_close: monthsSinceClose,
+        term_months: termMonths,
+        savings_per_month_dollars: savingsPerMonth,
+        note: c.notes,
+        segment,
+        consent_state: c.homeowner_id ? (consented ? "granted" : "pending") : "cold-lead",
+      };
+    });
+
+    // Aggregates.
+    const total = enriched.length;
+    const totalLoanCents = enriched.reduce(
+      (s, c) => s + (c.loan_at_close_cents ?? 0),
+      0,
+    );
+    const totalBalanceCents = enriched.reduce(
+      (s, c) => s + (c.loan_balance_cents ?? 0),
+      0,
+    );
+    const totalEquityCents = enriched.reduce((s, c) => s + (c.equity_cents ?? 0), 0);
+    const weightedRateNum = enriched.reduce(
+      (s, c) => s + (c.rate_at_close ?? 0) * (c.loan_at_close_cents ?? 0),
+      0,
+    );
+    const avgRate = totalLoanCents > 0 ? weightedRateNum / totalLoanCents : 0;
+    const avgMonthsSinceClose =
+      total > 0 ? enriched.reduce((s, c) => s + c.months_since_close, 0) / total : 0;
+
+    const segmentCounts = {
+      "refi-ready": 0,
+      "rate-and-term": 0,
+      "cash-out": 0,
+      watchlist: 0,
+    } as Record<Segment, number>;
+    const consentCounts = { granted: 0, pending: 0, "cold-lead": 0 } as Record<string, number>;
+    for (const c of enriched) {
+      segmentCounts[c.segment as Segment] += 1;
+      consentCounts[c.consent_state] += 1;
+    }
+
+    const topRefi = [...enriched]
+      .filter((c) => c.savings_per_month_dollars > 0)
+      .sort((a, b) => b.savings_per_month_dollars - a.savings_per_month_dollars)
+      .slice(0, 10);
+
     return {
       portfolio: {
         id: (portfolio as any).id,
         name: (portfolio as any).name,
         orgName: (portfolio as any).lender_orgs?.name ?? "Org",
       },
-      clients: (clients ?? []).map((c: any) => {
-        const consented = c.homeowner_id ? consentedIds.has(c.homeowner_id) : false;
-        return {
-          id: c.id,
-          full_name: consented ? c.client_name : maskName(c.client_name ?? ""),
-          email: consented ? c.client_email : null,
-          address: c.address_line1,
-          city: c.city,
-          state: c.state,
-          zip: c.zip,
-          loan_balance_cents: c.loan_amount_at_close_cents,
-          rate_at_close: c.rate_at_close,
-          note: c.notes,
-          consent_state: c.homeowner_id ? (consented ? "granted" : "pending") : "cold-lead",
-        };
-      }),
+      summary: {
+        total,
+        total_loan_cents: totalLoanCents,
+        total_balance_cents: totalBalanceCents,
+        total_equity_cents: totalEquityCents,
+        avg_rate: Math.round(avgRate * 100) / 100,
+        avg_months_since_close: Math.round(avgMonthsSinceClose),
+        benchmark_rate: benchmark,
+      },
+      segments: segmentCounts,
+      consent_counts: consentCounts,
+      top_refi_opportunities: topRefi,
+      clients: enriched,
     };
   });
 
@@ -233,4 +379,106 @@ export const listAllOrgs = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
+  });
+
+// -----------------------------------------------------------------------------
+// Demo seeder: creates a "SuCasa Demo Lender" org, adds the caller as a member,
+// grants them the lender role, and inserts 250 realistic clients into a demo
+// portfolio. Idempotent by portfolio name — running it twice does not duplicate.
+// -----------------------------------------------------------------------------
+export const seedDemoPortfolio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { generateDemoClients } = await import("./lender-demo.server");
+
+    const DEMO_ORG_NAME = "SuCasa Demo Lender";
+    const DEMO_PORTFOLIO_NAME = "Demo Book · 250 Clients";
+
+    // 1. Find or create the demo org.
+    let orgId: string;
+    const { data: existingOrg } = await supabaseAdmin
+      .from("lender_orgs")
+      .select("id")
+      .eq("name", DEMO_ORG_NAME)
+      .maybeSingle();
+    if (existingOrg) {
+      orgId = existingOrg.id;
+    } else {
+      const { data: newOrg, error: oErr } = await supabaseAdmin
+        .from("lender_orgs")
+        .insert({ name: DEMO_ORG_NAME, plan: "demo", active: true })
+        .select("id")
+        .single();
+      if (oErr) throw new Error(oErr.message);
+      orgId = newOrg.id;
+    }
+
+    // 2. Ensure the caller is a member.
+    const { data: existingMember } = await supabaseAdmin
+      .from("lender_members")
+      .select("id")
+      .eq("lender_org_id", orgId)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!existingMember) {
+      await supabaseAdmin
+        .from("lender_members")
+        .insert({ lender_org_id: orgId, user_id: context.userId, role: "owner" });
+    }
+
+    // 3. Grant lender role (idempotent — user_roles has unique(user_id, role)).
+    const { data: hasLenderRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("role", "lender")
+      .maybeSingle();
+    if (!hasLenderRole) {
+      await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: context.userId, role: "lender" });
+    }
+
+    // 4. Find or create the demo portfolio.
+    let portfolioId: string;
+    const { data: existingPortfolio } = await supabaseAdmin
+      .from("lender_portfolios")
+      .select("id")
+      .eq("lender_org_id", orgId)
+      .eq("name", DEMO_PORTFOLIO_NAME)
+      .maybeSingle();
+    if (existingPortfolio) {
+      portfolioId = existingPortfolio.id;
+    } else {
+      const { data: newP, error: pErr } = await supabaseAdmin
+        .from("lender_portfolios")
+        .insert({ lender_org_id: orgId, name: DEMO_PORTFOLIO_NAME })
+        .select("id")
+        .single();
+      if (pErr) throw new Error(pErr.message);
+      portfolioId = newP.id;
+    }
+
+    // 5. Seed 250 clients only if the portfolio is empty.
+    const { count } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("id", { count: "exact", head: true })
+      .eq("portfolio_id", portfolioId);
+    if ((count ?? 0) === 0) {
+      const rows = generateDemoClients(250).map((c) => ({
+        portfolio_id: portfolioId,
+        ...c,
+      }));
+      // Insert in chunks to stay well under any row-size limits.
+      const chunkSize = 100;
+      for (let i = 0; i < rows.length; i += chunkSize) {
+        const { error: iErr } = await supabaseAdmin
+          .from("lender_portfolio_clients")
+          .insert(rows.slice(i, i + chunkSize));
+        if (iErr) throw new Error(iErr.message);
+      }
+    }
+
+    return { orgId, portfolioId, seeded: (count ?? 0) === 0 };
   });
