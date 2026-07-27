@@ -5,6 +5,7 @@ import { FelloPanel } from "@/components/fello-panel";
 import { AdminLeadsPanel } from "@/components/admin-leads-panel";
 import { ProSeedPanel } from "@/components/pro-seed-panel";
 import { AttomSpendPanel } from "@/components/attom-spend-panel";
+import { AdminLenderPanel } from "@/components/admin-lender-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign } from "lucide-react";
 
@@ -53,6 +54,8 @@ function Admin() {
           </div>
 
           <AttomSpendPanel />
+
+          <AdminLenderPanel />
 
           <AdminLeadsPanel />
 

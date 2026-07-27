@@ -5,15 +5,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
-import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
+import { MAINTENANCE_TASKS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-panel";
+import { DocumentsCard } from "@/components/documents-card";
+import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
+import { ArrowRight, Bot, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
@@ -33,7 +36,27 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const [logOpen, setLogOpen] = useState(false);
-  const [requests, setRequests] = useState<RecentRequest[]>(RECENT_REQUESTS);
+  const [requests, setRequests] = useState<RecentRequest[]>([]);
+
+  const listReqFn = useServerFn(listMyRequests);
+  const { data: dbRequests } = useQuery({
+    queryKey: ["my-requests"],
+    queryFn: () => listReqFn(),
+  });
+  useEffect(() => {
+    if (!dbRequests) return;
+    setRequests(
+      dbRequests.map((r: any) => ({
+        id: r.id,
+        category: r.category,
+        status: r.status,
+        when: new Date(r.created_at).toLocaleDateString(),
+        source: r.source === "external" ? "external" : "sucasa",
+        vendorName: r.vendor_name ?? undefined,
+        amountCents: r.amount_cents ?? undefined,
+      })),
+    );
+  }, [dbRequests]);
 
   // Fetch profile (for address fallback) and ATTOM intel
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
@@ -96,6 +119,8 @@ function Dashboard() {
           <EquityMortgagePanel />
 
           <MaintenanceTimelinePanel />
+
+          <SuggestedServicesPanel />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
@@ -197,21 +222,7 @@ function Dashboard() {
 
 
             {/* Documents */}
-            <Card>
-              <CardHeader title="Documents" action={<a className="text-xs font-medium text-primary" href="#">Upload</a>} />
-              <p className="mt-2 text-xs text-muted-foreground">Upload your inspection report so our AI can analyze your home and recommend the right services and vendors.</p>
-              <ul className="mt-4 space-y-2">
-                {["Home inspection report.pdf","Home insurance policy.pdf","HVAC warranty.pdf","Property deed.pdf"].map(d => (
-                  <li key={d} className="flex items-center gap-3 rounded-2xl border border-border p-3">
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><FileText className="h-4 w-4" /></span>
-                    <span className="truncate text-sm">{d}</span>
-                    {d.startsWith("Home inspection") && (
-                      <span className="ml-auto rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">AI‑analyzed</span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </Card>
+            <DocumentsCard />
 
             {/* Recommended pros */}
             <Card className="lg:col-span-2">

@@ -21,9 +21,12 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
+import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicFelloWebhookRouteImport } from './routes/api/public/fello.webhook'
+import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -84,6 +87,18 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLenderRouteRoute =
+  AuthenticatedLenderRouteRouteImport.update({
+    id: '/lender',
+    path: '/lender',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLenderIndexRoute =
+  AuthenticatedLenderIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -99,6 +114,12 @@ const ApiPublicFelloWebhookRoute = ApiPublicFelloWebhookRouteImport.update({
   path: '/api/public/fello/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedLenderPortfolioIdRoute =
+  AuthenticatedLenderPortfolioIdRouteImport.update({
+    id: '/portfolio/$id',
+    path: '/portfolio/$id',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -111,7 +132,10 @@ export interface FileRoutesByFullPath {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/lender/': typeof AuthenticatedLenderIndexRoute
+  '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
@@ -128,6 +152,8 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/lender': typeof AuthenticatedLenderIndexRoute
+  '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
@@ -145,7 +171,10 @@ export interface FileRoutesById {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
+  '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
@@ -163,7 +192,10 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
+    | '/lender'
     | '/dashboard'
+    | '/lender/'
+    | '/lender/portfolio/$id'
     | '/api/public/fello/webhook'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
@@ -180,6 +212,8 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/dashboard'
+    | '/lender'
+    | '/lender/portfolio/$id'
     | '/api/public/fello/webhook'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
@@ -196,7 +230,10 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
+    | '/_authenticated/lender'
     | '/_authenticated/dashboard'
+    | '/_authenticated/lender/'
+    | '/_authenticated/lender/portfolio/$id'
     | '/api/public/fello/webhook'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
@@ -305,6 +342,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lender': {
+      id: '/_authenticated/lender'
+      path: '/lender'
+      fullPath: '/lender'
+      preLoaderRoute: typeof AuthenticatedLenderRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lender/': {
+      id: '/_authenticated/lender/'
+      path: '/'
+      fullPath: '/lender/'
+      preLoaderRoute: typeof AuthenticatedLenderIndexRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
       path: '/api/public/leads/tick'
@@ -326,14 +377,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFelloWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/lender/portfolio/$id': {
+      id: '/_authenticated/lender/portfolio/$id'
+      path: '/portfolio/$id'
+      fullPath: '/lender/portfolio/$id'
+      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
   }
 }
 
+interface AuthenticatedLenderRouteRouteChildren {
+  AuthenticatedLenderIndexRoute: typeof AuthenticatedLenderIndexRoute
+  AuthenticatedLenderPortfolioIdRoute: typeof AuthenticatedLenderPortfolioIdRoute
+}
+
+const AuthenticatedLenderRouteRouteChildren: AuthenticatedLenderRouteRouteChildren =
+  {
+    AuthenticatedLenderIndexRoute: AuthenticatedLenderIndexRoute,
+    AuthenticatedLenderPortfolioIdRoute: AuthenticatedLenderPortfolioIdRoute,
+  }
+
+const AuthenticatedLenderRouteRouteWithChildren =
+  AuthenticatedLenderRouteRoute._addFileChildren(
+    AuthenticatedLenderRouteRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedLenderRouteRoute: typeof AuthenticatedLenderRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedLenderRouteRoute: AuthenticatedLenderRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
 }
 
@@ -359,13 +435,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

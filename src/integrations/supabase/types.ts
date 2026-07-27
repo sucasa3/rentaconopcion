@@ -279,6 +279,80 @@ export type Database = {
         }
         Relationships: []
       }
+      home_documents: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          original_filename: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          original_filename?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          original_filename?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      homeowner_lender_consents: {
+        Row: {
+          created_at: string
+          granted_at: string | null
+          homeowner_id: string
+          id: string
+          lender_org_id: string
+          revoked_at: string | null
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          granted_at?: string | null
+          homeowner_id: string
+          id?: string
+          lender_org_id: string
+          revoked_at?: string | null
+          scope?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          granted_at?: string | null
+          homeowner_id?: string
+          id?: string
+          lender_org_id?: string
+          revoked_at?: string | null
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_lender_consents_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_assignments: {
         Row: {
           claimed_at: string
@@ -388,6 +462,219 @@ export type Database = {
             columns: ["service_request_id"]
             isOneToOne: false
             referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_activity: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          lender_org_id: string
+          portfolio_client_id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          lender_org_id: string
+          portfolio_client_id: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          lender_org_id?: string
+          portfolio_client_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_activity_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lender_activity_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_members: {
+        Row: {
+          created_at: string
+          id: string
+          lender_org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lender_org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lender_org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_members_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_orgs: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          license_number: string | null
+          name: string
+          plan: string
+          primary_contact_email: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          license_number?: string | null
+          name: string
+          plan?: string
+          primary_contact_email?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          license_number?: string | null
+          name?: string
+          plan?: string
+          primary_contact_email?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lender_portfolio_clients: {
+        Row: {
+          address_line1: string
+          city: string | null
+          client_email: string | null
+          client_name: string | null
+          client_phone: string | null
+          close_date: string | null
+          created_at: string
+          homeowner_id: string | null
+          id: string
+          last_intel_refreshed_at: string | null
+          loan_amount_at_close_cents: number | null
+          notes: string | null
+          portfolio_id: string
+          rate_at_close: number | null
+          state: string | null
+          term_months: number | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address_line1: string
+          city?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          close_date?: string | null
+          created_at?: string
+          homeowner_id?: string | null
+          id?: string
+          last_intel_refreshed_at?: string | null
+          loan_amount_at_close_cents?: number | null
+          notes?: string | null
+          portfolio_id: string
+          rate_at_close?: number | null
+          state?: string | null
+          term_months?: number | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address_line1?: string
+          city?: string | null
+          client_email?: string | null
+          client_name?: string | null
+          client_phone?: string | null
+          close_date?: string | null
+          created_at?: string
+          homeowner_id?: string | null
+          id?: string
+          last_intel_refreshed_at?: string | null
+          loan_amount_at_close_cents?: number | null
+          notes?: string | null
+          portfolio_id?: string
+          rate_at_close?: number | null
+          state?: string | null
+          term_months?: number | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_portfolio_clients_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_portfolios: {
+        Row: {
+          created_at: string
+          id: string
+          lender_org_id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lender_org_id: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lender_org_id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_portfolios_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -836,6 +1123,10 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string; _op?: string }
         Returns: undefined
       }
+      has_lender_access: {
+        Args: { _homeowner_id: string; _org_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -843,9 +1134,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_lender_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "homeowner" | "pro"
+      app_role: "admin" | "homeowner" | "pro" | "lender"
       lifecycle_stage:
         | "new_signup"
         | "onboarding"
@@ -980,7 +1275,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "homeowner", "pro"],
+      app_role: ["admin", "homeowner", "pro", "lender"],
       lifecycle_stage: [
         "new_signup",
         "onboarding",
