@@ -642,7 +642,13 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
           continue;
         }
 
-        const update: Record<string, unknown> = {};
+        const update: {
+          close_date?: string;
+          loan_amount_at_close_cents?: number;
+          rate_at_close?: number;
+          term_months?: number;
+        } = {};
+
         if (closeDate) update.close_date = closeDate.slice(0, 10);
         if (loanCents != null) update.loan_amount_at_close_cents = loanCents;
         if (rate != null) update.rate_at_close = rate;
