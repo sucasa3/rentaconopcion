@@ -5,15 +5,18 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
-import { MAINTENANCE_TASKS, RECENT_REQUESTS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
+import { MAINTENANCE_TASKS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-panel";
+import { DocumentsCard } from "@/components/documents-card";
+import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Bot, FileText, Plus, Sparkles, PenLine } from "lucide-react";
+import { ArrowRight, Bot, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
