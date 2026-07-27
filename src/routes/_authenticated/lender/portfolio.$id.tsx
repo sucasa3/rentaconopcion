@@ -337,7 +337,11 @@ function PortfolioDetail() {
                         disabled={enrich.isPending}
                         className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                       >
-                        <Sparkles className="h-3 w-3" />{" "}
+                        {enrich.isPending ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-3 w-3" />
+                        )}{" "}
                         {enrich.isPending
                           ? `Enriching ${missingCount}…`
                           : `Enrich ${missingCount} from ATTOM`}
@@ -345,7 +349,7 @@ function PortfolioDetail() {
                     )}
                   </div>
                 </div>
-                <div className="mt-4 overflow-x-auto">
+                <div className={`mt-4 overflow-x-auto ${enrich.isPending ? "pointer-events-none opacity-60" : ""}`}>
                   <table className="w-full min-w-[900px] text-left text-sm">
                     <thead className="sticky top-0 bg-card">
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
