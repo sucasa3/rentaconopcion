@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { getPortfolio, ingestPortfolioCsv } from "@/lib/lender.functions";
+import { getPortfolio, ingestPortfolioCsv, enrichPortfolioFromAttom } from "@/lib/lender.functions";
 import {
   ArrowLeft,
   Upload,
@@ -14,6 +14,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
@@ -62,6 +63,7 @@ function PortfolioDetail() {
   const { id } = Route.useParams();
   const getFn = useServerFn(getPortfolio);
   const ingestFn = useServerFn(ingestPortfolioCsv);
+  const enrichFn = useServerFn(enrichPortfolioFromAttom);
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -79,6 +81,19 @@ function PortfolioDetail() {
     mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
     onSuccess: (r: any) => {
       toast.success(`Imported ${r.inserted} clients`);
+      qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const enrich = useMutation({
+    mutationFn: () => enrichFn({ data: { portfolioId: id } }),
+    onSuccess: (r: any) => {
+      toast.success(
+        `Enriched ${r.enriched} of ${r.total} clients from ATTOM${
+          r.skipped ? ` · ${r.skipped} no data` : ""
+        }${r.failed ? ` · ${r.failed} failed` : ""}`,
+      );
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -107,6 +122,10 @@ function PortfolioDetail() {
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+  const missingCount = data
+    ? data.clients.filter((c: any) => c.missing_loan_data).length
+    : 0;
+
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -304,6 +323,18 @@ function PortfolioDetail() {
                       <Upload className="h-3 w-3" />{" "}
                       {ingest.isPending ? "Importing…" : "Upload CSV"}
                     </button>
+                    {missingCount > 0 && (
+                      <button
+                        onClick={() => enrich.mutate()}
+                        disabled={enrich.isPending}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                      >
+                        <Sparkles className="h-3 w-3" />{" "}
+                        {enrich.isPending
+                          ? `Enriching ${missingCount}…`
+                          : `Enrich ${missingCount} from ATTOM`}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 overflow-x-auto">

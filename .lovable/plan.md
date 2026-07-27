@@ -1,36 +1,51 @@
 
 ## Goal
 
-Make `neilterc@hotmail.com` (Neil Terc, 678-485-3054) a single sign-in that can browse SuCasa as a homeowner, a pro, and a lender — then land on a fully-populated lender dashboard.
+Make the Fello Import portfolio show real, useful data: full names for cold-lead uploads, and real close_date / loan amount / rate / term pulled from ATTOM.
 
-## Steps
+## 1. Show full names for cold-lead rows
 
-1. **Create / reuse the auth user** (`supabase--insert`)
-   - If `neilterc@hotmail.com` doesn't exist in `auth.users`, create it via `auth.admin` (email confirmed, password we set — e.g. a temporary one shown to Neil once). If it exists, reuse the id.
-   - Upsert `public.profiles` with full_name "Neil Terc", phone "678-485-3054", email, and the Stone Mountain test address (`2138 Gunstock Dr, Stone Mountain, GA 30087`) so the homeowner dashboard renders real ATTOM data.
+In `src/lib/lender.functions.ts` (`getPortfolio` mapper), change the name rule:
 
-2. **Grant all three roles** in `public.user_roles`
-   - Insert rows for `homeowner`, `pro`, `lender` (ON CONFLICT DO NOTHING). Admin panel + role-gated UIs then all light up for the same login.
+- If `homeowner_id IS NULL` → cold lead → show `client_name` unmasked (lender's own record).
+- If `homeowner_id` is set AND consent is granted → unmasked.
+- If `homeowner_id` is set AND consent is pending/revoked → keep `maskName(...)`.
 
-3. **Seed the pro side**
-   - Insert a `public.pros` row owned by Neil (business_name "Neil Terc — Test Pro", category "general", founding partner pricing, accepting_leads true) plus a couple of `pro_coverage` rows for Atlanta metro zips so the pro inbox has context.
+Email stays gated by consent (only revealed when a linked homeowner grants access).
 
-4. **Seed the lender side**
-   - Ensure the "SuCasa Demo Lender" org exists; add Neil as an `owner` in `lender_members`.
-   - Create a portfolio "Neil's Test Book" and run the existing 250-client demo seeder against it so the dashboard has segments, refi opportunities, and paginated clients ready.
-   - Also attach him to the "Fello Import · 76 Homeowners" portfolio if present.
+## 2. Enrich Fello rows from ATTOM
 
-5. **Deliver credentials + entry points**
-   - Return the temp password once in chat.
-   - Nav targets after sign-in: `/dashboard` (homeowner), `/pro` (pro), `/lender` → click into "Neil's Test Book" (lender). No new routes needed — existing role-gated pages already handle all three.
+Add a server function `enrichPortfolioFromAttom({ portfolioId })` in `src/lib/lender.functions.ts` that, for each client in the portfolio missing loan data:
 
-## Technical notes
+1. Uses the existing `attom.server.ts` helpers to resolve the property by `address_line1 + city + state + zip` and fetch the **mortgage** and **sales** endpoints (`fetchMortgage`, `fetchSales` — already used by `valuation.server.ts`).
+2. Extracts:
+   - `close_date` ← latest mortgage origination date (fallback: most recent sale date).
+   - `loan_amount_at_close_cents` ← original loan amount from the mortgage record.
+   - `rate_at_close` ← interest rate on that mortgage.
+   - `term_months` ← loan term (default 360 when ATTOM reports nothing).
+3. Writes results back to `lender_portfolio_clients` with `context.supabase.from(...).update(...)` scoped by `portfolio_id`, respecting the existing lender RLS.
+4. Skips rows already populated. Rate-limited via the existing ATTOM caching layer (`property_intel` + `attom_call_log`) so re-runs are cheap.
+5. Returns `{ enriched, skipped, failed }` for a toast.
 
-- All work is data-only (`supabase--insert` + one call to the existing `seedDemoPortfolio` logic replicated inline as SQL/insert calls). No schema migration, no code changes.
-- `handle_new_user` trigger auto-creates a `homeowner` role row; we add `pro` and `lender` on top.
-- Address fields on `profiles` will trigger `tg_refresh_lifecycle_stage` → `active_homeowner` once a service request exists; optional to insert one demo `service_requests` row so the homeowner dashboard shows activity.
-- No RLS changes — Neil's `admin`-adjacent visibility comes only from having the three roles, not from bypassing policies.
+### UI wire-up
 
-## Open question
+In `src/routes/_authenticated/lender/portfolio.$id.tsx`, add an **"Enrich from ATTOM"** button next to "Upload CSV" that:
 
-Do you want me to also grant the `admin` role so you can see the Admin dashboard with the same login, or keep admin separate?
+- Calls `enrichPortfolioFromAttom` via `useServerFn` + mutation.
+- Shows a spinner + progress toast (`Enriching 76 clients…`).
+- On success, invalidates `["lender-portfolio", id]` so the table refreshes with real loan/rate/close_date/equity/segment values.
+
+Only visible when at least one client has `loan_amount_at_close_cents = null`.
+
+## Out of scope
+
+- Changing the CSV import contract.
+- Backfilling `homeowner_id` on cold leads (that's the consent flow, separate track).
+- Modifying the 250-client synthetic seeder.
+
+## Files touched
+
+- `src/lib/lender.functions.ts` — new mapper rule + new `enrichPortfolioFromAttom` server fn.
+- `src/routes/_authenticated/lender/portfolio.$id.tsx` — enrich button + mutation.
+
+No DB migration needed — schema already supports these columns.
