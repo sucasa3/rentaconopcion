@@ -55,6 +55,8 @@ function Admin() {
 
           <AttomSpendPanel />
 
+          <AdminLenderPanel />
+
           <AdminLeadsPanel />
 
           <ProSeedPanel />
