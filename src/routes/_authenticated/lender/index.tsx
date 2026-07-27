@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { createPortfolio, listMyPortfolios, seedDemoPortfolio } from "@/lib/lender.functions";
+import { createPortfolio, listMyPortfolios, seedDemoPortfolio, seedFelloImport } from "@/lib/lender.functions";
 import { Building2, Plus, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/")({
