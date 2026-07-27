@@ -89,15 +89,22 @@ function PortfolioDetail() {
 
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id } }),
-    onSuccess: (r: any) => {
+    onMutate: () => {
+      const toastId = toast.loading(
+        `Enriching ${missingCount} clients from ATTOM… this can take a minute.`,
+      );
+      return { toastId };
+    },
+    onSuccess: (r: any, _v, ctx) => {
       toast.success(
         `Enriched ${r.enriched} of ${r.total} clients from ATTOM${
           r.skipped ? ` · ${r.skipped} no data` : ""
         }${r.failed ? ` · ${r.failed} failed` : ""}`,
+        { id: ctx?.toastId },
       );
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
 
   async function handleFile(f: File) {
