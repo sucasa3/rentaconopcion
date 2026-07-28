@@ -143,7 +143,20 @@ function Dashboard() {
 
 
 
-          <HomeHero data={heroData} />
+          <HomeHero
+            data={heroData}
+            refiChip={
+              showRefiChip ? (
+                <RefiChip
+                  signal={refiSignal as "strong" | "moderate"}
+                  estSavingsMonthly={estSavings}
+                  equityDollars={okIntel?.equity?.equityDollars ?? null}
+                  currentRate={currentRate}
+                />
+              ) : null
+            }
+          />
+
 
           <HomeIntelPanel />
 
