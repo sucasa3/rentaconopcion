@@ -58,9 +58,6 @@ export function ConnectLenderDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Connect with lender</DialogTitle>
-          <DialogDescription>
-            We picked a SuCasa lender based on your equity and current rate.
-          </DialogDescription>
         </DialogHeader>
 
         {isLoading && (
