@@ -696,4 +696,134 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
     return { enriched, skipped, failed, total: rows?.length ?? 0 };
   });
 
+// ---------------------------------------------------------------------------
+// Homeowner-facing: refi lender matching + intent handoff.
+// ---------------------------------------------------------------------------
+
+export const getMatchedLenderForMe = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: portfolioMatch } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("portfolio_id, lender_portfolios(lender_org_id)")
+      .eq("homeowner_id", context.userId)
+      .limit(1)
+      .maybeSingle();
+    const matchedOrgId =
+      (portfolioMatch as any)?.lender_portfolios?.lender_org_id ?? null;
+
+    let orgId: string | null = matchedOrgId;
+    let matchType: "portfolio" | "roundrobin" = "portfolio";
+    if (!orgId) {
+      const { data: fallback } = await supabaseAdmin
+        .from("lender_orgs")
+        .select("id")
+        .eq("active", true)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      orgId = fallback?.id ?? null;
+      matchType = "roundrobin";
+    }
+    if (!orgId) return null;
+
+    const { data: org } = await supabaseAdmin
+      .from("lender_orgs")
+      .select("id, name, license_number, primary_contact_email")
+      .eq("id", orgId)
+      .maybeSingle();
+    if (!org) return null;
+
+    return {
+      orgId: org.id as string,
+      name: org.name as string,
+      licenseNumber: (org.license_number as string | null) ?? null,
+      contactEmail: (org.primary_contact_email as string | null) ?? null,
+      contactPhone: null as string | null,
+      matchType,
+    };
+  });
+
+const RefiIntentSchema = z.object({
+  orgId: z.string().uuid(),
+  estSavingsMonthly: z.number().int().min(0).max(100_000).optional(),
+});
+export const createRefiIntent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => RefiIntentSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("address, city, state, zip")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const { data: req, error: rErr } = await context.supabase
+      .from("service_requests")
+      .insert({
+        homeowner_id: context.userId,
+        category: "refinance",
+        source: "sucasa",
+        status: "Matched",
+        address: profile?.address ?? null,
+        city: profile?.city ?? null,
+        state: profile?.state ?? null,
+        zip: profile?.zip ?? null,
+        notes:
+          data.estSavingsMonthly != null
+            ? `Refi interest from dashboard hero · est. savings ~$${data.estSavingsMonthly}/mo`
+            : "Refi interest from dashboard hero",
+      })
+      .select("id")
+      .single();
+    if (rErr) throw new Error(rErr.message);
+
+    const { data: existing } = await supabaseAdmin
+      .from("homeowner_lender_consents")
+      .select("id, revoked_at")
+      .eq("homeowner_id", context.userId)
+      .eq("lender_org_id", data.orgId)
+      .eq("scope", "refi_intent")
+      .maybeSingle();
+    if (!existing) {
+      await supabaseAdmin.from("homeowner_lender_consents").insert({
+        homeowner_id: context.userId,
+        lender_org_id: data.orgId,
+        scope: "refi_intent",
+        granted_at: new Date().toISOString(),
+      });
+    } else if (existing.revoked_at) {
+      await supabaseAdmin
+        .from("homeowner_lender_consents")
+        .update({ revoked_at: null, granted_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    }
+
+    const { data: pc } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("id, portfolio_id, lender_portfolios(lender_org_id)")
+      .eq("homeowner_id", context.userId)
+      .limit(1)
+      .maybeSingle();
+    if (pc && (pc as any).lender_portfolios?.lender_org_id === data.orgId) {
+      await supabaseAdmin.from("lender_activity").insert({
+        lender_org_id: data.orgId,
+        portfolio_client_id: (pc as any).id,
+        actor_user_id: context.userId,
+        action: "refi_intent",
+        detail:
+          data.estSavingsMonthly != null
+            ? `Homeowner opened refi lead · est. $${data.estSavingsMonthly}/mo savings`
+            : "Homeowner opened refi lead",
+      });
+    }
+
+    return { ok: true as const, requestId: req.id as string };
+  });
+
+
 

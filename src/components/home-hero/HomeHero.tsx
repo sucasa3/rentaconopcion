@@ -12,7 +12,7 @@ const fmtUsd = (n: number, compact = false) =>
     notation: compact ? "compact" : "standard",
   }).format(n);
 
-export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
+export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; refiChip?: React.ReactNode }) {
   const [years, setYears] = useState(0);
   const projected = useMemo(
     () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
@@ -52,8 +52,8 @@ export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
           </p>
         </div>
 
-        {/* Top-right score ring */}
-        <div className="absolute right-5 top-5 sm:right-7 sm:top-7">
+        {/* Top-right score ring + optional refi chip */}
+        <div className="absolute right-5 top-5 flex flex-col items-end gap-2 sm:right-7 sm:top-7">
           <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-2 backdrop-blur-md ring-1 ring-white/20">
             <ScoreRing value={score} />
             <div className="pr-1 text-white">
@@ -63,7 +63,9 @@ export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
               <div className="text-lg font-semibold tabular-nums leading-none">{Math.round(score)}</div>
             </div>
           </div>
+          {refiChip}
         </div>
+
 
         {/* Zone chips */}
         <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 sm:left-auto sm:right-7 sm:top-auto sm:bottom-[280px] sm:translate-y-0">
