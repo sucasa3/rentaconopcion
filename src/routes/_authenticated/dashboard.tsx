@@ -13,6 +13,7 @@ import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-panel";
 import { DocumentsCard } from "@/components/documents-card";
 import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
+import { RefiChip } from "@/components/refi-chip";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
