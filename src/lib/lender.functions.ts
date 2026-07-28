@@ -154,7 +154,7 @@ export const getPortfolio = createServerFn({ method: "GET" })
     const { data: clients, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
       .select(
-        "id, client_name, client_email, address_line1, city, state, zip, loan_amount_at_close_cents, rate_at_close, close_date, term_months, notes, homeowner_id, created_at",
+        "id, client_name, client_email, client_phone, address_line1, city, state, zip, loan_amount_at_close_cents, rate_at_close, close_date, term_months, notes, homeowner_id, created_at",
       )
       .eq("portfolio_id", data.id)
       .order("close_date", { ascending: false });
