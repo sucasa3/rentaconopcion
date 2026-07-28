@@ -123,20 +123,23 @@ export function EquityMortgagePanel() {
         </p>
       )}
 
-      {equity?.refiSignal === "strong" && (
-        <div className="mt-4 rounded-2xl border border-growth/30 bg-growth/5 p-4">
-          <p className="text-sm font-medium text-growth">You may qualify for a lower rate.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Your equity and rate spread suggest a refinance is worth exploring.
-          </p>
-          <Link
-            to="/report"
-            className="mt-3 inline-flex items-center justify-center rounded-full bg-growth px-4 py-2 text-xs font-semibold text-white"
-          >
-            Run refi readiness report
-          </Link>
-        </div>
-      )}
+      <ConnectLenderDialog
+        open={lenderOpen}
+        onOpenChange={setLenderOpen}
+        equityDollars={equity?.equityDollars ?? null}
+        currentRate={mortgage?.interestRate ?? null}
+        estSavingsMonthly={(() => {
+          const bal = equity?.loanBalanceEstimate;
+          const rate = mortgage?.interestRate;
+          if (!bal || !rate) return null;
+          const term = 360;
+          const pay = (p: number, r: number) => {
+            const m = r / 100 / 12;
+            return (p * m) / (1 - Math.pow(1 + m, -term));
+          };
+          return Math.max(0, Math.round(pay(bal, rate) - pay(bal, 6.5)));
+        })()}
+      />
     </div>
   );
 }
