@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { TrendingUp, Landmark, Wallet, Hammer } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight } from "lucide-react";
+import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null) return "—";
