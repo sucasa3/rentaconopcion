@@ -23,6 +23,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
+import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicFelloWebhookRouteImport } from './routes/api/public/fello.webhook'
@@ -99,6 +100,11 @@ const AuthenticatedLenderIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
+  id: '/requests/$id',
+  path: '/requests/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/lender'
     | '/dashboard'
+    | '/requests/$id'
     | '/lender/'
     | '/lender/portfolio/$id'
     | '/api/public/fello/webhook'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/services'
     | '/sitemap.xml'
     | '/dashboard'
+    | '/requests/$id'
     | '/lender'
     | '/lender/portfolio/$id'
     | '/api/public/fello/webhook'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/lender'
     | '/_authenticated/dashboard'
+    | '/_authenticated/requests/$id'
     | '/_authenticated/lender/'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/fello/webhook'
@@ -356,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderIndexRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
+    '/_authenticated/requests/$id': {
+      id: '/_authenticated/requests/$id'
+      path: '/requests/$id'
+      fullPath: '/requests/$id'
+      preLoaderRoute: typeof AuthenticatedRequestsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
       path: '/api/public/leads/tick'
@@ -406,11 +425,13 @@ const AuthenticatedLenderRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLenderRouteRoute: typeof AuthenticatedLenderRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLenderRouteRoute: AuthenticatedLenderRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

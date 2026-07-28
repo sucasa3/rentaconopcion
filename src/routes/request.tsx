@@ -2,8 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SERVICE_CATEGORIES } from "@/lib/mock-data";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
+import { createServiceRequest } from "@/lib/service-requests.functions";
 
 const search = z.object({ category: z.string().optional() });
 
@@ -21,6 +23,13 @@ export const Route = createFileRoute("/request")({
 
 const TIMELINES = ["ASAP", "This week", "Next 2 weeks", "Flexible"];
 
+function parseBudget(s: string): { min?: number; max?: number } {
+  const nums = s.match(/\d[\d,]*/g)?.map((n) => Number(n.replace(/,/g, ""))) ?? [];
+  if (!nums.length) return {};
+  if (nums.length === 1) return { max: nums[0] };
+  return { min: Math.min(nums[0], nums[1]), max: Math.max(nums[0], nums[1]) };
+}
+
 function RequestFlow() {
   const navigate = useNavigate();
   const { category: initial } = Route.useSearch();
@@ -30,14 +39,41 @@ function RequestFlow() {
   const [budget, setBudget] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [timeline, setTimeline] = useState<string>("This week");
-  const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const createFn = useServerFn(createServiceRequest);
 
   const total = 5;
-  const next = () => setStep(s => Math.min(s + 1, total - 1));
-  const back = () => setStep(s => Math.max(s - 1, 0));
-  const submit = () => setDone(true);
-
-  if (done) return <Confirmation onReset={() => navigate({ to: "/dashboard" })} />;
+  const next = () => setStep((s) => Math.min(s + 1, total - 1));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const submit = async () => {
+    if (!category) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { min, max } = parseBudget(budget);
+      const cat = SERVICE_CATEGORIES.find((c) => c.slug === category)?.name ?? category;
+      const { id } = await createFn({
+        data: {
+          category: cat,
+          description: description || undefined,
+          timeline,
+          budgetMin: min,
+          budgetMax: max,
+        },
+      });
+      navigate({ to: "/requests/$id", params: { id } });
+    } catch (e) {
+      const msg = (e as Error).message;
+      setSubmitting(false);
+      if (/Unauthorized|token|auth/i.test(msg)) {
+        navigate({ to: "/auth" });
+        return;
+      }
+      setSubmitError(msg);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
