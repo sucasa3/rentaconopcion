@@ -15,6 +15,7 @@ function fmtPct(n: number | null | undefined): string {
 }
 
 export function EquityMortgagePanel() {
+  const [lenderOpen, setLenderOpen] = useState(false);
   const fetchIntel = useServerFn(getMyHomeIntel);
   const { data, isLoading } = useQuery({
     queryKey: ["home-intel-equity"],
