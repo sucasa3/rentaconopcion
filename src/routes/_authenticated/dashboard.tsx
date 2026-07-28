@@ -108,6 +108,24 @@ function Dashboard() {
     equityPct: heroEquityPct,
   };
 
+  return (
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+      <main className="flex-1 px-5 py-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
+              <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">Your home</h1>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <OnboardingWalkthrough triggerLabel="Take the tour" />
+              <Link to="/request" className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
+                <Plus className="h-4 w-4" /> Request
+              </Link>
+            </div>
+          </div>
+
           <HomeHero data={heroData} />
 
 
