@@ -10,7 +10,7 @@ export const listMyOffers = createServerFn({ method: "GET" })
     // Find pro row for this user
     const { data: pro } = await supabaseAdmin
       .from("pros")
-      .select("id, business_name, is_founding_partner, monthly_price_cents, accepting_leads")
+      .select("id, business_name, is_founding_partner, monthly_price_cents, accepting_leads, user_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (!pro) return { pro: null, offers: [], claims: [] };
