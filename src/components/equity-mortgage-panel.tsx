@@ -60,9 +60,19 @@ export function EquityMortgagePanel() {
           </p>
         </div>
         {equity?.refiSignal && (
-          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${refiTone}`}>
-            Refi signal · {equity.refiSignal}
-          </span>
+          equity.refiSignal === "strong" || equity.refiSignal === "moderate" ? (
+            <button
+              onClick={() => setLenderOpen(true)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition hover:opacity-90 ${refiTone}`}
+            >
+              Refi signal · {equity.refiSignal}
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          ) : (
+            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${refiTone}`}>
+              Refi signal · {equity.refiSignal}
+            </span>
+          )
         )}
       </div>
 
