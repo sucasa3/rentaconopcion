@@ -1,46 +1,83 @@
-## Goal
 
-Surface a subtle refinance upsell in the homeowner dashboard hero so we can convert equity signals into lender conversations, without cluttering the primary value/equity story.
+## Scope
 
-## UX
+Two features shipped together:
 
-- New **contextual chip** overlaid on the hero card (top-right of the equity stat area), only rendered when `equity.refiSignal` is `"strong"` or `"moderate"`.
-  - Strong → green "Refi ready · save ~$X/mo" chip
-  - Moderate → neutral "Explore refi options" chip
-  - Watch/none → chip hidden (hero stays clean)
-- Tap opens a bottom-sheet/modal ("Your matched lender") showing:
-  - Matched lender org name, license #, primary contact
-  - Current equity, estimated new rate spread, rough monthly savings (reuse `computeEquityRibbon` math)
-  - Tap-to-call and tap-to-email buttons (same pattern as the lender→client contact card)
-  - Small consent line: "Sharing your address + equity summary with {lender}"
-  - Secondary link: "See full refi readiness report" → `/report`
-- On open, log a lender lead event (see Data below) so the lender sees it in their portfolio inbox.
+1. **Document viewer** — click any uploaded doc (homeowner card + admin drawer) to preview inline via a signed URL.
+2. **Inspection report AI pipeline** — when a homeowner uploads a doc of kind `inspection_report`, parse it, extract structured findings with Lovable AI, store them, and surface them on the homeowner dashboard and admin drawer.
 
-## Matching logic (server)
+Everything else (routing, lender flows, ATTOM, GHL) stays untouched.
 
-New server fn `getMatchedLenderForMe` in `src/lib/lender.functions.ts`:
+---
 
-1. Look up any `lender_portfolio_clients` row where `homeowner_id = auth.uid()` → return that portfolio's `lender_org_id`.
-2. Else fall back to the round-robin founding lender (first active `lender_orgs` row with `plan = 'founding'`, cycled via a lightweight cursor mirroring `rr_cursor`).
-3. Return `{ orgId, name, contactEmail, contactPhone, licenseNumber, matchType: "portfolio" | "roundrobin" }` or `null`.
+## 1. Document viewer
 
-Second server fn `createRefiIntent({ orgId, estSavingsMonthly })`:
-- Inserts a `service_requests` row with `category = 'refinance'`, `source = 'homeowner'`, and writes a `lender_activity` entry so the lender dashboard shows the new intent.
-- Ensures/creates a `homeowner_lender_consents` row (scope `refi_intent`, `granted_at = now()`) so `has_lender_access` passes for that lender.
+- New `getDocumentSignedUrl` server fn (`src/lib/documents.functions.ts`), auth-required, validates the caller owns the doc OR has `admin` role, returns a 10‑min signed URL from the `home-documents` bucket.
+- New `<DocumentViewerDialog>` component: renders PDFs in an `<iframe>`, images in `<img>`, everything else shows a Download button. Opens from:
+  - Homeowner documents card (existing list on dashboard)
+  - Admin drawer documents list
 
-## Frontend changes
+No storage or bucket changes — `home-documents` stays private, access is signed-URL only.
 
-- `src/components/home-hero/HomeHero.tsx`: accept optional `refiChip` slot and render it absolutely-positioned inside the hero card.
-- `src/routes/_authenticated/dashboard.tsx`: compute chip visibility from the existing `intel.equity.refiSignal`, pass a `<RefiChip />` into `<HomeHero>`.
-- New `src/components/refi-chip.tsx`: chip + `<RefiLenderSheet />` (shadcn `Sheet`/`Dialog`) that calls `getMatchedLenderForMe` on open via `useServerFn` + `useQuery`, and `createRefiIntent` on the "Connect" button via `useMutation`.
-- Reuse existing tokens (`gradient-growth`, `bg-growth/15 text-growth`); no new colors.
+---
 
-## Data / DB
+## 2. Inspection report AI extraction
 
-No schema changes required — reuses `service_requests`, `homeowner_lender_consents`, `lender_activity`, `lender_orgs`, `lender_portfolio_clients`.
+### Data
 
-## Out of scope
+New table `public.home_inspection_findings` (migration + GRANTs + RLS):
 
-- No changes to `/report`, lender dashboard layout, GHL sync mapping, or pricing.
-- No new payment surface; refi intent is a free lead handoff.
-- Persistent hero button and hero tab variants (rejected in favor of contextual chip).
+```
+id uuid pk
+document_id uuid fk home_documents on delete cascade
+user_id uuid not null
+system text not null           -- roof, hvac, plumbing, electrical, foundation, water_heater, etc.
+condition text                 -- good | fair | poor | end_of_life
+remaining_life_years int
+urgency text                   -- immediate | 12_months | 1_3_years | monitor
+defects text[]                 -- short bullet strings
+recommended_action text
+recommended_category text      -- maps to one of the 12 service categories, nullable
+source_excerpt text            -- short quote from the report for provenance
+created_at timestamptz
+```
+
+Plus on `home_documents`: `extraction_status text` (`pending` | `processing` | `ready` | `failed` | `not_applicable`), `extraction_error text`, `extracted_at timestamptz`.
+
+RLS: homeowners read/delete their own; admins read all; service_role full. Insert only via server fn (service role).
+
+### Extraction pipeline
+
+- New `extractInspectionReport(documentId)` server fn (`src/lib/inspection.functions.ts`, auth + admin-or-owner):
+  1. Signed URL → download bytes from storage.
+  2. `document--parse_document`-style parse (use existing doc parse helper; PDF → text). Cap at ~40 pages of text.
+  3. Call Lovable AI via existing `ai-gateway.server` helper, model `google/gemini-3.6-flash`, with `Output.object` schema matching the findings shape (array of systems). Small schema, no bounds — clamp/validate in code.
+  4. Upsert findings rows in a transaction (delete existing findings for this doc, insert new).
+  5. Update `home_documents.extraction_status`.
+- Auto-trigger: on successful upload of a doc with `kind = 'inspection_report'`, the upload path calls `extractInspectionReport` (fire-and-forget from the client after upload succeeds; server fn is idempotent).
+- Manual trigger: "Re-analyze" button in admin drawer for any inspection report.
+
+### UI
+
+- **Homeowner dashboard** — new `<InspectionFindingsPanel>` shown when at least one finding exists:
+  - Grouped by system, sorted by urgency
+  - Each row: condition badge, remaining life, one-line recommendation, and (if `recommended_category` set) a "Request this service" button that pre-fills the existing service request flow
+  - Feeds the existing maintenance timeline + suggested services panels (they read findings when present, fall back to age-based logic otherwise)
+- **Admin drawer** — new "Inspection findings" section under the documents list, plus a "Re-analyze" button and visible `extraction_status`.
+
+---
+
+## Technical notes
+
+- Model: `google/gemini-3.6-flash` — big context, cheap, handles multi-page PDFs. Prompt lives server-side; system prompt tells it to only extract what's actually stated and quote a short excerpt per finding.
+- Cost control: extraction runs once per upload; findings persisted, so dashboard reads are free. Manual re-analyze is admin-only.
+- Failure handling: parse or model errors set `extraction_status = 'failed'` with the error; the doc still previews normally in the viewer.
+- No changes to storage buckets, GHL sync, ATTOM, or lender flows.
+
+---
+
+## Files touched
+
+- New: `src/lib/documents.functions.ts`, `src/lib/inspection.functions.ts`, `src/lib/inspection.server.ts` (parser + AI call), `src/components/document-viewer-dialog.tsx`, `src/components/inspection-findings-panel.tsx`
+- Edit: homeowner dashboard route, admin drawer component, home documents card, upload handler
+- Migration: `home_inspection_findings` table + `home_documents` extraction columns + RLS + GRANTs
