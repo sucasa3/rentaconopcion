@@ -240,6 +240,9 @@ function Dashboard() {
             {/* Documents */}
             <DocumentsCard />
 
+            {/* Inspection findings (AI) */}
+            <InspectionFindingsPanel />
+
             {/* Recommended pros */}
             <Card className="lg:col-span-2">
               <CardHeader title="Recommended professionals" action={<Link to="/services" className="text-xs font-medium text-primary">Browse</Link>} />
