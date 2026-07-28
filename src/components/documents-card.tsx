@@ -59,11 +59,21 @@ export function DocumentsCard() {
         .from("home-documents")
         .upload(path, file, { contentType: file.type });
       if (upErr) throw new Error(upErr.message);
-      await recordFn({
+      const rec: any = await recordFn({
         data: { kind, storagePath: path, originalFilename: file.name, sizeBytes: file.size },
       });
       toast.success("Document uploaded");
       qc.invalidateQueries({ queryKey: ["home-documents"] });
+      if (kind === "inspection" && rec?.id) {
+        toast.info("Analyzing inspection report…");
+        extractFn({ data: { documentId: rec.id } })
+          .then((r: any) => {
+            toast.success(`Extracted ${r.findings} findings`);
+            qc.invalidateQueries({ queryKey: ["home-documents"] });
+            qc.invalidateQueries({ queryKey: ["inspection-findings"] });
+          })
+          .catch((e: any) => toast.error(`Analysis failed: ${e.message}`));
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {
