@@ -1041,6 +1041,8 @@ export type Database = {
           amount_cents: number | null
           budget_max: number | null
           budget_min: number | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
           category: string
           city: string | null
           completed_at: string | null
@@ -1048,10 +1050,14 @@ export type Database = {
           description: string | null
           homeowner_id: string
           id: string
+          invoice_cents: number | null
+          invoice_path: string | null
           metro: string | null
           notes: string | null
+          pro_notes: string | null
           receipt_path: string | null
           routing_status: string
+          scheduled_at: string | null
           source: string
           state: string | null
           status: string
@@ -1065,6 +1071,8 @@ export type Database = {
           amount_cents?: number | null
           budget_max?: number | null
           budget_min?: number | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           category: string
           city?: string | null
           completed_at?: string | null
@@ -1072,10 +1080,14 @@ export type Database = {
           description?: string | null
           homeowner_id: string
           id?: string
+          invoice_cents?: number | null
+          invoice_path?: string | null
           metro?: string | null
           notes?: string | null
+          pro_notes?: string | null
           receipt_path?: string | null
           routing_status?: string
+          scheduled_at?: string | null
           source?: string
           state?: string | null
           status?: string
@@ -1089,6 +1101,8 @@ export type Database = {
           amount_cents?: number | null
           budget_max?: number | null
           budget_min?: number | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           category?: string
           city?: string | null
           completed_at?: string | null
@@ -1096,10 +1110,14 @@ export type Database = {
           description?: string | null
           homeowner_id?: string
           id?: string
+          invoice_cents?: number | null
+          invoice_path?: string | null
           metro?: string | null
           notes?: string | null
+          pro_notes?: string | null
           receipt_path?: string | null
           routing_status?: string
+          scheduled_at?: string | null
           source?: string
           state?: string | null
           status?: string
@@ -1198,6 +1216,10 @@ export type Database = {
       }
       is_lender_member: {
         Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_request_assigned_pro: {
+        Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
       is_request_homeowner: {

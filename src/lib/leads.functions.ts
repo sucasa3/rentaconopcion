@@ -10,7 +10,7 @@ export const listMyOffers = createServerFn({ method: "GET" })
     // Find pro row for this user
     const { data: pro } = await supabaseAdmin
       .from("pros")
-      .select("id, business_name, is_founding_partner, monthly_price_cents, accepting_leads")
+      .select("id, business_name, is_founding_partner, monthly_price_cents, accepting_leads, user_id")
       .eq("user_id", context.userId)
       .maybeSingle();
     if (!pro) return { pro: null, offers: [], claims: [] };
@@ -28,7 +28,7 @@ export const listMyOffers = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("lead_assignments")
         .select(
-          "id, claimed_at, service_request_id, service_requests!inner(id, category, city, state, zip, description, homeowner_id, profiles:homeowner_id(full_name, phone, email))",
+          "id, claimed_at, service_request_id, service_requests!inner(id, category, city, state, zip, description, status, scheduled_at, invoice_path, homeowner_id, profiles:homeowner_id(full_name, phone, email))",
         )
         .eq("pro_id", pro.id)
         .order("claimed_at", { ascending: false })

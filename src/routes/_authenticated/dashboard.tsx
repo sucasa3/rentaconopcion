@@ -193,7 +193,12 @@ function Dashboard() {
               />
               <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
                 {requests.map(r => (
-                  <div key={r.id} className="flex items-center justify-between gap-3 p-4">
+                  <Link
+                    key={r.id}
+                    to="/requests/$id"
+                    params={{ id: r.id }}
+                    className="flex items-center justify-between gap-3 p-4 transition hover:bg-secondary/60"
+                  >
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">
                         {r.category} <span className="text-muted-foreground">· {r.id.slice(0, 8)}</span>
@@ -209,7 +214,7 @@ function Dashboard() {
                       )}
                       <StatusPill status={r.status} />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
               <p className="mt-3 text-xs text-muted-foreground">

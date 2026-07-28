@@ -2,8 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteHeader } from "@/components/site-header";
 import { SERVICE_CATEGORIES } from "@/lib/mock-data";
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { z } from "zod";
+import { useServerFn } from "@tanstack/react-start";
+import { createServiceRequest } from "@/lib/service-requests.functions";
 
 const search = z.object({ category: z.string().optional() });
 
@@ -21,6 +23,13 @@ export const Route = createFileRoute("/request")({
 
 const TIMELINES = ["ASAP", "This week", "Next 2 weeks", "Flexible"];
 
+function parseBudget(s: string): { min?: number; max?: number } {
+  const nums = s.match(/\d[\d,]*/g)?.map((n) => Number(n.replace(/,/g, ""))) ?? [];
+  if (!nums.length) return {};
+  if (nums.length === 1) return { max: nums[0] };
+  return { min: Math.min(nums[0], nums[1]), max: Math.max(nums[0], nums[1]) };
+}
+
 function RequestFlow() {
   const navigate = useNavigate();
   const { category: initial } = Route.useSearch();
@@ -30,14 +39,41 @@ function RequestFlow() {
   const [budget, setBudget] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [timeline, setTimeline] = useState<string>("This week");
-  const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const createFn = useServerFn(createServiceRequest);
 
   const total = 5;
-  const next = () => setStep(s => Math.min(s + 1, total - 1));
-  const back = () => setStep(s => Math.max(s - 1, 0));
-  const submit = () => setDone(true);
-
-  if (done) return <Confirmation onReset={() => navigate({ to: "/dashboard" })} />;
+  const next = () => setStep((s) => Math.min(s + 1, total - 1));
+  const back = () => setStep((s) => Math.max(s - 1, 0));
+  const submit = async () => {
+    if (!category) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const { min, max } = parseBudget(budget);
+      const cat = SERVICE_CATEGORIES.find((c) => c.slug === category)?.name ?? category;
+      const { id } = await createFn({
+        data: {
+          category: cat,
+          description: description || undefined,
+          timeline,
+          budgetMin: min,
+          budgetMax: max,
+        },
+      });
+      navigate({ to: "/requests/$id", params: { id } });
+    } catch (e) {
+      const msg = (e as Error).message;
+      setSubmitting(false);
+      if (/Unauthorized|token|auth/i.test(msg)) {
+        navigate({ to: "/auth" });
+        return;
+      }
+      setSubmitError(msg);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -141,11 +177,14 @@ function RequestFlow() {
                   Continue <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
-                <button onClick={submit} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft">
-                  Submit request <ArrowRight className="h-4 w-4" />
+                <button onClick={submit} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-60">
+                  {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>) : (<>Submit request <ArrowRight className="h-4 w-4" /></>)}
                 </button>
               )}
             </div>
+            {submitError && (
+              <p className="mt-3 text-xs text-destructive">{submitError}</p>
+            )}
           </div>
         </div>
       </main>
@@ -153,26 +192,6 @@ function RequestFlow() {
   );
 }
 
-function Confirmation({ onReset }: { onReset: () => void }) {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex flex-1 items-center justify-center px-5 py-16">
-        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-elevated">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full gradient-growth text-white shadow-soft">
-            <CheckCircle2 className="h-8 w-8" />
-          </div>
-          <h1 className="mt-6 text-2xl font-semibold tracking-tight">Request submitted</h1>
-          <p className="mt-2 text-sm text-muted-foreground">We are matching you with trusted professionals. You’ll get notifications as pros respond.</p>
-          <div className="mt-6 flex flex-col gap-2">
-            <button onClick={onReset} className="rounded-full gradient-brand px-5 py-3 text-sm font-semibold text-white shadow-soft">Back to dashboard</button>
-            <Link to="/services" className="rounded-full border border-border px-5 py-3 text-sm font-medium">Submit another request</Link>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
 
 const inputCls = "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
