@@ -12,6 +12,7 @@ import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-panel";
 import { DocumentsCard } from "@/components/documents-card";
+import { InspectionFindingsPanel } from "@/components/inspection-findings-panel";
 import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
 
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
