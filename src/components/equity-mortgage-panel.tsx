@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { TrendingUp, Landmark, Wallet, Hammer } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight } from "lucide-react";
+import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -14,6 +15,7 @@ function fmtPct(n: number | null | undefined): string {
 }
 
 export function EquityMortgagePanel() {
+  const [lenderOpen, setLenderOpen] = useState(false);
   const fetchIntel = useServerFn(getMyHomeIntel);
   const { data, isLoading } = useQuery({
     queryKey: ["home-intel-equity"],
@@ -58,9 +60,19 @@ export function EquityMortgagePanel() {
           </p>
         </div>
         {equity?.refiSignal && (
-          <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${refiTone}`}>
-            Refi signal · {equity.refiSignal}
-          </span>
+          equity.refiSignal === "strong" || equity.refiSignal === "moderate" ? (
+            <button
+              onClick={() => setLenderOpen(true)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition hover:opacity-90 ${refiTone}`}
+            >
+              Refi signal · {equity.refiSignal}
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          ) : (
+            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${refiTone}`}>
+              Refi signal · {equity.refiSignal}
+            </span>
+          )
         )}
       </div>
 
@@ -111,20 +123,23 @@ export function EquityMortgagePanel() {
         </p>
       )}
 
-      {equity?.refiSignal === "strong" && (
-        <div className="mt-4 rounded-2xl border border-growth/30 bg-growth/5 p-4">
-          <p className="text-sm font-medium text-growth">You may qualify for a lower rate.</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Your equity and rate spread suggest a refinance is worth exploring.
-          </p>
-          <Link
-            to="/report"
-            className="mt-3 inline-flex items-center justify-center rounded-full bg-growth px-4 py-2 text-xs font-semibold text-white"
-          >
-            Run refi readiness report
-          </Link>
-        </div>
-      )}
+      <ConnectLenderDialog
+        open={lenderOpen}
+        onOpenChange={setLenderOpen}
+        equityDollars={equity?.equityDollars ?? null}
+        currentRate={mortgage?.interestRate ?? null}
+        estSavingsMonthly={(() => {
+          const bal = equity?.loanBalanceEstimate;
+          const rate = mortgage?.interestRate;
+          if (!bal || !rate) return null;
+          const term = 360;
+          const pay = (p: number, r: number) => {
+            const m = r / 100 / 12;
+            return (p * m) / (1 - Math.pow(1 + m, -term));
+          };
+          return Math.max(0, Math.round(pay(bal, rate) - pay(bal, 6.5)));
+        })()}
+      />
     </div>
   );
 }
