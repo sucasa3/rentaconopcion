@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Upload, Trash2, Loader2 } from "lucide-react";
+import { FileText, Upload, Trash2, Loader2, Eye, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,6 +9,8 @@ import {
   recordHomeDocument,
   deleteHomeDocument,
 } from "@/lib/home-documents.functions";
+import { extractInspectionReport } from "@/lib/inspection.functions";
+import { DocumentViewerDialog } from "@/components/document-viewer-dialog";
 
 const KIND_LABEL: Record<string, string> = {
   inspection: "Inspection report",
