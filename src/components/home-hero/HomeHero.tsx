@@ -12,7 +12,7 @@ const fmtUsd = (n: number, compact = false) =>
     notation: compact ? "compact" : "standard",
   }).format(n);
 
-export function HomeHero({ data = HOME_HERO }: { data?: HomeHeroData }) {
+export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; refiChip?: React.ReactNode }) {
   const [years, setYears] = useState(0);
   const projected = useMemo(
     () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
