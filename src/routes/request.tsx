@@ -177,11 +177,14 @@ function RequestFlow() {
                   Continue <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
-                <button onClick={submit} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft">
-                  Submit request <ArrowRight className="h-4 w-4" />
+                <button onClick={submit} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-60">
+                  {submitting ? (<><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</>) : (<>Submit request <ArrowRight className="h-4 w-4" /></>)}
                 </button>
               )}
             </div>
+            {submitError && (
+              <p className="mt-3 text-xs text-destructive">{submitError}</p>
+            )}
           </div>
         </div>
       </main>
@@ -189,26 +192,6 @@ function RequestFlow() {
   );
 }
 
-function Confirmation({ onReset }: { onReset: () => void }) {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex flex-1 items-center justify-center px-5 py-16">
-        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-elevated">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full gradient-growth text-white shadow-soft">
-            <CheckCircle2 className="h-8 w-8" />
-          </div>
-          <h1 className="mt-6 text-2xl font-semibold tracking-tight">Request submitted</h1>
-          <p className="mt-2 text-sm text-muted-foreground">We are matching you with trusted professionals. You’ll get notifications as pros respond.</p>
-          <div className="mt-6 flex flex-col gap-2">
-            <button onClick={onReset} className="rounded-full gradient-brand px-5 py-3 text-sm font-semibold text-white shadow-soft">Back to dashboard</button>
-            <Link to="/services" className="rounded-full border border-border px-5 py-3 text-sm font-medium">Submit another request</Link>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
 
 const inputCls = "w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
