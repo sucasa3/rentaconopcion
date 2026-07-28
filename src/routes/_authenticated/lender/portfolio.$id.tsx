@@ -381,7 +381,14 @@ function PortfolioDetail() {
                             i % 2 === 1 ? "bg-surface/40" : ""
                           }`}
                         >
-                          <td className="py-2.5 pr-3">{c.full_name}</td>
+                          <td className="py-2.5 pr-3">
+                            <button
+                              onClick={() => setContact(c)}
+                              className="text-left font-medium text-primary hover:underline"
+                            >
+                              {c.full_name}
+                            </button>
+                          </td>
                           <td className="py-2.5 pr-3 text-muted-foreground">
                             {[c.city, c.state].filter(Boolean).join(", ")}
                           </td>
