@@ -169,10 +169,28 @@ function ProfileDrawer({ userId, onClose }: { userId: string; onClose: () => voi
   const resyncFn = useServerFn(resyncProfileToGhl);
   const recomputeFn = useServerFn(recomputeLifecycleStage);
   const roleFn = useServerFn(setUserRole);
+  const extractFn = useServerFn(extractInspectionReport);
+  const findingsFn = useServerFn(listInspectionFindings);
+  const [viewing, setViewing] = useState<{ id: string; filename: string | null } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-profile", userId],
     queryFn: () => detailFn({ data: { userId } }),
+  });
+
+  const { data: findings = [] } = useQuery({
+    queryKey: ["admin-findings", userId],
+    queryFn: () => findingsFn({ data: { userId } }),
+  });
+
+  const reanalyze = useMutation({
+    mutationFn: (documentId: string) => extractFn({ data: { documentId } }),
+    onSuccess: (r: any) => {
+      toast.success(`Extracted ${r.findings} findings`);
+      qc.invalidateQueries({ queryKey: ["admin-findings", userId] });
+      qc.invalidateQueries({ queryKey: ["admin-profile", userId] });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const resync = useMutation({
