@@ -439,14 +439,22 @@ export function computeEquityRibbon(
   const cashOut = value != null && balance != null ? Math.max(0, Math.round(value * 0.8 - balance)) : null;
 
   let refi: EquityRibbon["refiSignal"] = null;
+  const marketRate = 6.5;
   if (equityPct != null && mortgage?.interestRate != null) {
-    // Refi worth exploring if 20%+ equity AND current market ~1pt below their rate.
-    // We don't have live rates yet; use a conservative 6.5% proxy.
-    const marketRate = 6.5;
+    // Rate-driven refi: 20%+ equity AND current market meaningfully below their rate.
     const spread = mortgage.interestRate - marketRate;
     if (equityPct >= 0.2 && spread >= 1) refi = "strong";
     else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
     else if (equityPct >= 0.15) refi = "watch";
+  } else if (equityPct != null) {
+    // Equity-driven signal when ATTOM has no mortgage record: cash-out / HELOC angle.
+    if (equityPct >= 0.5) refi = "strong";
+    else if (equityPct >= 0.3) refi = "moderate";
+    else if (equityPct >= 0.2) refi = "watch";
+  } else if (value != null && mortgage == null) {
+    // No mortgage on file at all — likely owned free-and-clear or unrecorded.
+    // Treat as moderate cash-out opportunity.
+    refi = "moderate";
   }
 
   return {
