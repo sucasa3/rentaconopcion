@@ -25,12 +25,14 @@ export function DocumentsCard() {
     "inspection",
   );
   const [uploading, setUploading] = useState(false);
+  const [viewing, setViewing] = useState<{ id: string; filename: string | null } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   const listFn = useServerFn(listHomeDocuments);
   const recordFn = useServerFn(recordHomeDocument);
   const deleteFn = useServerFn(deleteHomeDocument);
+  const extractFn = useServerFn(extractInspectionReport);
 
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["home-documents"],
