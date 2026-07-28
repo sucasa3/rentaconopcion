@@ -75,6 +75,7 @@ function PortfolioDetail() {
   const [segment, setSegment] = useState<Segment>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [contact, setContact] = useState<any | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["lender-portfolio", id, benchmark],
