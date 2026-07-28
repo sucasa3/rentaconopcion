@@ -139,8 +139,33 @@ export function DocumentsCard() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">{d.original_filename ?? d.storage_path}</p>
-                <p className="text-[11px] text-muted-foreground">{KIND_LABEL[d.kind] ?? d.kind}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-[11px] text-muted-foreground">{KIND_LABEL[d.kind] ?? d.kind}</p>
+                  {d.kind === "inspection" && d.extraction_status && (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                        d.extraction_status === "ready"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : d.extraction_status === "processing"
+                          ? "bg-amber-100 text-amber-800"
+                          : d.extraction_status === "failed"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-muted text-foreground"
+                      }`}
+                    >
+                      <Sparkles className="h-2.5 w-2.5" />
+                      {d.extraction_status === "processing" ? "Analyzing" : d.extraction_status}
+                    </span>
+                  )}
+                </div>
               </div>
+              <button
+                onClick={() => setViewing({ id: d.id, filename: d.original_filename })}
+                className="text-muted-foreground hover:text-primary"
+                aria-label="View"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => del.mutate(d.id)}
                 className="text-muted-foreground hover:text-destructive"
@@ -152,6 +177,12 @@ export function DocumentsCard() {
           ))
         )}
       </ul>
+
+      <DocumentViewerDialog
+        documentId={viewing?.id ?? null}
+        filename={viewing?.filename ?? null}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }
