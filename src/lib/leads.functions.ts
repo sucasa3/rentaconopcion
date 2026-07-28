@@ -28,7 +28,7 @@ export const listMyOffers = createServerFn({ method: "GET" })
       supabaseAdmin
         .from("lead_assignments")
         .select(
-          "id, claimed_at, service_request_id, service_requests!inner(id, category, city, state, zip, description, homeowner_id, profiles:homeowner_id(full_name, phone, email))",
+          "id, claimed_at, service_request_id, service_requests!inner(id, category, city, state, zip, description, status, scheduled_at, invoice_path, homeowner_id, profiles:homeowner_id(full_name, phone, email))",
         )
         .eq("pro_id", pro.id)
         .order("claimed_at", { ascending: false })
