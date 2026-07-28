@@ -95,7 +95,7 @@ export const getProfileDetail = createServerFn({ method: "POST" })
         .eq("homeowner_id", data.userId),
       supabaseAdmin
         .from("home_documents")
-        .select("id, kind, original_filename, size_bytes, created_at")
+        .select("id, kind, original_filename, size_bytes, created_at, extraction_status, extraction_error, extracted_at")
         .eq("user_id", data.userId)
         .order("created_at", { ascending: false }),
       supabaseAdmin
