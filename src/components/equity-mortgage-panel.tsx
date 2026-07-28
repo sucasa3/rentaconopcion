@@ -65,7 +65,7 @@ export function EquityMortgagePanel() {
               onClick={() => setLenderOpen(true)}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition hover:opacity-90 ${refiTone}`}
             >
-              Refi signal · {equity.refiSignal}
+              Refi signal · {equity.refiSignal} · See options
               <ArrowRight className="h-3 w-3" />
             </button>
           ) : (
