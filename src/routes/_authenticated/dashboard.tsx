@@ -108,6 +108,21 @@ function Dashboard() {
     equityPct: heroEquityPct,
   };
 
+  const refiSignal = okIntel?.equity?.refiSignal;
+  const showRefiChip = refiSignal === "strong" || refiSignal === "moderate";
+  const currentRate = okIntel?.mortgage?.interestRate ?? null;
+  const loanBalance = okIntel?.equity?.loanBalanceEstimate ?? null;
+  // Rough monthly savings if we could refi the remaining balance at 6.5% for 30y.
+  const estSavings = (() => {
+    if (!loanBalance || !currentRate) return null;
+    const term = 360;
+    const pay = (p: number, r: number) => {
+      const m = r / 100 / 12;
+      return (p * m) / (1 - Math.pow(1 + m, -term));
+    };
+    return Math.max(0, Math.round(pay(loanBalance, currentRate) - pay(loanBalance, 6.5)));
+  })();
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -125,6 +140,7 @@ function Dashboard() {
               </Link>
             </div>
           </div>
+
 
 
           <HomeHero data={heroData} />
