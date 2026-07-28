@@ -462,6 +462,88 @@ function PortfolioDetail() {
         </div>
       </main>
       <SiteFooter />
+      {contact && <ContactDialog client={contact} onClose={() => setContact(null)} />}
+    </div>
+  );
+}
+
+function ContactDialog({ client, onClose }: { client: any; onClose: () => void }) {
+  const email: string | null = client.email ?? null;
+  const phone: string | null = client.phone ?? null;
+  const telHref = phone ? `tel:${phone.replace(/[^0-9+]/g, "")}` : null;
+  const subject = encodeURIComponent(`Following up on your mortgage`);
+  const body = encodeURIComponent(
+    `Hi ${client.full_name?.split(" ")[0] ?? "there"},\n\nI was reviewing your loan and wanted to reach out about a few options that could benefit you.\n\nBest,\n`,
+  );
+  const mailHref = email ? `mailto:${email}?subject=${subject}&body=${body}` : null;
+  const consentBlocked = client.consent_state === "pending" && !email && !phone;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-soft"
+      >
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-lg font-semibold tracking-tight">{client.full_name}</h3>
+            <p className="text-xs text-muted-foreground">
+              {[client.address, client.city, client.state].filter(Boolean).join(", ")}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 text-muted-foreground hover:bg-secondary"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-5 space-y-2">
+          {mailHref ? (
+            <a
+              href={mailHref}
+              className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 hover:border-primary"
+            >
+              <span className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-primary" />
+                <span className="font-medium">{email}</span>
+              </span>
+              <span className="text-xs text-primary">Email</span>
+            </a>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border px-4 py-3 text-xs text-muted-foreground">
+              No email on file
+            </div>
+          )}
+          {telHref ? (
+            <a
+              href={telHref}
+              className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 hover:border-primary"
+            >
+              <span className="flex items-center gap-2 text-sm">
+                <Phone className="h-4 w-4 text-primary" />
+                <span className="font-medium">{phone}</span>
+              </span>
+              <span className="text-xs text-primary">Call</span>
+            </a>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border px-4 py-3 text-xs text-muted-foreground">
+              No phone on file
+            </div>
+          )}
+        </div>
+
+        {consentBlocked && (
+          <p className="mt-4 text-[11px] text-muted-foreground">
+            This homeowner hasn't granted contact consent yet. Contact info unlocks once they opt in.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
