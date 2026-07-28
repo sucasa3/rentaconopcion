@@ -275,7 +275,12 @@ function PortfolioDetail() {
                         data.top_refi_opportunities.map((c: any) => (
                           <tr key={c.id} className="border-b border-border/60">
                             <td className="py-2.5 pr-3">
-                              <div className="font-medium">{c.full_name}</div>
+                              <button
+                                onClick={() => setContact(c)}
+                                className="text-left font-medium text-primary hover:underline"
+                              >
+                                {c.full_name}
+                              </button>
                               <div className="text-xs text-muted-foreground">
                                 {[c.city, c.state].filter(Boolean).join(", ")}
                               </div>
