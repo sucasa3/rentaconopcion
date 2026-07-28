@@ -282,6 +282,9 @@ export type Database = {
       home_documents: {
         Row: {
           created_at: string
+          extracted_at: string | null
+          extraction_error: string | null
+          extraction_status: string | null
           id: string
           kind: string
           original_filename: string | null
@@ -292,6 +295,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          extracted_at?: string | null
+          extraction_error?: string | null
+          extraction_status?: string | null
           id?: string
           kind: string
           original_filename?: string | null
@@ -302,6 +308,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          extracted_at?: string | null
+          extraction_error?: string | null
+          extraction_status?: string | null
           id?: string
           kind?: string
           original_filename?: string | null
@@ -311,6 +320,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      home_inspection_findings: {
+        Row: {
+          condition: string | null
+          created_at: string
+          defects: string[]
+          document_id: string
+          id: string
+          recommended_action: string | null
+          recommended_category: string | null
+          remaining_life_years: number | null
+          source_excerpt: string | null
+          system: string
+          urgency: string | null
+          user_id: string
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string
+          defects?: string[]
+          document_id: string
+          id?: string
+          recommended_action?: string | null
+          recommended_category?: string | null
+          remaining_life_years?: number | null
+          source_excerpt?: string | null
+          system: string
+          urgency?: string | null
+          user_id: string
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string
+          defects?: string[]
+          document_id?: string
+          id?: string
+          recommended_action?: string | null
+          recommended_category?: string | null
+          remaining_life_years?: number | null
+          source_excerpt?: string | null
+          system?: string
+          urgency?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_inspection_findings_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "home_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       homeowner_lender_consents: {
         Row: {

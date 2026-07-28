@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Upload, Trash2, Loader2 } from "lucide-react";
+import { FileText, Upload, Trash2, Loader2, Eye, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,6 +9,8 @@ import {
   recordHomeDocument,
   deleteHomeDocument,
 } from "@/lib/home-documents.functions";
+import { extractInspectionReport } from "@/lib/inspection.functions";
+import { DocumentViewerDialog } from "@/components/document-viewer-dialog";
 
 const KIND_LABEL: Record<string, string> = {
   inspection: "Inspection report",
@@ -23,12 +25,14 @@ export function DocumentsCard() {
     "inspection",
   );
   const [uploading, setUploading] = useState(false);
+  const [viewing, setViewing] = useState<{ id: string; filename: string | null } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   const listFn = useServerFn(listHomeDocuments);
   const recordFn = useServerFn(recordHomeDocument);
   const deleteFn = useServerFn(deleteHomeDocument);
+  const extractFn = useServerFn(extractInspectionReport);
 
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["home-documents"],
@@ -55,11 +59,21 @@ export function DocumentsCard() {
         .from("home-documents")
         .upload(path, file, { contentType: file.type });
       if (upErr) throw new Error(upErr.message);
-      await recordFn({
+      const rec: any = await recordFn({
         data: { kind, storagePath: path, originalFilename: file.name, sizeBytes: file.size },
       });
       toast.success("Document uploaded");
       qc.invalidateQueries({ queryKey: ["home-documents"] });
+      if (kind === "inspection" && rec?.id) {
+        toast.info("Analyzing inspection report…");
+        extractFn({ data: { documentId: rec.id } })
+          .then((r: any) => {
+            toast.success(`Extracted ${r.findings} findings`);
+            qc.invalidateQueries({ queryKey: ["home-documents"] });
+            qc.invalidateQueries({ queryKey: ["inspection-findings"] });
+          })
+          .catch((e: any) => toast.error(`Analysis failed: ${e.message}`));
+      }
     } catch (e: any) {
       toast.error(e.message);
     } finally {
@@ -125,8 +139,33 @@ export function DocumentsCard() {
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm">{d.original_filename ?? d.storage_path}</p>
-                <p className="text-[11px] text-muted-foreground">{KIND_LABEL[d.kind] ?? d.kind}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <p className="text-[11px] text-muted-foreground">{KIND_LABEL[d.kind] ?? d.kind}</p>
+                  {d.kind === "inspection" && d.extraction_status && (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                        d.extraction_status === "ready"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : d.extraction_status === "processing"
+                          ? "bg-amber-100 text-amber-800"
+                          : d.extraction_status === "failed"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-muted text-foreground"
+                      }`}
+                    >
+                      <Sparkles className="h-2.5 w-2.5" />
+                      {d.extraction_status === "processing" ? "Analyzing" : d.extraction_status}
+                    </span>
+                  )}
+                </div>
               </div>
+              <button
+                onClick={() => setViewing({ id: d.id, filename: d.original_filename })}
+                className="text-muted-foreground hover:text-primary"
+                aria-label="View"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => del.mutate(d.id)}
                 className="text-muted-foreground hover:text-destructive"
@@ -138,6 +177,12 @@ export function DocumentsCard() {
           ))
         )}
       </ul>
+
+      <DocumentViewerDialog
+        documentId={viewing?.id ?? null}
+        filename={viewing?.filename ?? null}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }

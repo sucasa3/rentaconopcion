@@ -33,7 +33,7 @@ export const listHomeDocuments = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("home_documents")
-      .select("id, kind, storage_path, original_filename, size_bytes, created_at")
+      .select("id, kind, storage_path, original_filename, size_bytes, created_at, extraction_status, extraction_error, extracted_at")
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);

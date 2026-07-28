@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Search, X, RefreshCw, Zap, Shield } from "lucide-react";
+import { Search, X, RefreshCw, Zap, Shield, Eye, Sparkles } from "lucide-react";
 import {
   getProfileDetail,
   listAllProfiles,
@@ -10,6 +10,8 @@ import {
   resyncProfileToGhl,
   setUserRole,
 } from "@/lib/admin.functions";
+import { extractInspectionReport, listInspectionFindings } from "@/lib/inspection.functions";
+import { DocumentViewerDialog } from "@/components/document-viewer-dialog";
 
 const STAGES = [
   "new_signup",
@@ -167,10 +169,28 @@ function ProfileDrawer({ userId, onClose }: { userId: string; onClose: () => voi
   const resyncFn = useServerFn(resyncProfileToGhl);
   const recomputeFn = useServerFn(recomputeLifecycleStage);
   const roleFn = useServerFn(setUserRole);
+  const extractFn = useServerFn(extractInspectionReport);
+  const findingsFn = useServerFn(listInspectionFindings);
+  const [viewing, setViewing] = useState<{ id: string; filename: string | null } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-profile", userId],
     queryFn: () => detailFn({ data: { userId } }),
+  });
+
+  const { data: findings = [] } = useQuery({
+    queryKey: ["admin-findings", userId],
+    queryFn: () => findingsFn({ data: { userId } }),
+  });
+
+  const reanalyze = useMutation({
+    mutationFn: (documentId: string) => extractFn({ data: { documentId } }),
+    onSuccess: (r: any) => {
+      toast.success(`Extracted ${r.findings} findings`);
+      qc.invalidateQueries({ queryKey: ["admin-findings", userId] });
+      qc.invalidateQueries({ queryKey: ["admin-profile", userId] });
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const resync = useMutation({
@@ -318,8 +338,54 @@ function ProfileDrawer({ userId, onClose }: { userId: string; onClose: () => voi
               ) : (
                 <ul className="space-y-1 text-xs">
                   {data.documents.map((d: any) => (
-                    <li key={d.id} className="truncate rounded-lg bg-muted px-3 py-2">
-                      <span className="font-medium">{d.kind}</span> · {d.original_filename ?? "file"}
+                    <li key={d.id} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+                      <div className="min-w-0 flex-1 truncate">
+                        <span className="font-medium">{d.kind}</span> · {d.original_filename ?? "file"}
+                        {d.extraction_status && (
+                          <span className="ml-1 rounded-full bg-background px-1.5 py-0.5 text-[10px]">
+                            {d.extraction_status}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setViewing({ id: d.id, filename: d.original_filename })}
+                        className="text-muted-foreground hover:text-primary"
+                        aria-label="View"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+                      {d.kind === "inspection" && (
+                        <button
+                          onClick={() => reanalyze.mutate(d.id)}
+                          disabled={reanalyze.isPending}
+                          className="text-muted-foreground hover:text-primary disabled:opacity-50"
+                          aria-label="Re-analyze"
+                          title="Re-analyze with AI"
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Section>
+
+            <Section title={`Inspection findings (${findings.length})`}>
+              {findings.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No findings extracted yet.</p>
+              ) : (
+                <ul className="space-y-1 text-xs">
+                  {findings.map((f: any) => (
+                    <li key={f.id} className="rounded-lg bg-muted px-3 py-2">
+                      <span className="font-medium capitalize">
+                        {String(f.system).replace(/_/g, " ")}
+                      </span>
+                      {f.condition && <span> · {f.condition}</span>}
+                      {f.urgency && <span> · {f.urgency}</span>}
+                      {f.recommended_action && (
+                        <p className="text-muted-foreground">{f.recommended_action}</p>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -340,6 +406,12 @@ function ProfileDrawer({ userId, onClose }: { userId: string; onClose: () => voi
           </>
         )}
       </aside>
+
+      <DocumentViewerDialog
+        documentId={viewing?.id ?? null}
+        filename={viewing?.filename ?? null}
+        onClose={() => setViewing(null)}
+      />
     </div>
   );
 }
