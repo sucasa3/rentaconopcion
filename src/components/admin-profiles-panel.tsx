@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Search, X, RefreshCw, Zap, Shield } from "lucide-react";
+import { Search, X, RefreshCw, Zap, Shield, Eye, Sparkles } from "lucide-react";
 import {
   getProfileDetail,
   listAllProfiles,
@@ -10,6 +10,8 @@ import {
   resyncProfileToGhl,
   setUserRole,
 } from "@/lib/admin.functions";
+import { extractInspectionReport, listInspectionFindings } from "@/lib/inspection.functions";
+import { DocumentViewerDialog } from "@/components/document-viewer-dialog";
 
 const STAGES = [
   "new_signup",
