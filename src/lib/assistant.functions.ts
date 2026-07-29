@@ -150,28 +150,30 @@ export const askAssistant = createServerFn({ method: "POST" })
           extractAvm,
           extractDetail,
           extractMortgage,
+          extractSales,
           computeEquityRibbon,
+          estimateLoanBalance,
         } = await import("@/lib/valuation.server");
         const intel = await getPropertyIntel(fullAddress, {
-          classes: ["avm", "detail", "mortgage"],
-          userId: context.userId,
+          classes: ["avm", "detail", "mortgage", "sales"],
+          requestedBy: context.userId,
           revenueSource: "assistant_context",
         });
-        if (intel?.ok) {
-          const avm = extractAvm(intel.classes as any);
-          const detail = extractDetail(intel.classes as any);
-          const mortgage = extractMortgage(intel.classes as any);
-          const equity = computeEquityRibbon(avm?.estimate ?? null, mortgage?.balance ?? null);
-          snapshot.avm = avm?.estimate ?? null;
-          snapshot.yearBuilt = detail?.yearBuilt ?? null;
-          snapshot.sqft = detail?.sqft ?? null;
-          snapshot.beds = detail?.beds ?? null;
-          snapshot.baths = detail?.baths ?? null;
-          snapshot.rate = mortgage?.rate ?? null;
-          snapshot.balance = mortgage?.balance ?? null;
-          snapshot.equity = equity?.equityDollars ?? null;
-          snapshot.equityPct = equity?.equityPct ?? null;
-        }
+        const avm = extractAvm(intel.classes.avm?.data);
+        const detail = extractDetail(intel.classes.detail?.data);
+        const mortgage = extractMortgage(intel.classes.mortgage?.data);
+        const sales = extractSales(intel.classes.sales?.data);
+        const equity = computeEquityRibbon(avm, mortgage, sales);
+        const balance = mortgage ? estimateLoanBalance(mortgage) : null;
+        snapshot.avm = avm?.estimate ?? null;
+        snapshot.yearBuilt = detail?.yearBuilt ?? null;
+        snapshot.sqft = detail?.sqft ?? null;
+        snapshot.beds = detail?.beds ?? null;
+        snapshot.baths = detail?.baths ?? null;
+        snapshot.rate = mortgage?.interestRate ?? null;
+        snapshot.balance = balance;
+        snapshot.equity = equity?.equityDollars ?? null;
+        snapshot.equityPct = equity?.equityPct ?? null;
       } catch (e) {
         console.warn("[assistant] intel fetch skipped:", (e as Error).message);
       }
