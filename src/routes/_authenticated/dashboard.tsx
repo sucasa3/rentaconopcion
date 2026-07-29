@@ -14,6 +14,7 @@ import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-pane
 import { DocumentsCard } from "@/components/documents-card";
 import { InspectionFindingsPanel } from "@/components/inspection-findings-panel";
 import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
+import { HomeAssistantCard } from "@/components/home-assistant-card";
 
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
