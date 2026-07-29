@@ -100,7 +100,7 @@ export function HomeAssistantCard() {
 
             {status === "submitted" ? (
               <Message from="assistant">
-                <MessageContent variant="flat" className="!bg-transparent !p-0">
+                <MessageContent className="!bg-transparent !p-0">
                   <Shimmer>Thinking…</Shimmer>
                 </MessageContent>
               </Message>
