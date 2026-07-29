@@ -162,18 +162,8 @@ function Dashboard() {
             </Card>
 
             {/* AI Assistant */}
-            <Card>
-              <CardHeader title="Home Assistant" action={<span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">Beta</span>} />
-              <div className="mt-4 rounded-2xl gradient-brand p-5 text-white">
-                <div className="flex items-center gap-2 text-xs opacity-80"><Bot className="h-3.5 w-3.5" /> Ask anything about your home</div>
-                <p className="mt-2 text-sm">“When should I service my HVAC?”</p>
-              </div>
-              <div className="mt-3 space-y-2">
-                {["Get a maintenance plan", "Estimate a remodel", "Find a warranty"].map(q => (
-                  <button key={q} className="w-full rounded-2xl border border-border p-3 text-left text-sm hover:bg-secondary">{q}</button>
-                ))}
-              </div>
-            </Card>
+            <HomeAssistantCard />
+
 
             {/* Recent requests */}
             <Card className="lg:col-span-2">
