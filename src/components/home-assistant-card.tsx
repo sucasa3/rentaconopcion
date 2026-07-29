@@ -87,7 +87,7 @@ export function HomeAssistantCard() {
             {messages.map((m) => (
               <Message key={m.id} from={m.role}>
                 {m.role === "assistant" ? (
-                  <MessageContent variant="flat" className="!bg-transparent !p-0">
+                  <MessageContent className="!bg-transparent !p-0">
                     <MessageResponse>{m.content}</MessageResponse>
                   </MessageContent>
                 ) : (
