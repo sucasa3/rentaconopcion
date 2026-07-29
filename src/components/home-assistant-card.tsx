@@ -73,57 +73,57 @@ export function HomeAssistantCard() {
         </span>
       </div>
 
-      <div className="mt-4 flex h-[320px] flex-col overflow-hidden rounded-2xl border border-border">
-        <Conversation className="flex-1">
-          <ConversationContent className="!p-3">
-            {messages.length === 0 && status !== "submitted" ? (
-              <ConversationEmptyState
-                icon={<Home className="h-6 w-6 text-primary" />}
-                title="Ask anything about your home"
-                description="Maintenance, equity, inspection findings — grounded in your home's data."
-              />
-            ) : null}
-
-            {messages.map((m) => (
-              <Message key={m.id} from={m.role}>
-                {m.role === "assistant" ? (
-                  <MessageContent className="!bg-transparent !p-0">
-                    <MessageResponse>{m.content}</MessageResponse>
-                  </MessageContent>
-                ) : (
-                  <MessageContent className="!bg-primary !text-primary-foreground">
-                    {m.content}
-                  </MessageContent>
-                )}
-              </Message>
+      {messages.length === 0 && status !== "submitted" ? (
+        <>
+          <div className="mt-4 rounded-2xl gradient-brand p-5 text-white">
+            <div className="flex items-center gap-2 text-xs opacity-80">
+              <Home className="h-3.5 w-3.5" /> Ask anything about your home
+            </div>
+            <p className="mt-2 text-sm">"When should I service my HVAC?"</p>
+          </div>
+          <div className="mt-3 space-y-2">
+            {SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                onClick={() => send(s)}
+                className="w-full rounded-2xl border border-border p-3 text-left text-sm hover:bg-secondary"
+              >
+                {s}
+              </button>
             ))}
+          </div>
+        </>
+      ) : (
+        <div className="mt-4 flex h-[320px] flex-col overflow-hidden rounded-2xl border border-border">
+          <Conversation className="flex-1">
+            <ConversationContent className="!p-3">
+              {messages.map((m) => (
+                <Message key={m.id} from={m.role}>
+                  {m.role === "assistant" ? (
+                    <MessageContent className="!bg-transparent !p-0">
+                      <MessageResponse>{m.content}</MessageResponse>
+                    </MessageContent>
+                  ) : (
+                    <MessageContent className="!bg-primary !text-primary-foreground">
+                      {m.content}
+                    </MessageContent>
+                  )}
+                </Message>
+              ))}
 
-            {status === "submitted" ? (
-              <Message from="assistant">
-                <MessageContent className="!bg-transparent !p-0">
-                  <Shimmer>Thinking…</Shimmer>
-                </MessageContent>
-              </Message>
-            ) : null}
-          </ConversationContent>
-          <ConversationScrollButton />
-        </Conversation>
-      </div>
-
-      {messages.length === 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {SUGGESTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => send(s)}
-              disabled={status === "submitted"}
-              className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50"
-            >
-              {s}
-            </button>
-          ))}
+              {status === "submitted" ? (
+                <Message from="assistant">
+                  <MessageContent className="!bg-transparent !p-0">
+                    <Shimmer>Thinking…</Shimmer>
+                  </MessageContent>
+                </Message>
+              ) : null}
+            </ConversationContent>
+            <ConversationScrollButton />
+          </Conversation>
         </div>
-      ) : null}
+      )}
+
 
       {error ? (
         <p className="mt-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
