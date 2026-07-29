@@ -19,7 +19,7 @@ import { HomeAssistantCard } from "@/components/home-assistant-card";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Bot, Plus, Sparkles, PenLine } from "lucide-react";
+import { ArrowRight, Plus, Sparkles, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
