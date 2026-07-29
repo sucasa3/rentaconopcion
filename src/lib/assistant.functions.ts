@@ -106,7 +106,7 @@ export const askAssistant = createServerFn({ method: "POST" })
       context.supabase
         .from("service_requests")
         .select("category, status, created_at")
-        .eq("user_id", context.userId)
+        .eq("homeowner_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(5),
     ]);
