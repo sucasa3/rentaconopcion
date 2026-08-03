@@ -57,13 +57,22 @@ export function AdminLeadsPanel() {
                   <li key={r.id} className="rounded-2xl border border-border p-3 text-xs">
                     <p className="font-semibold">{r.category}</p>
                     <p className="text-muted-foreground">{[r.city, r.zip].filter(Boolean).join(", ") || "no location"}</p>
-                    <button
-                      onClick={() => reassignMut.mutate(r.id)}
-                      disabled={reassignMut.isPending}
-                      className="mt-2 rounded-full gradient-brand px-3 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
-                    >
-                      Route now
-                    </button>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => reassignMut.mutate(r.id)}
+                        disabled={reassignMut.isPending}
+                        className="rounded-full gradient-brand px-3 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
+                      >
+                        Route now
+                      </button>
+                      <button
+                        onClick={() => partnerMut.mutate(r.id)}
+                        disabled={partnerMut.isPending}
+                        className="rounded-full border border-border px-3 py-1 text-[10px] font-semibold disabled:opacity-50"
+                      >
+                        Send to partner
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
