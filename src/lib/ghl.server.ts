@@ -34,6 +34,7 @@ export type Homeowner = {
   city: string | null;
   state: string | null;
   stage: string; // enum key
+  language?: string | null;
 };
 
 const STAGE_ENV: Record<string, string> = {
@@ -63,7 +64,10 @@ export async function upsertContact(h: Homeowner): Promise<string> {
     city: h.city ?? undefined,
     state: h.state ?? undefined,
     tags: ["homeowner", "sucasa-app"],
-    customFields: [{ key: "sucasa_user_id", field_value: h.userId }],
+    customFields: [
+      { key: "sucasa_user_id", field_value: h.userId },
+      { key: "sucasa_language", field_value: h.language ?? "en" },
+    ],
   };
   const r = await ghlFetch("/contacts/upsert", { method: "POST", body: JSON.stringify(body) });
   const id = r?.contact?.id ?? r?.id;
