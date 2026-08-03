@@ -1,12 +1,14 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLeadRoutingOverview, adminForceReassign, runLeadTick } from "@/lib/leads.functions";
+import { adminSendToPartner } from "@/lib/partners.functions";
 import { Clock, RefreshCw, Zap } from "lucide-react";
 
 export function AdminLeadsPanel() {
   const overview = useServerFn(getLeadRoutingOverview);
   const reassign = useServerFn(adminForceReassign);
   const tick = useServerFn(runLeadTick);
+  const sendPartner = useServerFn(adminSendToPartner);
   const qc = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -17,6 +19,10 @@ export function AdminLeadsPanel() {
 
   const reassignMut = useMutation({
     mutationFn: (requestId: string) => reassign({ data: { requestId } }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["lead-routing"] }),
+  });
+  const partnerMut = useMutation({
+    mutationFn: (requestId: string) => sendPartner({ data: { requestId } }),
     onSettled: () => qc.invalidateQueries({ queryKey: ["lead-routing"] }),
   });
   const tickMut = useMutation({
@@ -42,7 +48,7 @@ export function AdminLeadsPanel() {
 
       {tickMut.data && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Expired {tickMut.data.expired} · Requeued {tickMut.data.requeued} · Newly routed {tickMut.data.routed}
+          Expired {tickMut.data.expired} · Requeued {tickMut.data.requeued} · Newly routed {tickMut.data.routed} · Partner handoffs {tickMut.data.handedOff}
         </p>
       )}
       {error && <p className="mt-3 text-xs text-destructive">{(error as Error).message}</p>}
@@ -57,13 +63,22 @@ export function AdminLeadsPanel() {
                   <li key={r.id} className="rounded-2xl border border-border p-3 text-xs">
                     <p className="font-semibold">{r.category}</p>
                     <p className="text-muted-foreground">{[r.city, r.zip].filter(Boolean).join(", ") || "no location"}</p>
-                    <button
-                      onClick={() => reassignMut.mutate(r.id)}
-                      disabled={reassignMut.isPending}
-                      className="mt-2 rounded-full gradient-brand px-3 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
-                    >
-                      Route now
-                    </button>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => reassignMut.mutate(r.id)}
+                        disabled={reassignMut.isPending}
+                        className="rounded-full gradient-brand px-3 py-1 text-[10px] font-semibold text-white disabled:opacity-50"
+                      >
+                        Route now
+                      </button>
+                      <button
+                        onClick={() => partnerMut.mutate(r.id)}
+                        disabled={partnerMut.isPending}
+                        className="rounded-full border border-border px-3 py-1 text-[10px] font-semibold disabled:opacity-50"
+                      >
+                        Send to partner
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>

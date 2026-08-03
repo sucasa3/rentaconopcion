@@ -467,6 +467,69 @@ export type Database = {
           },
         ]
       }
+      lead_handoffs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          http_status: number | null
+          id: string
+          partner_id: string | null
+          partner_lead_id: string | null
+          payload: Json | null
+          response: Json | null
+          sent_at: string | null
+          service_request_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          partner_id?: string | null
+          partner_lead_id?: string | null
+          payload?: Json | null
+          response?: Json | null
+          sent_at?: string | null
+          service_request_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          partner_id?: string | null
+          partner_lead_id?: string | null
+          payload?: Json | null
+          response?: Json | null
+          sent_at?: string | null
+          service_request_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_handoffs_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "lead_partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_handoffs_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_offers: {
         Row: {
           created_at: string
@@ -527,6 +590,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_partners: {
+        Row: {
+          active: boolean
+          auth_type: string
+          categories: string[]
+          created_at: string
+          endpoint_url: string
+          field_map: Json
+          id: string
+          metros: string[]
+          name: string
+          payout_notes: string | null
+          priority: number
+          secret_name: string | null
+          states: string[]
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          auth_type?: string
+          categories?: string[]
+          created_at?: string
+          endpoint_url: string
+          field_map?: Json
+          id?: string
+          metros?: string[]
+          name: string
+          payout_notes?: string | null
+          priority?: number
+          secret_name?: string | null
+          states?: string[]
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          auth_type?: string
+          categories?: string[]
+          created_at?: string
+          endpoint_url?: string
+          field_map?: Json
+          id?: string
+          metros?: string[]
+          name?: string
+          payout_notes?: string | null
+          priority?: number
+          secret_name?: string | null
+          states?: string[]
+          updated_at?: string
+        }
+        Relationships: []
       }
       lender_activity: {
         Row: {

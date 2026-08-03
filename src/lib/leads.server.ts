@@ -33,6 +33,10 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
     .map((c) => c.pros as unknown as { id: string; business_name: string; phone: string | null; active: boolean; accepting_leads: boolean })
     .filter((p) => p && p.active && p.accepting_leads);
   if (!eligible.length) {
+    // No SuCasa pro covers this category/area — spill straight over to the partner network.
+    const { handoffToPartner } = await import("./partners.server");
+    const h = await handoffToPartner(requestId);
+    if (h.sent) return { offered: false, reason: "partner_sent" };
     await supabaseAdmin.from("service_requests").update({ routing_status: "unrouted" }).eq("id", requestId);
     return { offered: false, reason: "no_eligible_pros" };
   }
@@ -45,6 +49,10 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
   const already = new Set((prior ?? []).map((o) => o.pro_id));
   const pool = eligible.filter((p) => !already.has(p.id));
   if (!pool.length) {
+    // Every eligible pro passed or timed out — hand the lead to the partner network.
+    const { handoffToPartner } = await import("./partners.server");
+    const h = await handoffToPartner(requestId);
+    if (h.sent) return { offered: false, reason: "partner_sent" };
     await supabaseAdmin.from("service_requests").update({ routing_status: "unrouted" }).eq("id", requestId);
     return { offered: false, reason: "exhausted_rotation" };
   }
@@ -110,7 +118,7 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
 }
 
 // Cron entry: expire stale offers and cascade to next pro in queue.
-export async function expireStaleOffers(): Promise<{ expired: number; requeued: number; routed: number }> {
+export async function expireStaleOffers(): Promise<{ expired: number; requeued: number; routed: number; handedOff: number }> {
   const nowIso = new Date().toISOString();
 
   const { data: stale, error: staleErr } = await supabaseAdmin
@@ -148,5 +156,14 @@ export async function expireStaleOffers(): Promise<{ expired: number; requeued: 
     if (res.offered) routed++;
   }
 
-  return { expired, requeued, routed };
+  // Retry any partner handoffs that failed on a previous tick.
+  let handedOff = 0;
+  try {
+    const { retryFailedHandoffs } = await import("./partners.server");
+    handedOff = await retryFailedHandoffs();
+  } catch (e) {
+    console.error("Partner handoff retry failed (non-fatal):", (e as Error).message);
+  }
+
+  return { expired, requeued, routed, handedOff };
 }
