@@ -30,7 +30,7 @@ export const drainGhlQueue = createServerFn({ method: "POST" })
       try {
         const { data: profile } = await supabaseAdmin
           .from("profiles")
-          .select("id, full_name, email, phone, city, state, lifecycle_stage")
+          .select("id, full_name, email, phone, city, state, lifecycle_stage, language")
           .eq("id", job.entity_id)
           .maybeSingle();
         if (!profile) throw new Error(`Profile ${job.entity_id} not found`);
@@ -43,6 +43,7 @@ export const drainGhlQueue = createServerFn({ method: "POST" })
           city: profile.city,
           state: profile.state,
           stage: profile.lifecycle_stage,
+          language: profile.language,
         });
         const oppId = await ghl.moveToStage(contactId, profile.lifecycle_stage, profile.full_name);
 
