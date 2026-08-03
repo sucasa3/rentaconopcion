@@ -1203,10 +1203,6 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string; _op?: string }
         Returns: undefined
       }
-      has_lender_access: {
-        Args: { _homeowner_id: string; _org_id: string }
-        Returns: boolean
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1214,15 +1210,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_lender_member: {
-        Args: { _org_id: string; _user_id: string }
-        Returns: boolean
-      }
       is_request_assigned_pro: {
-        Args: { _request_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_request_homeowner: {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
