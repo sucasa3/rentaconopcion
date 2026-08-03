@@ -68,8 +68,9 @@ export const Route = createFileRoute("/api/public/ghl/billing")({
           subscription_activated_at?: string;
           ghl_contact_id?: string;
         } = {
-
+          subscription_status: status,
           active: status === "active",
+
           accepting_leads: status === "active",
         };
         if (status === "active") patch.subscription_activated_at = new Date().toISOString();
