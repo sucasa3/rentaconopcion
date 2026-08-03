@@ -118,7 +118,7 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
 }
 
 // Cron entry: expire stale offers and cascade to next pro in queue.
-export async function expireStaleOffers(): Promise<{ expired: number; requeued: number; routed: number }> {
+export async function expireStaleOffers(): Promise<{ expired: number; requeued: number; routed: number; handedOff: number }> {
   const nowIso = new Date().toISOString();
 
   const { data: stale, error: staleErr } = await supabaseAdmin
