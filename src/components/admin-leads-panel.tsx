@@ -1,12 +1,14 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getLeadRoutingOverview, adminForceReassign, runLeadTick } from "@/lib/leads.functions";
+import { adminSendToPartner } from "@/lib/partners.functions";
 import { Clock, RefreshCw, Zap } from "lucide-react";
 
 export function AdminLeadsPanel() {
   const overview = useServerFn(getLeadRoutingOverview);
   const reassign = useServerFn(adminForceReassign);
   const tick = useServerFn(runLeadTick);
+  const sendPartner = useServerFn(adminSendToPartner);
   const qc = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -17,6 +19,10 @@ export function AdminLeadsPanel() {
 
   const reassignMut = useMutation({
     mutationFn: (requestId: string) => reassign({ data: { requestId } }),
+    onSettled: () => qc.invalidateQueries({ queryKey: ["lead-routing"] }),
+  });
+  const partnerMut = useMutation({
+    mutationFn: (requestId: string) => sendPartner({ data: { requestId } }),
     onSettled: () => qc.invalidateQueries({ queryKey: ["lead-routing"] }),
   });
   const tickMut = useMutation({
@@ -42,7 +48,7 @@ export function AdminLeadsPanel() {
 
       {tickMut.data && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Expired {tickMut.data.expired} · Requeued {tickMut.data.requeued} · Newly routed {tickMut.data.routed}
+          Expired {tickMut.data.expired} · Requeued {tickMut.data.requeued} · Newly routed {tickMut.data.routed} · Partner handoffs {tickMut.data.handedOff}
         </p>
       )}
       {error && <p className="mt-3 text-xs text-destructive">{(error as Error).message}</p>}
