@@ -96,8 +96,18 @@ function Onboarding() {
                 <Field label="Full name"><input className={inputCls} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" /></Field>
                 <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="jane@example.com" /></Field>
                 <Field label="Phone"><input type="tel" className={inputCls} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" /></Field>
+                <Field label="Desired language">
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["en", "es"] as const).map(l => (
+                      <button key={l} type="button" onClick={() => setForm({ ...form, language: l })} className={`rounded-2xl border px-4 py-3 text-sm transition ${form.language === l ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-secondary"}`}>
+                        {l === "en" ? "English" : "Español"}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
               </div>
             )}
+
             {step === 1 && (
               <div className="space-y-4">
                 <Header title="About your home" desc="This helps us tailor value and maintenance insights." />
