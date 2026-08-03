@@ -1,47 +1,37 @@
-# Activate the GHL connection end-to-end
+# Activate the GHL connection
 
-## Status today
-- GHL is **coded and credentialed** (17 secrets stored: API key, location, homeowners pipeline + 6 stages, service-leads pipeline + 4 lead stages, webhook secret).
-- DB triggers auto-enqueue sync jobs on every profile / pro / service-request / claim change.
-- **But nothing has ever synced.** `ghl_sync_state` is empty (0 rows). The queue holds 44 pending jobs, all `attempts = 0` / `last_error = null` → the drain has never run. Nothing is calling `/api/public/ghl/drain` on a schedule.
+Goal: make contacts, pros, and claimed leads flow into GoHighLevel automatically, on a schedule, without duplicate API calls.
 
-## Recommendation: pg_cron (easiest, already in use)
-You already have a working pg_cron job — `sucasa-leads-tick` (every 5 min) — that calls `/api/public/leads/tick` using the `apikey` header (the Supabase anon key). The GHL drain should mirror that exactly. No external scheduler, no GHL-workflow setup, no new secret. Same database-side scheduler that already runs reliably.
+## 1. Put the sync on a schedule
 
-## The plan
+The sync endpoint currently requires a hand-signed security header, which the database scheduler can't produce. Switch it to the exact same key-header check the existing lead-routing job already uses, then schedule it.
 
-### 1. Switch the drain route to the apikey pattern (match `leads.tick.ts`)
-`src/routes/api/public/ghl.drain.ts` currently requires an HMAC signature header (`x-cron-signature` over the body with `GHL_WEBHOOK_SECRET`). Replace it with the same `apikey` check `leads.tick.ts` uses (`apikey` header == `SUPABASE_PUBLISHABLE_KEY`). This keeps one consistent auth pattern and removes the fiddly HMAC requirement.
+- Update `src/routes/api/public/ghl.drain.ts` to authenticate with the `apikey` header compared against `SUPABASE_PUBLISHABLE_KEY` (mirrors `src/routes/api/public/leads.tick.ts`); drop the HMAC check.
+- Schedule a pg_cron job `sucasa-ghl-drain` every 2 minutes calling `https://project--94429f0c-1687-4b34-81a7-6195279589c3.lovable.app/api/public/ghl/drain` with the `apikey` header and an empty body — same shape as `sucasa-leads-tick`.
 
-### 2. Schedule the GHL drain via pg_cron (run via `supabase--insert`)
-One SQL insert, identical in shape to the existing leads-tick job, every **2 minutes**:
-```sql
-SELECT cron.schedule(
-  'sucasa-ghl-drain',
-  '*/2 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://project--94429f0c-1687-4b34-81a7-6195279589c3.lovable.app/api/public/ghl/drain',
-    headers := '{"Content-Type": "application/json", "apikey": "sb_publishable_dvSA_Juhtj_ETiv5x_iPxQ_mr3rRu-M"}'::jsonb,
-    body := '{}'::jsonb
-  ) as request_id;
-  $$
-);
-```
+## 2. Sync pros and claimed leads, not just homeowners
 
-### 3. Extend the drain to sync pros + service requests (not just homeowners)
-`drainGhlQueue` in `src/lib/ghl.functions.ts` filters `entity_type = 'homeowner'`, so the queued `pro` and `service_request` rows are never processed — pros and claimed leads never appear in GHL. Add handlers for those two types:
-- **pro**: upsert a GHL contact for the pro (business name, phone, email, category, coverage) so pros show up for comms + billing tags; store the GHL contact id in `ghl_sync_state` with `entity_type = 'pro'`.
-- **service_request**: create/move the service-lead opportunity in the service-leads pipeline (the homeowner must already have a GHL contact from step 1's homeowner sync — if not, skip and retry next tick).
+Today the drain only picks up `entity_type = 'homeowner'`, so the queued pro and service-request jobs sit forever.
 
-### 4. De-duplicate queue rows (stop redundant GHL calls)
-Today every insert *and* update fires the trigger separately → 42 homeowner jobs for 17 distinct homeowners. Add a guard so the drain processes only one job per `entity_type + entity_id` per pass (mark the duplicates processed without calling GHL), and switch the enqueue function to an idempotent upsert so rapid edits coalesce to one pending job.
+- Rework `drainGhlQueue` in `src/lib/ghl.functions.ts` to select all pending job types (no `entity_type` filter) and branch per type:
+  - `homeowner` — existing behavior (contact upsert + lifecycle stage move).
+  - `pro` — upsert the pro as a GHL contact (business name, email, phone, category, metro, plan, language, membership status); record `ghl_contact_id` on the pro and in `ghl_sync_state`.
+  - `service_request` / `claim` — only create the service-lead opportunity once a pro has claimed it (per the agreed model); otherwise mark the job processed as a no-op so it doesn't retry forever.
+- Keep the existing per-job retry/`attempts` and `last_error` handling for every branch.
 
-### 5. Verify
-- Run the drain once (admin "Drain now" button or hit the endpoint) and confirm `ghl_sync_state` populates and GHL contacts/opportunities appear.
-- Confirm the pg_cron job shows in `cron.job` and the queue drains over the next few ticks.
-- Confirm pros and a claimed service request create GHL contacts/opportunities.
+## 3. Stop duplicate calls
 
-## What you'll need to do (after I build)
-- Confirm the GHL pipelines/stages in your GHL account match the stage IDs already stored as secrets (they were configured earlier; if any moved, we update the secret).
-- Nothing to set up on the GHL side for the cron — it's all database-side.
+42 queued jobs cover only 17 distinct homeowners, because every insert and update enqueues a new row.
+
+- Change the enqueue helper so a pending job for the same entity is reused instead of duplicated (upsert on entity type + entity id while `processed_at` is null).
+- Collapse the existing pending duplicates so the first drain run doesn't burn redundant GHL calls.
+
+## 4. Verify
+
+- Trigger one drain manually from the admin panel, then confirm sync records exist for homeowners, the pro, and any claimed lead, and that the queue drains to zero with no errors.
+
+## Technical notes
+
+- Endpoint stays under `/api/public/*` so the published site doesn't gate it; the anon key check is the project's established cron auth pattern.
+- Enqueue de-dup requires a partial unique index on pending queue rows (schema migration).
+- Batch size stays at 25 per run; at 2-minute intervals that clears the current 44-job backlog within minutes.
