@@ -187,11 +187,12 @@ export const resyncHomeowner = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
-    await supabaseAdmin.from("ghl_sync_queue").insert({
-      entity_type: "homeowner",
-      entity_id: data.userId,
-      op: "upsert",
+    await supabaseAdmin.rpc("enqueue_ghl_sync", {
+      _entity_type: "homeowner",
+      _entity_id: data.userId,
+      _op: "upsert",
     });
+
     return { queued: true };
   });
 
