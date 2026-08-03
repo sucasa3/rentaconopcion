@@ -151,6 +151,8 @@ function Onboarding() {
                   <ReviewRow k="Home type" v={form.homeType} />
                   <ReviewRow k="Year built" v={form.yearBuilt || "—"} />
                   <ReviewRow k="Goals" v={form.goals.length ? form.goals.map(id => GOALS.find(g => g.id === id)!.label).join(", ") : "—"} />
+                  <ReviewRow k="Language" v={form.language === "es" ? "Español" : "English"} />
+
                 </div>
                 <div className="rounded-2xl bg-accent p-4 text-sm text-accent-foreground">
                   <span className="inline-flex items-center gap-2 font-medium"><Home className="h-4 w-4" /> You're all set—your dashboard is ready.</span>
