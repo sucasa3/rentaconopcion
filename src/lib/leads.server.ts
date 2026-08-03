@@ -49,6 +49,10 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
   const already = new Set((prior ?? []).map((o) => o.pro_id));
   const pool = eligible.filter((p) => !already.has(p.id));
   if (!pool.length) {
+    // Every eligible pro passed or timed out — hand the lead to the partner network.
+    const { handoffToPartner } = await import("./partners.server");
+    const h = await handoffToPartner(requestId);
+    if (h.sent) return { offered: false, reason: "partner_sent" };
     await supabaseAdmin.from("service_requests").update({ routing_status: "unrouted" }).eq("id", requestId);
     return { offered: false, reason: "exhausted_rotation" };
   }
