@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { ProLeadInbox } from "@/components/pro-lead-inbox";
+import { ProAccountPanel } from "@/components/pro-account-panel";
 
 export const Route = createFileRoute("/pro")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Pro Dashboard — SuCasa" },
-      { name: "description", content: "Manage opportunities, claims, response times, reviews, and your membership." },
+      { name: "description", content: "Join SuCasa as a pro, manage your membership, opportunities and claims." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -26,10 +27,11 @@ function ProDashboard() {
               Leads route to you round-robin. You have <span className="font-semibold text-foreground">25 minutes</span> to claim before the lead auto-reassigns to the next pro.
             </p>
           </div>
-          <ProLeadInbox />
+          <ProAccountPanel />
         </div>
       </main>
       <SiteFooter />
     </div>
   );
 }
+
