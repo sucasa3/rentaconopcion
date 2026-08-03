@@ -30,8 +30,9 @@ function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", address: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[],
+    name: "", email: "", phone: "", address: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[], language: "en" as "en" | "es",
   });
+
 
   const steps = ["About you", "Your home", "Your goals", "Review"];
   const total = steps.length;
@@ -59,7 +60,9 @@ function Onboarding() {
           phone: form.phone || null,
           address: street || null,
           city, state, zip,
+          language: form.language,
           last_activity_at: new Date().toISOString(),
+
         }, { onConflict: "id" });
         console.log("[onboarding] upsert result", JSON.stringify(upRes));
       }
@@ -95,8 +98,18 @@ function Onboarding() {
                 <Field label="Full name"><input className={inputCls} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" /></Field>
                 <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="jane@example.com" /></Field>
                 <Field label="Phone"><input type="tel" className={inputCls} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" /></Field>
+                <Field label="Desired language">
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["en", "es"] as const).map(l => (
+                      <button key={l} type="button" onClick={() => setForm({ ...form, language: l })} className={`rounded-2xl border px-4 py-3 text-sm transition ${form.language === l ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-secondary"}`}>
+                        {l === "en" ? "English" : "Español"}
+                      </button>
+                    ))}
+                  </div>
+                </Field>
               </div>
             )}
+
             {step === 1 && (
               <div className="space-y-4">
                 <Header title="About your home" desc="This helps us tailor value and maintenance insights." />
@@ -138,6 +151,8 @@ function Onboarding() {
                   <ReviewRow k="Home type" v={form.homeType} />
                   <ReviewRow k="Year built" v={form.yearBuilt || "—"} />
                   <ReviewRow k="Goals" v={form.goals.length ? form.goals.map(id => GOALS.find(g => g.id === id)!.label).join(", ") : "—"} />
+                  <ReviewRow k="Language" v={form.language === "es" ? "Español" : "English"} />
+
                 </div>
                 <div className="rounded-2xl bg-accent p-4 text-sm text-accent-foreground">
                   <span className="inline-flex items-center gap-2 font-medium"><Home className="h-4 w-4" /> You're all set—your dashboard is ready.</span>

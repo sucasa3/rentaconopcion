@@ -36,6 +36,7 @@ type Snapshot = {
     recommended_category: string | null;
   }>;
   recentRequests: Array<{ category: string; status: string; when: string }>;
+  language?: "en" | "es";
 };
 
 function buildSystemPrompt(s: Snapshot): string {
@@ -48,6 +49,11 @@ function buildSystemPrompt(s: Snapshot): string {
   );
   parts.push(
     `Scope: home maintenance, inspection findings, equity/refinancing in plain terms, seasonal tasks, matching problems to SuCasa service categories (Roofing, HVAC, Plumbing, Electrical, Foundation, Water Heater, Appliances, Windows, Flooring, Water & Mold Restoration, Junk Removal, Movers). If actionable, encourage the user to file a Service Request from the dashboard. If a question is off-topic (news, personal advice, code, etc.), politely decline and redirect to their home.`,
+  );
+  parts.push(
+    s.language === "es"
+      ? `IMPORTANTE: responde SIEMPRE en español, con un tono claro y cercano.`
+      : `Always answer in English.`,
   );
   parts.push(
     `Do NOT invent numbers, dates, or facts that aren't in the snapshot. If a value is missing, say so.`,
@@ -95,7 +101,7 @@ export const askAssistant = createServerFn({ method: "POST" })
     const [{ data: profile }, { data: findings }, { data: requests }] = await Promise.all([
       context.supabase
         .from("profiles")
-        .select("full_name, address, city, state, zip")
+        .select("full_name, address, city, state, zip, language")
         .eq("id", context.userId)
         .maybeSingle(),
       context.supabase
@@ -113,6 +119,7 @@ export const askAssistant = createServerFn({ method: "POST" })
 
     // Try home intel (AVM / equity / rate) — safe to fail.
     const snapshot: Snapshot = {
+      language: (profile?.language === "es" ? "es" : "en"),
       name: profile?.full_name ?? null,
       address: profile?.address ?? null,
       cityStateZip: [profile?.city, profile?.state, profile?.zip].filter(Boolean).join(", ") || null,

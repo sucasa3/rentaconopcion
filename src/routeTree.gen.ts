@@ -26,6 +26,7 @@ import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
+import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
 import { Route as ApiPublicFelloWebhookRouteImport } from './routes/api/public/fello.webhook'
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 
@@ -115,6 +116,11 @@ const ApiPublicGhlDrainRoute = ApiPublicGhlDrainRouteImport.update({
   path: '/api/public/ghl/drain',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicGhlBillingRoute = ApiPublicGhlBillingRouteImport.update({
+  id: '/api/public/ghl/billing',
+  path: '/api/public/ghl/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFelloWebhookRoute = ApiPublicFelloWebhookRouteImport.update({
   id: '/api/public/fello/webhook',
   path: '/api/public/fello/webhook',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
+  '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
+  '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
+  '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
 }
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/lender/'
     | '/lender/portfolio/$id'
     | '/api/public/fello/webhook'
+    | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
   fileRoutesByTo: FileRoutesByTo
@@ -226,6 +236,7 @@ export interface FileRouteTypes {
     | '/lender'
     | '/lender/portfolio/$id'
     | '/api/public/fello/webhook'
+    | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
   id:
@@ -247,6 +258,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lender/'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/fello/webhook'
+    | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
   fileRoutesById: FileRoutesById
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicFelloWebhookRoute: typeof ApiPublicFelloWebhookRoute
+  ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
 }
@@ -389,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGhlDrainRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ghl/billing': {
+      id: '/api/public/ghl/billing'
+      path: '/api/public/ghl/billing'
+      fullPath: '/api/public/ghl/billing'
+      preLoaderRoute: typeof ApiPublicGhlBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/fello/webhook': {
       id: '/api/public/fello/webhook'
       path: '/api/public/fello/webhook'
@@ -450,19 +470,10 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicFelloWebhookRoute: ApiPublicFelloWebhookRoute,
+  ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -73,6 +73,7 @@ export async function extractFindingsFromFile(
   fileBytes: Uint8Array,
   mimeType: string,
   filename: string,
+  language: "en" | "es" = "en",
 ): Promise<Finding[]> {
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
@@ -106,7 +107,14 @@ export async function extractFindingsFromFile(
   const body = {
     model: MODEL,
     messages: [
-      { role: "system", content: SYSTEM_PROMPT },
+      {
+        role: "system",
+        content:
+          SYSTEM_PROMPT +
+          (language === "es"
+            ? "\n\nEscribe los campos de texto libre (defects, recommended_action) en español."
+            : ""),
+      },
       { role: "user", content: userContent },
     ],
     response_format: {

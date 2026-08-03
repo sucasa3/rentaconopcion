@@ -54,10 +54,17 @@ export const extractInspectionReport = createServerFn({ method: "POST" })
       const buf = new Uint8Array(await file.arrayBuffer());
       const mime = (file as any).type || guessMime(doc.original_filename || doc.storage_path);
 
+      const { data: prof } = await supabaseAdmin
+        .from("profiles")
+        .select("language")
+        .eq("id", doc.user_id)
+        .maybeSingle();
+
       const findings = await extractFindingsFromFile(
         buf,
         mime,
         doc.original_filename || "inspection.pdf",
+        prof?.language === "es" ? "es" : "en",
       );
 
       // Replace existing findings for this document

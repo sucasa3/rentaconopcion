@@ -797,6 +797,7 @@ export type Database = {
           full_name: string | null
           ghl_last_synced_at: string | null
           id: string
+          language: string
           last_activity_at: string
           lifecycle_stage: Database["public"]["Enums"]["lifecycle_stage"]
           phone: string | null
@@ -817,6 +818,7 @@ export type Database = {
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id: string
+          language?: string
           last_activity_at?: string
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
           phone?: string | null
@@ -837,6 +839,7 @@ export type Database = {
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id?: string
+          language?: string
           last_activity_at?: string
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
           phone?: string | null
@@ -945,14 +948,18 @@ export type Database = {
           claimed_count: number
           created_at: string
           email: string | null
+          ghl_contact_id: string | null
           id: string
           is_founding_partner: boolean
+          language: string
           monthly_price_cents: number
           phone: string | null
           plan: string
           rating: number | null
           reviews_count: number
           service_area: string | null
+          subscription_activated_at: string | null
+          subscription_status: string
           updated_at: string
           user_id: string | null
         }
@@ -964,14 +971,18 @@ export type Database = {
           claimed_count?: number
           created_at?: string
           email?: string | null
+          ghl_contact_id?: string | null
           id?: string
           is_founding_partner?: boolean
+          language?: string
           monthly_price_cents?: number
           phone?: string | null
           plan?: string
           rating?: number | null
           reviews_count?: number
           service_area?: string | null
+          subscription_activated_at?: string | null
+          subscription_status?: string
           updated_at?: string
           user_id?: string | null
         }
@@ -983,14 +994,18 @@ export type Database = {
           claimed_count?: number
           created_at?: string
           email?: string | null
+          ghl_contact_id?: string | null
           id?: string
           is_founding_partner?: boolean
+          language?: string
           monthly_price_cents?: number
           phone?: string | null
           plan?: string
           rating?: number | null
           reviews_count?: number
           service_area?: string | null
+          subscription_activated_at?: string | null
+          subscription_status?: string
           updated_at?: string
           user_id?: string | null
         }
