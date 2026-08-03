@@ -117,6 +117,43 @@ export async function addContactNote(contactId: string, body: string): Promise<v
   });
 }
 
+export type ProContact = {
+  proId: string;
+  businessName: string;
+  email: string | null;
+  phone: string | null;
+  category: string;
+  metros: string[];
+  plan: string;
+  subscriptionStatus: string;
+  language?: string | null;
+};
+
+// Upsert a pro (vendor) as a GHL contact; returns contact id.
+export async function upsertProContact(p: ProContact): Promise<string> {
+  const body = {
+    locationId: env("GHL_LOCATION_ID"),
+    email: p.email ?? undefined,
+    phone: p.phone ?? undefined,
+    companyName: p.businessName,
+    firstName: p.businessName,
+    tags: ["pro", "sucasa-app", `pro-${p.subscriptionStatus}`],
+    customFields: [
+      { key: "sucasa_pro_id", field_value: p.proId },
+      { key: "sucasa_pro_category", field_value: p.category },
+      { key: "sucasa_pro_metros", field_value: p.metros.join(", ") },
+      { key: "sucasa_pro_plan", field_value: p.plan },
+      { key: "sucasa_pro_status", field_value: p.subscriptionStatus },
+      { key: "sucasa_language", field_value: p.language ?? "en" },
+    ],
+  };
+  const r = await ghlFetch("/contacts/upsert", { method: "POST", body: JSON.stringify(body) });
+  const id = r?.contact?.id ?? r?.id;
+  if (!id) throw new Error(`upsertProContact: no id in response: ${JSON.stringify(r)}`);
+  return id;
+}
+
+
 // === SERVICE LEADS PIPELINE (per-request opportunities) ===
 // Called after a pro claims a lead. Best-effort — returns null if pipeline
 // env vars are not configured yet.
