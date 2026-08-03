@@ -206,13 +206,28 @@ export const backfillGhl = createServerFn({ method: "POST" })
       _role: "admin",
     });
     if (!isAdmin) throw new Error("Forbidden");
-    const { data: rows } = await supabaseAdmin.from("profiles").select("id");
-    if (!rows?.length) return { queued: 0 };
-    const { error } = await supabaseAdmin
-      .from("ghl_sync_queue")
-      .insert(rows.map((r) => ({ entity_type: "homeowner", entity_id: r.id, op: "upsert" })));
-    if (error) throw error;
-    return { queued: rows.length };
+    const [{ data: profiles }, { data: pros }] = await Promise.all([
+      supabaseAdmin.from("profiles").select("id"),
+      supabaseAdmin.from("pros").select("id"),
+    ]);
+    const targets = [
+      ...(profiles ?? []).map((r) => ({ type: "homeowner", id: r.id })),
+      ...(pros ?? []).map((r) => ({ type: "pro", id: r.id })),
+    ];
+    if (!targets.length) return { queued: 0 };
+    for (let i = 0; i < targets.length; i += 20) {
+      await Promise.all(
+        targets.slice(i, i + 20).map((t) =>
+          supabaseAdmin.rpc("enqueue_ghl_sync", {
+            _entity_type: t.type,
+            _entity_id: t.id,
+            _op: "upsert",
+          }),
+        ),
+      );
+    }
+    return { queued: targets.length };
+
   });
 
 // Add a note to a homeowner's GHL contact (called from milestones).
