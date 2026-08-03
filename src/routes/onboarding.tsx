@@ -60,7 +60,9 @@ function Onboarding() {
           phone: form.phone || null,
           address: street || null,
           city, state, zip,
+          language: form.language,
           last_activity_at: new Date().toISOString(),
+
         }, { onConflict: "id" });
         console.log("[onboarding] upsert result", JSON.stringify(upRes));
       }
