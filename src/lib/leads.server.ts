@@ -156,5 +156,14 @@ export async function expireStaleOffers(): Promise<{ expired: number; requeued: 
     if (res.offered) routed++;
   }
 
-  return { expired, requeued, routed };
+  // Retry any partner handoffs that failed on a previous tick.
+  let handedOff = 0;
+  try {
+    const { retryFailedHandoffs } = await import("./partners.server");
+    handedOff = await retryFailedHandoffs();
+  } catch (e) {
+    console.error("Partner handoff retry failed (non-fatal):", (e as Error).message);
+  }
+
+  return { expired, requeued, routed, handedOff };
 }
