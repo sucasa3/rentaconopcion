@@ -30,8 +30,9 @@ function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", address: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[],
+    name: "", email: "", phone: "", address: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[], language: "en" as "en" | "es",
   });
+
 
   const steps = ["About you", "Your home", "Your goals", "Review"];
   const total = steps.length;
