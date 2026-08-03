@@ -61,8 +61,14 @@ export const Route = createFileRoute("/api/public/ghl/billing")({
         const pro = rows?.[0];
         if (!pro) return new Response("Pro not found", { status: 404 });
 
-        const patch: Record<string, unknown> = {
-          subscription_status: status,
+        const patch: {
+          subscription_status: string;
+          active: boolean;
+          accepting_leads: boolean;
+          subscription_activated_at?: string;
+          ghl_contact_id?: string;
+        } = {
+
           active: status === "active",
           accepting_leads: status === "active",
         };
