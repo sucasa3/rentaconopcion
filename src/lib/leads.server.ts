@@ -33,6 +33,10 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
     .map((c) => c.pros as unknown as { id: string; business_name: string; phone: string | null; active: boolean; accepting_leads: boolean })
     .filter((p) => p && p.active && p.accepting_leads);
   if (!eligible.length) {
+    // No SuCasa pro covers this category/area — spill straight over to the partner network.
+    const { handoffToPartner } = await import("./partners.server");
+    const h = await handoffToPartner(requestId);
+    if (h.sent) return { offered: false, reason: "partner_sent" };
     await supabaseAdmin.from("service_requests").update({ routing_status: "unrouted" }).eq("id", requestId);
     return { offered: false, reason: "no_eligible_pros" };
   }
