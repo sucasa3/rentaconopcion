@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getMatchedLenderForMe, createRefiIntent } from "@/lib/lender.functions";
+import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
 
 export function ConnectLenderDialog({
   open,
@@ -18,13 +19,20 @@ export function ConnectLenderDialog({
   equityDollars,
   currentRate,
   estSavingsMonthly,
+  loanBalance = null,
+  cashOutHeadroom = null,
+  benchmarkRate = BENCHMARK_REFI_RATE,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   equityDollars: number | null;
   currentRate: number | null;
   estSavingsMonthly: number | null;
+  loanBalance?: number | null;
+  cashOutHeadroom?: number | null;
+  benchmarkRate?: number;
 }) {
+
   const [sent, setSent] = useState(false);
   const fetchMatch = useServerFn(getMatchedLenderForMe);
   const createIntent = useServerFn(createRefiIntent);
