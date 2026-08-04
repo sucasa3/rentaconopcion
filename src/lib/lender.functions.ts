@@ -599,12 +599,17 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
     if (!portfolio) throw new Error("Portfolio not found");
 
 
-    const { data: rows, error: cErr } = await context.supabase
+    const { data: allRows, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
       .select("id, address_line1, city, state, zip, loan_amount_at_close_cents")
       .eq("portfolio_id", data.portfolioId)
       .is("loan_amount_at_close_cents", null);
     if (cErr) throw new Error(cErr.message);
+    // Cap each pass so automatic background pulls never burn the monthly
+    // records allowance in one page load.
+    const rows = data.limit ? (allRows ?? []).slice(0, data.limit) : (allRows ?? []);
+    const pendingBefore = (allRows ?? []).length;
+
 
     const { getPropertyIntel } = await import("./valuation.server");
     const { extractMortgage, extractSales } = await import("./valuation.server");
