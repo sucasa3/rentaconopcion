@@ -437,9 +437,13 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         ).length,
         linked: enriched.filter((c) => c.linked).length,
         active_referrals: referralFeed.filter((r) => r.status !== "completed").length,
+        recommendations_due: enriched.reduce((s, c) => s + (c.recommendations?.length ?? 0), 0),
+        touches_30d: touches30d,
       },
       top_listing_opportunities: topListing,
       referral_feed: referralFeed,
+      recommendation_feed: recommendationFeed,
+      touch_feed: touchFeed,
       clients: enriched,
     };
   });
