@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   getAgentPortfolio,
   enrichAgentPortfolio,
