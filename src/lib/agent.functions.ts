@@ -706,7 +706,7 @@ export const seedAgentDemo = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden: admin only");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getFelloHomeowners } = await import("@/lib/fello-import.server");
+    const { getSeedHomeowners } = await import("@/lib/portfolio-seed.server");
 
     let { data: org } = await supabaseAdmin
       .from("lender_orgs")
@@ -746,7 +746,7 @@ export const seedAgentDemo = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("portfolio_id", portfolio!.id);
     if ((count ?? 0) === 0) {
-      const rows = getFelloHomeowners().map((h) => ({ portfolio_id: portfolio!.id, ...h }));
+      const rows = getSeedHomeowners().map((h) => ({ portfolio_id: portfolio!.id, ...h }));
       for (let i = 0; i < rows.length; i += 100) {
         const { error } = await supabaseAdmin
           .from("lender_portfolio_clients")
