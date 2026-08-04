@@ -25,6 +25,7 @@ export function SiteHeader() {
     { to: "/services", label: "Services" },
     { to: "/partner", label: "For Pros" },
     { to: "/lender", label: "For Lenders" },
+    { to: "/agent", label: "For Agents" },
     { to: "/dashboard", label: "Dashboard" },
   ] as const;
   return (
