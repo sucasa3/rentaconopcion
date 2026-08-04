@@ -135,6 +135,69 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       }
     }
 
+    // Recommendations due: open, high/medium-urgency inspection findings for
+    // linked homeowners that have no matching service job yet.
+    const recsByHomeowner: Record<string, any[]> = {};
+    if (homeownerIds.length) {
+      const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+      const { data: findings } = await admin
+        .from("home_inspection_findings")
+        .select(
+          "id, user_id, system, condition, urgency, recommended_action, recommended_category, created_at",
+        )
+        .in("user_id", homeownerIds)
+        .in("urgency", ["high", "medium"])
+        .order("created_at", { ascending: false })
+        .limit(500);
+      for (const f of findings ?? []) {
+        const done = (referralsByHomeowner[f.user_id] ?? []).some(
+          (r: any) =>
+            f.recommended_category &&
+            String(r.category).toLowerCase() === String(f.recommended_category).toLowerCase(),
+        );
+        if (done) continue;
+        const bucket = (recsByHomeowner[f.user_id] ??= []);
+        if (bucket.length >= 3) continue;
+        bucket.push({
+          id: f.id,
+          system: f.system,
+          condition: f.condition,
+          urgency: f.urgency,
+          recommended_action: f.recommended_action,
+          recommended_category: f.recommended_category,
+          created_at: f.created_at,
+        });
+      }
+    }
+
+    // Communicated: campaign sends recorded against clients in this book.
+    const touchesByClient: Record<string, any[]> = {};
+    if (ids.length) {
+      const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+      const { data: sends } = await admin
+        .from("campaign_sends")
+        .select(
+          "id, portfolio_client_id, subject, status, scheduled_for, sent_at, created_at, campaigns:campaign_id(name, channel)",
+        )
+        .in("portfolio_client_id", ids)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      for (const s of sends ?? []) {
+        if (!s.portfolio_client_id) continue;
+        (touchesByClient[s.portfolio_client_id] ??= []).push({
+          id: s.id,
+          subject: s.subject,
+          status: s.status,
+          scheduled_for: s.scheduled_for,
+          sent_at: s.sent_at,
+          created_at: s.created_at,
+          campaign_name: (s.campaigns as any)?.name ?? "Campaign",
+          channel: (s.campaigns as any)?.channel ?? "email",
+        });
+      }
+    }
+
+
 
     const { normalizeAddress } = await import("@/lib/attom.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -223,6 +286,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       });
 
       const referrals = c.homeowner_id ? referralsByHomeowner[c.homeowner_id] ?? [] : [];
+      const recommendations = c.homeowner_id ? recsByHomeowner[c.homeowner_id] ?? [] : [];
+      const touches = touchesByClient[c.id] ?? [];
+
 
       return {
         id: c.id,
@@ -262,8 +328,13 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         net_proceeds: readiness.netProceeds,
         referrals,
         referral_count: referrals.length,
+        recommendations,
+        recommendation_count: recommendations.length,
+        touches,
+        touch_count: touches.length,
       };
     });
+
 
     enriched.sort((a, b) => b.move_score - a.move_score);
 
@@ -299,6 +370,48 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
       .slice(0, 12);
 
+    const recommendationFeed = enriched
+      .flatMap((c) =>
+        (c.recommendations ?? []).map((r: any) => ({
+          ...r,
+          client_id: c.id,
+          client_name: c.name,
+          city: c.city,
+        })),
+      )
+      .sort((a, b) => {
+        const rank = (u: string) => (u === "high" ? 0 : u === "medium" ? 1 : 2);
+        const d = rank(String(a.urgency)) - rank(String(b.urgency));
+        return d !== 0 ? d : a.created_at < b.created_at ? 1 : -1;
+      })
+      .slice(0, 12);
+
+    const touchFeed = enriched
+      .flatMap((c) =>
+        (c.touches ?? []).map((t: any) => ({
+          ...t,
+          client_id: c.id,
+          client_name: c.name,
+          city: c.city,
+        })),
+      )
+      .sort((a, b) => {
+        const at = a.sent_at ?? a.scheduled_for ?? a.created_at;
+        const bt = b.sent_at ?? b.scheduled_for ?? b.created_at;
+        return at < bt ? 1 : -1;
+      })
+      .slice(0, 12);
+
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 3600 * 1000;
+    const touches30d = enriched.reduce(
+      (s, c) =>
+        s +
+        (c.touches ?? []).filter(
+          (t: any) => t.sent_at && new Date(t.sent_at).getTime() >= thirtyDaysAgo,
+        ).length,
+      0,
+    );
+
     return {
       portfolio: {
         id: (portfolio as any).id,
@@ -324,9 +437,13 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         ).length,
         linked: enriched.filter((c) => c.linked).length,
         active_referrals: referralFeed.filter((r) => r.status !== "completed").length,
+        recommendations_due: enriched.reduce((s, c) => s + (c.recommendations?.length ?? 0), 0),
+        touches_30d: touches30d,
       },
       top_listing_opportunities: topListing,
       referral_feed: referralFeed,
+      recommendation_feed: recommendationFeed,
+      touch_feed: touchFeed,
       clients: enriched,
     };
   });

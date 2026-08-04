@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getAgentPortfolio,
   enrichAgentPortfolio,
@@ -410,46 +411,129 @@ function AgentPortfolio() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Wrench className="h-4 w-4 text-primary" />
-                      <h3 className="text-sm font-semibold">Referral activity</h3>
+                      <h3 className="text-sm font-semibold">Client activity</h3>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {data.summary.active_referrals} open
+                      {data.summary.active_referrals} open ·{" "}
+                      {data.summary.recommendations_due ?? 0} due ·{" "}
+                      {data.summary.touches_30d ?? 0} touches / 30d
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Home service jobs your linked clients requested through SuCasa. Every job is a
-                    reason to check in — and a referral you can be credited for.
+                    What your clients are doing, what their home needs next, and what has already
+                    gone out to them.
                   </p>
-                  <div className="mt-4 space-y-2">
-                    {data.referral_feed.length === 0 ? (
-                      <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                        No service activity yet. Invite clients to SuCasa to see their projects
-                        here.
-                      </p>
-                    ) : (
-                      data.referral_feed.map((r: any) => (
-                        <div
-                          key={r.id}
-                          className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-2.5"
-                        >
-                          <div>
-                            <p className="text-sm font-medium capitalize">
-                              {String(r.category).replace(/_/g, " ")}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {r.client_name}
-                              {r.city ? ` · ${r.city}` : ""} ·{" "}
-                              {new Date(r.created_at).toLocaleDateString()}
-                            </p>
+                  <Tabs defaultValue="referrals" className="mt-4">
+                    <TabsList>
+                      <TabsTrigger value="referrals">Referrals</TabsTrigger>
+                      <TabsTrigger value="recommendations">Recommendations due</TabsTrigger>
+                      <TabsTrigger value="communicated">Communicated</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="referrals" className="mt-4 space-y-2">
+                      {data.referral_feed.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                          No service activity yet. Invite clients to SuCasa to see their projects
+                          here.
+                        </p>
+                      ) : (
+                        data.referral_feed.map((r: any) => (
+                          <div
+                            key={r.id}
+                            className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-2.5"
+                          >
+                            <div>
+                              <p className="text-sm font-medium capitalize">
+                                {String(r.category).replace(/_/g, " ")}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {r.client_name}
+                                {r.city ? ` · ${r.city}` : ""} ·{" "}
+                                {new Date(r.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
+                              {String(r.status).replace(/_/g, " ")}
+                            </span>
                           </div>
-                          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
-                            {String(r.status).replace(/_/g, " ")}
-                          </span>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                        ))
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="recommendations" className="mt-4 space-y-2">
+                      {(data.recommendation_feed ?? []).length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                          Nothing outstanding. Recommendations appear once a linked client uploads
+                          an inspection report.
+                        </p>
+                      ) : (
+                        data.recommendation_feed.map((r: any) => (
+                          <div
+                            key={r.id}
+                            className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-2.5"
+                          >
+                            <div>
+                              <p className="text-sm font-medium capitalize">
+                                {String(r.system).replace(/_/g, " ")}
+                                {r.recommended_category ? ` · ${r.recommended_category}` : ""}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {r.client_name}
+                                {r.recommended_action ? ` — ${r.recommended_action}` : ""}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
+                                r.urgency === "high"
+                                  ? "border-destructive/40 bg-destructive/10 text-destructive"
+                                  : "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                              }`}
+                            >
+                              {r.urgency}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="communicated" className="mt-4 space-y-2">
+                      {(data.touch_feed ?? []).length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                          No campaign messages have gone out to this book yet.
+                        </p>
+                      ) : (
+                        data.touch_feed.map((t: any) => (
+                          <div
+                            key={t.id}
+                            className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-2.5"
+                          >
+                            <div>
+                              <p className="text-sm font-medium">{t.campaign_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t.client_name} · {t.channel} ·{" "}
+                                {new Date(
+                                  t.sent_at ?? t.scheduled_for ?? t.created_at,
+                                ).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${
+                                t.status === "sent"
+                                  ? "bg-growth/15 text-growth"
+                                  : t.status === "failed"
+                                    ? "bg-destructive/10 text-destructive"
+                                    : "bg-secondary text-muted-foreground"
+                              }`}
+                            >
+                              {String(t.status).replace(/_/g, " ")}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </div>
+
               </div>
 
               {/* Client table */}
@@ -783,6 +867,68 @@ function ClientDrawer({
             </ul>
           </>
         )}
+
+        {client.recommendations?.length > 0 && (
+          <>
+            <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Recommendations due
+            </h3>
+            <ul className="mt-2 space-y-1.5">
+              {client.recommendations.map((r: any) => (
+                <li key={r.id} className="rounded-2xl border border-border bg-card px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium capitalize">
+                      {String(r.system).replace(/_/g, " ")}
+                      {r.recommended_category ? ` · ${r.recommended_category}` : ""}
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
+                        r.urgency === "high"
+                          ? "border-destructive/40 bg-destructive/10 text-destructive"
+                          : "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                      }`}
+                    >
+                      {r.urgency}
+                    </span>
+                  </div>
+                  {r.recommended_action && (
+                    <p className="mt-1 text-xs text-muted-foreground">{r.recommended_action}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {client.touches?.length > 0 && (
+          <>
+            <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Communicated
+            </h3>
+            <ul className="mt-2 space-y-1.5">
+              {client.touches.map((t: any) => (
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card px-3 py-2 text-xs"
+                >
+                  <span className="font-medium">
+                    {t.campaign_name}
+                    <span className="ml-1 font-normal text-muted-foreground">
+                      {new Date(
+                        t.sent_at ?? t.scheduled_for ?? t.created_at,
+                      ).toLocaleDateString()}
+                    </span>
+                  </span>
+                  <span className="capitalize text-muted-foreground">
+                    {String(t.status).replace(/_/g, " ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+
 
         <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
