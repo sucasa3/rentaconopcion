@@ -451,7 +451,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
   });
 
 // ---------------------------------------------------------------------------
-// Listing status upsert (manual today, Fello/MLS events later).
+// Listing status upsert (manual today, MLS events later).
 // ---------------------------------------------------------------------------
 export const setListingStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -694,7 +694,7 @@ ${JSON.stringify(facts, null, 2)}`,
   });
 
 // ---------------------------------------------------------------------------
-// Admin: create a demo agency + book of business from the Fello sample data.
+// Admin: create a demo agency + book of business from the roster sample data.
 // ---------------------------------------------------------------------------
 export const seedAgentDemo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
