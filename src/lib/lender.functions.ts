@@ -579,7 +579,10 @@ export const seedRosterImport = createServerFn({ method: "POST" })
 // rate, and term for rows missing loan data by fetching mortgage + sales.
 // Uses the cached valuation abstraction so re-runs are cheap.
 // -----------------------------------------------------------------------------
-const EnrichSchema = z.object({ portfolioId: z.string().uuid() });
+const EnrichSchema = z.object({
+  portfolioId: z.string().uuid(),
+  limit: z.number().int().min(1).max(200).optional(),
+});
 export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => EnrichSchema.parse(i))
@@ -595,12 +598,18 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
     if (pErr) throw new Error(pErr.message);
     if (!portfolio) throw new Error("Portfolio not found");
 
-    const { data: rows, error: cErr } = await context.supabase
+
+    const { data: allRows, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
       .select("id, address_line1, city, state, zip, loan_amount_at_close_cents")
       .eq("portfolio_id", data.portfolioId)
       .is("loan_amount_at_close_cents", null);
     if (cErr) throw new Error(cErr.message);
+    // Cap each pass so automatic background pulls never burn the monthly
+    // records allowance in one page load.
+    const rows = data.limit ? (allRows ?? []).slice(0, data.limit) : (allRows ?? []);
+    const pendingBefore = (allRows ?? []).length;
+
 
     const { getPropertyIntel } = await import("./valuation.server");
     const { extractMortgage, extractSales } = await import("./valuation.server");
@@ -693,8 +702,50 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
       }
     }
 
-    return { enriched, skipped, failed, total: rows?.length ?? 0 };
+    return {
+      enriched,
+      skipped,
+      failed,
+      total: rows.length,
+      remaining: Math.max(0, pendingBefore - enriched - skipped),
+    };
   });
+
+// ---------------------------------------------------------------------------
+// Monthly property-records allowance, lender-scoped. Drives the automatic
+// background pulls: the UI stops pulling once the soft cap is reached.
+// Provider-neutral field names — the UI never names the data vendor.
+// ---------------------------------------------------------------------------
+export const getLenderRecordsBudget = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertLenderAccess(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const monthKey = monthStart.toISOString().slice(0, 10);
+
+    const { data: b } = await supabaseAdmin
+      .from("attom_monthly_budget")
+      .select("tier_calls_included, calls_used, soft_cap_pct, cache_only_mode")
+      .eq("month", monthKey)
+      .maybeSingle();
+
+    if (!b) return null;
+    const included = b.tier_calls_included || 0;
+    const used = b.calls_used || 0;
+    return {
+      used,
+      included,
+      remaining: Math.max(0, included - used),
+      pct: included > 0 ? Math.round((used / included) * 100) : 0,
+      softCapPct: b.soft_cap_pct,
+      cacheOnly: b.cache_only_mode,
+    };
+  });
+
 
 // ---------------------------------------------------------------------------
 // Homeowner-facing: refi lender matching + intent handoff.
