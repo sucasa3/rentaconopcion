@@ -70,7 +70,14 @@ export const listAgentPortfolios = createServerFn({ method: "GET" })
 // ---------------------------------------------------------------------------
 export const getAgentPortfolio = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        sellCostPct: z.number().min(0).max(20).optional(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     await agentOrgIds(context.supabase, context.userId);
 
