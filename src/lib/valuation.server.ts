@@ -1,6 +1,6 @@
 /**
  * Valuation abstraction — the ONE interface UI code and server fns talk to.
- * Providers (attom, fello, mock) sit behind this so we can:
+ * Providers (attom, mock) sit behind this so we can:
  *   - swap providers per-field without touching callers,
  *   - cache in Postgres with per-class TTLs,
  *   - enforce a monthly budget cap,

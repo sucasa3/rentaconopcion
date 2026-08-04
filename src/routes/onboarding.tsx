@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/site-header";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
-import { syncMyHomeToFello } from "@/lib/fello.functions";
+import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/onboarding")({
@@ -39,7 +39,7 @@ function Onboarding() {
 
   const toggleGoal = (id: string) => setForm(f => ({ ...f, goals: f.goals.includes(id) ? f.goals.filter(g => g !== id) : [...f.goals, id] }));
 
-  const felloSync = useServerFn(syncMyHomeToFello);
+  const prewarmIntel = useServerFn(getMyHomeIntel);
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
     setSubmitting(true);
@@ -66,7 +66,18 @@ function Onboarding() {
         }, { onConflict: "id" });
         console.log("[onboarding] upsert result", JSON.stringify(upRes));
       }
-      try { await felloSync(); } catch (e) { console.log("[onboarding] fello sync failed", e); }
+      // Warm the property-records cache for the address they just entered so
+      // the dashboard has value / equity / detail on first paint.
+      try {
+        await prewarmIntel({
+          data: {
+            classes: ["avm", "detail", "mortgage", "sales"],
+            revenueSource: "signup_enrichment",
+          },
+        });
+      } catch (e) {
+        console.log("[onboarding] property records prewarm failed", e);
+      }
     } catch (e) {
       console.log("[onboarding] submit error", e);
     }

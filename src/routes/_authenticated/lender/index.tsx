@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { createPortfolio, listMyPortfolios, seedDemoPortfolio, seedFelloImport } from "@/lib/lender.functions";
+import { createPortfolio, listMyPortfolios, seedDemoPortfolio, seedRosterImport } from "@/lib/lender.functions";
 import { Building2, Plus, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/")({
@@ -22,7 +22,7 @@ function LenderHome() {
   const listFn = useServerFn(listMyPortfolios);
   const createFn = useServerFn(createPortfolio);
   const seedFn = useServerFn(seedDemoPortfolio);
-  const felloFn = useServerFn(seedFelloImport);
+  const rosterFn = useServerFn(seedRosterImport);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data, isLoading, error } = useQuery({
@@ -54,10 +54,10 @@ function LenderHome() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const fello = useMutation({
-    mutationFn: () => felloFn(),
+  const roster = useMutation({
+    mutationFn: () => rosterFn(),
     onSuccess: (r: any) => {
-      toast.success(r.seeded ? "Imported 76 Fello homeowners" : "Fello portfolio ready");
+      toast.success(r.seeded ? "Imported 76 client homeowners" : "Client roster ready");
       qc.invalidateQueries({ queryKey: ["lender-portfolios"] });
       navigate({ to: "/lender/portfolio/$id", params: { id: r.portfolioId } });
     },
@@ -79,12 +79,12 @@ function LenderHome() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => fello.mutate()}
-                disabled={fello.isPending}
+                onClick={() => roster.mutate()}
+                disabled={roster.isPending}
                 className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-60"
               >
                 <Sparkles className="h-3 w-3" />
-                {fello.isPending ? "Importing…" : "Import 76 Fello homeowners"}
+                {roster.isPending ? "Importing…" : "Import 76 client roster"}
               </button>
               <button
                 onClick={() => seed.mutate()}

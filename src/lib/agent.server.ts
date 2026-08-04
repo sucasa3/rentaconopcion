@@ -108,7 +108,7 @@ export function extractTaxTrend(raw: unknown, marketValue: number | null): TaxTr
 }
 
 // ---------------------------------------------------------------------------
-// Listing status (ours — sourced from Fello events, MLS later, or manual)
+// Listing status (ours — manual today, MLS feed later)
 // ---------------------------------------------------------------------------
 
 export type ListingStatus =

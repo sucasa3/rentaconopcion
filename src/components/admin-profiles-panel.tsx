@@ -273,7 +273,6 @@ function ProfileDrawer({ userId, onClose }: { userId: string; onClose: () => voi
               <Field label="Joined" value={fmtDate(p.created_at)} />
               <Field label="Last activity" value={fmtDate(p.last_activity_at)} />
               <Field label="GHL synced" value={fmtDate(p.ghl_last_synced_at)} />
-              <Field label="Fello synced" value={fmtDate(p.fello_last_synced_at)} />
             </Section>
 
             <Section title="Roles">

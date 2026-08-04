@@ -52,6 +52,42 @@ export function stageIdFor(stage: string): string {
   return env(key);
 }
 
+export type GhlAddress = {
+  street: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+};
+
+// Look up a contact by email and return their mailing address, if any.
+// Returns null when the contact is unknown or has no street address on file.
+export async function findContactAddressByEmail(email: string): Promise<GhlAddress | null> {
+  const q = new URLSearchParams({
+    locationId: env("GHL_LOCATION_ID"),
+    query: email,
+    limit: "5",
+  });
+  let r: any;
+  try {
+    r = await ghlFetch(`/contacts/?${q}`);
+  } catch {
+    return null;
+  }
+  const contacts: any[] = r?.contacts ?? [];
+  const match =
+    contacts.find((c) => String(c?.email ?? "").toLowerCase() === email.toLowerCase()) ??
+    contacts[0];
+  if (!match) return null;
+  const street: string | null = match.address1 ?? match.address ?? null;
+  if (!street || !String(street).trim()) return null;
+  return {
+    street: String(street).trim(),
+    city: match.city ? String(match.city).trim() : null,
+    state: match.state ? String(match.state).trim().toUpperCase().slice(0, 2) : null,
+    zip: match.postalCode ? String(match.postalCode).trim().slice(0, 10) : null,
+  };
+}
+
 // Upsert contact by email; return contact id.
 export async function upsertContact(h: Homeowner): Promise<string> {
   const [firstName, ...rest] = (h.fullName ?? "").trim().split(/\s+/);
