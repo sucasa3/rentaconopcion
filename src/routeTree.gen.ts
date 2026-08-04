@@ -24,6 +24,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
 import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authenticated/agent/route'
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
+import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
@@ -109,6 +110,11 @@ const AuthenticatedLenderIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedAgentIndexRoute = AuthenticatedAgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAgentRouteRoute,
+} as any)
 const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
   id: '/requests/$id',
   path: '/requests/$id',
@@ -162,12 +168,13 @@ export interface FileRoutesByFullPath {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/agent': typeof AuthenticatedAgentRouteRoute
+  '/agent': typeof AuthenticatedAgentRouteRouteWithChildren
   '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
@@ -186,11 +193,11 @@ export interface FileRoutesByTo {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/agent': typeof AuthenticatedAgentRouteRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
@@ -211,12 +218,13 @@ export interface FileRoutesById {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/_authenticated/agent': typeof AuthenticatedAgentRouteRoute
+  '/_authenticated/agent': typeof AuthenticatedAgentRouteRouteWithChildren
   '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
@@ -243,6 +251,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/lender/campaigns'
     | '/requests/$id'
+    | '/agent/'
     | '/lender/'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
@@ -261,11 +270,11 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
-    | '/agent'
     | '/admin'
     | '/dashboard'
     | '/lender/campaigns'
     | '/requests/$id'
+    | '/agent'
     | '/lender'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/lender/campaigns'
     | '/_authenticated/requests/$id'
+    | '/_authenticated/agent/'
     | '/_authenticated/lender/'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
@@ -425,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderIndexRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
+    '/_authenticated/agent/': {
+      id: '/_authenticated/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AuthenticatedAgentIndexRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
     '/_authenticated/requests/$id': {
       id: '/_authenticated/requests/$id'
       path: '/requests/$id'
@@ -484,6 +501,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAgentRouteRouteChildren {
+  AuthenticatedAgentIndexRoute: typeof AuthenticatedAgentIndexRoute
+}
+
+const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren =
+  {
+    AuthenticatedAgentIndexRoute: AuthenticatedAgentIndexRoute,
+  }
+
+const AuthenticatedAgentRouteRouteWithChildren =
+  AuthenticatedAgentRouteRoute._addFileChildren(
+    AuthenticatedAgentRouteRouteChildren,
+  )
+
 interface AuthenticatedLenderRouteRouteChildren {
   AuthenticatedLenderCampaignsRoute: typeof AuthenticatedLenderCampaignsRoute
   AuthenticatedLenderIndexRoute: typeof AuthenticatedLenderIndexRoute
@@ -503,7 +534,7 @@ const AuthenticatedLenderRouteRouteWithChildren =
   )
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAgentRouteRoute: typeof AuthenticatedAgentRouteRoute
+  AuthenticatedAgentRouteRoute: typeof AuthenticatedAgentRouteRouteWithChildren
   AuthenticatedLenderRouteRoute: typeof AuthenticatedLenderRouteRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -511,7 +542,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAgentRouteRoute: AuthenticatedAgentRouteRoute,
+  AuthenticatedAgentRouteRoute: AuthenticatedAgentRouteRouteWithChildren,
   AuthenticatedLenderRouteRoute: AuthenticatedLenderRouteRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
