@@ -360,66 +360,6 @@ export type Database = {
           },
         ]
       }
-      fello_events: {
-        Row: {
-          event_type: string
-          fello_contact_id: string | null
-          id: string
-          payload: Json
-          processed_at: string | null
-          received_at: string
-          user_id: string | null
-        }
-        Insert: {
-          event_type: string
-          fello_contact_id?: string | null
-          id?: string
-          payload: Json
-          processed_at?: string | null
-          received_at?: string
-          user_id?: string | null
-        }
-        Update: {
-          event_type?: string
-          fello_contact_id?: string | null
-          id?: string
-          payload?: Json
-          processed_at?: string | null
-          received_at?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      fello_webhook_subscriptions: {
-        Row: {
-          created_at: string
-          event_type: string
-          id: string
-          status: string
-          subscription_id: string
-          updated_at: string
-          url: string
-        }
-        Insert: {
-          created_at?: string
-          event_type: string
-          id?: string
-          status?: string
-          subscription_id: string
-          updated_at?: string
-          url: string
-        }
-        Update: {
-          created_at?: string
-          event_type?: string
-          id?: string
-          status?: string
-          subscription_id?: string
-          updated_at?: string
-          url?: string
-        }
-        Relationships: []
-      }
       ghl_sync_queue: {
         Row: {
           attempts: number
@@ -1117,11 +1057,6 @@ export type Database = {
           city: string | null
           created_at: string
           email: string | null
-          fello_contact_id: string | null
-          fello_equity_cents: number | null
-          fello_estimated_value_cents: number | null
-          fello_last_synced_at: string | null
-          fello_lead_score: number | null
           full_name: string | null
           ghl_last_synced_at: string | null
           id: string
@@ -1139,11 +1074,6 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
-          fello_contact_id?: string | null
-          fello_equity_cents?: number | null
-          fello_estimated_value_cents?: number | null
-          fello_last_synced_at?: string | null
-          fello_lead_score?: number | null
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id: string
@@ -1161,11 +1091,6 @@ export type Database = {
           city?: string | null
           created_at?: string
           email?: string | null
-          fello_contact_id?: string | null
-          fello_equity_cents?: number | null
-          fello_estimated_value_cents?: number | null
-          fello_last_synced_at?: string | null
-          fello_lead_score?: number | null
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id?: string
