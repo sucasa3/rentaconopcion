@@ -89,10 +89,12 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!portfolio) throw new Error("Portfolio not found");
 
+    const sellCostPct = data.sellCostPct ?? 8;
+
     const { data: clients, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
       .select(
-        "id, client_name, client_email, client_phone, address_line1, city, state, zip, close_date, loan_amount_at_close_cents, rate_at_close, term_months, notes",
+        "id, client_name, client_email, client_phone, address_line1, city, state, zip, close_date, loan_amount_at_close_cents, rate_at_close, term_months, notes, homeowner_id",
       )
       .eq("portfolio_id", data.id);
     if (cErr) throw new Error(cErr.message);
@@ -106,6 +108,33 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         .in("portfolio_client_id", ids);
       for (const l of ls ?? []) listings[l.portfolio_client_id] = l;
     }
+
+    // Referral visibility: service requests placed by linked homeowners in
+    // this book. Every job is a touchpoint the agent can be credited for.
+    const homeownerIds = (clients ?? [])
+      .map((c: any) => c.homeowner_id)
+      .filter(Boolean) as string[];
+    const referralsByHomeowner: Record<string, any[]> = {};
+    if (homeownerIds.length) {
+      const { supabaseAdmin: admin } = await import("@/integrations/supabase/client.server");
+      const { data: reqs } = await admin
+        .from("service_requests")
+        .select("id, homeowner_id, category, status, created_at, amount_cents, scheduled_at")
+        .in("homeowner_id", homeownerIds)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      for (const r of reqs ?? []) {
+        (referralsByHomeowner[r.homeowner_id] ??= []).push({
+          id: r.id,
+          category: r.category,
+          status: r.status,
+          created_at: r.created_at,
+          amount_cents: r.amount_cents,
+          scheduled_at: r.scheduled_at,
+        });
+      }
+    }
+
 
     const { normalizeAddress } = await import("@/lib/attom.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
