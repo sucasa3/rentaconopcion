@@ -1,45 +1,48 @@
-# Expand "Referral activity" into a full client-touchpoint feed
+# Add an Intent explainer popover to the Agent portfolio
 
-Short answer: yes, it can be done, and it makes the widget much more useful. Today the panel only lists service jobs linked homeowners placed. Two other signals already exist in the data and can join it:
-
-- **Recommendations that are due** — maintenance/repair items pulled from a linked homeowner's uploaded inspection report (system, urgency, recommended action, matching service category). These are stored per homeowner and are not yet surfaced anywhere in the agent view.
-- **What has already been communicated** — homeowner campaign sends (which campaign, when, delivery status) recorded per client. This lets an agent see "value update was emailed 6 days ago" instead of guessing.
-
-Only clients whose record is linked to a SuCasa homeowner account will have recommendations; campaign sends exist for any client the agency has activated a campaign on.
-
-## The change
-
-Rename the widget to **Client activity** with three tabs:
-
-1. **Referrals** (current content, unchanged) — service jobs, status, date.
-2. **Recommendations due** — open, high/medium-urgency items from linked homeowners' inspection findings that have no matching service job yet. Each row: client name, system (e.g. Roof), urgency chip, recommended action, matching service category.
-3. **Communicated** — recent campaign sends for this book: client name, campaign name, channel, sent date, status (sent / scheduled / failed).
-
-Summary line at the top of the widget: `X open referrals · Y recommendations due · Z touches in last 30 days`.
-
-In the client detail drawer, add the same two sections under the existing referral list so a single client's full touch history is visible in one place.
-
-## Technical details
-
-Backend — `src/lib/agent.functions.ts`, inside `getAgentPortfolioDetail`:
-
-- Query `home_inspection_findings` (admin client, same pattern as the existing referral query) for the portfolio's `homeowner_id` list, selecting `user_id, system, condition, urgency, recommended_action, recommended_category, created_at`. Keep urgency high/medium, drop items whose `recommended_category` already matches an existing service request for that homeowner, cap at 3 per client.
-- Query `campaign_sends` filtered by `portfolio_client_id in (client ids)`, selecting `campaign_id, portfolio_client_id, subject, status, scheduled_for, sent_at`, joined to `campaigns(name, channel)`, ordered newest first.
-- Attach `recommendations` and `touches` arrays per client alongside the existing `referrals`, and return flattened `recommendation_feed` and `touch_feed` (12 each) plus summary counts `recommendations_due` and `touches_30d`.
-
-Frontend — `src/routes/_authenticated/agent/portfolio.$id.tsx`:
-
-- Replace the single referral list with a `Tabs` block (existing shadcn `Tabs`) holding the three feeds; keep the current row styling and empty states.
-- Add the two extra sections to the client drawer below the referrals block.
+## Goal
+The "Intent" column in the Agent portfolio shows pills like `22 · Nurture` with no
+explanation, while the secondary "Readiness" column already has a tap-to-open
+`ReadinessInfo` popover. Add a matching `IntentInfo` popover next to each
+"Intent" column header so agents understand what the score means.
 
 ## Scope
+"Bands + signals only" — the popover lists the four intent bands and the signals
+that feed the score. No per-row expandable breakdown, no data-source hint about
+manual listing entry.
 
-This round is the three-tab feed only — no schema change, no migration, no new webhook.
+## What changes
 
-Open/click engagement tracking is a meaningful enhancement but is deliberately deferred from this round. It requires a migration (delivery/open/click columns), a new HMAC-verified webhook route for the sending platform to call, and a one-time workflow configured on that platform to post email events back. It is worth revisiting once the three-tab feed is in place and the sending-platform workflow is ready to wire up. A note worth keeping: opens are unreliable (Apple Mail Privacy Protection and similar tools inflate or suppress them); clicks are the trustworthy signal.
+File: `src/routes/_authenticated/agent/portfolio.$id.tsx`
 
-## Verify
+1. Add an `IntentInfo` component next to the existing `ReadinessInfo`
+   component (around line 68). Same Popover structure, same styling:
+   - Title: "Move intent"
+   - One line: "A 0–100 score from public-property signals: time in home,
+     equity, recent permits, tax pressure, absentee ownership, outgrown
+     space, and any expired/withdrawn listing."
+   - A list of the four bands with score ranges and short guidance:
+     - Hot — 60+. Clear, time-sensitive move signal. Call now.
+     - Warm — 38–59. Multiple solid signals. Worth a real conversation.
+     - Nurture — 18–37. Mild signals. Stay in touch with value content.
+     - Hold — under 18. Little movement signal. Keep in value-only nurture.
+   - Color dots reuse the existing `BAND_META` tones (growth / amber / primary / muted).
 
-- Build/typecheck pass.
-- Open the agent portfolio: the widget shows three tabs; Referrals matches today's list; Recommendations and Communicated populate for linked clients and show clean empty states otherwise.
+2. Place an `<IntentInfo />` info button (the `Info` icon is already imported)
+   next to the "Intent" `<th>` header in both table locations:
+   - The main opportunities table header (around line 314).
+   - The nested table header inside the client detail drawer (around line 564).
+   This mirrors exactly how `ReadinessInfo` is placed next to "Readiness".
 
+## Out of scope
+- No new server functions, queries, or migrations.
+- No per-row signal breakdown.
+- No copy changes to `ReadinessInfo`.
+- The `property_listing_status` manual-entry flow and any future MLS/IDX feed
+  are unchanged.
+
+## Verification
+- Build passes (`bun run build` / typecheck).
+- In the preview, open the Agent portfolio, click the info icon beside
+  "Intent" in both the table and the drawer, and confirm the popover shows
+  the four bands with correct score ranges and colors.
