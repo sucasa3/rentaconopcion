@@ -41,13 +41,25 @@ export const listAgentPortfolios = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
-    const withCounts = [] as Array<Record<string, unknown>>;
+    const withCounts: Array<{
+      id: string;
+      name: string;
+      lender_org_id: string;
+      created_at: string;
+      client_count: number;
+    }> = [];
     for (const p of portfolios ?? []) {
       const { count } = await context.supabase
         .from("lender_portfolio_clients")
         .select("id", { count: "exact", head: true })
         .eq("portfolio_id", p.id);
-      withCounts.push({ ...p, client_count: count ?? 0 });
+      withCounts.push({
+        id: p.id,
+        name: p.name,
+        lender_org_id: p.lender_org_id,
+        created_at: p.created_at,
+        client_count: count ?? 0,
+      });
     }
     return { orgs: orgs ?? [], portfolios: withCounts };
   });
@@ -175,7 +187,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         equity_dollars: equityDollars,
         equity_pct: equityPct,
         tenure_years: tenureYears,
-        last_sale_price: sales?.lastSale?.price ?? null,
+        last_sale_price: sales?.lastSale?.amount ?? null,
         last_sale_date: sales?.lastSale?.date ?? null,
         beds: chars?.beds ?? null,
         baths: chars?.baths ?? null,
