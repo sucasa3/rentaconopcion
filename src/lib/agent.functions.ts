@@ -769,7 +769,7 @@ export const getPortfolioCoverage = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await context.supabase
       .from("lender_portfolio_clients")
-      .select("id, client_name, address_line1, city, state, zip")
+      .select("id, client_name, client_email, address_line1, city, state, zip")
       .eq("portfolio_id", data.portfolioId)
       .limit(1000);
     if (error) throw new Error(error.message);
@@ -821,7 +821,12 @@ export const getPortfolioCoverage = createServerFn({ method: "POST" })
       return {
         id: m.id,
         name: m.client_name,
+        email: m.client_email,
         address: m.mappable ? m.full : m.address_line1 || "—",
+        street: m.address_line1 ?? "",
+        city: m.city ?? "",
+        state: m.state ?? "",
+        zip: m.zip ?? "",
         mappable: m.mappable,
         hasValue,
         hasDetail,
