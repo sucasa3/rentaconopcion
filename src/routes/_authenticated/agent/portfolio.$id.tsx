@@ -755,7 +755,7 @@ function AgentPortfolio() {
                       ))}
                       {pageRows.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                          <td colSpan={9} className="py-8 text-center text-muted-foreground">
                             No households match this filter.
                           </td>
                         </tr>
