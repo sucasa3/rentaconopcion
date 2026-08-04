@@ -1203,7 +1203,7 @@ function Field({
 }: {
   label: string;
   value: any;
-  info?: React.ReactNode;
+  info?: ReactNode;
   tone?: string;
 }) {
   return (
