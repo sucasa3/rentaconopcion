@@ -166,6 +166,33 @@ function PortfolioDetail() {
     ? data.clients.filter((c: any) => c.missing_loan_data).length
     : 0;
 
+  // Automatic top-up of missing loan data, budget-guarded.
+  const budgetFn = useServerFn(getLenderRecordsBudget);
+  const { data: budget } = useQuery({
+    queryKey: ["records-budget"],
+    queryFn: () => budgetFn(),
+    staleTime: 60_000,
+  });
+
+  const auto = useAutoEnrich({
+    key: `lender:${id}`,
+    pending: missingCount,
+    budget: budget as any,
+    ready: !!data && !enrich.isPending,
+    batchSize: 10,
+    maxAuto: 40,
+    runBatch: async (limit) => {
+      const r: any = await enrichFn({ data: { portfolioId: id, limit } });
+      return { enriched: r.enriched, remaining: r.remaining ?? 0 };
+    },
+    onDone: () => {
+      qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
+      qc.invalidateQueries({ queryKey: ["records-budget"] });
+    },
+  });
+
+
+
 
   return (
     <div className="flex min-h-screen flex-col">
