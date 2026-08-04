@@ -30,7 +30,6 @@ import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_auth
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
-import { Route as ApiPublicFelloWebhookRouteImport } from './routes/api/public/fello.webhook'
 import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 import { Route as AuthenticatedAgentPortfolioIdRouteImport } from './routes/_authenticated/agent/portfolio.$id'
@@ -142,11 +141,6 @@ const ApiPublicGhlBillingRoute = ApiPublicGhlBillingRouteImport.update({
   path: '/api/public/ghl/billing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicFelloWebhookRoute = ApiPublicFelloWebhookRouteImport.update({
-  id: '/api/public/fello/webhook',
-  path: '/api/public/fello/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicCampaignsTickRoute = ApiPublicCampaignsTickRouteImport.update({
   id: '/api/public/campaigns/tick',
   path: '/api/public/campaigns/tick',
@@ -186,7 +180,6 @@ export interface FileRoutesByFullPath {
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
-  '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
@@ -210,7 +203,6 @@ export interface FileRoutesByTo {
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
-  '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
@@ -238,7 +230,6 @@ export interface FileRoutesById {
   '/_authenticated/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
-  '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
@@ -266,7 +257,6 @@ export interface FileRouteTypes {
     | '/agent/portfolio/$id'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
-    | '/api/public/fello/webhook'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
@@ -290,7 +280,6 @@ export interface FileRouteTypes {
     | '/agent/portfolio/$id'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
-    | '/api/public/fello/webhook'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
@@ -317,7 +306,6 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/portfolio/$id'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
-    | '/api/public/fello/webhook'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
@@ -335,7 +323,6 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
-  ApiPublicFelloWebhookRoute: typeof ApiPublicFelloWebhookRoute
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
@@ -490,13 +477,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicGhlBillingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/fello/webhook': {
-      id: '/api/public/fello/webhook'
-      path: '/api/public/fello/webhook'
-      fullPath: '/api/public/fello/webhook'
-      preLoaderRoute: typeof ApiPublicFelloWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/campaigns/tick': {
       id: '/api/public/campaigns/tick'
       path: '/api/public/campaigns/tick'
@@ -586,7 +566,6 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,
-  ApiPublicFelloWebhookRoute: ApiPublicFelloWebhookRoute,
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
@@ -594,13 +573,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

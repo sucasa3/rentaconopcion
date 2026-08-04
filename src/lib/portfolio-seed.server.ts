@@ -1,9 +1,9 @@
-// Server-only: 76 real homeowners imported from Fello Expired Seller export
-// (2026-07-27). Used to seed a "Fello Import · 76 Homeowners" portfolio for
-// testing the lender dashboard and downstream reports.
-import raw from "./data/fello-homeowners.json";
+// Server-only: 76 real homeowner rows from the original CSV roster export
+// (2026-07-27). Used to seed a starter portfolio for the lender and agent
+// dashboards. This is a frozen file — not a live provider integration.
+import raw from "./data/portfolio-seed.json";
 
-export type FelloHomeowner = {
+export type SeedHomeowner = {
   client_name: string | null;
   client_email: string | null;
   client_phone: string | null;
@@ -14,6 +14,6 @@ export type FelloHomeowner = {
   notes: string | null;
 };
 
-export function getFelloHomeowners(): FelloHomeowner[] {
-  return raw as FelloHomeowner[];
+export function getSeedHomeowners(): SeedHomeowner[] {
+  return raw as SeedHomeowner[];
 }
