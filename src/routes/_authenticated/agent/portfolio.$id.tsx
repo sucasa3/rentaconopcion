@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Link2,
+  Info,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
