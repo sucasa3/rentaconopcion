@@ -311,7 +311,12 @@ function AgentPortfolio() {
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Household</th>
                         <th className="py-2 pr-3 font-medium">Intent</th>
-                        <th className="py-2 pr-3 font-medium">Readiness</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Readiness
+                            <ReadinessInfo />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Est. value</th>
                         <th className="py-2 pr-3 font-medium">Net proceeds</th>
                         <th className="py-2 pr-3 font-medium">Top signal</th>
