@@ -422,7 +422,12 @@ function AgentPortfolio() {
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Household</th>
-                        <th className="py-2 pr-3 font-medium">Intent</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Intent
+                            <IntentInfo />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
                             Readiness
@@ -430,7 +435,12 @@ function AgentPortfolio() {
                           </span>
                         </th>
                         <th className="py-2 pr-3 font-medium">Est. value</th>
-                        <th className="py-2 pr-3 font-medium">Net proceeds</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Net proceeds
+                            <NetProceedsInfo sellCostPct={sellCost} />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Top signal</th>
                       </tr>
                     </thead>
