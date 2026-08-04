@@ -884,6 +884,7 @@ function ReadinessBar({ score, label }: { score: number; label: string }) {
 
 function ClientDrawer({
   client,
+  sellCostPct,
   brief,
   briefLoading,
   onBrief,
@@ -892,6 +893,7 @@ function ClientDrawer({
   saving,
 }: {
   client: any;
+  sellCostPct: number;
   brief: string;
   briefLoading: boolean;
   onBrief: () => void;
