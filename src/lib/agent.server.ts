@@ -324,6 +324,112 @@ export function computeMoveScore(input: MoveScoreInput): MoveScore {
   return { score, band, signals, headline };
 }
 
+// ---------------------------------------------------------------------------
+// Listing readiness — "if they said yes today, could we list it?"
+// Separate from move score (intent). This is preparation.
+// ---------------------------------------------------------------------------
+
+export interface ReadinessCheck {
+  key: "equity_covers_costs" | "records" | "condition" | "tenure_basis" | "clear_of_listing" | "contactable";
+  label: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface ListingReadiness {
+  score: number; // 0..100
+  label: "list-ready" | "prep-needed" | "not-ready";
+  netProceeds: number | null;
+  checks: ReadinessCheck[];
+}
+
+export function computeListingReadiness(input: {
+  estimatedValue: number | null;
+  loanBalance: number | null;
+  sellCostPct: number; // e.g. 8 (commission + closing + concessions)
+  yearBuilt: number | null;
+  lastPermitDate: string | null;
+  tenureYears: number | null;
+  hasIntel: boolean;
+  listing: ListingRow | null;
+  hasContact: boolean;
+}): ListingReadiness {
+  const value = input.estimatedValue;
+  const netProceeds =
+    value != null
+      ? Math.round(value * (1 - input.sellCostPct / 100) - (input.loanBalance ?? 0))
+      : null;
+
+  const permitYears = yearsSince(input.lastPermitDate);
+  const age = input.yearBuilt ? new Date().getFullYear() - input.yearBuilt : null;
+
+  const checks: ReadinessCheck[] = [
+    {
+      key: "equity_covers_costs",
+      label: "Equity clears selling costs",
+      ok: netProceeds != null && netProceeds > 0,
+      detail:
+        netProceeds == null
+          ? "Need a valuation to model net proceeds."
+          : netProceeds > 0
+            ? `Est. $${netProceeds.toLocaleString()} at closing after ${input.sellCostPct}% costs.`
+            : "Underwater after selling costs — not a listing conversation yet.",
+    },
+    {
+      key: "records",
+      label: "Property records on file",
+      ok: input.hasIntel,
+      detail: input.hasIntel
+        ? "Valuation, tax, sale and permit history cached."
+        : "Pull property records to score this household.",
+    },
+    {
+      key: "condition",
+      label: "Condition story",
+      ok: (permitYears != null && permitYears <= 7) || (age != null && age <= 15),
+      detail:
+        permitYears != null && permitYears <= 7
+          ? "Recent permitted work supports a premium list price."
+          : age != null && age <= 15
+            ? "Newer construction — limited prep expected."
+            : "No recent permits — expect a pre-list prep conversation.",
+    },
+    {
+      key: "tenure_basis",
+      label: "Past the 2-year basis window",
+      ok: (input.tenureYears ?? 0) >= 2,
+      detail:
+        (input.tenureYears ?? 0) >= 2
+          ? "Qualifies for the capital-gains exclusion window."
+          : "Under two years of ownership — tax hit on gains.",
+    },
+    {
+      key: "clear_of_listing",
+      label: "Not represented elsewhere",
+      ok: !(
+        input.listing?.listed_with_other_agent &&
+        (input.listing.status === "active" || input.listing.status === "pending")
+      ),
+      detail: input.listing?.listed_with_other_agent
+        ? "Under another agent's agreement — value-only contact."
+        : "No active representation on record.",
+    },
+    {
+      key: "contactable",
+      label: "Reachable",
+      ok: input.hasContact,
+      detail: input.hasContact ? "Phone or email on file." : "No contact info — needs skip trace.",
+    },
+  ];
+
+  const passed = checks.filter((c) => c.ok).length;
+  const score = Math.round((passed / checks.length) * 100);
+  const label: ListingReadiness["label"] =
+    score >= 84 ? "list-ready" : score >= 50 ? "prep-needed" : "not-ready";
+
+  return { score, label, netProceeds, checks };
+}
+
 /** Deterministic, no-AI opening line so the dashboard is useful offline. */
 export function draftOpener(name: string | null, score: MoveScore): string {
   const first = (name ?? "there").split(" ")[0];
