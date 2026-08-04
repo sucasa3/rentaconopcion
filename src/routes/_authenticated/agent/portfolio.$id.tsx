@@ -731,6 +731,17 @@ function AgentPortfolio() {
                           </td>
                           <td className="py-2.5 pr-3">{moneyCompact(c.estimated_value)}</td>
                           <td className="py-2.5 pr-3">{moneyCompact(c.equity_dollars)}</td>
+                          <td
+                            className={`py-2.5 pr-3 font-semibold ${
+                              c.net_proceeds == null
+                                ? "text-muted-foreground"
+                                : c.net_proceeds > 0
+                                  ? "text-growth"
+                                  : "text-destructive"
+                            }`}
+                          >
+                            {moneyCompact(c.net_proceeds)}
+                          </td>
                           <td className="py-2.5 pr-3">
                             {c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—"}
                           </td>
