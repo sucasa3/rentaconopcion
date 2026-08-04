@@ -109,6 +109,31 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
             <p className="text-sm text-destructive">{(error as Error).message}</p>
           ) : data ? (
             <>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] text-muted-foreground">
+                  {data.counts.partial + data.counts.missing} home
+                  {data.counts.partial + data.counts.missing === 1 ? "" : "s"} need value, equity or
+                  mortgage records.
+                </p>
+                <div className="flex items-center gap-2">
+                  {progress ? (
+                    <span className="text-[11px] text-muted-foreground">{progress}</span>
+                  ) : null}
+                  <button
+                    onClick={handleRetry}
+                    disabled={retrying || data.counts.partial + data.counts.missing === 0}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                  >
+                    {retrying ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Retry pulls
+                  </button>
+                </div>
+              </div>
+
               <div className="mb-3 flex flex-wrap gap-2">
                 {(
                   [
