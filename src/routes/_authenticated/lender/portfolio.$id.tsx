@@ -4,7 +4,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { getPortfolio, ingestPortfolioCsv, enrichPortfolioFromAttom } from "@/lib/lender.functions";
+import {
+  getPortfolio,
+  ingestPortfolioCsv,
+  enrichPortfolioFromAttom,
+  getLenderRecordsBudget,
+} from "@/lib/lender.functions";
+import { useAutoEnrich } from "@/hooks/use-auto-enrich";
 import {
   ArrowLeft,
   Upload,
