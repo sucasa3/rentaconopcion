@@ -129,18 +129,17 @@ export function EquityMortgagePanel() {
         onOpenChange={setLenderOpen}
         equityDollars={equity?.equityDollars ?? null}
         currentRate={mortgage?.interestRate ?? null}
-        estSavingsMonthly={(() => {
-          const bal = equity?.loanBalanceEstimate;
-          const rate = mortgage?.interestRate;
-          if (!bal || !rate) return null;
-          const term = 360;
-          const pay = (p: number, r: number) => {
-            const m = r / 100 / 12;
-            return (p * m) / (1 - Math.pow(1 + m, -term));
-          };
-          return Math.max(0, Math.round(pay(bal, rate) - pay(bal, 6.5)));
-        })()}
+        loanBalance={equity?.loanBalanceEstimate ?? null}
+        cashOutHeadroom={equity?.cashOutHeadroom80 ?? null}
+        benchmarkRate={BENCHMARK_REFI_RATE}
+        estSavingsMonthly={
+          estimateRefiSavings(
+            equity?.loanBalanceEstimate,
+            mortgage?.interestRate,
+          )?.monthlySavings ?? null
+        }
       />
+
     </div>
   );
 }
