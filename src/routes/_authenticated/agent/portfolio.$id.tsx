@@ -931,6 +931,7 @@ function ClientDrawer({
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <BandPill band={client.band} score={client.move_score} />
+          <IntentInfo />
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
               READINESS_META[client.readiness_label]?.tone
@@ -938,11 +939,23 @@ function ClientDrawer({
           >
             {READINESS_META[client.readiness_label]?.label} · {client.readiness_score}
           </span>
+          <ReadinessInfo />
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
           <Field label="Est. value" value={money(client.estimated_value)} />
-          <Field label="Net proceeds" value={money(client.net_proceeds)} />
+          <Field
+            label="Net proceeds"
+            value={money(client.net_proceeds)}
+            info={<NetProceedsInfo sellCostPct={sellCostPct} />}
+            tone={
+              client.net_proceeds == null
+                ? undefined
+                : client.net_proceeds > 0
+                  ? "text-growth"
+                  : "text-destructive"
+            }
+          />
           <Field label="Equity" value={money(client.equity_dollars)} />
           <Field
             label="Tenure"
