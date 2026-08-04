@@ -801,6 +801,7 @@ function AgentPortfolio() {
       {selected && (
         <ClientDrawer
           client={selected}
+          sellCostPct={sellCost}
           brief={brief}
           briefLoading={makeBrief.isPending}
           onBrief={() => makeBrief.mutate(selected.id)}
@@ -1179,11 +1180,24 @@ function ClientDrawer({
   );
 }
 
-function Field({ label, value }: { label: string; value: any }) {
+function Field({
+  label,
+  value,
+  info,
+  tone,
+}: {
+  label: string;
+  value: any;
+  info?: React.ReactNode;
+  tone?: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-0.5 font-medium">{value}</p>
+      <p className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+        {info}
+      </p>
+      <p className={`mt-0.5 font-medium ${tone ?? ""}`}>{value}</p>
     </div>
   );
 }
