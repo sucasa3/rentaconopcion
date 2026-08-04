@@ -370,7 +370,10 @@ function AgentPortfolio() {
               {/* Agent widgets: readiness mix + referral visibility */}
               <div className="grid gap-4 lg:grid-cols-3">
                 <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                  <h3 className="text-sm font-semibold">Listing readiness mix</h3>
+                  <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+                    Listing readiness mix
+                    <ReadinessInfo />
+                  </h3>
                   <div className="mt-4 space-y-3">
                     {(["list-ready", "prep-needed", "not-ready"] as const).map((k) => {
                       const n = data.summary.readiness[k] ?? 0;
