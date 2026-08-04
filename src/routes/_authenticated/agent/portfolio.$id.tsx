@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   getAgentPortfolio,
   enrichAgentPortfolio,
@@ -27,6 +28,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Link2,
+  Info,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
@@ -60,6 +62,62 @@ const READINESS_META: Record<string, { label: string; tone: string }> = {
   "prep-needed": { label: "Prep needed", tone: "bg-amber-500/10 text-amber-700" },
   "not-ready": { label: "Not ready", tone: "bg-secondary text-muted-foreground" },
 };
+
+/** Tap-to-open explainer for the three listing-readiness bands. */
+function ReadinessInfo() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="What does readiness mean?"
+          className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Listing readiness
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          A 0–100 score from six pass/fail checks: equity clears selling costs,
+          property records on file, condition story, past the 2-year
+          capital-gains basis window, not represented elsewhere, and reachable.
+        </p>
+        <ul className="mt-3 space-y-1.5">
+          {(["list-ready", "prep-needed", "not-ready"] as const).map((k) => (
+            <li key={k} className="flex items-start gap-2">
+              <span
+                className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
+                  k === "list-ready"
+                    ? "bg-growth"
+                    : k === "prep-needed"
+                      ? "bg-amber-500"
+                      : "bg-muted-foreground/40"
+                }`}
+              />
+              <span>
+                <span className="font-medium">{READINESS_META[k].label}</span>
+                <span className="block text-muted-foreground">
+                  {k === "list-ready"
+                    ? "Score 84+. All checks pass — could take the listing today."
+                    : k === "prep-needed"
+                      ? "Score 50–83. Real potential, but a few prep steps remain before it's listable."
+                      : "Score < 50. Too many blockers — keep in value-only nurture."}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const STATUSES = ["off_market", "active", "pending", "sold", "expired", "withdrawn"] as const;
 const PAGE_SIZE = 25;
@@ -253,7 +311,12 @@ function AgentPortfolio() {
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Household</th>
                         <th className="py-2 pr-3 font-medium">Intent</th>
-                        <th className="py-2 pr-3 font-medium">Readiness</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Readiness
+                            <ReadinessInfo />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Est. value</th>
                         <th className="py-2 pr-3 font-medium">Net proceeds</th>
                         <th className="py-2 pr-3 font-medium">Top signal</th>
@@ -307,7 +370,10 @@ function AgentPortfolio() {
               {/* Agent widgets: readiness mix + referral visibility */}
               <div className="grid gap-4 lg:grid-cols-3">
                 <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                  <h3 className="text-sm font-semibold">Listing readiness mix</h3>
+                  <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+                    Listing readiness mix
+                    <ReadinessInfo />
+                  </h3>
                   <div className="mt-4 space-y-3">
                     {(["list-ready", "prep-needed", "not-ready"] as const).map((k) => {
                       const n = data.summary.readiness[k] ?? 0;
@@ -656,8 +722,9 @@ function ClientDrawer({
           <Field label="Permits" value={money(client.permit_total_value)} />
         </div>
 
-        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="mt-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Listing readiness
+          <ReadinessInfo />
         </h3>
         <ul className="mt-2 space-y-1.5">
           {client.readiness_checks?.map((c: any) => (
