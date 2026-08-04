@@ -120,7 +120,7 @@ function PortfolioDetail() {
   const filtered = useMemo(() => {
     if (!data) return [];
     const q = search.trim().toLowerCase();
-    return data.clients.filter((c: any) => {
+    const rows = data.clients.filter((c: any) => {
       if (segment !== "all" && c.segment !== segment) return false;
       if (!q) return true;
       return (
@@ -130,7 +130,29 @@ function PortfolioDetail() {
         (c.zip ?? "").toLowerCase().includes(q)
       );
     });
+
+    // Rank enriched households first: most complete loan/equity picture on top,
+    // then weighted by how actionable the numbers are.
+    const rank = (c: any) => {
+      let s = 0;
+      if (c.equity_cents != null) s += 40;
+      if (c.loan_balance_cents != null) s += 30;
+      if (c.rate_at_close != null) s += 20;
+      if (c.loan_at_close_cents != null) s += 10;
+      if (c.missing_loan_data) s -= 25;
+      return s;
+    };
+
+    return [...rows].sort((a: any, b: any) => {
+      const d = rank(b) - rank(a);
+      if (d !== 0) return d;
+      const ea = a.equity_cents ?? -1;
+      const eb = b.equity_cents ?? -1;
+      if (eb !== ea) return eb - ea;
+      return (a.full_name ?? "").localeCompare(b.full_name ?? "");
+    });
   }, [data, segment, search]);
+
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
