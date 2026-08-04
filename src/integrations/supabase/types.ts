@@ -245,6 +245,7 @@ export type Database = {
       campaigns: {
         Row: {
           active: boolean
+          audiences: string[]
           cadence: string
           channel: string
           created_at: string
@@ -264,6 +265,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          audiences?: string[]
           cadence?: string
           channel?: string
           created_at?: string
@@ -283,6 +285,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          audiences?: string[]
           cadence?: string
           channel?: string
           created_at?: string
@@ -1265,6 +1268,59 @@ export type Database = {
           zip?: string | null
         }
         Relationships: []
+      }
+      property_listing_status: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          list_date: string | null
+          list_price_cents: number | null
+          listed_with_other_agent: boolean
+          listing_agent_name: string | null
+          portfolio_client_id: string
+          raw: Json | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          list_date?: string | null
+          list_price_cents?: number | null
+          listed_with_other_agent?: boolean
+          listing_agent_name?: string | null
+          portfolio_client_id: string
+          raw?: Json | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          list_date?: string | null
+          list_price_cents?: number | null
+          listed_with_other_agent?: boolean
+          listing_agent_name?: string | null
+          portfolio_client_id?: string
+          raw?: Json | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_listing_status_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: true
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pros: {
         Row: {
