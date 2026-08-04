@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -114,6 +114,117 @@ function ReadinessInfo() {
               </span>
             </li>
           ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** Tap-to-open explainer for the four move-intent bands. */
+function IntentInfo() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="What does intent mean?"
+          className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Move intent
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          A 0–100 score from property-record signals: time in the home, equity
+          position, recent permitted work, tax pressure, absentee ownership,
+          outgrown space, and any expired or withdrawn listing.
+        </p>
+        <ul className="mt-3 space-y-1.5">
+          {(["hot", "warm", "nurture", "hold"] as const).map((k) => (
+            <li key={k} className="flex items-start gap-2">
+              <span
+                className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
+                  k === "hot"
+                    ? "bg-growth"
+                    : k === "warm"
+                      ? "bg-amber-500"
+                      : k === "nurture"
+                        ? "bg-primary"
+                        : "bg-muted-foreground/40"
+                }`}
+              />
+              <span>
+                <span className="font-medium">{BAND_META[k].label}</span>
+                <span className="block text-muted-foreground">
+                  {k === "hot"
+                    ? "Score 60+. Clear, time-sensitive move signal — call today."
+                    : k === "warm"
+                      ? "Score 38–59. Several solid signals. Worth a real conversation."
+                      : k === "nurture"
+                        ? "Score 18–37. Mild signals. Stay in touch with value content."
+                        : "Score under 18. Little movement signal, or represented elsewhere."}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** Tap-to-open explainer for the modeled net proceeds figure. */
+function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="How are net proceeds calculated?"
+          className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Projected net proceeds
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          What the homeowner would likely walk away with at closing, after
+          agent compensation and closing costs.
+        </p>
+        <div className="mt-3 rounded-lg bg-secondary/60 p-2 font-mono text-[11px] leading-relaxed">
+          Est. value
+          <br />− {sellCostPct}% cost to sell
+          <br />− mortgage balance
+          <br />
+          <span className="font-semibold">= net proceeds</span>
+        </div>
+        <ul className="mt-3 space-y-1.5 text-muted-foreground">
+          <li>
+            <span className="font-medium text-foreground">Cost to sell</span> covers
+            agent compensation on both sides, title and escrow, transfer taxes, and
+            typical seller concessions. Adjust the {sellCostPct}% assumption at the
+            top of the page.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Est. value</span> and the
+            mortgage balance are modeled from property records — not an appraisal or
+            a payoff statement.
+          </li>
+          <li>A negative figure means the sale would not clear costs and payoff.</li>
         </ul>
       </PopoverContent>
     </Popover>
@@ -311,7 +422,12 @@ function AgentPortfolio() {
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Household</th>
-                        <th className="py-2 pr-3 font-medium">Intent</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Intent
+                            <IntentInfo />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
                             Readiness
@@ -319,7 +435,12 @@ function AgentPortfolio() {
                           </span>
                         </th>
                         <th className="py-2 pr-3 font-medium">Est. value</th>
-                        <th className="py-2 pr-3 font-medium">Net proceeds</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Net proceeds
+                            <NetProceedsInfo sellCostPct={sellCost} />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Top signal</th>
                       </tr>
                     </thead>
@@ -557,14 +678,30 @@ function AgentPortfolio() {
                 </div>
 
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[860px] text-left text-sm">
+                  <table className="w-full min-w-[980px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Household</th>
-                        <th className="py-2 pr-3 font-medium">Intent</th>
-                        <th className="py-2 pr-3 font-medium">Readiness</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Intent
+                            <IntentInfo />
+                          </span>
+                        </th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Readiness
+                            <ReadinessInfo />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Value</th>
                         <th className="py-2 pr-3 font-medium">Equity</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Net proceeds
+                            <NetProceedsInfo sellCostPct={sellCost} />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Tenure</th>
                         <th className="py-2 pr-3 font-medium">Listing</th>
                         <th className="py-2 pr-3 font-medium">Referrals</th>
@@ -594,6 +731,17 @@ function AgentPortfolio() {
                           </td>
                           <td className="py-2.5 pr-3">{moneyCompact(c.estimated_value)}</td>
                           <td className="py-2.5 pr-3">{moneyCompact(c.equity_dollars)}</td>
+                          <td
+                            className={`py-2.5 pr-3 font-semibold ${
+                              c.net_proceeds == null
+                                ? "text-muted-foreground"
+                                : c.net_proceeds > 0
+                                  ? "text-growth"
+                                  : "text-destructive"
+                            }`}
+                          >
+                            {moneyCompact(c.net_proceeds)}
+                          </td>
                           <td className="py-2.5 pr-3">
                             {c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—"}
                           </td>
@@ -607,7 +755,7 @@ function AgentPortfolio() {
                       ))}
                       {pageRows.length === 0 && (
                         <tr>
-                          <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                          <td colSpan={9} className="py-8 text-center text-muted-foreground">
                             No households match this filter.
                           </td>
                         </tr>
@@ -653,6 +801,7 @@ function AgentPortfolio() {
       {selected && (
         <ClientDrawer
           client={selected}
+          sellCostPct={sellCost}
           brief={brief}
           briefLoading={makeBrief.isPending}
           onBrief={() => makeBrief.mutate(selected.id)}
@@ -735,6 +884,7 @@ function ReadinessBar({ score, label }: { score: number; label: string }) {
 
 function ClientDrawer({
   client,
+  sellCostPct,
   brief,
   briefLoading,
   onBrief,
@@ -743,6 +893,7 @@ function ClientDrawer({
   saving,
 }: {
   client: any;
+  sellCostPct: number;
   brief: string;
   briefLoading: boolean;
   onBrief: () => void;
@@ -780,6 +931,7 @@ function ClientDrawer({
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <BandPill band={client.band} score={client.move_score} />
+          <IntentInfo />
           <span
             className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
               READINESS_META[client.readiness_label]?.tone
@@ -787,11 +939,23 @@ function ClientDrawer({
           >
             {READINESS_META[client.readiness_label]?.label} · {client.readiness_score}
           </span>
+          <ReadinessInfo />
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
           <Field label="Est. value" value={money(client.estimated_value)} />
-          <Field label="Net proceeds" value={money(client.net_proceeds)} />
+          <Field
+            label="Net proceeds"
+            value={money(client.net_proceeds)}
+            info={<NetProceedsInfo sellCostPct={sellCostPct} />}
+            tone={
+              client.net_proceeds == null
+                ? undefined
+                : client.net_proceeds > 0
+                  ? "text-growth"
+                  : "text-destructive"
+            }
+          />
           <Field label="Equity" value={money(client.equity_dollars)} />
           <Field
             label="Tenure"
@@ -1031,11 +1195,24 @@ function ClientDrawer({
   );
 }
 
-function Field({ label, value }: { label: string; value: any }) {
+function Field({
+  label,
+  value,
+  info,
+  tone,
+}: {
+  label: string;
+  value: any;
+  info?: ReactNode;
+  tone?: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-0.5 font-medium">{value}</p>
+      <p className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+        {info}
+      </p>
+      <p className={`mt-0.5 font-medium ${tone ?? ""}`}>{value}</p>
     </div>
   );
 }
