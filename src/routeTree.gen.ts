@@ -28,6 +28,7 @@ import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/lead
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
 import { Route as ApiPublicFelloWebhookRouteImport } from './routes/api/public/fello.webhook'
+import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -126,6 +127,11 @@ const ApiPublicFelloWebhookRoute = ApiPublicFelloWebhookRouteImport.update({
   path: '/api/public/fello/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCampaignsTickRoute = ApiPublicCampaignsTickRouteImport.update({
+  id: '/api/public/campaigns/tick',
+  path: '/api/public/campaigns/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedLenderPortfolioIdRoute =
   AuthenticatedLenderPortfolioIdRouteImport.update({
     id: '/portfolio/$id',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
+  '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
@@ -169,6 +176,7 @@ export interface FileRoutesByTo {
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
+  '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
@@ -192,6 +200,7 @@ export interface FileRoutesById {
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRoute
+  '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/fello/webhook': typeof ApiPublicFelloWebhookRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
@@ -215,6 +224,7 @@ export interface FileRouteTypes {
     | '/requests/$id'
     | '/lender/'
     | '/lender/portfolio/$id'
+    | '/api/public/campaigns/tick'
     | '/api/public/fello/webhook'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
@@ -235,6 +245,7 @@ export interface FileRouteTypes {
     | '/requests/$id'
     | '/lender'
     | '/lender/portfolio/$id'
+    | '/api/public/campaigns/tick'
     | '/api/public/fello/webhook'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
@@ -257,6 +268,7 @@ export interface FileRouteTypes {
     | '/_authenticated/requests/$id'
     | '/_authenticated/lender/'
     | '/_authenticated/lender/portfolio/$id'
+    | '/api/public/campaigns/tick'
     | '/api/public/fello/webhook'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
@@ -275,6 +287,7 @@ export interface RootRouteChildren {
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
   ApiPublicFelloWebhookRoute: typeof ApiPublicFelloWebhookRoute
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
@@ -416,6 +429,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFelloWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/campaigns/tick': {
+      id: '/api/public/campaigns/tick'
+      path: '/api/public/campaigns/tick'
+      fullPath: '/api/public/campaigns/tick'
+      preLoaderRoute: typeof ApiPublicCampaignsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/lender/portfolio/$id': {
       id: '/_authenticated/lender/portfolio/$id'
       path: '/portfolio/$id'
@@ -469,6 +489,7 @@ const rootRouteChildren: RootRouteChildren = {
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,
   ApiPublicFelloWebhookRoute: ApiPublicFelloWebhookRoute,
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
