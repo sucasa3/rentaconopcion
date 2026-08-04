@@ -12,7 +12,7 @@ import { AdminCampaignPanel } from "@/components/admin-campaign-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign } from "lucide-react";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
     meta: [
       { title: "Admin — SuCasa" },
