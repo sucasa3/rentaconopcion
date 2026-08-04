@@ -1,0 +1,293 @@
+/**
+ * Campaign scheduler — decides which homeowners are due, generates the copy,
+ * records the send, then hands the payload to GoHighLevel.
+ *
+ * Server-only. Invoked by the daily cron route and by admin dry-run/test tools.
+ */
+
+import {
+  loadCachedFacts,
+  isDue,
+  generateCopy,
+  buildPayload,
+  type CampaignRow,
+  type CampaignTarget,
+} from "@/lib/campaigns.server";
+
+export type TickOptions = {
+  limit?: number;
+  dryRun?: boolean;
+  campaignKey?: string;
+  clientId?: string;
+  orgId?: string;
+};
+
+export type TickResult = {
+  evaluated: number;
+  generated: number;
+  sent: number;
+  skipped: number;
+  errors: number;
+  samples: Array<{
+    client: string;
+    campaign: string;
+    status: string;
+    subject?: string;
+    body?: string;
+    reason?: string;
+  }>;
+};
+
+const MONTHLY_CAP = 2;
+
+export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResult> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const limit = opts.limit ?? 100;
+  const result: TickResult = { evaluated: 0, generated: 0, sent: 0, skipped: 0, errors: 0, samples: [] };
+
+  const { data: campaignRows } = await supabaseAdmin
+    .from("campaigns")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order");
+  const campaigns = (campaignRows ?? []) as unknown as CampaignRow[];
+  if (!campaigns.length) return result;
+
+  let actQ = supabaseAdmin
+    .from("campaign_activations")
+    .select("id, lender_org_id, campaign_id, portfolio_id, portfolio_client_id")
+    .eq("active", true);
+  if (opts.orgId) actQ = actQ.eq("lender_org_id", opts.orgId);
+  const { data: activations } = await actQ;
+  if (!activations?.length) return result;
+
+  const orgIds = [...new Set(activations.map((a) => a.lender_org_id))];
+  const { data: orgs } = await supabaseAdmin
+    .from("lender_orgs")
+    .select("id, name, org_type")
+    .in("id", orgIds);
+  const orgById = new Map((orgs ?? []).map((o) => [o.id, o]));
+
+  const { data: portfolios } = await supabaseAdmin
+    .from("lender_portfolios")
+    .select("id, lender_org_id")
+    .in("lender_org_id", orgIds);
+  const portfolioIds = (portfolios ?? []).map((p) => p.id);
+  const orgByPortfolio = new Map((portfolios ?? []).map((p) => [p.id, p.lender_org_id]));
+
+  if (!portfolioIds.length) return result;
+
+  let clientQ = supabaseAdmin
+    .from("lender_portfolio_clients")
+    .select(
+      "id, portfolio_id, homeowner_id, client_name, client_email, client_phone, address_line1, city, state, zip, close_date, loan_amount_at_close_cents, rate_at_close",
+    )
+    .in("portfolio_id", portfolioIds);
+  if (opts.clientId) clientQ = clientQ.eq("id", opts.clientId);
+  const { data: clients } = await clientQ;
+  if (!clients?.length) return result;
+
+  const clientsByPortfolio = new Map<string, typeof clients>();
+  for (const c of clients) {
+    const arr = clientsByPortfolio.get(c.portfolio_id) ?? [];
+    arr.push(c);
+    clientsByPortfolio.set(c.portfolio_id, arr);
+  }
+
+  // Recent sends for cap + cadence checks
+  const { data: recentSends } = await supabaseAdmin
+    .from("campaign_sends")
+    .select("campaign_id, portfolio_client_id, created_at, status")
+    .gte("created_at", new Date(Date.now() - 400 * 86400000).toISOString());
+  const lastByPair = new Map<string, string>();
+  const monthCount = new Map<string, number>();
+  const monthAgo = Date.now() - 30 * 86400000;
+  for (const s of recentSends ?? []) {
+    if (!s.portfolio_client_id) continue;
+    const k = `${s.campaign_id}:${s.portfolio_client_id}`;
+    if (!lastByPair.has(k)) lastByPair.set(k, s.created_at);
+    else if (new Date(s.created_at) > new Date(lastByPair.get(k)!)) lastByPair.set(k, s.created_at);
+    if (new Date(s.created_at).getTime() > monthAgo) {
+      monthCount.set(s.portfolio_client_id, (monthCount.get(s.portfolio_client_id) ?? 0) + 1);
+    }
+  }
+
+  // Homeowner opt-outs
+  const homeownerIds = clients.map((c) => c.homeowner_id).filter(Boolean) as string[];
+  const optedOut = new Set<string>();
+  if (homeownerIds.length) {
+    const { data: profs } = await supabaseAdmin
+      .from("profiles")
+      .select("id, campaign_opt_out, language")
+      .in("id", homeownerIds);
+    for (const p of profs ?? []) if (p.campaign_opt_out) optedOut.add(p.id);
+  }
+
+  const factsCache = new Map<string, Awaited<ReturnType<typeof loadCachedFacts>>>();
+
+  outer: for (const act of activations) {
+    const campaign = campaigns.find((c) => c.id === act.campaign_id);
+    if (!campaign) continue;
+    if (opts.campaignKey && campaign.key !== opts.campaignKey) continue;
+
+    const org = orgById.get(act.lender_org_id);
+    if (!org) continue;
+
+    // Resolve target clients for this activation's scope
+    let scope = clients.filter((c) => orgByPortfolio.get(c.portfolio_id) === act.lender_org_id);
+    if (act.portfolio_id) scope = scope.filter((c) => c.portfolio_id === act.portfolio_id);
+    if (act.portfolio_client_id) scope = scope.filter((c) => c.id === act.portfolio_client_id);
+
+    for (const c of scope) {
+      if (result.generated >= limit) break outer;
+      result.evaluated++;
+
+      const skip = (reason: string) => {
+        result.skipped++;
+        if (result.samples.length < 20)
+          result.samples.push({ client: c.client_name ?? c.id, campaign: campaign.key, status: "skipped", reason });
+      };
+
+      if (!c.client_email) { skip("no email"); continue; }
+      if (c.homeowner_id && optedOut.has(c.homeowner_id)) { skip("opted out"); continue; }
+      if ((monthCount.get(c.id) ?? 0) >= MONTHLY_CAP && !opts.dryRun) { skip("monthly cap"); continue; }
+
+      const target: CampaignTarget = {
+        clientId: c.id,
+        orgId: org.id,
+        orgName: org.name,
+        orgType: org.org_type ?? "lender",
+        homeownerId: c.homeowner_id,
+        name: c.client_name,
+        email: c.client_email,
+        phone: c.client_phone,
+        address: c.address_line1,
+        city: c.city,
+        state: c.state,
+        zip: c.zip,
+        closeDate: c.close_date,
+        loanAtCloseCents: c.loan_amount_at_close_cents,
+        rateAtClose: c.rate_at_close,
+      };
+
+      let facts = factsCache.get(c.id);
+      if (!facts) {
+        facts = await loadCachedFacts(target);
+        factsCache.set(c.id, facts);
+      }
+
+      const due = isDue(campaign, facts, target, lastByPair.get(`${campaign.id}:${c.id}`) ?? null);
+      if (!due.due && !opts.dryRun) { skip(due.reason); continue; }
+
+      const copy = await generateCopy(campaign, facts, target);
+      const payload = buildPayload(campaign, facts, target, copy);
+      result.generated++;
+
+      if (opts.dryRun) {
+        if (result.samples.length < 20)
+          result.samples.push({
+            client: c.client_name ?? c.id,
+            campaign: campaign.key,
+            status: due.due ? "would send" : `would skip (${due.reason})`,
+            subject: copy.subject,
+            body: copy.body,
+          });
+        continue;
+      }
+
+      const { data: sendRow } = await supabaseAdmin
+        .from("campaign_sends")
+        .insert({
+          campaign_id: campaign.id,
+          lender_org_id: org.id,
+          portfolio_client_id: c.id,
+          homeowner_id: c.homeowner_id,
+          recipient_email: c.client_email,
+          recipient_name: c.client_name,
+          subject: copy.subject,
+          body: copy.body,
+          payload,
+          status: "pending",
+        })
+        .select("id")
+        .maybeSingle();
+
+      try {
+        const { pushCampaignContact } = await import("@/lib/ghl.server");
+        const contactId = await pushCampaignContact({
+          email: c.client_email,
+          phone: c.client_phone,
+          fullName: c.client_name,
+          city: c.city,
+          state: c.state,
+          tag: campaign.ghl_tag,
+          payload,
+        });
+        if (sendRow?.id) {
+          await supabaseAdmin
+            .from("campaign_sends")
+            .update({ status: "sent", ghl_contact_id: contactId, sent_at: new Date().toISOString() })
+            .eq("id", sendRow.id);
+        }
+        result.sent++;
+        monthCount.set(c.id, (monthCount.get(c.id) ?? 0) + 1);
+        if (result.samples.length < 20)
+          result.samples.push({
+            client: c.client_name ?? c.id,
+            campaign: campaign.key,
+            status: "sent",
+            subject: copy.subject,
+          });
+      } catch (e) {
+        result.errors++;
+        const msg = (e as Error).message.slice(0, 500);
+        if (sendRow?.id) {
+          await supabaseAdmin
+            .from("campaign_sends")
+            .update({ status: "failed", error_message: msg })
+            .eq("id", sendRow.id);
+        }
+        if (result.samples.length < 20)
+          result.samples.push({ client: c.client_name ?? c.id, campaign: campaign.key, status: "failed", reason: msg });
+      }
+    }
+  }
+
+  // Retry recent failures (bounded)
+  await retryFailedSends(10);
+
+  return result;
+}
+
+async function retryFailedSends(limit: number) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: failed } = await supabaseAdmin
+    .from("campaign_sends")
+    .select("id, recipient_email, recipient_name, payload, campaign_id")
+    .eq("status", "failed")
+    .gte("created_at", new Date(Date.now() - 3 * 86400000).toISOString())
+    .limit(limit);
+  if (!failed?.length) return;
+
+  const { data: campaignRows } = await supabaseAdmin.from("campaigns").select("id, ghl_tag");
+  const tagById = new Map((campaignRows ?? []).map((c) => [c.id, c.ghl_tag]));
+  const { pushCampaignContact } = await import("@/lib/ghl.server");
+
+  for (const f of failed) {
+    if (!f.recipient_email) continue;
+    try {
+      const contactId = await pushCampaignContact({
+        email: f.recipient_email,
+        fullName: f.recipient_name,
+        tag: tagById.get(f.campaign_id) ?? "sucasa_campaign",
+        payload: (f.payload ?? {}) as Record<string, string>,
+      });
+      await supabaseAdmin
+        .from("campaign_sends")
+        .update({ status: "sent", ghl_contact_id: contactId, sent_at: new Date().toISOString(), error_message: null })
+        .eq("id", f.id);
+    } catch {
+      /* leave failed for the next tick */
+    }
+  }
+}

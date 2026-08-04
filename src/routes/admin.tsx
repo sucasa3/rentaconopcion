@@ -8,6 +8,7 @@ import { AttomSpendPanel } from "@/components/attom-spend-panel";
 import { AdminLenderPanel } from "@/components/admin-lender-panel";
 import { AdminProfilesPanel } from "@/components/admin-profiles-panel";
 import { AdminPartnerPanel } from "@/components/admin-partner-panel";
+import { AdminCampaignPanel } from "@/components/admin-campaign-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign } from "lucide-react";
 
@@ -60,6 +61,8 @@ function Admin() {
           <AttomSpendPanel />
 
           <AdminLenderPanel />
+
+          <AdminCampaignPanel />
 
           <AdminLeadsPanel />
 

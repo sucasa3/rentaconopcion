@@ -203,6 +203,44 @@ export async function createServiceLeadOpportunity(
   return r?.opportunity?.id ?? r?.id ?? null;
 }
 
+// === CAMPAIGNS ===
+// SuCasa computes the message; GHL sends it. We write the computed values onto
+// the contact as custom fields and apply the campaign tag that triggers the
+// GHL workflow / email template.
+export type CampaignContactPush = {
+  email: string;
+  phone?: string | null;
+  fullName?: string | null;
+  city?: string | null;
+  state?: string | null;
+  tag: string;
+  payload: Record<string, string>;
+};
+
+export async function pushCampaignContact(p: CampaignContactPush): Promise<string> {
+  const [firstName, ...rest] = (p.fullName ?? "").trim().split(/\s+/);
+  const customFields = Object.entries(p.payload).map(([k, v]) => ({
+    key: `sc_${k}`,
+    field_value: String(v ?? ""),
+  }));
+  const body = {
+    locationId: env("GHL_LOCATION_ID"),
+    email: p.email,
+    phone: p.phone ?? undefined,
+    firstName: firstName || undefined,
+    lastName: rest.join(" ") || undefined,
+    city: p.city ?? undefined,
+    state: p.state ?? undefined,
+    tags: ["homeowner", "sucasa-app", p.tag],
+    customFields,
+  };
+  const r = await ghlFetch("/contacts/upsert", { method: "POST", body: JSON.stringify(body) });
+  const id = r?.contact?.id ?? r?.id;
+  if (!id) throw new Error(`pushCampaignContact: no id in response: ${JSON.stringify(r)}`);
+  return id;
+}
+
+
 // Best-effort SMS to a pro via GHL conversations API. Silently skips if
 // GHL_LOCATION_ID is missing. Errors bubble to caller (which logs them).
 export async function sendProSms(toPhone: string, message: string): Promise<void> {

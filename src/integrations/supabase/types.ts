@@ -95,6 +95,213 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_activations: {
+        Row: {
+          active: boolean
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          lender_org_id: string
+          portfolio_client_id: string | null
+          portfolio_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lender_org_id: string
+          portfolio_client_id?: string | null
+          portfolio_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lender_org_id?: string
+          portfolio_client_id?: string | null
+          portfolio_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_activations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_activations_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_activations_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_activations_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_sends: {
+        Row: {
+          body: string | null
+          campaign_id: string
+          created_at: string
+          error_message: string | null
+          ghl_contact_id: string | null
+          homeowner_id: string | null
+          id: string
+          lender_org_id: string | null
+          payload: Json
+          portfolio_client_id: string | null
+          recipient_email: string | null
+          recipient_name: string | null
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+        }
+        Insert: {
+          body?: string | null
+          campaign_id: string
+          created_at?: string
+          error_message?: string | null
+          ghl_contact_id?: string | null
+          homeowner_id?: string | null
+          id?: string
+          lender_org_id?: string | null
+          payload?: Json
+          portfolio_client_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string | null
+          campaign_id?: string
+          created_at?: string
+          error_message?: string | null
+          ghl_contact_id?: string | null
+          homeowner_id?: string | null
+          id?: string
+          lender_org_id?: string | null
+          payload?: Json
+          portfolio_client_id?: string | null
+          recipient_email?: string | null
+          recipient_name?: string | null
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_sends_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_sends_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          active: boolean
+          cadence: string
+          channel: string
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          data_fields: string[]
+          description: string | null
+          ghl_tag: string
+          id: string
+          key: string
+          min_days_between: number
+          name: string
+          prompt_template: string
+          sort_order: number
+          trigger_month: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          cadence?: string
+          channel?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          data_fields?: string[]
+          description?: string | null
+          ghl_tag: string
+          id?: string
+          key: string
+          min_days_between?: number
+          name: string
+          prompt_template: string
+          sort_order?: number
+          trigger_month?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          cadence?: string
+          channel?: string
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          data_fields?: string[]
+          description?: string | null
+          ghl_tag?: string
+          id?: string
+          key?: string
+          min_days_between?: number
+          name?: string
+          prompt_template?: string
+          sort_order?: number
+          trigger_month?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claims: {
         Row: {
           created_at: string
@@ -726,6 +933,7 @@ export type Database = {
           id: string
           license_number: string | null
           name: string
+          org_type: string
           plan: string
           primary_contact_email: string | null
           updated_at: string
@@ -736,6 +944,7 @@ export type Database = {
           id?: string
           license_number?: string | null
           name: string
+          org_type?: string
           plan?: string
           primary_contact_email?: string | null
           updated_at?: string
@@ -746,6 +955,7 @@ export type Database = {
           id?: string
           license_number?: string | null
           name?: string
+          org_type?: string
           plan?: string
           primary_contact_email?: string | null
           updated_at?: string
@@ -900,6 +1110,7 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          campaign_opt_out: boolean
           city: string | null
           created_at: string
           email: string | null
@@ -921,6 +1132,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          campaign_opt_out?: boolean
           city?: string | null
           created_at?: string
           email?: string | null
@@ -942,6 +1154,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          campaign_opt_out?: boolean
           city?: string | null
           created_at?: string
           email?: string | null
