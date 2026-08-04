@@ -702,8 +702,50 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
       }
     }
 
-    return { enriched, skipped, failed, total: rows?.length ?? 0 };
+    return {
+      enriched,
+      skipped,
+      failed,
+      total: rows.length,
+      remaining: Math.max(0, pendingBefore - enriched - skipped),
+    };
   });
+
+// ---------------------------------------------------------------------------
+// Monthly property-records allowance, lender-scoped. Drives the automatic
+// background pulls: the UI stops pulling once the soft cap is reached.
+// Provider-neutral field names — the UI never names the data vendor.
+// ---------------------------------------------------------------------------
+export const getLenderRecordsBudget = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertLenderAccess(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const monthKey = monthStart.toISOString().slice(0, 10);
+
+    const { data: b } = await supabaseAdmin
+      .from("attom_monthly_budget")
+      .select("tier_calls_included, calls_used, soft_cap_pct, cache_only_mode")
+      .eq("month", monthKey)
+      .maybeSingle();
+
+    if (!b) return null;
+    const included = b.tier_calls_included || 0;
+    const used = b.calls_used || 0;
+    return {
+      used,
+      included,
+      remaining: Math.max(0, included - used),
+      pct: included > 0 ? Math.round((used / included) * 100) : 0,
+      softCapPct: b.soft_cap_pct,
+      cacheOnly: b.cache_only_mode,
+    };
+  });
+
 
 // ---------------------------------------------------------------------------
 // Homeowner-facing: refi lender matching + intent handoff.
