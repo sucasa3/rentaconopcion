@@ -32,9 +32,28 @@ Frontend — `src/routes/_authenticated/agent/portfolio.$id.tsx`:
 - Replace the single referral list with a `Tabs` block (existing shadcn `Tabs`) holding the three feeds; keep the current row styling and empty states.
 - Add the two extra sections to the client drawer below the referrals block.
 
-No schema changes, no new tables, no migration.
+## Opens and clicks (engagement tracking)
+
+Yes — but it needs one addition. Today the send record only stores whether SuCasa handed the message to the sending platform (`scheduled` / `sent` / `failed`); nothing records what the client did with it, and no webhook currently listens for email events. Open and click tracking is produced by the sending platform, so it has to be fed back in.
+
+The addition:
+
+- Migration: add `delivered_at`, `opened_at`, `clicked_at`, `open_count`, `click_count` to the campaign send record.
+- New public webhook route `src/routes/api/public/ghl.email.ts` — HMAC-verified with the existing `GHL_WEBHOOK_SECRET`, same pattern as the billing webhook. It matches the incoming event to a send record (by contact id + campaign tag, stored at send time) and stamps the delivered/opened/clicked fields.
+- Requires a workflow in the sending platform that posts email delivered/opened/clicked events to that URL — a one-time setup on your side; without it the columns simply stay empty and the feed shows "Sent".
+
+UI effect in the Communicated tab: each row shows a status chip progressing `Scheduled → Sent → Delivered → Opened → Clicked`, with the relative time of the latest event ("Opened 2 days ago"). Clients who opened but never replied become the natural follow-up list, and the widget summary gains an `N opened` count.
+
+Caveat worth knowing: open tracking relies on a tracking pixel, so Apple Mail Privacy Protection and similar tools inflate or suppress opens. Clicks are the reliable signal; opens are directional.
+
+## Scope
+
+- Recommendations + communicated feeds: no schema change.
+- Open/click tracking: one migration plus one webhook route, and a workflow set up on the sending platform side.
 
 ## Verify
 
 - Build/typecheck pass.
 - Open the agent portfolio: the widget shows three tabs; Referrals matches today's list; Recommendations and Communicated populate for linked clients and show clean empty states otherwise.
+- Post a signed test event to the new webhook and confirm the matching send row flips to Opened in the Communicated tab.
+
