@@ -421,6 +421,8 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       summary: {
         total: enriched.length,
         with_intel: enriched.filter((c) => c.has_intel).length,
+        with_value: enriched.filter((c) => c.estimated_value != null).length,
+        unmappable: enriched.filter((c) => !c.city && !c.zip).length,
         bands,
         readiness: readinessCounts,
         sell_cost_pct: sellCostPct,
@@ -511,8 +513,20 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
     const { getPropertyIntel } = await import("@/lib/valuation.server");
 
     const targets: Array<{ full: string }> = [];
+    let unmappable = 0;
     for (const r of rows ?? []) {
       if (!r.address_line1) continue;
+      // The property-records provider requires a street line plus city/state or
+      // ZIP. Placeholder rows ("Address on file") would burn a call per class
+      // and return a 400, so skip them instead of spending the batch on them.
+      if (!r.city && !r.zip) {
+        unmappable += 1;
+        continue;
+      }
+      if (/address on file/i.test(r.address_line1)) {
+        unmappable += 1;
+        continue;
+      }
       const full = [r.address_line1, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
         .filter(Boolean)
         .join(", ");
@@ -525,6 +539,7 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
       targets.push({ full });
       if (targets.length >= data.limit) break;
     }
+
 
     let ok = 0;
     let failed = 0;
@@ -540,7 +555,7 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
         failed += 1;
       }
     }
-    return { enriched: ok, failed, remaining: Math.max(0, (rows?.length ?? 0) - ok) };
+    return { enriched: ok, failed, unmappable, remaining: Math.max(0, targets.length - ok) };
   });
 
 // ---------------------------------------------------------------------------
