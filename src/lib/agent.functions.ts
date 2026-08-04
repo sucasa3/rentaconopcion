@@ -210,6 +210,20 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         beds: chars?.beds ?? null,
       });
 
+      const readiness = computeListingReadiness({
+        estimatedValue: value,
+        loanBalance: balance,
+        sellCostPct,
+        yearBuilt: chars?.yearBuilt ?? null,
+        lastPermitDate: permits?.lastPermitDate ?? null,
+        tenureYears,
+        hasIntel: !!intel,
+        listing: listing as any,
+        hasContact: !!(c.client_email || c.client_phone),
+      });
+
+      const referrals = c.homeowner_id ? referralsByHomeowner[c.homeowner_id] ?? [] : [];
+
       return {
         id: c.id,
         name: c.client_name,
@@ -219,6 +233,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         city: c.city,
         state: c.state,
         zip: c.zip,
+        linked: !!c.homeowner_id,
         estimated_value: value,
         loan_balance: balance,
         equity_dollars: equityDollars,
@@ -241,6 +256,12 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         band: score.band,
         signals: score.signals,
         opener: draftOpener(c.client_name, score),
+        readiness_score: readiness.score,
+        readiness_label: readiness.label,
+        readiness_checks: readiness.checks,
+        net_proceeds: readiness.netProceeds,
+        referrals,
+        referral_count: referrals.length,
       };
     });
 
@@ -248,6 +269,35 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
 
     const bands = { hot: 0, warm: 0, nurture: 0, hold: 0 } as Record<string, number>;
     for (const c of enriched) bands[c.band] += 1;
+
+    const readinessCounts = { "list-ready": 0, "prep-needed": 0, "not-ready": 0 } as Record<
+      string,
+      number
+    >;
+    for (const c of enriched) readinessCounts[c.readiness_label] += 1;
+
+    // Top listing opportunities: intent × readiness, highest net proceeds first.
+    const topListing = [...enriched]
+      .filter((c) => c.band !== "hold" && c.readiness_label !== "not-ready")
+      .sort(
+        (a, b) =>
+          b.move_score * 1.5 +
+          b.readiness_score -
+          (a.move_score * 1.5 + a.readiness_score),
+      )
+      .slice(0, 10);
+
+    const referralFeed = enriched
+      .flatMap((c) =>
+        (c.referrals ?? []).map((r: any) => ({
+          ...r,
+          client_id: c.id,
+          client_name: c.name,
+          city: c.city,
+        })),
+      )
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+      .slice(0, 12);
 
     return {
       portfolio: {
@@ -259,7 +309,12 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         total: enriched.length,
         with_intel: enriched.filter((c) => c.has_intel).length,
         bands,
+        readiness: readinessCounts,
+        sell_cost_pct: sellCostPct,
         total_equity: enriched.reduce((s, c) => s + (c.equity_dollars ?? 0), 0),
+        total_gci_potential: Math.round(
+          topListing.reduce((s, c) => s + (c.estimated_value ?? 0) * 0.025, 0),
+        ),
         avg_tenure:
           enriched.length
             ? enriched.reduce((s, c) => s + (c.tenure_years ?? 0), 0) / enriched.length
@@ -267,7 +322,11 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         expired: enriched.filter(
           (c) => c.listing?.status === "expired" || c.listing?.status === "withdrawn",
         ).length,
+        linked: enriched.filter((c) => c.linked).length,
+        active_referrals: referralFeed.filter((r) => r.status !== "completed").length,
       },
+      top_listing_opportunities: topListing,
+      referral_feed: referralFeed,
       clients: enriched,
     };
   });
