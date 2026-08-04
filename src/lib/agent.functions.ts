@@ -935,3 +935,150 @@ export const retryPortfolioPulls = createServerFn({ method: "POST" })
       remaining: Math.max(0, pending.length - ok),
     };
   });
+
+// ---------------------------------------------------------------------------
+// Records budget: monthly property-records usage for the current month, so
+// agents can see the remaining allowance before kicking off a bulk pull.
+// Provider-neutral field names — the UI never names the data vendor.
+// ---------------------------------------------------------------------------
+export const getRecordsBudget = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const monthStart = new Date();
+    monthStart.setUTCDate(1);
+    monthStart.setUTCHours(0, 0, 0, 0);
+    const monthKey = monthStart.toISOString().slice(0, 10);
+
+    const { data: b } = await supabaseAdmin
+      .from("attom_monthly_budget")
+      .select("tier_calls_included, calls_used, soft_cap_pct, cache_only_mode")
+      .eq("month", monthKey)
+      .maybeSingle();
+
+    if (!b) return null;
+    const included = b.tier_calls_included || 0;
+    const used = b.calls_used || 0;
+    return {
+      used,
+      included,
+      remaining: Math.max(0, included - used),
+      pct: included > 0 ? Math.round((used / included) * 100) : 0,
+      softCapPct: b.soft_cap_pct,
+      cacheOnly: b.cache_only_mode,
+    };
+  });
+
+// ---------------------------------------------------------------------------
+// Address backfill: for households whose street address is missing or is the
+// "Address on file" placeholder, look the contact up by email in the CRM and
+// write back any mailing address we find. Property records are keyed by
+// address, so this is what unlocks value / equity / mortgage for those rows.
+// ---------------------------------------------------------------------------
+export const backfillPortfolioAddresses = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        limit: z.number().int().min(1).max(50).default(25),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+
+    const { data: rows, error } = await context.supabase
+      .from("lender_portfolio_clients")
+      .select("id, client_email, address_line1, city, zip")
+      .eq("portfolio_id", data.portfolioId)
+      .limit(1000);
+    if (error) throw new Error(error.message);
+
+    const pending = (rows ?? []).filter(
+      (r) =>
+        Boolean(r.client_email) &&
+        (!r.address_line1 ||
+          /address on file/i.test(r.address_line1) ||
+          (!r.city && !r.zip)),
+    );
+
+    const targets = pending.slice(0, data.limit);
+    if (targets.length === 0) {
+      return { found: 0, notFound: 0, remaining: 0, scanned: 0 };
+    }
+
+    const { findContactAddressByEmail } = await import("@/lib/ghl.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let found = 0;
+    let notFound = 0;
+    for (const row of targets) {
+      let hit = null;
+      try {
+        hit = await findContactAddressByEmail(row.client_email!);
+      } catch {
+        hit = null;
+      }
+      if (!hit?.street) {
+        notFound += 1;
+        continue;
+      }
+      const { error: upErr } = await supabaseAdmin
+        .from("lender_portfolio_clients")
+        .update({
+          address_line1: hit.street,
+          city: hit.city ?? row.city,
+          state: hit.state,
+          zip: hit.zip,
+        })
+        .eq("id", row.id);
+      if (upErr) notFound += 1;
+      else found += 1;
+    }
+
+    return {
+      found,
+      notFound,
+      scanned: targets.length,
+      remaining: Math.max(0, pending.length - targets.length),
+    };
+  });
+
+// ---------------------------------------------------------------------------
+// Manual address edit for a single household — the fallback when the CRM has
+// no address either.
+// ---------------------------------------------------------------------------
+export const updateClientAddress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        clientId: z.string().uuid(),
+        street: z.string().trim().min(3).max(200),
+        city: z.string().trim().max(100).optional().default(""),
+        state: z.string().trim().max(2).optional().default(""),
+        zip: z.string().trim().max(10).optional().default(""),
+      })
+      .refine((v) => Boolean(v.city || v.zip), {
+        message: "Add a city or ZIP so the address can be matched",
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+
+    const { error } = await context.supabase
+      .from("lender_portfolio_clients")
+      .update({
+        address_line1: data.street,
+        city: data.city || null,
+        state: data.state ? data.state.toUpperCase() : null,
+        zip: data.zip || null,
+      })
+      .eq("id", data.clientId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
