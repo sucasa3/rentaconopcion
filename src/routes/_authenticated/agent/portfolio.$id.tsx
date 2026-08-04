@@ -255,17 +255,35 @@ function AgentPortfolio() {
   });
 
   const enrich = useMutation({
-    mutationFn: () => enrichFn({ data: { portfolioId: id, limit: 25 } }),
+    // Runs batch after batch until every mappable home in the book is covered
+    // (or a batch stops making progress), so one click finishes the portfolio.
+    mutationFn: async () => {
+      let enriched = 0;
+      let failed = 0;
+      let unmappable = 0;
+      let remaining = 0;
+      for (let pass = 0; pass < 20; pass++) {
+        const r: any = await enrichFn({ data: { portfolioId: id, limit: 25 } });
+        enriched += r.enriched;
+        failed += r.failed;
+        unmappable = r.unmappable;
+        remaining = r.remaining;
+        if (r.remaining === 0 || r.enriched === 0) break;
+      }
+      return { enriched, failed, unmappable, remaining };
+    },
     onMutate: () => ({ toastId: toast.loading("Pulling property records…") }),
     onSuccess: (r: any, _v, ctx) => {
       const extra = r.unmappable
         ? ` · ${r.unmappable} skipped (no street address on file)`
         : "";
-      toast.success(`Records pulled for ${r.enriched} homes${extra}`, { id: ctx?.toastId });
+      const left = r.remaining ? ` · ${r.remaining} still pending` : "";
+      toast.success(`Records pulled for ${r.enriched} homes${extra}${left}`, { id: ctx?.toastId });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
     onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
+
 
 
   const saveListing = useMutation({

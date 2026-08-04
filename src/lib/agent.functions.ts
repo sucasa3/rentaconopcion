@@ -505,47 +505,48 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
       .from("lender_portfolio_clients")
       .select("id, address_line1, city, state, zip")
       .eq("portfolio_id", data.portfolioId)
-      .limit(200);
+      .limit(1000);
     if (error) throw new Error(error.message);
 
     const { normalizeAddress } = await import("@/lib/attom.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getPropertyIntel } = await import("@/lib/valuation.server");
 
-    const targets: Array<{ full: string }> = [];
+    // 1. Build the full set of mappable, de-duplicated addresses in the book.
+    const addresses = new Map<string, string>(); // normalized -> full
     let unmappable = 0;
     for (const r of rows ?? []) {
-      if (!r.address_line1) continue;
-      // The property-records provider requires a street line plus city/state or
-      // ZIP. Placeholder rows ("Address on file") would burn a call per class
-      // and return a 400, so skip them instead of spending the batch on them.
-      if (!r.city && !r.zip) {
-        unmappable += 1;
-        continue;
-      }
-      if (/address on file/i.test(r.address_line1)) {
+      if (!r.address_line1 || /address on file/i.test(r.address_line1) || (!r.city && !r.zip)) {
         unmappable += 1;
         continue;
       }
       const full = [r.address_line1, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
         .filter(Boolean)
         .join(", ");
-      const { data: existing } = await supabaseAdmin
-        .from("property_intel")
-        .select("owner, detail, avm")
-        .eq("address_normalized", normalizeAddress(full))
-        .maybeSingle();
-      if (existing?.owner && existing?.detail && existing?.avm) continue;
-      targets.push({ full });
-      if (targets.length >= data.limit) break;
+      addresses.set(normalizeAddress(full), full);
     }
 
+    // 2. One query for what's already cached, instead of a round-trip per row.
+    const keys = [...addresses.keys()];
+    const cached = new Set<string>();
+    for (let i = 0; i < keys.length; i += 200) {
+      const { data: hit } = await supabaseAdmin
+        .from("property_intel")
+        .select("address_normalized, owner, detail, avm")
+        .in("address_normalized", keys.slice(i, i + 200));
+      for (const row of hit ?? []) {
+        if (row.owner && row.detail && row.avm) cached.add(row.address_normalized);
+      }
+    }
+
+    const pending = keys.filter((k) => !cached.has(k));
+    const targets = pending.slice(0, data.limit).map((k) => addresses.get(k)!);
 
     let ok = 0;
     let failed = 0;
-    for (const t of targets) {
+    for (const full of targets) {
       try {
-        await getPropertyIntel(t.full, {
+        await getPropertyIntel(full, {
           classes: ["avm", "detail", "owner", "sales", "tax", "permits", "mortgage"],
           revenueSource: "agent_dashboard",
           requestedBy: context.userId,
@@ -555,8 +556,15 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
         failed += 1;
       }
     }
-    return { enriched: ok, failed, unmappable, remaining: Math.max(0, targets.length - ok) };
+    return {
+      enriched: ok,
+      failed,
+      unmappable,
+      remaining: Math.max(0, pending.length - ok),
+      totalPending: pending.length,
+    };
   });
+
 
 // ---------------------------------------------------------------------------
 // AI listing brief for one client.
