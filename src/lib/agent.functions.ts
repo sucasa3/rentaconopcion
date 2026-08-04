@@ -421,6 +421,8 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       summary: {
         total: enriched.length,
         with_intel: enriched.filter((c) => c.has_intel).length,
+        with_value: enriched.filter((c) => c.estimated_value != null).length,
+        unmappable: enriched.filter((c) => !c.city && !c.zip).length,
         bands,
         readiness: readinessCounts,
         sell_cost_pct: sellCostPct,
