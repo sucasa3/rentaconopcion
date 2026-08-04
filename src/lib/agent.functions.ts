@@ -286,6 +286,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       });
 
       const referrals = c.homeowner_id ? referralsByHomeowner[c.homeowner_id] ?? [] : [];
+      const recommendations = c.homeowner_id ? recsByHomeowner[c.homeowner_id] ?? [] : [];
+      const touches = touchesByClient[c.id] ?? [];
+
 
       return {
         id: c.id,
