@@ -353,7 +353,7 @@ function PortfolioDetail() {
                         )}{" "}
                         {enrich.isPending
                           ? `Enriching ${missingCount}…`
-                          : `Enrich ${missingCount} from ATTOM`}
+                          : `Enrich ${missingCount} from property records`}
                       </button>
                     )}
                   </div>
