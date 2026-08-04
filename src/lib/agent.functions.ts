@@ -555,7 +555,7 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
         failed += 1;
       }
     }
-    return { enriched: ok, failed, remaining: Math.max(0, (rows?.length ?? 0) - ok) };
+    return { enriched: ok, failed, unmappable, remaining: Math.max(0, targets.length - ok) };
   });
 
 // ---------------------------------------------------------------------------
