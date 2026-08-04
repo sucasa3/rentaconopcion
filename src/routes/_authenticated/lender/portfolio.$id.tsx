@@ -411,7 +411,22 @@ function PortfolioDetail() {
                           : `Enrich ${missingCount} from property records`}
                       </button>
                     )}
+                    {auto.running && (
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" /> Auto-filling records…
+                      </span>
+                    )}
+                    {!auto.running && auto.paused && missingCount > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {auto.paused === "cache_only"
+                          ? "Auto-fill paused — records paused for this month"
+                          : auto.paused === "soft_cap"
+                            ? "Auto-fill paused — monthly records allowance nearly used"
+                            : "Auto-fill off — no records allowance configured"}
+                      </span>
+                    )}
                   </div>
+
                 </div>
                 <div className={`mt-4 overflow-x-auto ${enrich.isPending ? "pointer-events-none opacity-60" : ""}`}>
                   <table className="w-full min-w-[900px] text-left text-sm">
