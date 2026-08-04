@@ -722,8 +722,9 @@ function ClientDrawer({
           <Field label="Permits" value={money(client.permit_total_value)} />
         </div>
 
-        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="mt-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Listing readiness
+          <ReadinessInfo />
         </h3>
         <ul className="mt-2 space-y-1.5">
           {client.readiness_checks?.map((c: any) => (
