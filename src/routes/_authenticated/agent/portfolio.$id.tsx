@@ -255,14 +255,18 @@ function AgentPortfolio() {
   });
 
   const enrich = useMutation({
-    mutationFn: () => enrichFn({ data: { portfolioId: id, limit: 10 } }),
+    mutationFn: () => enrichFn({ data: { portfolioId: id, limit: 25 } }),
     onMutate: () => ({ toastId: toast.loading("Pulling property records…") }),
     onSuccess: (r: any, _v, ctx) => {
-      toast.success(`Records pulled for ${r.enriched} homes`, { id: ctx?.toastId });
+      const extra = r.unmappable
+        ? ` · ${r.unmappable} skipped (no street address on file)`
+        : "";
+      toast.success(`Records pulled for ${r.enriched} homes${extra}`, { id: ctx?.toastId });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
     onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
+
 
   const saveListing = useMutation({
     mutationFn: (v: any) => listingFn({ data: v }),
