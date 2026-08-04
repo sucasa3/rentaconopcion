@@ -120,6 +120,117 @@ function ReadinessInfo() {
   );
 }
 
+/** Tap-to-open explainer for the four move-intent bands. */
+function IntentInfo() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="What does intent mean?"
+          className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Move intent
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          A 0–100 score from property-record signals: time in the home, equity
+          position, recent permitted work, tax pressure, absentee ownership,
+          outgrown space, and any expired or withdrawn listing.
+        </p>
+        <ul className="mt-3 space-y-1.5">
+          {(["hot", "warm", "nurture", "hold"] as const).map((k) => (
+            <li key={k} className="flex items-start gap-2">
+              <span
+                className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
+                  k === "hot"
+                    ? "bg-growth"
+                    : k === "warm"
+                      ? "bg-amber-500"
+                      : k === "nurture"
+                        ? "bg-primary"
+                        : "bg-muted-foreground/40"
+                }`}
+              />
+              <span>
+                <span className="font-medium">{BAND_META[k].label}</span>
+                <span className="block text-muted-foreground">
+                  {k === "hot"
+                    ? "Score 60+. Clear, time-sensitive move signal — call today."
+                    : k === "warm"
+                      ? "Score 38–59. Several solid signals. Worth a real conversation."
+                      : k === "nurture"
+                        ? "Score 18–37. Mild signals. Stay in touch with value content."
+                        : "Score under 18. Little movement signal, or represented elsewhere."}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** Tap-to-open explainer for the modeled net proceeds figure. */
+function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="How are net proceeds calculated?"
+          className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Projected net proceeds
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          What the homeowner would likely walk away with at closing, after
+          agent compensation and closing costs.
+        </p>
+        <div className="mt-3 rounded-lg bg-secondary/60 p-2 font-mono text-[11px] leading-relaxed">
+          Est. value
+          <br />− {sellCostPct}% cost to sell
+          <br />− mortgage balance
+          <br />
+          <span className="font-semibold">= net proceeds</span>
+        </div>
+        <ul className="mt-3 space-y-1.5 text-muted-foreground">
+          <li>
+            <span className="font-medium text-foreground">Cost to sell</span> covers
+            agent compensation on both sides, title and escrow, transfer taxes, and
+            typical seller concessions. Adjust the {sellCostPct}% assumption at the
+            top of the page.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Est. value</span> and the
+            mortgage balance are modeled from property records — not an appraisal or
+            a payoff statement.
+          </li>
+          <li>A negative figure means the sale would not clear costs and payoff.</li>
+        </ul>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const STATUSES = ["off_market", "active", "pending", "sold", "expired", "withdrawn"] as const;
 const PAGE_SIZE = 25;
 
