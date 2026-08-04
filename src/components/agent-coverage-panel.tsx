@@ -37,13 +37,41 @@ function Dot({ ok, label }: { ok: boolean; label: string }) {
 export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
+  const [retrying, setRetrying] = useState(false);
+  const [progress, setProgress] = useState<string | null>(null);
   const coverageFn = useServerFn(getPortfolioCoverage);
+  const retryFn = useServerFn(retryPortfolioPulls);
+  const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["agent-coverage", portfolioId],
     queryFn: () => coverageFn({ data: { portfolioId } }) as any,
     enabled: open,
   });
+
+  async function handleRetry() {
+    setRetrying(true);
+    setProgress("Retrying pulls…");
+    let done = 0;
+    let failed = 0;
+    try {
+      for (let pass = 0; pass < 20; pass += 1) {
+        const res: any = await retryFn({ data: { portfolioId, limit: 25 } });
+        done += res.retried ?? 0;
+        failed += res.failed ?? 0;
+        setProgress(`Retried ${done} · ${res.remaining} left`);
+        if (!res.remaining || (!res.retried && !res.failed)) break;
+      }
+      toast.success(`Retried ${done} ${done === 1 ? "home" : "homes"}${failed ? ` · ${failed} failed` : ""}`);
+      await queryClient.invalidateQueries({ queryKey: ["agent-coverage", portfolioId] });
+      await queryClient.invalidateQueries({ queryKey: ["agent-portfolio", portfolioId] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRetrying(false);
+      setProgress(null);
+    }
+  }
 
   const rows = useMemo(() => {
     const items = (data?.items ?? []) as any[];
