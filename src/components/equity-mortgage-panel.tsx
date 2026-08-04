@@ -109,19 +109,20 @@ export function EquityMortgagePanel() {
                 ? `Last ${new Date(permits.lastPermitDate).toLocaleDateString()}`
                 : "Recorded"
               : sales?.tenureYears != null
-                ? `Owned ~${sales.tenureYears} yr · none in ATTOM feed`
-                : "None in ATTOM feed"
+                ? `Owned ~${sales.tenureYears} yr · none on record`
+                : "None on record"
           }
         />
       </div>
 
       {permits && permits.events.length === 0 && (
         <p className="mt-3 text-[11px] text-muted-foreground">
-          No permits returned by ATTOM for this address. Building Permits is a
-          separate ATTOM data package — some jurisdictions and trial plans
-          don't include it, even when permits exist locally.
+          No permits found on public record for this address. Permit coverage
+          varies by jurisdiction, so local permits may exist without appearing
+          here.
         </p>
       )}
+
 
       <ConnectLenderDialog
         open={lenderOpen}

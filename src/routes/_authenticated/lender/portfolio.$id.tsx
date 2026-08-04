@@ -95,13 +95,13 @@ function PortfolioDetail() {
     mutationFn: () => enrichFn({ data: { portfolioId: id } }),
     onMutate: () => {
       const toastId = toast.loading(
-        `Enriching ${missingCount} clients from ATTOM… this can take a minute.`,
+        `Enriching ${missingCount} clients from property records… this can take a minute.`,
       );
       return { toastId };
     },
     onSuccess: (r: any, _v, ctx) => {
       toast.success(
-        `Enriched ${r.enriched} of ${r.total} clients from ATTOM${
+        `Enriched ${r.enriched} of ${r.total} clients from property records${
           r.skipped ? ` · ${r.skipped} no data` : ""
         }${r.failed ? ` · ${r.failed} failed` : ""}`,
         { id: ctx?.toastId },
@@ -353,7 +353,7 @@ function PortfolioDetail() {
                         )}{" "}
                         {enrich.isPending
                           ? `Enriching ${missingCount}…`
-                          : `Enrich ${missingCount} from ATTOM`}
+                          : `Enrich ${missingCount} from property records`}
                       </button>
                     )}
                   </div>
