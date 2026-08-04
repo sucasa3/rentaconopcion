@@ -143,6 +143,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       extractCharacteristics,
       extractTaxTrend,
       computeMoveScore,
+      computeListingReadiness,
       draftOpener,
     } = await import("@/lib/agent.server");
     const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
