@@ -1,48 +1,43 @@
-# Add an Intent explainer popover to the Agent portfolio
+# Backfill missing client addresses from the CRM sources
 
-## Goal
-The "Intent" column in the Agent portfolio shows pills like `22 · Nurture` with no
-explanation, while the secondary "Readiness" column already has a tap-to-open
-`ReadinessInfo` popover. Add a matching `IntentInfo` popover next to each
-"Intent" column header so agents understand what the score means.
+## What's going on
 
-## Scope
-"Bands + signals only" — the popover lists the four intent bands and the signals
-that feed the score. No per-row expandable breakdown, no data-source hint about
-manual listing entry.
+Mauricio Patino's address isn't coming from a special source — it was already in the imported roster. The 25 households showing "Address on file" were imported that way: the seed file (`src/lib/data/fello-homeowners.json`) literally has `address_line1: "Address on file"` with null city/state/zip for those contacts, so there is nothing to pull property records against.
 
-## What changes
+The good news: every one of those 25 rows has an email (and usually a phone), and the same contacts exist in the two connected CRMs:
 
-File: `src/routes/_authenticated/agent/portfolio.$id.tsx`
+- Fello contacts return `properties[].address` (street, city, state, zip) — the wrapper already models this in `src/lib/fello.server.ts`.
+- The GoHighLevel contact record carries `address1 / city / state / postalCode`.
 
-1. Add an `IntentInfo` component next to the existing `ReadinessInfo`
-   component (around line 68). Same Popover structure, same styling:
-   - Title: "Move intent"
-   - One line: "A 0–100 score from public-property signals: time in home,
-     equity, recent permits, tax pressure, absentee ownership, outgrown
-     space, and any expired/withdrawn listing."
-   - A list of the four bands with score ranges and short guidance:
-     - Hot — 60+. Clear, time-sensitive move signal. Call now.
-     - Warm — 38–59. Multiple solid signals. Worth a real conversation.
-     - Nurture — 18–37. Mild signals. Stay in touch with value content.
-     - Hold — under 18. Little movement signal. Keep in value-only nurture.
-   - Color dots reuse the existing `BAND_META` tones (growth / amber / primary / muted).
+So instead of hand-typing addresses, we look each contact up by email and write the address back onto the household.
 
-2. Place an `<IntentInfo />` info button (the `Info` icon is already imported)
-   next to the "Intent" `<th>` header in both table locations:
-   - The main opportunities table header (around line 314).
-   - The nested table header inside the client detail drawer (around line 564).
-   This mirrors exactly how `ReadinessInfo` is placed next to "Readiness".
+## What I'll build
 
-## Out of scope
-- No new server functions, queries, or migrations.
-- No per-row signal breakdown.
-- No copy changes to `ReadinessInfo`.
-- The `property_listing_status` manual-entry flow and any future MLS/IDX feed
-  are unchanged.
+1. **Address backfill engine** (server side)
+   - For each portfolio client whose `address_line1` is missing or a placeholder ("Address on file", blank), look up the contact:
+     1. Fello by email → first property address.
+     2. If Fello has nothing, GHL contact lookup by email → address fields.
+     3. If still nothing, fall back to the linked homeowner profile address when the client is matched to a SuCasa account.
+   - Write `address_line1 / city / state / zip` back to the household, and record which source filled it.
+   - Skip anything already having a real street address; never overwrite good data.
 
-## Verification
-- Build passes (`bun run build` / typecheck).
-- In the preview, open the Agent portfolio, click the info icon beside
-  "Intent" in both the table and the drawer, and confirm the popover shows
-  the four bands with correct score ranges and colors.
+2. **"Find addresses" action in the Records coverage panel**
+   - Sits next to "Retry pulls", batches through all placeholder rows, shows progress ("Found 9 of 25").
+   - When it finishes, it automatically kicks off a property-records pull for the newly addressed homes so value / equity / net proceeds populate in the same click.
+
+3. **Coverage panel reporting**
+   - The "No address" filter chip gains a per-row note of the outcome: found via Fello, found via CRM, or "not found — needs manual entry".
+
+4. **Manual edit fallback**
+   - Inline edit of street / city / state / ZIP on any household row, so the handful the CRMs can't resolve can be fixed in-app without a re-import.
+
+## Expected outcome
+
+Realistically the CRMs will resolve many but not all 25 — contacts that were buyer leads and never owned a home won't have a property on file. Those stay flagged as "No address" and can be fixed with the inline editor.
+
+## Technical notes
+
+- New server functions in `src/lib/agent.functions.ts`: `backfillClientAddresses` (batched, returns per-row result) and reuse of the existing pull path afterwards.
+- New helpers: `findFelloAddressByEmail` in `src/lib/fello.server.ts`, `findContactByEmail` in `src/lib/ghl.server.ts`.
+- Updates to `src/components/agent-coverage-panel.tsx` for the new action, progress state, per-row source note, and inline address editing.
+- Writes go to `lender_portfolio_clients`; no schema change needed.
