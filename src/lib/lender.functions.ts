@@ -579,7 +579,10 @@ export const seedRosterImport = createServerFn({ method: "POST" })
 // rate, and term for rows missing loan data by fetching mortgage + sales.
 // Uses the cached valuation abstraction so re-runs are cheap.
 // -----------------------------------------------------------------------------
-const EnrichSchema = z.object({ portfolioId: z.string().uuid() });
+const EnrichSchema = z.object({
+  portfolioId: z.string().uuid(),
+  limit: z.number().int().min(1).max(200).optional(),
+});
 export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => EnrichSchema.parse(i))
@@ -594,6 +597,7 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
     if (!portfolio) throw new Error("Portfolio not found");
+
 
     const { data: rows, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
