@@ -347,6 +347,15 @@ function AgentPortfolio() {
                     />
                     %
                   </label>
+                  <span
+                    className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
+                    title="Value, equity and net proceeds only appear once property records have been pulled for that home."
+                  >
+                    Valued {data.summary.with_value ?? 0}/{data.summary.total}
+                    {data.summary.unmappable
+                      ? ` · ${data.summary.unmappable} no address`
+                      : ""}
+                  </span>
                   <button
                     onClick={() => enrich.mutate()}
                     disabled={enrich.isPending}
@@ -360,6 +369,7 @@ function AgentPortfolio() {
                     Pull records
                   </button>
                 </div>
+
               </div>
 
               {/* Summary strip */}
