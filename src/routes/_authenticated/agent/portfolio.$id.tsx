@@ -20,6 +20,13 @@ import {
   X,
   Flame,
   Copy,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Wrench,
+  CheckCircle2,
+  AlertCircle,
+  Link2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
@@ -34,15 +41,28 @@ export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
 
 const money = (n: number | null | undefined) =>
   n == null ? "—" : `$${Math.round(n).toLocaleString()}`;
+const moneyCompact = (n: number | null | undefined) => {
+  if (n == null) return "—";
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1_000) return `$${Math.round(n / 1_000)}k`;
+  return `$${Math.round(n).toLocaleString()}`;
+};
 
 const BAND_META: Record<string, { label: string; tone: string }> = {
-  hot: { label: "Hot", tone: "bg-growth/15 text-growth border-growth/30" },
-  warm: { label: "Warm", tone: "bg-amber-500/10 text-amber-700 border-amber-500/30" },
-  nurture: { label: "Nurture", tone: "bg-primary/10 text-primary border-primary/30" },
+  hot: { label: "Hot", tone: "bg-growth/15 text-growth border-growth/40" },
+  warm: { label: "Warm", tone: "bg-amber-500/10 text-amber-700 border-amber-500/40" },
+  nurture: { label: "Nurture", tone: "bg-primary/10 text-primary border-primary/40" },
   hold: { label: "Hold", tone: "bg-secondary text-muted-foreground border-border" },
 };
 
+const READINESS_META: Record<string, { label: string; tone: string }> = {
+  "list-ready": { label: "List-ready", tone: "bg-growth/15 text-growth" },
+  "prep-needed": { label: "Prep needed", tone: "bg-amber-500/10 text-amber-700" },
+  "not-ready": { label: "Not ready", tone: "bg-secondary text-muted-foreground" },
+};
+
 const STATUSES = ["off_market", "active", "pending", "sold", "expired", "withdrawn"] as const;
+const PAGE_SIZE = 25;
 
 function AgentPortfolio() {
   const { id } = Route.useParams();
@@ -52,23 +72,26 @@ function AgentPortfolio() {
   const briefFn = useServerFn(generateAgentBrief);
   const qc = useQueryClient();
 
+  const [sellCost, setSellCost] = useState(8);
   const [band, setBand] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<any | null>(null);
   const [brief, setBrief] = useState<string>("");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["agent-portfolio", id],
-    queryFn: () => getFn({ data: { id } }),
+    queryKey: ["agent-portfolio", id, sellCost],
+    queryFn: () => getFn({ data: { id, sellCostPct: sellCost } }),
   });
 
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id, limit: 10 } }),
-    onSuccess: (r: any) => {
-      toast.success(`Pulled property records for ${r.enriched} homes`);
+    onMutate: () => ({ toastId: toast.loading("Pulling property records from ATTOM…") }),
+    onSuccess: (r: any, _v, ctx) => {
+      toast.success(`Records pulled for ${r.enriched} homes`, { id: ctx?.toastId });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
 
   const saveListing = useMutation({
@@ -87,146 +110,395 @@ function AgentPortfolio() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  const clients = useMemo(() => {
-    const rows = data?.clients ?? [];
+  const filtered = useMemo(() => {
+    if (!data) return [];
     const q = search.trim().toLowerCase();
-    return rows.filter(
-      (c: any) =>
-        (band === "all" || c.band === band) &&
-        (!q ||
-          (c.name ?? "").toLowerCase().includes(q) ||
-          (c.address ?? "").toLowerCase().includes(q)),
-    );
+    return data.clients.filter((c: any) => {
+      if (band !== "all" && c.band !== band) return false;
+      if (!q) return true;
+      return (
+        (c.name ?? "").toLowerCase().includes(q) ||
+        (c.address ?? "").toLowerCase().includes(q) ||
+        (c.city ?? "").toLowerCase().includes(q) ||
+        (c.zip ?? "").toLowerCase().includes(q)
+      );
+    });
   }, [data, band, search]);
 
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <Link
-          to="/agent"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Agent portal
-        </Link>
+      <main className="flex-1 px-5 py-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <Link
+            to="/agent"
+            className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+          >
+            <ArrowLeft className="h-3 w-3" /> All client lists
+          </Link>
 
-        {isLoading && <p className="mt-8 text-muted-foreground">Loading sphere…</p>}
-        {error && <p className="mt-8 text-destructive">{(error as Error).message}</p>}
-
-        {data && (
-          <>
-            <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">{data.portfolio.name}</h1>
-                <p className="text-sm text-muted-foreground">{data.portfolio.orgName}</p>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : error ? (
+            <p className="text-sm text-destructive">{(error as Error).message}</p>
+          ) : data ? (
+            <>
+              {/* Header */}
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                    {data.portfolio.orgName}
+                  </p>
+                  <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    {data.portfolio.name}
+                  </h1>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    Cost to sell
+                    <input
+                      type="number"
+                      step="0.5"
+                      min={0}
+                      max={20}
+                      value={sellCost}
+                      onChange={(e) => {
+                        setSellCost(Number(e.target.value) || 8);
+                        setPage(0);
+                      }}
+                      className="w-20 rounded-full border border-border bg-background px-3 py-1 text-right text-sm text-foreground"
+                    />
+                    %
+                  </label>
+                  <button
+                    onClick={() => enrich.mutate()}
+                    disabled={enrich.isPending}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary disabled:opacity-50"
+                  >
+                    {enrich.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3 text-growth" />
+                    )}
+                    Pull records
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => enrich.mutate()}
-                disabled={enrich.isPending}
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium hover:border-primary/40 disabled:opacity-60"
-              >
-                {enrich.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4 text-growth" />
-                )}
-                Pull property records (10)
-              </button>
-            </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <Stat label="Households" value={String(data.summary.total)} />
-              <Stat label="With records" value={String(data.summary.with_intel)} />
-              <Stat label="Hot" value={String(data.summary.bands.hot)} accent />
-              <Stat label="Expired" value={String(data.summary.expired)} />
-              <Stat label="Sphere equity" value={money(data.summary.total_equity)} />
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              {["all", "hot", "warm", "nurture", "hold"].map((b) => (
-                <button
-                  key={b}
-                  onClick={() => setBand(b)}
-                  className={`rounded-full border px-3 py-1 text-xs font-medium capitalize ${
-                    band === b
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {b}
-                </button>
-              ))}
-              <div className="relative ml-auto">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Name or address"
-                  className="w-56 rounded-lg border border-border bg-card py-2 pl-8 pr-3 text-sm outline-none focus:border-primary"
+              {/* Summary strip */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <SummaryTile label="Households" value={data.summary.total.toLocaleString()} />
+                <SummaryTile label="List-ready" value={String(data.summary.readiness["list-ready"])} />
+                <SummaryTile label="Hot signals" value={String(data.summary.bands.hot)} />
+                <SummaryTile label="Sphere equity" value={moneyCompact(data.summary.total_equity)} />
+                <SummaryTile
+                  label="Potential GCI"
+                  value={moneyCompact(data.summary.total_gci_potential)}
                 />
               </div>
-            </div>
 
-            <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card">
-              <table className="w-full text-sm">
-                <thead className="bg-secondary/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="px-4 py-3">Household</th>
-                    <th className="px-4 py-3">Move score</th>
-                    <th className="px-4 py-3 hidden md:table-cell">Top signal</th>
-                    <th className="px-4 py-3 hidden lg:table-cell">Value</th>
-                    <th className="px-4 py-3 hidden lg:table-cell">Equity</th>
-                    <th className="px-4 py-3 hidden sm:table-cell">Tenure</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {clients.map((c: any) => (
-                    <tr
-                      key={c.id}
-                      onClick={() => {
-                        setSelected(c);
-                        setBrief("");
-                      }}
-                      className="cursor-pointer border-t border-border/60 hover:bg-secondary/40"
-                    >
-                      <td className="px-4 py-3">
-                        <p className="font-medium">{c.name ?? "—"}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {c.address}
-                          {c.city ? `, ${c.city}` : ""}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${
-                            BAND_META[c.band]?.tone
-                          }`}
-                        >
-                          {c.band === "hot" && <Flame className="h-3 w-3" />}
-                          {c.move_score} · {BAND_META[c.band]?.label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
-                        {c.signals[0]?.label ?? (c.has_intel ? "No signals" : "No records yet")}
-                      </td>
-                      <td className="px-4 py-3 hidden lg:table-cell">{money(c.estimated_value)}</td>
-                      <td className="px-4 py-3 hidden lg:table-cell">{money(c.equity_dollars)}</td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        {c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {clients.length === 0 && (
-                <p className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  No households match this filter.
+              {/* Band chips */}
+              <div className="flex flex-wrap gap-2">
+                <SegChip
+                  label={`All ${data.summary.total}`}
+                  active={band === "all"}
+                  tone="bg-foreground text-background border-foreground"
+                  onClick={() => {
+                    setBand("all");
+                    setPage(0);
+                  }}
+                />
+                {(["hot", "warm", "nurture", "hold"] as const).map((b) => (
+                  <SegChip
+                    key={b}
+                    label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
+                    active={band === b}
+                    tone={BAND_META[b].tone}
+                    onClick={() => {
+                      setBand(b);
+                      setPage(0);
+                    }}
+                  />
+                ))}
+                <span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 text-growth" />
+                    {data.summary.expired} expired / withdrawn
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    {data.summary.linked} linked to SuCasa
+                  </span>
+                </span>
+              </div>
+
+              {/* Listing readiness board */}
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+                <div className="flex items-center gap-2">
+                  <Home className="h-4 w-4 text-primary" />
+                  <h2 className="text-base font-semibold">
+                    Top listing opportunities @ {sellCost}% cost to sell
+                  </h2>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ranked on move intent × listing readiness. Net proceeds are modeled from public
+                  records — not an appraisal.
                 </p>
-              )}
-            </div>
-          </>
-        )}
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[720px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+                        <th className="py-2 pr-3 font-medium">Household</th>
+                        <th className="py-2 pr-3 font-medium">Intent</th>
+                        <th className="py-2 pr-3 font-medium">Readiness</th>
+                        <th className="py-2 pr-3 font-medium">Est. value</th>
+                        <th className="py-2 pr-3 font-medium">Net proceeds</th>
+                        <th className="py-2 pr-3 font-medium">Top signal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.top_listing_opportunities.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-6 text-center text-muted-foreground">
+                            No scored opportunities yet — pull property records to begin.
+                          </td>
+                        </tr>
+                      ) : (
+                        data.top_listing_opportunities.map((c: any) => (
+                          <tr key={c.id} className="border-b border-border/60">
+                            <td className="py-2.5 pr-3">
+                              <button
+                                onClick={() => {
+                                  setSelected(c);
+                                  setBrief("");
+                                }}
+                                className="text-left font-medium text-primary hover:underline"
+                              >
+                                {c.name}
+                              </button>
+                              <div className="text-xs text-muted-foreground">
+                                {[c.city, c.state].filter(Boolean).join(", ")}
+                              </div>
+                            </td>
+                            <td className="py-2.5 pr-3">
+                              <BandPill band={c.band} score={c.move_score} />
+                            </td>
+                            <td className="py-2.5 pr-3">
+                              <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
+                            </td>
+                            <td className="py-2.5 pr-3">{moneyCompact(c.estimated_value)}</td>
+                            <td className="py-2.5 pr-3 font-semibold text-growth">
+                              {moneyCompact(c.net_proceeds)}
+                            </td>
+                            <td className="py-2.5 pr-3 text-xs text-muted-foreground">
+                              {c.signals[0]?.label ?? "—"}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Agent widgets: readiness mix + referral visibility */}
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+                  <h3 className="text-sm font-semibold">Listing readiness mix</h3>
+                  <div className="mt-4 space-y-3">
+                    {(["list-ready", "prep-needed", "not-ready"] as const).map((k) => {
+                      const n = data.summary.readiness[k] ?? 0;
+                      const pct = data.summary.total ? (n / data.summary.total) * 100 : 0;
+                      return (
+                        <div key={k}>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-medium">{READINESS_META[k].label}</span>
+                            <span className="text-muted-foreground">{n}</span>
+                          </div>
+                          <div className="mt-1 h-2 rounded-full bg-secondary">
+                            <div
+                              className={`h-2 rounded-full ${
+                                k === "list-ready"
+                                  ? "bg-growth"
+                                  : k === "prep-needed"
+                                    ? "bg-amber-500"
+                                    : "bg-muted-foreground/40"
+                              }`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Readiness scores equity vs. selling costs, records on file, condition story,
+                    the 2-year basis window, representation, and reachability.
+                  </p>
+                </div>
+
+                <div className="rounded-3xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-primary" />
+                      <h3 className="text-sm font-semibold">Referral activity</h3>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {data.summary.active_referrals} open
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Home service jobs your linked clients requested through SuCasa. Every job is a
+                    reason to check in — and a referral you can be credited for.
+                  </p>
+                  <div className="mt-4 space-y-2">
+                    {data.referral_feed.length === 0 ? (
+                      <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                        No service activity yet. Invite clients to SuCasa to see their projects
+                        here.
+                      </p>
+                    ) : (
+                      data.referral_feed.map((r: any) => (
+                        <div
+                          key={r.id}
+                          className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-2.5"
+                        >
+                          <div>
+                            <p className="text-sm font-medium capitalize">
+                              {String(r.category).replace(/_/g, " ")}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {r.client_name}
+                              {r.city ? ` · ${r.city}` : ""} ·{" "}
+                              {new Date(r.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
+                            {String(r.status).replace(/_/g, " ")}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Client table */}
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold">
+                    Households ({filtered.length.toLocaleString()})
+                  </h2>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setPage(0);
+                      }}
+                      placeholder="Name, address, city, zip"
+                      className="w-64 rounded-full border border-border bg-background py-1.5 pl-8 pr-3 text-sm outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full min-w-[860px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+                        <th className="py-2 pr-3 font-medium">Household</th>
+                        <th className="py-2 pr-3 font-medium">Intent</th>
+                        <th className="py-2 pr-3 font-medium">Readiness</th>
+                        <th className="py-2 pr-3 font-medium">Value</th>
+                        <th className="py-2 pr-3 font-medium">Equity</th>
+                        <th className="py-2 pr-3 font-medium">Tenure</th>
+                        <th className="py-2 pr-3 font-medium">Listing</th>
+                        <th className="py-2 pr-3 font-medium">Referrals</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((c: any) => (
+                        <tr
+                          key={c.id}
+                          onClick={() => {
+                            setSelected(c);
+                            setBrief("");
+                          }}
+                          className="cursor-pointer border-b border-border/60 hover:bg-secondary/40"
+                        >
+                          <td className="py-2.5 pr-3">
+                            <p className="font-medium text-primary">{c.name ?? "—"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {[c.address, c.city].filter(Boolean).join(", ")}
+                            </p>
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <BandPill band={c.band} score={c.move_score} />
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
+                          </td>
+                          <td className="py-2.5 pr-3">{moneyCompact(c.estimated_value)}</td>
+                          <td className="py-2.5 pr-3">{moneyCompact(c.equity_dollars)}</td>
+                          <td className="py-2.5 pr-3">
+                            {c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—"}
+                          </td>
+                          <td className="py-2.5 pr-3 text-xs capitalize text-muted-foreground">
+                            {c.listing ? String(c.listing.status).replace("_", " ") : "off market"}
+                          </td>
+                          <td className="py-2.5 pr-3 text-xs text-muted-foreground">
+                            {c.referral_count || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                      {pageRows.length === 0 && (
+                        <tr>
+                          <td colSpan={8} className="py-8 text-center text-muted-foreground">
+                            No households match this filter.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {filtered.length > PAGE_SIZE && (
+                  <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      Showing {page * PAGE_SIZE + 1}–
+                      {Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        disabled={page === 0}
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </button>
+                      <span className="px-2">
+                        Page {page + 1} / {pageCount}
+                      </span>
+                      <button
+                        disabled={page >= pageCount - 1}
+                        onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border disabled:opacity-40"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : null}
+        </div>
       </main>
+      <SiteFooter />
 
       {selected && (
         <ClientDrawer
@@ -239,16 +511,74 @@ function AgentPortfolio() {
           saving={saveListing.isPending}
         />
       )}
-      <SiteFooter />
     </div>
   );
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+function SummaryTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-xl font-semibold ${accent ? "text-growth" : ""}`}>{value}</p>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+function SegChip({
+  label,
+  active,
+  tone,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  tone: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+        active ? tone : "border-border bg-background text-muted-foreground hover:border-foreground/30"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function BandPill({ band, score }: { band: string; score: number }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${BAND_META[band]?.tone}`}
+    >
+      {band === "hot" && <Flame className="h-3 w-3" />}
+      {score} · {BAND_META[band]?.label}
+    </span>
+  );
+}
+
+function ReadinessBar({ score, label }: { score: number; label: string }) {
+  return (
+    <div className="w-28">
+      <div className="flex items-center justify-between text-[10px]">
+        <span className={`rounded-full px-1.5 py-0.5 font-medium ${READINESS_META[label]?.tone}`}>
+          {READINESS_META[label]?.label}
+        </span>
+        <span className="text-muted-foreground">{score}</span>
+      </div>
+      <div className="mt-1 h-1.5 rounded-full bg-secondary">
+        <div
+          className={`h-1.5 rounded-full ${
+            label === "list-ready"
+              ? "bg-growth"
+              : label === "prep-needed"
+                ? "bg-amber-500"
+                : "bg-muted-foreground/40"
+          }`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -279,32 +609,39 @@ function ClientDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-foreground/40" onClick={onClose}>
       <aside
-        className="h-full w-full max-w-md overflow-y-auto bg-background p-6 shadow-2xl"
+        className="h-full w-full max-w-md overflow-y-auto bg-background p-6 shadow-soft"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold">{client.name ?? "Household"}</h2>
-            <p className="text-sm text-muted-foreground">
-              {client.address}
-              {client.city ? `, ${client.city}` : ""} {client.state} {client.zip}
+            <h2 className="text-lg font-semibold tracking-tight">{client.name ?? "Household"}</h2>
+            <p className="text-xs text-muted-foreground">
+              {[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}
             </p>
           </div>
-          <button onClick={onClose} aria-label="Close">
-            <X className="h-5 w-5 text-muted-foreground" />
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-full p-1 text-muted-foreground hover:bg-secondary"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <BandPill band={client.band} score={client.move_score} />
           <span
-            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${BAND_META[client.band]?.tone}`}
+            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+              READINESS_META[client.readiness_label]?.tone
+            }`}
           >
-            Move score {client.move_score} · {BAND_META[client.band]?.label}
+            {READINESS_META[client.readiness_label]?.label} · {client.readiness_score}
           </span>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
           <Field label="Est. value" value={money(client.estimated_value)} />
+          <Field label="Net proceeds" value={money(client.net_proceeds)} />
           <Field label="Equity" value={money(client.equity_dollars)} />
           <Field
             label="Tenure"
@@ -317,41 +654,71 @@ function ClientDrawer({
           <Field label="Sqft" value={client.sqft ? client.sqft.toLocaleString() : "—"} />
           <Field label="Year built" value={client.year_built ?? "—"} />
           <Field label="Permits" value={money(client.permit_total_value)} />
-          <Field
-            label="Taxes"
-            value={
-              client.tax_amount
-                ? `${money(client.tax_amount)}${
-                    client.tax_change_pct
-                      ? ` (${client.tax_change_pct > 0 ? "+" : ""}${client.tax_change_pct}%)`
-                      : ""
-                  }`
-                : "—"
-            }
-          />
         </div>
 
-        <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Signals
+        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Listing readiness
+        </h3>
+        <ul className="mt-2 space-y-1.5">
+          {client.readiness_checks?.map((c: any) => (
+            <li key={c.key} className="flex items-start gap-2 text-xs">
+              {c.ok ? (
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-growth" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              )}
+              <span>
+                <span className="font-medium">{c.label}</span>
+                <span className="block text-muted-foreground">{c.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Move signals
         </h3>
         <ul className="mt-2 space-y-2">
           {client.signals.length === 0 && (
-            <li className="text-sm text-muted-foreground">
+            <li className="text-xs text-muted-foreground">
               {client.has_intel
                 ? "No movement signals yet."
                 : "No property records pulled for this address yet."}
             </li>
           )}
           {client.signals.map((s: any, i: number) => (
-            <li key={i} className="rounded-lg border border-border bg-card p-3">
+            <li key={i} className="rounded-2xl border border-border bg-card p-3">
               <p className="text-sm font-medium">{s.label}</p>
               <p className="text-xs text-muted-foreground">{s.detail}</p>
             </li>
           ))}
         </ul>
 
-        <div className="mt-5 rounded-lg border border-primary/30 bg-primary/5 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+        {client.referrals?.length > 0 && (
+          <>
+            <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Service activity
+            </h3>
+            <ul className="mt-2 space-y-1.5">
+              {client.referrals.map((r: any) => (
+                <li
+                  key={r.id}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-3 py-2 text-xs"
+                >
+                  <span className="font-medium capitalize">
+                    {String(r.category).replace(/_/g, " ")}
+                  </span>
+                  <span className="capitalize text-muted-foreground">
+                    {String(r.status).replace(/_/g, " ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
             Suggested opener
           </p>
           <p className="mt-1 text-sm">{client.opener}</p>
@@ -369,7 +736,7 @@ function ClientDrawer({
         <button
           onClick={onBrief}
           disabled={briefLoading}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
         >
           {briefLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -379,7 +746,7 @@ function ClientDrawer({
           Generate listing brief
         </button>
         {brief && (
-          <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-border bg-card p-3 text-sm">
+          <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-border bg-card p-3 text-sm">
             {brief}
           </pre>
         )}
@@ -387,29 +754,29 @@ function ClientDrawer({
         <div className="mt-5 flex gap-2">
           {client.phone && (
             <a
-              href={`tel:${client.phone}`}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm"
+              href={`tel:${String(client.phone).replace(/[^0-9+]/g, "")}`}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-border px-3 py-2 text-sm hover:border-primary"
             >
-              <Phone className="h-4 w-4" /> Call
+              <Phone className="h-4 w-4 text-primary" /> Call
             </a>
           )}
           {client.email && (
             <a
               href={`mailto:${client.email}`}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-border px-3 py-2 text-sm hover:border-primary"
             >
-              <Mail className="h-4 w-4" /> Email
+              <Mail className="h-4 w-4 text-primary" /> Email
             </a>
           )}
         </div>
 
-        <h3 className="mt-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Listing status
         </h3>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
+          className="mt-2 w-full rounded-2xl border border-border bg-card px-3 py-2 text-sm"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -430,7 +797,7 @@ function ClientDrawer({
             value={agentName}
             onChange={(e) => setAgentName(e.target.value)}
             placeholder="Listing agent name"
-            className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
+            className="mt-2 w-full rounded-2xl border border-border bg-card px-3 py-2 text-sm"
           />
         )}
         <button
@@ -442,7 +809,7 @@ function ClientDrawer({
             })
           }
           disabled={saving}
-          className="mt-3 w-full rounded-lg border border-border px-4 py-2 text-sm font-medium hover:border-primary/40 disabled:opacity-60"
+          className="mt-3 w-full rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-primary disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save listing status"}
         </button>
@@ -453,8 +820,8 @@ function ClientDrawer({
 
 function Field({ label, value }: { label: string; value: any }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="rounded-2xl border border-border bg-card p-3">
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-0.5 font-medium">{value}</p>
     </div>
   );
