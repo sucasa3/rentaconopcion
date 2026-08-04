@@ -74,49 +74,100 @@ function Hero() {
 
 function HowItWorks() {
   const steps = [
-    { n: "01", title: "Create your Home Profile", desc: "Add your address and goals in under 2 minutes.", icon: FileText },
-    { n: "02", title: "Get matched with trusted pros", desc: "We route you to vetted, local professionals.", icon: ShieldCheck },
-    { n: "03", title: "Manage and grow your home", desc: "Track value, tasks, documents and requests.", icon: TrendingUp },
+    { n: "01", title: "Create your Home Profile", desc: "Add your address and goals in under 2 minutes.", icon: FileText, tone: "growth" as const },
+    { n: "02", title: "Get matched with trusted pros", desc: "We route you to vetted, local professionals.", icon: ShieldCheck, tone: "primary" as const },
+    { n: "03", title: "Manage and grow your home", desc: "Track value, tasks, documents and requests.", icon: TrendingUp, tone: "growth" as const },
   ];
   return (
-    <Section eyebrow="How it works" title="A calmer way to own a home">
-      <div className="mt-10 grid gap-4 md:grid-cols-3">
-        {steps.map(s => (
-          <div key={s.n} className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-            <div className="flex items-center justify-between">
-              <span className="grid h-11 w-11 place-items-center rounded-2xl gradient-brand text-white"><s.icon className="h-5 w-5" /></span>
-              <span className="text-sm font-medium text-muted-foreground">{s.n}</span>
+    <section className="px-5 py-16 md:py-20">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-xs font-semibold uppercase tracking-widest text-growth">How it works</p>
+        <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
+          A calmer way <span className="text-muted-foreground">to own a home</span>
+        </h2>
+
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {steps.map((s, i) => (
+            <div
+              key={s.n}
+              className="animate-fade-in relative"
+              style={{ animationDelay: `${i * 90}ms`, animationFillMode: "backwards" }}
+            >
+              {i === 0 && (
+                <div className="pointer-events-none absolute -inset-0.5 rounded-[1.85rem] gradient-growth opacity-25 blur-[2px]" aria-hidden />
+              )}
+              <div className="relative flex h-full items-start gap-4 rounded-3xl bg-primary p-5 shadow-elevated transition-transform duration-300 hover:-translate-y-1 sm:p-6">
+                <div
+                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ring-1 ${
+                    s.tone === "growth"
+                      ? "bg-growth/15 text-growth ring-growth/30"
+                      : "bg-white/10 text-white ring-white/25"
+                  }`}
+                >
+                  <s.icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold tracking-[0.18em] text-primary-foreground/50">{s.n}</p>
+                  <h3 className="mt-1 text-base font-semibold text-primary-foreground sm:text-lg">{s.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-primary-foreground/65">{s.desc}</p>
+                </div>
+              </div>
             </div>
-            <h3 className="mt-5 text-lg font-semibold">{s.title}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </Section>
+    </section>
   );
 }
 
 function Benefits() {
   const items = [
-    { icon: Wallet, title: "Save money", desc: "Track spend, warranties, and get member pricing." },
-    { icon: ShieldCheck, title: "Protect your investment", desc: "Stay on top of maintenance before it costs you." },
-    { icon: TrendingUp, title: "Grow home value", desc: "Improvement suggestions with ROI estimates." },
-    { icon: Bell, title: "Never miss a task", desc: "Smart reminders tailored to your home." },
+    { icon: Wallet, title: "Save money", desc: "Track spend, warranties, and get member pricing.", tone: "growth" as const },
+    { icon: ShieldCheck, title: "Protect your investment", desc: "Stay on top of maintenance before it costs you.", tone: "primary" as const },
+    { icon: TrendingUp, title: "Grow home value", desc: "Improvement suggestions with ROI estimates.", tone: "growth" as const },
+    { icon: Bell, title: "Never miss a task", desc: "Smart reminders tailored to your home.", tone: "primary" as const },
   ];
   return (
-    <Section eyebrow="For homeowners" title="Everything your home needs, in one place">
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {items.map(i => (
-          <div key={i.title} className="rounded-3xl border border-border bg-card p-6">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-secondary text-primary"><i.icon className="h-5 w-5" /></span>
-            <h3 className="mt-4 text-base font-semibold">{i.title}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{i.desc}</p>
-          </div>
-        ))}
+    <section className="px-5 py-16 md:py-20">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">For homeowners</p>
+        <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
+          Everything your home needs, <span className="text-muted-foreground">in one place</span>
+        </h2>
+
+        <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {items.map((i, idx) => (
+            <div
+              key={i.title}
+              className="animate-fade-in flex flex-col items-start rounded-3xl border border-border bg-card p-5 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated sm:p-6"
+              style={{ animationDelay: `${idx * 80}ms`, animationFillMode: "backwards" }}
+            >
+              <span
+                className={`grid h-11 w-11 place-items-center rounded-full ${
+                  i.tone === "growth" ? "bg-accent text-growth" : "bg-secondary text-primary"
+                }`}
+              >
+                <i.icon className="h-5 w-5" />
+              </span>
+              <h3 className="mt-4 text-base font-semibold leading-snug">{i.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{i.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            to="/onboarding"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-transform duration-200 active:scale-[0.98] sm:w-auto sm:min-w-[280px]"
+          >
+            Start your journey <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
-    </Section>
+    </section>
   );
 }
+
 
 function ServicesGrid() {
   return (
