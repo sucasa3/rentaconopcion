@@ -678,14 +678,30 @@ function AgentPortfolio() {
                 </div>
 
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-[860px] text-left text-sm">
+                  <table className="w-full min-w-[980px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                         <th className="py-2 pr-3 font-medium">Household</th>
-                        <th className="py-2 pr-3 font-medium">Intent</th>
-                        <th className="py-2 pr-3 font-medium">Readiness</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Intent
+                            <IntentInfo />
+                          </span>
+                        </th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Readiness
+                            <ReadinessInfo />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Value</th>
                         <th className="py-2 pr-3 font-medium">Equity</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            Net proceeds
+                            <NetProceedsInfo sellCostPct={sellCost} />
+                          </span>
+                        </th>
                         <th className="py-2 pr-3 font-medium">Tenure</th>
                         <th className="py-2 pr-3 font-medium">Listing</th>
                         <th className="py-2 pr-3 font-medium">Referrals</th>
