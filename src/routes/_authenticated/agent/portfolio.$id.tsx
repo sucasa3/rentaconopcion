@@ -402,6 +402,10 @@ function AgentPortfolio() {
                 />
               </div>
 
+              <AgentCoveragePanel portfolioId={id} />
+
+
+
               {/* Band chips */}
               <div className="flex flex-wrap gap-2">
                 <SegChip
