@@ -86,7 +86,7 @@ function AgentPortfolio() {
 
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id, limit: 10 } }),
-    onMutate: () => ({ toastId: toast.loading("Pulling property records from ATTOM…") }),
+    onMutate: () => ({ toastId: toast.loading("Pulling property records…") }),
     onSuccess: (r: any, _v, ctx) => {
       toast.success(`Records pulled for ${r.enriched} homes`, { id: ctx?.toastId });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
