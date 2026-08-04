@@ -10,6 +10,8 @@
  * in a createServerFn in `property-intel.functions.ts`.
  */
 
+import { BENCHMARK_REFI_RATE } from "./refi";
+
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 
 export type IntelClass = AttomEndpoint;
@@ -439,7 +441,7 @@ export function computeEquityRibbon(
   const cashOut = value != null && balance != null ? Math.max(0, Math.round(value * 0.8 - balance)) : null;
 
   let refi: EquityRibbon["refiSignal"] = null;
-  const marketRate = 6.5;
+  const marketRate = BENCHMARK_REFI_RATE;
   if (equityPct != null && mortgage?.interestRate != null) {
     // Rate-driven refi: 20%+ equity AND current market meaningfully below their rate.
     const spread = mortgage.interestRate - marketRate;
