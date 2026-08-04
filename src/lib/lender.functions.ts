@@ -491,18 +491,18 @@ export const seedDemoPortfolio = createServerFn({ method: "POST" })
   });
 
 // -----------------------------------------------------------------------------
-// Fello import seeder: creates a "Fello Import" portfolio under the demo lender
-// org and inserts the 76 homeowners exported from Fello (2026-07-27).
+// Roster import seeder: creates a starter portfolio under the demo lender org
+// and inserts the 76 homeowners from the frozen CSV roster export (2026-07-27).
 // Idempotent by portfolio name.
 // -----------------------------------------------------------------------------
-export const seedFelloImport = createServerFn({ method: "POST" })
+export const seedRosterImport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { getFelloHomeowners } = await import("./fello-import.server");
+    const { getSeedHomeowners } = await import("./portfolio-seed.server");
 
     const ORG_NAME = "SuCasa Demo Lender";
-    const PORTFOLIO_NAME = "Fello Import · 76 Homeowners";
+    const PORTFOLIO_NAME = "Client Roster · 76 Homeowners";
 
     // Ensure org
     let orgId: string;
@@ -559,7 +559,7 @@ export const seedFelloImport = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("portfolio_id", portfolioId);
     if ((count ?? 0) === 0) {
-      const rows = getFelloHomeowners().map((h) => ({ portfolio_id: portfolioId, ...h }));
+      const rows = getSeedHomeowners().map((h) => ({ portfolio_id: portfolioId, ...h }));
       const chunk = 100;
       for (let i = 0; i < rows.length; i += chunk) {
         const { error } = await supabaseAdmin
