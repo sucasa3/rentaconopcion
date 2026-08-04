@@ -257,3 +257,12 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-semibold tabular-nums">{value}</dd>
+    </div>
+  );
+}
