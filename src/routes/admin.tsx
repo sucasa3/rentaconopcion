@@ -62,6 +62,8 @@ function Admin() {
 
           <AdminLenderPanel />
 
+          <AdminCampaignPanel />
+
           <AdminLeadsPanel />
 
           
