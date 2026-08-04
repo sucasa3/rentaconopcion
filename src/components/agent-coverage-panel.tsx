@@ -1,9 +1,24 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getPortfolioCoverage, retryPortfolioPulls } from "@/lib/agent.functions";
+import {
+  backfillPortfolioAddresses,
+  getPortfolioCoverage,
+  getRecordsBudget,
+  retryPortfolioPulls,
+  updateClientAddress,
+} from "@/lib/agent.functions";
 import { toast } from "sonner";
-import { CheckCircle2, ChevronDown, Loader2, MinusCircle, RefreshCw, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  MapPin,
+  MinusCircle,
+  Pencil,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
 
 type Filter = "all" | "complete" | "partial" | "missing" | "no_address";
 
@@ -34,13 +49,89 @@ function Dot({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+const inputCls =
+  "w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary";
+
+function AddressEditor({
+  row,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  row: any;
+  onSave: (v: { street: string; city: string; state: string; zip: string }) => void;
+  onCancel: () => void;
+  saving: boolean;
+}) {
+  const placeholder = /address on file/i.test(row.street ?? "");
+  const [street, setStreet] = useState(placeholder ? "" : (row.street ?? ""));
+  const [city, setCity] = useState(row.city ?? "");
+  const [state, setState] = useState(row.state ?? "");
+  const [zip, setZip] = useState(row.zip ?? "");
+
+  return (
+    <div className="mt-2 space-y-1.5 rounded-lg border border-border bg-secondary/30 p-2">
+      <input
+        className={inputCls}
+        placeholder="Street address"
+        value={street}
+        onChange={(e) => setStreet(e.target.value)}
+      />
+      <div className="flex gap-1.5">
+        <input
+          className={inputCls}
+          placeholder="City"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        />
+        <input
+          className={`${inputCls} w-16 shrink-0`}
+          placeholder="ST"
+          maxLength={2}
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+        />
+        <input
+          className={`${inputCls} w-24 shrink-0`}
+          placeholder="ZIP"
+          maxLength={10}
+          value={zip}
+          onChange={(e) => setZip(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-2 pt-0.5">
+        <button
+          disabled={saving || street.trim().length < 3 || (!city.trim() && !zip.trim())}
+          onClick={() => onSave({ street: street.trim(), city: city.trim(), state: state.trim(), zip: zip.trim() })}
+          className="rounded-full bg-foreground px-3 py-1 text-[11px] font-semibold text-background disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save address"}
+        </button>
+        <button
+          onClick={onCancel}
+          className="rounded-full border border-border px-3 py-1 text-[11px] font-medium text-muted-foreground"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
   const [retrying, setRetrying] = useState(false);
+  const [finding, setFinding] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
   const coverageFn = useServerFn(getPortfolioCoverage);
   const retryFn = useServerFn(retryPortfolioPulls);
+  const backfillFn = useServerFn(backfillPortfolioAddresses);
+  const saveAddressFn = useServerFn(updateClientAddress);
+  const budgetFn = useServerFn(getRecordsBudget);
   const queryClient = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
@@ -48,6 +139,20 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
     queryFn: () => coverageFn({ data: { portfolioId } }) as any,
     enabled: open,
   });
+
+  const { data: budget } = useQuery({
+    queryKey: ["records-budget"],
+    queryFn: () => budgetFn() as any,
+    enabled: open,
+  });
+
+  const busy = retrying || finding;
+
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ["agent-coverage", portfolioId] });
+    await queryClient.invalidateQueries({ queryKey: ["agent-portfolio", portfolioId] });
+    await queryClient.invalidateQueries({ queryKey: ["records-budget"] });
+  }
 
   async function handleRetry() {
     setRetrying(true);
@@ -63,13 +168,53 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
         if (!res.remaining || (!res.retried && !res.failed)) break;
       }
       toast.success(`Retried ${done} ${done === 1 ? "home" : "homes"}${failed ? ` · ${failed} failed` : ""}`);
-      await queryClient.invalidateQueries({ queryKey: ["agent-coverage", portfolioId] });
-      await queryClient.invalidateQueries({ queryKey: ["agent-portfolio", portfolioId] });
+      await refresh();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setRetrying(false);
       setProgress(null);
+    }
+  }
+
+  async function handleFindAddresses() {
+    setFinding(true);
+    setProgress("Searching CRM…");
+    let found = 0;
+    let missed = 0;
+    try {
+      for (let pass = 0; pass < 20; pass += 1) {
+        const res: any = await backfillFn({ data: { portfolioId, limit: 25 } });
+        found += res.found ?? 0;
+        missed += res.notFound ?? 0;
+        setProgress(`Found ${found} · ${res.remaining} left`);
+        if (!res.scanned || !res.remaining) break;
+      }
+      toast.success(
+        found
+          ? `Recovered ${found} address${found === 1 ? "" : "es"}${missed ? ` · ${missed} not in CRM` : ""}`
+          : "No addresses found in the CRM for these contacts",
+      );
+      await refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setFinding(false);
+      setProgress(null);
+    }
+  }
+
+  async function handleSaveAddress(id: string, v: { street: string; city: string; state: string; zip: string }) {
+    setSavingId(id);
+    try {
+      await saveAddressFn({ data: { clientId: id, ...v } });
+      toast.success("Address saved — run Retry pulls to fetch records");
+      setEditingId(null);
+      await refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSavingId(null);
     }
   }
 
@@ -110,18 +255,46 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
           ) : data ? (
             <>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] text-muted-foreground">
-                  {data.counts.partial + data.counts.missing} home
-                  {data.counts.partial + data.counts.missing === 1 ? "" : "s"} need value, equity or
-                  mortgage records.
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    {data.counts.partial + data.counts.missing} home
+                    {data.counts.partial + data.counts.missing === 1 ? "" : "s"} need value, equity or
+                    mortgage records.
+                  </p>
+                  {budget ? (
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+                        budget.cacheOnly || budget.pct >= budget.softCapPct
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                          : "border-border bg-secondary text-muted-foreground"
+                      }`}
+                      title="Property-records lookups included in this month's plan"
+                    >
+                      {budget.cacheOnly
+                        ? "Monthly cap reached · cached data only"
+                        : `${budget.remaining.toLocaleString()} lookups left this month`}
+                    </span>
+                  ) : null}
+                </div>
                 <div className="flex items-center gap-2">
                   {progress ? (
                     <span className="text-[11px] text-muted-foreground">{progress}</span>
                   ) : null}
                   <button
+                    onClick={handleFindAddresses}
+                    disabled={busy || data.counts.no_address === 0}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-3 py-1.5 text-[11px] font-semibold text-foreground transition hover:border-primary disabled:opacity-50"
+                  >
+                    {finding ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <MapPin className="h-3 w-3" />
+                    )}
+                    Find addresses
+                  </button>
+                  <button
                     onClick={handleRetry}
-                    disabled={retrying || data.counts.partial + data.counts.missing === 0}
+                    disabled={busy || data.counts.partial + data.counts.missing === 0}
                     className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary transition hover:bg-primary/15 disabled:opacity-50"
                   >
                     {retrying ? (
@@ -173,7 +346,24 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
                       <tr key={r.id} className="border-t border-border align-top">
                         <td className="px-3 py-2">
                           <p className="font-medium">{r.name || "Unnamed"}</p>
-                          <p className="text-xs text-muted-foreground">{r.address}</p>
+                          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {r.address}
+                            <button
+                              onClick={() => setEditingId(editingId === r.id ? null : r.id)}
+                              className="rounded p-0.5 text-muted-foreground transition hover:text-primary"
+                              title="Edit address"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                          </p>
+                          {editingId === r.id ? (
+                            <AddressEditor
+                              row={r}
+                              saving={savingId === r.id}
+                              onCancel={() => setEditingId(null)}
+                              onSave={(v) => handleSaveAddress(r.id, v)}
+                            />
+                          ) : null}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex flex-wrap gap-x-3 gap-y-1">
@@ -207,8 +397,9 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
                 </table>
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground">
-                Equity needs both a value and a mortgage record. Homes marked “No address” need a
-                street address before records can be pulled.
+                Equity needs both a value and a mortgage record. For homes marked “No address”, try
+                <span className="font-medium text-foreground"> Find addresses</span> to recover the
+                street address from your CRM, or edit it inline.
               </p>
             </>
           ) : null}
