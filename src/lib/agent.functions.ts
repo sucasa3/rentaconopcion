@@ -757,3 +757,95 @@ export const seedAgentDemo = createServerFn({ method: "POST" })
 
     return { orgId: org!.id, portfolioId: portfolio!.id };
   });
+
+// ---------------------------------------------------------------------------
+// Coverage report: per-home pull status (value / mortgage present) + last pull.
+// ---------------------------------------------------------------------------
+export const getPortfolioCoverage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ portfolioId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+
+    const { data: rows, error } = await context.supabase
+      .from("lender_portfolio_clients")
+      .select("id, client_name, address_line1, city, state, zip")
+      .eq("portfolio_id", data.portfolioId)
+      .limit(1000);
+    if (error) throw new Error(error.message);
+
+    const { normalizeAddress } = await import("@/lib/attom.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const mapped = (rows ?? []).map((r) => {
+      const mappable = Boolean(
+        r.address_line1 && !/address on file/i.test(r.address_line1) && (r.city || r.zip),
+      );
+      const full = [r.address_line1, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
+        .filter(Boolean)
+        .join(", ");
+      return { ...r, mappable, full, key: mappable ? normalizeAddress(full) : null };
+    });
+
+    const keys = [...new Set(mapped.map((m) => m.key).filter(Boolean) as string[])];
+    const intel = new Map<string, Record<string, unknown>>();
+    for (let i = 0; i < keys.length; i += 200) {
+      const { data: hit } = await supabaseAdmin
+        .from("property_intel")
+        .select(
+          "address_normalized, avm, detail, mortgage, avm_fetched_at, detail_fetched_at, mortgage_fetched_at, sales_fetched_at, tax_fetched_at, permits_fetched_at, owner_fetched_at",
+        )
+        .in("address_normalized", keys.slice(i, i + 200));
+      for (const row of hit ?? []) intel.set(row.address_normalized, row as Record<string, unknown>);
+    }
+
+    const items = mapped.map((m) => {
+      const row = m.key ? intel.get(m.key) : undefined;
+      const stamps = [
+        "avm_fetched_at",
+        "detail_fetched_at",
+        "mortgage_fetched_at",
+        "sales_fetched_at",
+        "tax_fetched_at",
+        "permits_fetched_at",
+        "owner_fetched_at",
+      ]
+        .map((k) => (row?.[k] as string | null) ?? null)
+        .filter(Boolean) as string[];
+      const lastPulledAt = stamps.length
+        ? stamps.reduce((a, b) => (new Date(a) > new Date(b) ? a : b))
+        : null;
+      const hasValue = Boolean(row?.avm);
+      const hasDetail = Boolean(row?.detail);
+      const hasMortgage = Boolean(row?.mortgage);
+      return {
+        id: m.id,
+        name: m.client_name,
+        address: m.mappable ? m.full : m.address_line1 || "—",
+        mappable: m.mappable,
+        hasValue,
+        hasDetail,
+        hasMortgage,
+        hasEquity: hasValue && hasMortgage,
+        lastPulledAt,
+        status: !m.mappable
+          ? ("no_address" as const)
+          : hasValue && hasDetail && hasMortgage
+            ? ("complete" as const)
+            : hasValue || hasDetail || hasMortgage
+              ? ("partial" as const)
+              : ("missing" as const),
+      };
+    });
+
+    return {
+      items,
+      counts: {
+        total: items.length,
+        complete: items.filter((i) => i.status === "complete").length,
+        partial: items.filter((i) => i.status === "partial").length,
+        missing: items.filter((i) => i.status === "missing").length,
+        no_address: items.filter((i) => i.status === "no_address").length,
+      },
+    };
+  });
