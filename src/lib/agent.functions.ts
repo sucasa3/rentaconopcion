@@ -327,9 +327,15 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         readiness_checks: readiness.checks,
         net_proceeds: readiness.netProceeds,
         referrals,
+        referrals,
         referral_count: referrals.length,
+        recommendations,
+        recommendation_count: recommendations.length,
+        touches,
+        touch_count: touches.length,
       };
     });
+
 
     enriched.sort((a, b) => b.move_score - a.move_score);
 
