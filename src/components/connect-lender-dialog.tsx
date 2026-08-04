@@ -37,6 +37,10 @@ export function ConnectLenderDialog({
   const fetchMatch = useServerFn(getMatchedLenderForMe);
   const createIntent = useServerFn(createRefiIntent);
 
+  const savings = estimateRefiSavings(loanBalance, currentRate, benchmarkRate);
+  const monthly = savings?.monthlySavings ?? (estSavingsMonthly ?? 0);
+
+
   const { data: match, isLoading } = useQuery({
     queryKey: ["matched-lender-me"],
     queryFn: () => fetchMatch(),
