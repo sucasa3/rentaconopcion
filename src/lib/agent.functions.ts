@@ -849,3 +849,84 @@ export const getPortfolioCoverage = createServerFn({ method: "POST" })
       },
     };
   });
+
+// ---------------------------------------------------------------------------
+// Bulk retry: re-fetch value / equity / mortgage classes only for homes whose
+// coverage is Partial or Not pulled. Complete + no-address rows are skipped.
+// ---------------------------------------------------------------------------
+export const retryPortfolioPulls = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        limit: z.number().int().min(1).max(50).default(25),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+
+    const { data: rows, error } = await context.supabase
+      .from("lender_portfolio_clients")
+      .select("id, address_line1, city, state, zip")
+      .eq("portfolio_id", data.portfolioId)
+      .limit(1000);
+    if (error) throw new Error(error.message);
+
+    const { normalizeAddress } = await import("@/lib/attom.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { getPropertyIntel } = await import("@/lib/valuation.server");
+
+    const addresses = new Map<string, string>();
+    let skippedNoAddress = 0;
+    for (const r of rows ?? []) {
+      if (!r.address_line1 || /address on file/i.test(r.address_line1) || (!r.city && !r.zip)) {
+        skippedNoAddress += 1;
+        continue;
+      }
+      const full = [r.address_line1, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
+        .filter(Boolean)
+        .join(", ");
+      addresses.set(normalizeAddress(full), full);
+    }
+
+    const keys = [...addresses.keys()];
+    const complete = new Set<string>();
+    for (let i = 0; i < keys.length; i += 200) {
+      const { data: hit } = await supabaseAdmin
+        .from("property_intel")
+        .select("address_normalized, avm, detail, mortgage")
+        .in("address_normalized", keys.slice(i, i + 200));
+      for (const row of hit ?? []) {
+        if (row.avm && row.detail && row.mortgage) complete.add(row.address_normalized);
+      }
+    }
+
+    // Partial + not-pulled only.
+    const pending = keys.filter((k) => !complete.has(k));
+    const targets = pending.slice(0, data.limit).map((k) => addresses.get(k)!);
+
+    let ok = 0;
+    let failed = 0;
+    for (const full of targets) {
+      try {
+        await getPropertyIntel(full, {
+          classes: ["avm", "detail", "mortgage"],
+          revenueSource: "agent_retry_pull",
+          requestedBy: context.userId,
+        });
+        ok += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+
+    return {
+      retried: ok,
+      failed,
+      skippedNoAddress,
+      totalPending: pending.length,
+      remaining: Math.max(0, pending.length - ok),
+    };
+  });
