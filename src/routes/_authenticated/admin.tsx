@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { GhlSyncPanel } from "@/components/ghl-sync-panel";
-import { FelloPanel } from "@/components/fello-panel";
 import { AdminLeadsPanel } from "@/components/admin-leads-panel";
 import { ProSeedPanel } from "@/components/pro-seed-panel";
 import { AttomSpendPanel } from "@/components/attom-spend-panel";
@@ -73,8 +72,6 @@ function Admin() {
           <ProSeedPanel />
 
           <GhlSyncPanel />
-
-          <FelloPanel />
 
 
 
