@@ -160,6 +160,63 @@ export type Database = {
           },
         ]
       }
+      campaign_org_overrides: {
+        Row: {
+          campaign_id: string
+          closing: string | null
+          created_at: string
+          cta_label: string | null
+          cta_url: string | null
+          id: string
+          intro: string | null
+          lender_org_id: string
+          subject: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          campaign_id: string
+          closing?: string | null
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          intro?: string | null
+          lender_org_id: string
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          closing?: string | null
+          created_at?: string
+          cta_label?: string | null
+          cta_url?: string | null
+          id?: string
+          intro?: string | null
+          lender_org_id?: string
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_org_overrides_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_org_overrides_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_sends: {
         Row: {
           body: string | null
@@ -872,35 +929,56 @@ export type Database = {
       lender_orgs: {
         Row: {
           active: boolean
+          contact_name: string | null
+          contact_phone: string | null
+          contact_title: string | null
           created_at: string
           id: string
           license_number: string | null
+          logo_url: string | null
           name: string
           org_type: string
           plan: string
           primary_contact_email: string | null
+          reply_to_email: string | null
+          sender_name: string | null
+          signoff: string | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_title?: string | null
           created_at?: string
           id?: string
           license_number?: string | null
+          logo_url?: string | null
           name: string
           org_type?: string
           plan?: string
           primary_contact_email?: string | null
+          reply_to_email?: string | null
+          sender_name?: string | null
+          signoff?: string | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_title?: string | null
           created_at?: string
           id?: string
           license_number?: string | null
+          logo_url?: string | null
           name?: string
           org_type?: string
           plan?: string
           primary_contact_email?: string | null
+          reply_to_email?: string | null
+          sender_name?: string | null
+          signoff?: string | null
           updated_at?: string
         }
         Relationships: []
