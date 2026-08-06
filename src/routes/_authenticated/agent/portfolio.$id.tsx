@@ -260,7 +260,10 @@ function AgentPortfolio() {
   const enrichFn = useServerFn(enrichAgentPortfolio);
   const listingFn = useServerFn(setListingStatus);
   const briefFn = useServerFn(generateAgentBrief);
+  const markSeenFn = useServerFn(markAgentFeedSeen);
+  const reviewFn = useServerFn(setAgentFeedReviewed);
   const qc = useQueryClient();
+
 
   const [sellCost, setSellCost] = useState(8);
   const [band, setBand] = useState<string>("all");
