@@ -129,7 +129,7 @@ function Dashboard() {
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
               <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">
-                {firstName ? `${firstName}'s home` : "Your home"}
+                {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
               </h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
