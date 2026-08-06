@@ -35,6 +35,7 @@ import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 import { Route as AuthenticatedAgentPortfolioIdRouteImport } from './routes/_authenticated/agent/portfolio.$id'
 import { Route as AuthenticatedLenderPortfolioIdIndexRouteImport } from './routes/_authenticated/lender/portfolio.$id.index'
+import { Route as AuthenticatedLenderPortfolioIdCampaignsRouteImport } from './routes/_authenticated/lender/portfolio.$id.campaigns'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -172,6 +173,12 @@ const AuthenticatedLenderPortfolioIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedLenderPortfolioIdRoute,
   } as any)
+const AuthenticatedLenderPortfolioIdCampaignsRoute =
+  AuthenticatedLenderPortfolioIdCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedLenderPortfolioIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/lender/portfolio/$id/': typeof AuthenticatedLenderPortfolioIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -222,6 +230,7 @@ export interface FileRoutesByTo {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdIndexRoute
 }
 export interface FileRoutesById {
@@ -251,6 +260,7 @@ export interface FileRoutesById {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/_authenticated/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/_authenticated/lender/portfolio/$id/': typeof AuthenticatedLenderPortfolioIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/lender/portfolio/$id/campaigns'
     | '/lender/portfolio/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -304,6 +315,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/lender/portfolio/$id/campaigns'
     | '/lender/portfolio/$id'
   id:
     | '__root__'
@@ -332,6 +344,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/_authenticated/lender/portfolio/$id/campaigns'
     | '/_authenticated/lender/portfolio/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -536,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderPortfolioIdIndexRouteImport
       parentRoute: typeof AuthenticatedLenderPortfolioIdRoute
     }
+    '/_authenticated/lender/portfolio/$id/campaigns': {
+      id: '/_authenticated/lender/portfolio/$id/campaigns'
+      path: '/campaigns'
+      fullPath: '/lender/portfolio/$id/campaigns'
+      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdCampaignsRouteImport
+      parentRoute: typeof AuthenticatedLenderPortfolioIdRoute
+    }
   }
 }
 
@@ -558,11 +578,14 @@ const AuthenticatedAgentRouteRouteWithChildren =
   )
 
 interface AuthenticatedLenderPortfolioIdRouteChildren {
+  AuthenticatedLenderPortfolioIdCampaignsRoute: typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   AuthenticatedLenderPortfolioIdIndexRoute: typeof AuthenticatedLenderPortfolioIdIndexRoute
 }
 
 const AuthenticatedLenderPortfolioIdRouteChildren: AuthenticatedLenderPortfolioIdRouteChildren =
   {
+    AuthenticatedLenderPortfolioIdCampaignsRoute:
+      AuthenticatedLenderPortfolioIdCampaignsRoute,
     AuthenticatedLenderPortfolioIdIndexRoute:
       AuthenticatedLenderPortfolioIdIndexRoute,
   }
