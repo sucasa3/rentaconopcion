@@ -1,9 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
 import {
   getPortfolio,
   ingestPortfolioCsv,
@@ -12,7 +11,6 @@ import {
 } from "@/lib/lender.functions";
 import { useAutoEnrich } from "@/hooks/use-auto-enrich";
 import {
-  ArrowLeft,
   Upload,
   Lock,
   CheckCircle2,
@@ -27,15 +25,10 @@ import {
   X,
 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
-  head: () => ({
-    meta: [
-      { title: "Portfolio — SuCasa Lender" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/")({
   component: PortfolioDetail,
 });
+
 
 function money(cents: number | null | undefined) {
   if (cents == null) return "—";
