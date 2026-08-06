@@ -198,6 +198,21 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       }
     }
 
+    // Seen / reviewed state for this agent on this book. Drives the "New" dot
+    // and the manual "Mark reviewed" hide.
+    const seenState: Record<string, { first_seen_at: string; reviewed_at: string | null }> = {};
+    {
+      const { data: seenRows } = await context.supabase
+        .from("agent_feed_seen")
+        .select("item_key, first_seen_at, reviewed_at")
+        .eq("user_id", context.userId)
+        .eq("portfolio_id", data.id);
+      for (const s of seenRows ?? [])
+        seenState[s.item_key] = {
+          first_seen_at: s.first_seen_at,
+          reviewed_at: s.reviewed_at,
+        };
+    }
 
 
     const { normalizeAddress } = await import("@/lib/attom.server");
