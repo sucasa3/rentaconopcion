@@ -188,33 +188,15 @@ function PortfolioDetail() {
 
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
-        <div className="mx-auto max-w-6xl space-y-6">
-          <Link
-            to="/lender"
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-          >
-            <ArrowLeft className="h-3 w-3" /> All portfolios
-          </Link>
+    <div className="space-y-6">
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      ) : error ? (
+        <p className="text-sm text-destructive">{(error as Error).message}</p>
+      ) : data ? (
+        <>
+              <div className="flex flex-wrap items-end justify-end gap-3">
 
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
-          ) : error ? (
-            <p className="text-sm text-destructive">{(error as Error).message}</p>
-          ) : data ? (
-            <>
-              {/* Header */}
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                    {data.portfolio.orgName}
-                  </p>
-                  <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {data.portfolio.name}
-                  </h1>
-                </div>
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   Assumed rate
                   <input
