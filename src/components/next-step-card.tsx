@@ -106,10 +106,17 @@ function fallbackGuide(item: TimelineItem): Guide {
   };
 }
 
-export function NextStepCard({ item }: { item: TimelineItem }) {
+export function NextStepCard({
+  item,
+  onMarkDone,
+}: {
+  item: TimelineItem;
+  onMarkDone?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const slug = CATEGORY_SLUG[item.category] ?? "handyman";
   const guide = GUIDES[item.key] ?? fallbackGuide(item);
+
 
   const fetchPros = useServerFn(getRecommendedPros);
   const { data: pros } = useQuery({
