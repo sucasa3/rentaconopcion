@@ -176,8 +176,17 @@ export const saveOrgBranding = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertOrgMember(context.supabase, context.userId, data.orgId);
     const { orgId, ...fields } = data;
-    const patch: Record<string, string | null> = {};
-    for (const [k, v] of Object.entries(fields)) patch[k] = v === "" ? null : (v as string | null);
+    const norm = (v: string | null | undefined) => (v == null || v === "" ? null : v);
+    const patch = {
+      sender_name: norm(fields.sender_name),
+      reply_to_email: norm(fields.reply_to_email),
+      contact_name: norm(fields.contact_name),
+      contact_title: norm(fields.contact_title),
+      contact_phone: norm(fields.contact_phone),
+      license_number: norm(fields.license_number),
+      logo_url: norm(fields.logo_url),
+      signoff: norm(fields.signoff),
+    };
     const { error } = await context.supabase.from("lender_orgs").update(patch).eq("id", orgId);
     if (error) throw new Error(error.message);
     return { ok: true as const };
