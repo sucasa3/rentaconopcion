@@ -236,20 +236,9 @@ function Dashboard() {
             {/* Inspection findings (AI) */}
             <InspectionFindingsPanel />
 
-            {/* Recommended pros */}
-            <Card className="lg:col-span-2">
-              <CardHeader title="Recommended professionals" action={<Link to="/services" className="text-xs font-medium text-primary">Browse</Link>} />
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {RECOMMENDED_PROS.map(p => (
-                  <div key={p.name} className="rounded-2xl border border-border p-4">
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">{p.badge}</span>
-                    <p className="mt-3 text-sm font-semibold">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.category}</p>
-                    <p className="mt-2 text-xs">★ {p.rating} · {p.reviews} reviews</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            {/* Recommended pros — matched to current needs */}
+            <RecommendedProsCard />
+
 
             {/* Intelligence report */}
             <Card>
