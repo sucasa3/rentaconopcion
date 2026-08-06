@@ -50,6 +50,52 @@ export type CampaignTarget = {
   rateAtClose: number | null;
 };
 
+/** Partner (lender/agent org) branding applied to every campaign email. */
+export type OrgBranding = {
+  orgName: string;
+  senderName: string | null;
+  replyToEmail: string | null;
+  contactName: string | null;
+  contactTitle: string | null;
+  contactPhone: string | null;
+  licenseNumber: string | null;
+  logoUrl: string | null;
+  signoff: string | null;
+};
+
+/** Per-org wording overrides for a single campaign. */
+export type CampaignOverride = {
+  subject: string | null;
+  intro: string | null;
+  closing: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+};
+
+export function brandingFromOrg(o: {
+  name?: string | null;
+  sender_name?: string | null;
+  reply_to_email?: string | null;
+  contact_name?: string | null;
+  contact_title?: string | null;
+  contact_phone?: string | null;
+  license_number?: string | null;
+  logo_url?: string | null;
+  signoff?: string | null;
+}): OrgBranding {
+  return {
+    orgName: o.name ?? "",
+    senderName: o.sender_name ?? null,
+    replyToEmail: o.reply_to_email ?? null,
+    contactName: o.contact_name ?? null,
+    contactTitle: o.contact_title ?? null,
+    contactPhone: o.contact_phone ?? null,
+    licenseNumber: o.license_number ?? null,
+    logoUrl: o.logo_url ?? null,
+    signoff: o.signoff ?? null,
+  };
+}
+
 export type CampaignFacts = {
   value: number | null;
   valueChange: number | null;
