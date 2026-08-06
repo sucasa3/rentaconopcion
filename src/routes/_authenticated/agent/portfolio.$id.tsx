@@ -695,65 +695,75 @@ function AgentPortfolio() {
                     What your clients are doing, what their home needs next, and what has already
                     gone out to them.
                   </p>
-                  <Tabs defaultValue="referrals" className="mt-4">
+                  <Tabs
+                    value={activityTab}
+                    onValueChange={setActivityTab}
+                    className="mt-4"
+                  >
                     <TabsList>
-                      <TabsTrigger value="referrals">Referrals</TabsTrigger>
-                      <TabsTrigger value="recommendations">Recommendations due</TabsTrigger>
+                      <TabsTrigger value="recommendations" className="gap-1.5">
+                        Recommendations due
+                        {newRecCount > 0 && <NewPill count={newRecCount} />}
+                      </TabsTrigger>
                       <TabsTrigger value="communicated">Communicated</TabsTrigger>
+                      <TabsTrigger value="referrals" className="gap-1.5">
+                        Referrals
+                        {newRefCount > 0 && <NewPill count={newRefCount} />}
+                      </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="referrals" className="mt-4 space-y-2">
-                      {data.referral_feed.length === 0 ? (
-                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No service activity yet. Invite clients to SuCasa to see their projects
-                          here.
-                        </p>
-                      ) : (
-                        data.referral_feed.map((r: any) => (
-                          <div
-                            key={r.id}
-                            className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-2.5"
-                          >
-                            <div>
-                              <p className="text-sm font-medium capitalize">
-                                {String(r.category).replace(/_/g, " ")}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {r.client_name}
-                                {r.city ? ` · ${r.city}` : ""} ·{" "}
-                                {new Date(r.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
-                              {String(r.status).replace(/_/g, " ")}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </TabsContent>
-
                     <TabsContent value="recommendations" className="mt-4 space-y-2">
-                      {(data.recommendation_feed ?? []).length === 0 ? (
+                      {reviewedCount > 0 && (
+                        <button
+                          onClick={() => setShowReviewed((v) => !v)}
+                          className="text-[11px] font-medium text-primary"
+                        >
+                          {showReviewed
+                            ? "Hide reviewed"
+                            : `Show ${reviewedCount} reviewed`}
+                        </button>
+                      )}
+                      {recFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
                           Nothing outstanding. Recommendations come from property records
                           (home age + permits) and from inspection reports once a linked client
                           uploads one.
                         </p>
                       ) : (
-                        data.recommendation_feed.map((r: any) => (
+                        recFeed.map((r: any) => (
                           <div
                             key={r.id}
-                            className="flex items-start justify-between gap-3 rounded-2xl border border-border bg-background px-4 py-2.5"
+                            className={`flex items-start justify-between gap-3 rounded-2xl border px-4 py-2.5 ${
+                              r.reviewed_at
+                                ? "border-border bg-secondary/40 opacity-70"
+                                : r.is_new
+                                  ? "border-primary/40 bg-primary/5"
+                                  : "border-border bg-background"
+                            }`}
                           >
                             <div>
-                              <p className="text-sm font-medium capitalize">
+                              <p className="flex items-center gap-1.5 text-sm font-medium capitalize">
                                 {String(r.system).replace(/_/g, " ")}
                                 {r.recommended_category ? ` · ${r.recommended_category}` : ""}
+                                {r.is_new && !r.reviewed_at && <NewPill />}
                               </p>
                               <p className="text-xs text-muted-foreground">
                                 {r.client_name}
                                 {r.recommended_action ? ` — ${r.recommended_action}` : ""}
                               </p>
+                              <button
+                                onClick={() =>
+                                  setReviewed.mutate({
+                                    itemKey: r.item_key,
+                                    reviewed: !r.reviewed_at,
+                                  })
+                                }
+                                disabled={setReviewed.isPending}
+                                className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary disabled:opacity-50"
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                {r.reviewed_at ? "Undo reviewed" : "Mark reviewed"}
+                              </button>
                             </div>
                             <div className="flex shrink-0 items-center gap-1.5">
                               <SourceBadge source={r.source} />
@@ -773,6 +783,40 @@ function AgentPortfolio() {
                         ))
                       )}
                     </TabsContent>
+
+                    <TabsContent value="referrals" className="mt-4 space-y-2">
+                      {refFeed.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                          No service activity yet. Invite clients to SuCasa to see their projects
+                          here.
+                        </p>
+                      ) : (
+                        refFeed.map((r: any) => (
+                          <div
+                            key={r.id}
+                            className={`flex items-center justify-between rounded-2xl border px-4 py-2.5 ${
+                              r.is_new ? "border-primary/40 bg-primary/5" : "border-border bg-background"
+                            }`}
+                          >
+                            <div>
+                              <p className="flex items-center gap-1.5 text-sm font-medium capitalize">
+                                {String(r.category).replace(/_/g, " ")}
+                                {r.is_new && <NewPill />}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {r.client_name}
+                                {r.city ? ` · ${r.city}` : ""} ·{" "}
+                                {new Date(r.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">
+                              {String(r.status).replace(/_/g, " ")}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </TabsContent>
+
 
                     <TabsContent value="communicated" className="mt-4 space-y-2">
                       {(data.touch_feed ?? []).length === 0 ? (
