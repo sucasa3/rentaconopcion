@@ -34,7 +34,18 @@ export function MaintenanceTimelinePanel() {
 
   const yearBuilt = data.detail?.yearBuilt ?? null;
   const permitEvents = data.permits?.events ?? [];
-  if (!yearBuilt && permitEvents.length === 0) return null;
+  if (!yearBuilt && permitEvents.length === 0) {
+    return (
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+        <h2 className="text-base font-semibold">Maintenance timeline</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add your home details so we can project when your roof, HVAC, water heater and other
+          systems are due — and suggest your next step.
+        </p>
+      </div>
+    );
+  }
+
 
   const items: TimelineItem[] = buildMaintenanceTimeline(yearBuilt, permitEvents);
 

@@ -213,14 +213,15 @@ export interface DetailSummary {
   propertyType: string | null;
 }
 export function extractDetail(raw: unknown): DetailSummary {
-  const r = raw as { property?: Array<{ building?: { rooms?: { beds?: number; bathstotal?: number }; size?: { livingsize?: number }; summary?: { yearbuilt?: number } }; lot?: { lotsize2?: number }; summary?: { proptype?: string } }> } | null;
+  const r = raw as { property?: Array<{ building?: { rooms?: { beds?: number; bathstotal?: number }; size?: { livingsize?: number }; summary?: { yearbuilt?: number } }; lot?: { lotsize2?: number }; summary?: { proptype?: string; yearbuilt?: number } }> } | null;
   const p = r?.property?.[0];
   return {
     beds: p?.building?.rooms?.beds ?? null,
     baths: p?.building?.rooms?.bathstotal ?? null,
     sqft: p?.building?.size?.livingsize ?? null,
     lotSqft: p?.lot?.lotsize2 ?? null,
-    yearBuilt: p?.building?.summary?.yearbuilt ?? null,
+    yearBuilt: p?.summary?.yearbuilt ?? p?.building?.summary?.yearbuilt ?? null,
+
     propertyType: p?.summary?.proptype ?? null,
   };
 }
