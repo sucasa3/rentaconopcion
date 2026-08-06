@@ -338,9 +338,22 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
           }
           return true;
         })
-        .slice(0, 3);
+        .slice(0, 3)
+        .map((r: any) => ({
+          ...r,
+          item_key: `rec:${r.id}`,
+          is_new: !seenState[`rec:${r.id}`],
+          reviewed_at: seenState[`rec:${r.id}`]?.reviewed_at ?? null,
+        }));
+
+      const referralsDecorated = referrals.map((r: any) => ({
+        ...r,
+        item_key: `ref:${r.id}`,
+        is_new: !seenState[`ref:${r.id}`],
+      }));
 
       const needsData = !chars?.yearBuilt && (permits?.events?.length ?? 0) === 0;
+
 
 
 
