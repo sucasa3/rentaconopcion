@@ -393,8 +393,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         readiness_label: readiness.label,
         readiness_checks: readiness.checks,
         net_proceeds: readiness.netProceeds,
-        referrals,
-        referral_count: referrals.length,
+        referrals: referralsDecorated,
+        referral_count: referralsDecorated.length,
+
         recommendations,
         recommendation_count: recommendations.length,
         recommendations_need_data: needsData,
