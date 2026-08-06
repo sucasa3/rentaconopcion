@@ -91,7 +91,7 @@ function buildCurve(base: number, growth: number) {
 }
 
 export function OnboardingWalkthrough({
-  autoOpenIfNew = true,
+  autoOpenIfNew = false,
   triggerLabel,
 }: {
   autoOpenIfNew?: boolean;
