@@ -31,7 +31,7 @@ export function MaintenanceTimelinePanel() {
 
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
-    queryFn: () => fetchLog({ data: {} }),
+    queryFn: () => fetchLog(undefined),
     staleTime: 60_000,
   });
 
@@ -128,21 +128,33 @@ export function MaintenanceTimelinePanel() {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
-                {item.source === "permit"
-                  ? `Installed ${item.installedYear} (permit)`
-                  : `Est. from year built ${item.installedYear}`}{" "}
+                {item.source === "logged"
+                  ? `You logged ${item.installedYear}${item.loggedDetail ? ` · ${item.loggedDetail}` : ""}`
+                  : item.source === "permit"
+                    ? `Installed ${item.installedYear} (permit)`
+                    : `Est. from year built ${item.installedYear}`}{" "}
                 · Expected end of life {item.expectedYear}
               </p>
             </div>
-            {(item.status === "overdue" || item.status === "due_soon") && (
-              <Link
-                to="/request"
-                className="shrink-0 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                onClick={() => setMarkItem(item)}
+                className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
               >
-                Get quotes
-              </Link>
-            )}
+                <CheckSquare className="h-3 w-3" />
+                {item.source === "logged" ? "Update" : "Mark done"}
+              </button>
+              {(item.status === "overdue" || item.status === "due_soon") && (
+                <Link
+                  to="/request"
+                  className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                >
+                  Get quotes
+                </Link>
+              )}
+            </div>
           </li>
+
         ))}
       </ul>
 
