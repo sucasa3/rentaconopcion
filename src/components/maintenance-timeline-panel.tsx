@@ -94,7 +94,7 @@ export function MaintenanceTimelinePanel() {
         </div>
       </div>
 
-      {nextStep && <NextStepCard item={nextStep} />}
+      {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}
 
       <ul className="mt-4 divide-y divide-border rounded-2xl border border-border">
         {items.map((item) => (
