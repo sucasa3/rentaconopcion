@@ -198,6 +198,21 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       }
     }
 
+    // Seen / reviewed state for this agent on this book. Drives the "New" dot
+    // and the manual "Mark reviewed" hide.
+    const seenState: Record<string, { first_seen_at: string; reviewed_at: string | null }> = {};
+    {
+      const { data: seenRows } = await context.supabase
+        .from("agent_feed_seen")
+        .select("item_key, first_seen_at, reviewed_at")
+        .eq("user_id", context.userId)
+        .eq("portfolio_id", data.id);
+      for (const s of seenRows ?? [])
+        seenState[s.item_key] = {
+          first_seen_at: s.first_seen_at,
+          reviewed_at: s.reviewed_at,
+        };
+    }
 
 
     const { normalizeAddress } = await import("@/lib/attom.server");
@@ -323,9 +338,22 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
           }
           return true;
         })
-        .slice(0, 3);
+        .slice(0, 3)
+        .map((r: any) => ({
+          ...r,
+          item_key: `rec:${r.id}`,
+          is_new: !seenState[`rec:${r.id}`],
+          reviewed_at: seenState[`rec:${r.id}`]?.reviewed_at ?? null,
+        }));
+
+      const referralsDecorated = referrals.map((r: any) => ({
+        ...r,
+        item_key: `ref:${r.id}`,
+        is_new: !seenState[`ref:${r.id}`],
+      }));
 
       const needsData = !chars?.yearBuilt && (permits?.events?.length ?? 0) === 0;
+
 
 
 
@@ -365,8 +393,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         readiness_label: readiness.label,
         readiness_checks: readiness.checks,
         net_proceeds: readiness.netProceeds,
-        referrals,
-        referral_count: referrals.length,
+        referrals: referralsDecorated,
+        referral_count: referralsDecorated.length,
+
         recommendations,
         recommendation_count: recommendations.length,
         recommendations_need_data: needsData,
@@ -479,8 +508,21 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         ).length,
         linked: enriched.filter((c) => c.linked).length,
         active_referrals: referralFeed.filter((r) => r.status !== "completed").length,
-        recommendations_due: enriched.reduce((s, c) => s + (c.recommendations?.length ?? 0), 0),
+        recommendations_due: enriched.reduce(
+          (s, c) => s + (c.recommendations ?? []).filter((r: any) => !r.reviewed_at).length,
+          0,
+        ),
+        new_recommendations: enriched.reduce(
+          (s, c) =>
+            s + (c.recommendations ?? []).filter((r: any) => r.is_new && !r.reviewed_at).length,
+          0,
+        ),
+        new_referrals: enriched.reduce(
+          (s, c) => s + (c.referrals ?? []).filter((r: any) => r.is_new).length,
+          0,
+        ),
         touches_30d: touches30d,
+
       },
       top_listing_opportunities: topListing,
       referral_feed: referralFeed,
@@ -1122,6 +1164,70 @@ export const updateClientAddress = createServerFn({ method: "POST" })
         zip: data.zip || null,
       })
       .eq("id", data.clientId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ---------------------------------------------------------------------------
+// Client-activity "new" markers: auto-clear on view, plus manual review.
+// ---------------------------------------------------------------------------
+export const markAgentFeedSeen = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        items: z
+          .array(
+            z.object({
+              itemKey: z.string().min(1),
+              kind: z.enum(["recommendation", "referral"]),
+            }),
+          )
+          .max(200),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    if (!data.items.length) return { ok: true, marked: 0 };
+
+    const rows = data.items.map((it) => ({
+      user_id: context.userId,
+      portfolio_id: data.portfolioId,
+      item_key: it.itemKey,
+      kind: it.kind,
+    }));
+    const { error } = await context.supabase
+      .from("agent_feed_seen")
+      .upsert(rows, { onConflict: "user_id,portfolio_id,item_key", ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
+    return { ok: true, marked: rows.length };
+  });
+
+export const setAgentFeedReviewed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        itemKey: z.string().min(1),
+        reviewed: z.boolean(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    const { error } = await context.supabase.from("agent_feed_seen").upsert(
+      {
+        user_id: context.userId,
+        portfolio_id: data.portfolioId,
+        item_key: data.itemKey,
+        kind: "recommendation",
+        reviewed_at: data.reviewed ? new Date().toISOString() : null,
+      },
+      { onConflict: "user_id,portfolio_id,item_key" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
