@@ -287,8 +287,43 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       });
 
       const referrals = c.homeowner_id ? referralsByHomeowner[c.homeowner_id] ?? [] : [];
-      const recommendations = c.homeowner_id ? recsByHomeowner[c.homeowner_id] ?? [] : [];
+      const inspectionNeeds = c.homeowner_id ? recsByHomeowner[c.homeowner_id] ?? [] : [];
       const touches = touchesByClient[c.id] ?? [];
+
+      // Property-record needs: component lifespans projected off year built and
+      // any permit that reset the clock. Works without a linked homeowner.
+      const timeline = buildMaintenanceTimeline(chars?.yearBuilt ?? null, permits?.events ?? []);
+      const recordNeeds =
+        chars?.yearBuilt || (permits?.events?.length ?? 0) > 0
+          ? needsFromTimeline(timeline, c.id)
+          : [];
+      const permitNeeds = recentImprovementNeeds(permits?.events ?? [], c.id);
+
+      // Suppress anything already handled: an open/complete job in the same
+      // category, or a campaign already sent that covers it.
+      const handledCategories = new Set(
+        referrals.map((r: any) => String(r.category ?? "").toLowerCase()),
+      );
+      const communicatedText = touches
+        .map((t: any) => `${t.campaign_name ?? ""} ${t.subject ?? ""}`.toLowerCase())
+        .join(" | ");
+
+      const seenCategories = new Set<string>();
+      const recommendations = [...inspectionNeeds, ...recordNeeds, ...permitNeeds]
+        .filter((r: any) => {
+          const cat = String(r.recommended_category ?? "").toLowerCase();
+          if (cat) {
+            if (handledCategories.has(cat)) return false;
+            if (communicatedText.includes(cat)) return false;
+            if (seenCategories.has(cat)) return false;
+            seenCategories.add(cat);
+          }
+          return true;
+        })
+        .slice(0, 3);
+
+      const needsData = !chars?.yearBuilt && (permits?.events?.length ?? 0) === 0;
+
 
 
       return {
