@@ -61,20 +61,23 @@ function Dashboard() {
     );
   }, [dbRequests]);
 
-  // Fetch profile (for address fallback) and ATTOM intel
+  // Fetch profile (for name + address fallback) and property intel
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const { data: p } = await supabase
         .from("profiles")
-        .select("address, city, state, zip")
+        .select("full_name, address, city, state, zip")
         .eq("id", u.user.id)
         .maybeSingle();
       if (p?.address) {
         setProfileAddr([p.address, p.city, p.state, p.zip].filter(Boolean).join(", "));
       }
+      const first = (p?.full_name ?? "").trim().split(/\s+/)[0];
+      if (first) setFirstName(first);
     })();
   }, []);
 
