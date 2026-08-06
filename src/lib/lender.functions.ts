@@ -348,6 +348,7 @@ export const getPortfolio = createServerFn({ method: "GET" })
       portfolio: {
         id: (portfolio as any).id,
         name: (portfolio as any).name,
+        orgId: (portfolio as any).lender_org_id,
         orgName: (portfolio as any).lender_orgs?.name ?? "Org",
       },
       summary: {
