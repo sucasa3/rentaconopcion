@@ -7,6 +7,7 @@ import {
   buildMaintenanceTimeline,
   type TimelineItem,
 } from "@/lib/maintenance-rules";
+import { NextStepCard } from "@/components/next-step-card";
 
 export function MaintenanceTimelinePanel() {
   const fetchIntel = useServerFn(getMyHomeIntel);
