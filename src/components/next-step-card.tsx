@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, BookOpen, Star, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpen, Star, ShieldCheck, CheckSquare } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -106,10 +106,17 @@ function fallbackGuide(item: TimelineItem): Guide {
   };
 }
 
-export function NextStepCard({ item }: { item: TimelineItem }) {
+export function NextStepCard({
+  item,
+  onMarkDone,
+}: {
+  item: TimelineItem;
+  onMarkDone?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const slug = CATEGORY_SLUG[item.category] ?? "handyman";
   const guide = GUIDES[item.key] ?? fallbackGuide(item);
+
 
   const fetchPros = useServerFn(getRecommendedPros);
   const { data: pros } = useQuery({
@@ -145,7 +152,16 @@ export function NextStepCard({ item }: { item: TimelineItem }) {
         >
           Get quotes <ArrowRight className="h-3.5 w-3.5" />
         </Link>
+        {onMarkDone && (
+          <button
+            onClick={onMarkDone}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-2 text-xs font-semibold hover:bg-secondary"
+          >
+            <CheckSquare className="h-3.5 w-3.5" /> Already done — add details
+          </button>
+        )}
       </div>
+
 
       {pro && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3">

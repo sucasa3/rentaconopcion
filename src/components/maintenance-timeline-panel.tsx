@@ -1,16 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { Wrench, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
+import { Wrench, AlertTriangle, CheckCircle2, Clock, CheckSquare } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   buildMaintenanceTimeline,
   type TimelineItem,
 } from "@/lib/maintenance-rules";
 import { NextStepCard } from "@/components/next-step-card";
+import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
 
 export function MaintenanceTimelinePanel() {
   const fetchIntel = useServerFn(getMyHomeIntel);
+  const fetchLog = useServerFn(getMyComponentServiceLog);
+  const [markItem, setMarkItem] = useState<TimelineItem | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["home-intel-maintenance"],
     queryFn: () =>
@@ -21,6 +27,12 @@ export function MaintenanceTimelinePanel() {
         },
       }),
     staleTime: 30 * 60_000,
+  });
+
+  const { data: serviceLog } = useQuery({
+    queryKey: ["component-service-log"],
+    queryFn: () => fetchLog(undefined),
+    staleTime: 60_000,
   });
 
   if (isLoading) {
@@ -46,12 +58,17 @@ export function MaintenanceTimelinePanel() {
     );
   }
 
-
-  const items: TimelineItem[] = buildMaintenanceTimeline(yearBuilt, permitEvents);
+  const items: TimelineItem[] = buildMaintenanceTimeline(
+    yearBuilt,
+    permitEvents,
+    new Date(),
+    serviceLog ?? [],
+  );
 
   const overdue = items.filter((i) => i.status === "overdue");
   const dueSoon = items.filter((i) => i.status === "due_soon");
   const nextStep = overdue[0] ?? dueSoon[0] ?? null;
+
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
@@ -77,7 +94,7 @@ export function MaintenanceTimelinePanel() {
         </div>
       </div>
 
-      {nextStep && <NextStepCard item={nextStep} />}
+      {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}
 
       <ul className="mt-4 divide-y divide-border rounded-2xl border border-border">
         {items.map((item) => (
@@ -111,27 +128,49 @@ export function MaintenanceTimelinePanel() {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground">
-                {item.source === "permit"
-                  ? `Installed ${item.installedYear} (permit)`
-                  : `Est. from year built ${item.installedYear}`}{" "}
+                {item.source === "logged"
+                  ? `You logged ${item.installedYear}${item.loggedDetail ? ` · ${item.loggedDetail}` : ""}`
+                  : item.source === "permit"
+                    ? `Installed ${item.installedYear} (permit)`
+                    : `Est. from year built ${item.installedYear}`}{" "}
                 · Expected end of life {item.expectedYear}
               </p>
             </div>
-            {(item.status === "overdue" || item.status === "due_soon") && (
-              <Link
-                to="/request"
-                className="shrink-0 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                onClick={() => setMarkItem(item)}
+                className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
               >
-                Get quotes
-              </Link>
-            )}
+                <CheckSquare className="h-3 w-3" />
+                {item.source === "logged" ? "Update" : "Mark done"}
+              </button>
+              {(item.status === "overdue" || item.status === "due_soon") && (
+                <Link
+                  to="/request"
+                  className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                >
+                  Get quotes
+                </Link>
+              )}
+            </div>
           </li>
+
         ))}
       </ul>
 
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Estimates use standard component lifespans. Log a service to reset the clock.
+        Estimates use standard component lifespans. Marked something done? Add the year and we'll
+        reset the clock — permits aren't always pulled.
       </p>
+
+      {markItem && (
+        <MarkComponentDoneDialog
+          item={markItem}
+          open={!!markItem}
+          onOpenChange={(o) => !o && setMarkItem(null)}
+        />
+      )}
     </div>
+
   );
 }

@@ -522,6 +522,54 @@ export type Database = {
         }
         Relationships: []
       }
+      home_component_service_log: {
+        Row: {
+          action: string
+          brand: string | null
+          component_key: string
+          created_at: string
+          id: string
+          installed_year: number | null
+          model: string | null
+          notes: string | null
+          provider: string | null
+          serviced_on: string | null
+          updated_at: string
+          user_id: string
+          warranty_years: number | null
+        }
+        Insert: {
+          action?: string
+          brand?: string | null
+          component_key: string
+          created_at?: string
+          id?: string
+          installed_year?: number | null
+          model?: string | null
+          notes?: string | null
+          provider?: string | null
+          serviced_on?: string | null
+          updated_at?: string
+          user_id: string
+          warranty_years?: number | null
+        }
+        Update: {
+          action?: string
+          brand?: string | null
+          component_key?: string
+          created_at?: string
+          id?: string
+          installed_year?: number | null
+          model?: string | null
+          notes?: string | null
+          provider?: string | null
+          serviced_on?: string | null
+          updated_at?: string
+          user_id?: string
+          warranty_years?: number | null
+        }
+        Relationships: []
+      }
       home_documents: {
         Row: {
           created_at: string

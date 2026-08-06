@@ -62,8 +62,22 @@ export type TimelineItem = {
   installedYear: number;
   expectedYear: number;
   yearsLeft: number;
-  source: "permit" | "year_built";
+  source: "permit" | "year_built" | "logged";
   status: "overdue" | "due_soon" | "healthy";
+  logId?: string | null;
+  loggedDetail?: string | null;
+};
+
+/** Homeowner-entered service records, keyed by component. */
+export type ServiceLogLike = {
+  id?: string;
+  componentKey: string;
+  action?: "replaced" | "serviced" | string;
+  installedYear?: number | null;
+  servicedOn?: string | null;
+  brand?: string | null;
+  model?: string | null;
+  warrantyYears?: number | null;
 };
 
 export function classifyLifespan(yearsLeft: number): TimelineItem["status"] {
@@ -77,6 +91,7 @@ export function buildMaintenanceTimeline(
   yearBuilt: number | null,
   permitEvents: PermitLike[],
   now: Date = new Date(),
+  serviceLog: ServiceLogLike[] = [],
 ): TimelineItem[] {
   const nowYear = now.getFullYear();
   return LIFESPANS.map((cfg) => {
@@ -84,9 +99,26 @@ export function buildMaintenanceTimeline(
     const match = permitEvents
       .filter((p) => cfg.permitMatch.test(haystack(p)))
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))[0];
-    const installedYear = match?.date
-      ? new Date(match.date).getFullYear()
-      : (yearBuilt ?? nowYear - 20);
+
+    // A homeowner-logged replacement/service is the most authoritative signal.
+    const logged = serviceLog
+      .filter((l) => l.componentKey === cfg.key)
+      .map((l) => ({
+        ...l,
+        year:
+          l.installedYear ?? (l.servicedOn ? new Date(l.servicedOn).getFullYear() : null),
+      }))
+      .filter((l) => l.year != null)
+      .sort((a, b) => (b.year as number) - (a.year as number))[0];
+
+    const permitYear = match?.date ? new Date(match.date).getFullYear() : null;
+    const installedYear =
+      logged?.year ?? permitYear ?? (yearBuilt ?? nowYear - 20);
+    const source: TimelineItem["source"] = logged
+      ? "logged"
+      : match
+        ? "permit"
+        : "year_built";
     const expectedYear = installedYear + cfg.years;
     const yearsLeft = expectedYear - nowYear;
     return {
@@ -96,11 +128,16 @@ export function buildMaintenanceTimeline(
       installedYear,
       expectedYear,
       yearsLeft,
-      source: match ? ("permit" as const) : ("year_built" as const),
+      source,
       status: classifyLifespan(yearsLeft),
+      logId: logged?.id ?? null,
+      loggedDetail: logged
+        ? [logged.brand, logged.model].filter(Boolean).join(" ") || null
+        : null,
     };
   }).sort((a, b) => a.yearsLeft - b.yearsLeft);
 }
+
 
 export type HomeNeed = {
   id: string;
