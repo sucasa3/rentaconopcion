@@ -3,42 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { Wrench, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-
-/**
- * Standard component lifespans (years). Used to project the next service due
- * date off of `year_built` + any relevant permit that reset the clock.
- */
-const LIFESPANS: Array<{
-  key: string;
-  label: string;
-  years: number;
-  permitMatch: RegExp;
-  category: string;
-}> = [
-  { key: "roof", label: "Roof", years: 25, permitMatch: /roof/i, category: "Roofing" },
-  { key: "hvac", label: "HVAC system", years: 15, permitMatch: /hvac|furnace|a\/?c|heating|cooling/i, category: "HVAC" },
-  { key: "water_heater", label: "Water heater", years: 10, permitMatch: /water heater|hot water/i, category: "Plumbing" },
-  { key: "windows", label: "Windows", years: 25, permitMatch: /window/i, category: "Windows" },
-  { key: "electrical", label: "Electrical panel", years: 30, permitMatch: /electric|panel|service upgrade/i, category: "Electrical" },
-  { key: "siding", label: "Exterior siding/paint", years: 12, permitMatch: /siding|stucco|paint/i, category: "Exterior" },
-];
-
-type TimelineItem = {
-  key: string;
-  label: string;
-  category: string;
-  installedYear: number;
-  expectedYear: number;
-  yearsLeft: number;
-  source: "permit" | "year_built";
-  status: "overdue" | "due_soon" | "healthy";
-};
-
-function classify(yearsLeft: number): TimelineItem["status"] {
-  if (yearsLeft < 0) return "overdue";
-  if (yearsLeft <= 2) return "due_soon";
-  return "healthy";
-}
+import {
+  buildMaintenanceTimeline,
+  type TimelineItem,
+} from "@/lib/maintenance-rules";
 
 export function MaintenanceTimelinePanel() {
   const fetchIntel = useServerFn(getMyHomeIntel);
@@ -67,28 +35,7 @@ export function MaintenanceTimelinePanel() {
   const permitEvents = data.permits?.events ?? [];
   if (!yearBuilt && permitEvents.length === 0) return null;
 
-  const nowYear = new Date().getFullYear();
-  const items: TimelineItem[] = LIFESPANS.map((cfg) => {
-    // Find most recent permit that matches this system
-    const match = permitEvents
-      .filter((p) => p.description && cfg.permitMatch.test(p.description))
-      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))[0];
-    const installedYear = match?.date
-      ? new Date(match.date).getFullYear()
-      : (yearBuilt ?? nowYear - 20);
-    const expectedYear = installedYear + cfg.years;
-    const yearsLeft = expectedYear - nowYear;
-    return {
-      key: cfg.key,
-      label: cfg.label,
-      category: cfg.category,
-      installedYear,
-      expectedYear,
-      yearsLeft,
-      source: match ? ("permit" as const) : ("year_built" as const),
-      status: classify(yearsLeft),
-    };
-  }).sort((a, b) => a.yearsLeft - b.yearsLeft);
+  const items: TimelineItem[] = buildMaintenanceTimeline(yearBuilt, permitEvents);
 
   const overdue = items.filter((i) => i.status === "overdue");
   const dueSoon = items.filter((i) => i.status === "due_soon");
