@@ -7,21 +7,22 @@ import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
 import { useHomeScore } from "@/hooks/use-home-score";
 
-import { MAINTENANCE_TASKS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
+import { type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
-import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-panel";
+import { HomeCarePanel } from "@/components/home-care-panel";
 import { DocumentsCard } from "@/components/documents-card";
 import { InspectionFindingsPanel } from "@/components/inspection-findings-panel";
-import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
+import { RecommendedProsCard } from "@/components/recommended-pros-card";
 import { HomeAssistantCard } from "@/components/home-assistant-card";
 
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Plus, Sparkles, PenLine } from "lucide-react";
+import { ArrowRight, Plus, PenLine } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
