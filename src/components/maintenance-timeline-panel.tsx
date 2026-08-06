@@ -65,6 +65,8 @@ export function MaintenanceTimelinePanel() {
         </div>
       </div>
 
+      {nextStep && <NextStepCard item={nextStep} />}
+
       <ul className="mt-4 divide-y divide-border rounded-2xl border border-border">
         {items.map((item) => (
           <li key={item.key} className="flex items-center gap-3 p-4">
