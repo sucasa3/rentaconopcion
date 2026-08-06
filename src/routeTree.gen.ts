@@ -27,6 +27,7 @@ import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
+import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
@@ -126,6 +127,12 @@ const AuthenticatedLenderCampaignsRoute =
     path: '/campaigns',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedAgentCampaignsRoute =
+  AuthenticatedAgentCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -173,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
@@ -223,6 +232,7 @@ export interface FileRoutesById {
   '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/lender'
     | '/admin'
     | '/dashboard'
+    | '/agent/campaigns'
     | '/lender/campaigns'
     | '/requests/$id'
     | '/agent/'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/dashboard'
+    | '/agent/campaigns'
     | '/lender/campaigns'
     | '/requests/$id'
     | '/agent'
@@ -299,6 +311,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lender'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/_authenticated/agent/campaigns'
     | '/_authenticated/lender/campaigns'
     | '/_authenticated/requests/$id'
     | '/_authenticated/agent/'
@@ -456,6 +469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderCampaignsRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
+    '/_authenticated/agent/campaigns': {
+      id: '/_authenticated/agent/campaigns'
+      path: '/campaigns'
+      fullPath: '/agent/campaigns'
+      preLoaderRoute: typeof AuthenticatedAgentCampaignsRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
       path: '/api/public/leads/tick'
@@ -502,12 +522,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAgentRouteRouteChildren {
+  AuthenticatedAgentCampaignsRoute: typeof AuthenticatedAgentCampaignsRoute
   AuthenticatedAgentIndexRoute: typeof AuthenticatedAgentIndexRoute
   AuthenticatedAgentPortfolioIdRoute: typeof AuthenticatedAgentPortfolioIdRoute
 }
 
 const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren =
   {
+    AuthenticatedAgentCampaignsRoute: AuthenticatedAgentCampaignsRoute,
     AuthenticatedAgentIndexRoute: AuthenticatedAgentIndexRoute,
     AuthenticatedAgentPortfolioIdRoute: AuthenticatedAgentPortfolioIdRoute,
   }
@@ -573,13 +595,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

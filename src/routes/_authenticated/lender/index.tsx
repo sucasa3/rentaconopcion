@@ -78,6 +78,12 @@ function LenderHome() {
               </h1>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Link
+                to="/lender/campaigns"
+                className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+              >
+                Campaigns
+              </Link>
               <button
                 onClick={() => roster.mutate()}
                 disabled={roster.isPending}

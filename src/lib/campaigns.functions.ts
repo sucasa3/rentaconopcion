@@ -122,3 +122,212 @@ export const getCampaignSends = createServerFn({ method: "GET" })
       .limit(50);
     return data ?? [];
   });
+
+/* ---------------------------------------------------------------------------
+ * Partner branding + per-campaign wording overrides + preview
+ * ------------------------------------------------------------------------- */
+
+async function assertOrgMember(supabase: any, userId: string, orgId: string) {
+  const { data: member } = await supabase
+    .from("lender_members")
+    .select("id")
+    .eq("lender_org_id", orgId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (member) return;
+  const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (!isAdmin) throw new Error("Forbidden: not a member of this organization");
+}
+
+const BRAND_FIELDS =
+  "id, name, org_type, sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff";
+
+/** Branding + overrides for one partner org. */
+export const getOrgBranding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ orgId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+    const [{ data: org }, { data: overrides }] = await Promise.all([
+      context.supabase.from("lender_orgs").select(BRAND_FIELDS).eq("id", data.orgId).maybeSingle(),
+      context.supabase
+        .from("campaign_org_overrides")
+        .select("campaign_id, subject, intro, closing, cta_label, cta_url")
+        .eq("lender_org_id", data.orgId),
+    ]);
+    return { org: org ?? null, overrides: overrides ?? [] };
+  });
+
+const BrandSchema = z.object({
+  orgId: z.string().uuid(),
+  sender_name: z.string().trim().max(120).nullable().optional(),
+  reply_to_email: z.string().trim().email().max(180).nullable().or(z.literal("")).optional(),
+  contact_name: z.string().trim().max(120).nullable().optional(),
+  contact_title: z.string().trim().max(120).nullable().optional(),
+  contact_phone: z.string().trim().max(40).nullable().optional(),
+  license_number: z.string().trim().max(60).nullable().optional(),
+  logo_url: z.string().trim().max(2000).nullable().optional(),
+  signoff: z.string().trim().max(200).nullable().optional(),
+});
+
+export const saveOrgBranding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => BrandSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+    const { orgId, ...fields } = data;
+    const norm = (v: string | null | undefined) => (v == null || v === "" ? null : v);
+    const patch = {
+      sender_name: norm(fields.sender_name),
+      reply_to_email: norm(fields.reply_to_email),
+      contact_name: norm(fields.contact_name),
+      contact_title: norm(fields.contact_title),
+      contact_phone: norm(fields.contact_phone),
+      license_number: norm(fields.license_number),
+      logo_url: norm(fields.logo_url),
+      signoff: norm(fields.signoff),
+    };
+    const { error } = await context.supabase.from("lender_orgs").update(patch).eq("id", orgId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+const OverrideSchema = z.object({
+  orgId: z.string().uuid(),
+  campaignId: z.string().uuid(),
+  subject: z.string().trim().max(120).nullable().optional(),
+  intro: z.string().trim().max(400).nullable().optional(),
+  closing: z.string().trim().max(400).nullable().optional(),
+  cta_label: z.string().trim().max(60).nullable().optional(),
+  cta_url: z.string().trim().url().max(500).nullable().or(z.literal("")).optional(),
+});
+
+export const saveCampaignOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => OverrideSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+    const row = {
+      lender_org_id: data.orgId,
+      campaign_id: data.campaignId,
+      subject: data.subject || null,
+      intro: data.intro || null,
+      closing: data.closing || null,
+      cta_label: data.cta_label || null,
+      cta_url: data.cta_url || null,
+      updated_by: context.userId,
+    };
+    const { error } = await context.supabase
+      .from("campaign_org_overrides")
+      .upsert(row, { onConflict: "lender_org_id,campaign_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export const resetCampaignOverride = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ orgId: z.string().uuid(), campaignId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+    const { error } = await context.supabase
+      .from("campaign_org_overrides")
+      .delete()
+      .eq("lender_org_id", data.orgId)
+      .eq("campaign_id", data.campaignId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Clients in this org's portfolios — used to pick a preview recipient. */
+export const listOrgCampaignClients = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ orgId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+    const { data: portfolios } = await context.supabase
+      .from("lender_portfolios")
+      .select("id")
+      .eq("lender_org_id", data.orgId);
+    const ids = (portfolios ?? []).map((p) => p.id);
+    if (!ids.length) return [];
+    const { data: clients } = await context.supabase
+      .from("lender_portfolio_clients")
+      .select("id, client_name, client_email, address_line1, city, state")
+      .in("portfolio_id", ids)
+      .order("client_name")
+      .limit(300);
+    return clients ?? [];
+  });
+
+/** Render (never send) the exact email one client would receive. */
+export const previewCampaignForClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ orgId: z.string().uuid(), campaignId: z.string().uuid(), clientId: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+
+    const [{ data: campaign }, { data: org }, { data: client }, { data: override }] = await Promise.all([
+      context.supabase.from("campaigns").select("*").eq("id", data.campaignId).maybeSingle(),
+      context.supabase.from("lender_orgs").select(BRAND_FIELDS).eq("id", data.orgId).maybeSingle(),
+      context.supabase
+        .from("lender_portfolio_clients")
+        .select(
+          "id, portfolio_id, homeowner_id, client_name, client_email, client_phone, address_line1, city, state, zip, close_date, loan_amount_at_close_cents, rate_at_close",
+        )
+        .eq("id", data.clientId)
+        .maybeSingle(),
+      context.supabase
+        .from("campaign_org_overrides")
+        .select("subject, intro, closing, cta_label, cta_url")
+        .eq("lender_org_id", data.orgId)
+        .eq("campaign_id", data.campaignId)
+        .maybeSingle(),
+    ]);
+
+    if (!campaign || !org || !client) throw new Error("Preview unavailable for this selection");
+
+    const mod = await import("@/lib/campaigns.server");
+    const target = {
+      clientId: client.id,
+      orgId: org.id,
+      orgName: org.name,
+      orgType: org.org_type ?? "lender",
+      homeownerId: client.homeowner_id,
+      name: client.client_name,
+      email: client.client_email,
+      phone: client.client_phone,
+      address: client.address_line1,
+      city: client.city,
+      state: client.state,
+      zip: client.zip,
+      closeDate: client.close_date,
+      loanAtCloseCents: client.loan_amount_at_close_cents,
+      rateAtClose: client.rate_at_close,
+    };
+
+    const facts = await mod.loadCachedFacts(target);
+    const branding = mod.brandingFromOrg(org);
+    const copy = await mod.generateCopy(
+      campaign as never,
+      facts,
+      target,
+      "en",
+      override ?? null,
+    );
+    const payload = mod.buildPayload(campaign as never, facts, target, copy, branding, override ?? null);
+    const due = mod.isDue(campaign as never, facts, target, null);
+
+    return {
+      subject: copy.subject,
+      body: copy.body,
+      due: due.due,
+      dueReason: due.reason,
+      recipient: { name: client.client_name, email: client.client_email },
+      branding,
+      cta: { label: payload.next_cta, url: payload.cta_url },
+      footer: payload.sent_on_behalf_of,
+      signature: payload.signature_block,
+    };
+  });

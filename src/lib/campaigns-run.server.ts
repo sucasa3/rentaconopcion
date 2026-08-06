@@ -10,6 +10,7 @@ import {
   isDue,
   generateCopy,
   buildPayload,
+  brandingFromOrg,
   type CampaignRow,
   type CampaignTarget,
 } from "@/lib/campaigns.server";
@@ -64,9 +65,19 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
   const orgIds = [...new Set(activations.map((a) => a.lender_org_id))];
   const { data: orgs } = await supabaseAdmin
     .from("lender_orgs")
-    .select("id, name, org_type")
+    .select(
+      "id, name, org_type, sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff",
+    )
     .in("id", orgIds);
   const orgById = new Map((orgs ?? []).map((o) => [o.id, o]));
+
+  const { data: overrideRows } = await supabaseAdmin
+    .from("campaign_org_overrides")
+    .select("lender_org_id, campaign_id, subject, intro, closing, cta_label, cta_url")
+    .in("lender_org_id", orgIds);
+  const overrideByPair = new Map(
+    (overrideRows ?? []).map((o) => [`${o.lender_org_id}:${o.campaign_id}`, o]),
+  );
 
   const { data: portfolios } = await supabaseAdmin
     .from("lender_portfolios")
@@ -179,8 +190,10 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       const due = isDue(campaign, facts, target, lastByPair.get(`${campaign.id}:${c.id}`) ?? null);
       if (!due.due && !opts.dryRun) { skip(due.reason); continue; }
 
-      const copy = await generateCopy(campaign, facts, target);
-      const payload = buildPayload(campaign, facts, target, copy);
+      const override = overrideByPair.get(`${org.id}:${campaign.id}`) ?? null;
+      const branding = brandingFromOrg(org);
+      const copy = await generateCopy(campaign, facts, target, "en", override);
+      const payload = buildPayload(campaign, facts, target, copy, branding, override);
       result.generated++;
 
       if (opts.dryRun) {
