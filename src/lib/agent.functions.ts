@@ -508,8 +508,21 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         ).length,
         linked: enriched.filter((c) => c.linked).length,
         active_referrals: referralFeed.filter((r) => r.status !== "completed").length,
-        recommendations_due: enriched.reduce((s, c) => s + (c.recommendations?.length ?? 0), 0),
+        recommendations_due: enriched.reduce(
+          (s, c) => s + (c.recommendations ?? []).filter((r: any) => !r.reviewed_at).length,
+          0,
+        ),
+        new_recommendations: enriched.reduce(
+          (s, c) =>
+            s + (c.recommendations ?? []).filter((r: any) => r.is_new && !r.reviewed_at).length,
+          0,
+        ),
+        new_referrals: enriched.reduce(
+          (s, c) => s + (c.referrals ?? []).filter((r: any) => r.is_new).length,
+          0,
+        ),
         touches_30d: touches30d,
+
       },
       top_listing_opportunities: topListing,
       referral_feed: referralFeed,
