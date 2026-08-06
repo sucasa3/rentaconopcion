@@ -153,32 +153,11 @@ function Dashboard() {
 
           <EquityMortgagePanel />
 
-          <MaintenanceTimelinePanel />
-
-          <SuggestedServicesPanel />
+          <HomeCarePanel />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
-            {/* Maintenance */}
-            <Card className="lg:col-span-2">
-              <CardHeader title="Maintenance checklist" action={<a className="text-xs font-medium text-primary" href="#">View all</a>} />
-              <ul className="mt-4 space-y-2">
-                {MAINTENANCE_TASKS.map(t => (
-                  <li key={t.title} className="flex items-center justify-between rounded-2xl border border-border p-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${t.done ? "bg-growth/15 text-growth" : t.overdue ? "bg-destructive/10 text-destructive" : "bg-secondary text-primary"}`}>
-                        <Sparkles className="h-3.5 w-3.5" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className={`truncate text-sm font-medium ${t.done ? "line-through opacity-60" : ""}`}>{t.title}</p>
-                        <p className="text-xs text-muted-foreground">{t.due}</p>
-                      </div>
-                    </div>
-                    <button className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary">{t.done ? "Done" : "Mark done"}</button>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+
 
             {/* AI Assistant */}
             <HomeAssistantCard />
