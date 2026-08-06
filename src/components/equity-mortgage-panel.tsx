@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight } from "lucide-react";
+import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight, Sparkles } from "lucide-react";
 import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
 import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
 
