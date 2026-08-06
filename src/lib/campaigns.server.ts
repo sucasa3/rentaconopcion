@@ -307,11 +307,17 @@ export async function generateCopy(
   facts: CampaignFacts,
   target: CampaignTarget,
   language: "en" | "es" = "en",
+  override?: CampaignOverride | null,
 ): Promise<{ subject: string; body: string }> {
   const apiKey = process.env.LOVABLE_API_KEY;
-  const fallbackSubject = campaign.name;
-  const fallbackBody =
-    `Hi ${target.name?.split(" ")[0] ?? "there"}, here is your ${campaign.name.toLowerCase()} for ${target.address}.`;
+  const intro = override?.intro?.trim() || "";
+  const closing = override?.closing?.trim() || "";
+  const wrap = (core: string) => [intro, core, closing].filter(Boolean).join("\n\n");
+
+  const fallbackSubject = override?.subject?.trim() || campaign.name;
+  const fallbackBody = wrap(
+    `Hi ${target.name?.split(" ")[0] ?? "there"}, here is your ${campaign.name.toLowerCase()} for ${target.address}.`,
+  );
 
   if (!apiKey) return { subject: fallbackSubject, body: fallbackBody };
 
@@ -320,8 +326,13 @@ export async function generateCopy(
     `Tone: warm, useful, never salesy. Plain English. No emojis, no subject-line hype, no invented numbers.`,
     `Use ONLY the facts provided. If a fact is missing, leave it out rather than guessing.`,
     language === "es" ? "Escribe SIEMPRE en español." : "Write in English.",
+    intro || closing
+      ? `The partner supplies their own opening and/or closing lines separately — write ONLY the middle data paragraph, with no greeting and no sign-off.`
+      : ``,
     `Return strict JSON: {"subject": string, "body": string}. Subject under 60 characters. Body 40-90 words, no signature, no greeting line beyond the first name.`,
-  ].join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const user = [
     `Campaign: ${campaign.name}`,
@@ -353,8 +364,8 @@ export async function generateCopy(
     const raw = json?.choices?.[0]?.message?.content ?? "";
     const parsed = JSON.parse(raw) as { subject?: string; body?: string };
     return {
-      subject: (parsed.subject || fallbackSubject).slice(0, 120),
-      body: parsed.body || fallbackBody,
+      subject: (override?.subject?.trim() || parsed.subject || fallbackSubject).slice(0, 120),
+      body: wrap(parsed.body || fallbackBody),
     };
   } catch (e) {
     console.error("[campaigns] copy generation failed:", (e as Error).message);
@@ -367,7 +378,19 @@ export function buildPayload(
   facts: CampaignFacts,
   target: CampaignTarget,
   copy: { subject: string; body: string },
+  branding?: OrgBranding | null,
+  override?: CampaignOverride | null,
 ) {
+  const partnerName = branding?.orgName || target.orgName;
+  const signatureLines = [
+    branding?.contactName,
+    branding?.contactTitle,
+    partnerName,
+    branding?.contactPhone,
+    branding?.replyToEmail,
+    branding?.licenseNumber ? `License ${branding.licenseNumber}` : null,
+  ].filter(Boolean) as string[];
+
   return {
     campaign: campaign.key,
     campaign_name: campaign.name,
@@ -380,11 +403,23 @@ export function buildPayload(
     loan_balance: fmtMoney(facts.loanBalance),
     rate: facts.rate != null ? `${facts.rate.toFixed(2)}%` : "",
     estimated_savings: fmtMoney(facts.estimatedSavings),
-    partner_name: target.orgName,
+    partner_name: partnerName,
     partner_type: target.orgType,
+    // Partner-branded, SuCasa-powered sender identity (merged in the GHL template)
+    sender_name: branding?.senderName || partnerName,
+    reply_to: branding?.replyToEmail ?? "",
+    contact_name: branding?.contactName ?? "",
+    contact_title: branding?.contactTitle ?? "",
+    contact_phone: branding?.contactPhone ?? "",
+    license: branding?.licenseNumber ?? "",
+    logo_url: branding?.logoUrl ?? "",
+    signoff: branding?.signoff ?? "",
+    signature_block: signatureLines.join("\n"),
+    sent_on_behalf_of: `Sent by SuCasa on behalf of ${partnerName}`,
     subject: copy.subject,
     body: copy.body,
-    next_cta: campaign.cta_label ?? "See my home report",
-    cta_url: campaign.cta_url ?? "https://rentaconopcion.lovable.app/dashboard",
+    next_cta: override?.cta_label?.trim() || campaign.cta_label || "See my home report",
+    cta_url: override?.cta_url?.trim() || campaign.cta_url || "https://rentaconopcion.lovable.app/dashboard",
   };
 }
+
