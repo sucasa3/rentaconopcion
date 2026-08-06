@@ -44,13 +44,16 @@ export function EquityMortgagePanel() {
   if (!equity && !mortgage && !permits) return null;
 
   const refiTone =
-    equity?.refiSignal === "strong"
-      ? "bg-growth/15 text-growth"
-      : equity?.refiSignal === "moderate"
-        ? "bg-accent text-accent-foreground"
-        : equity?.refiSignal === "watch"
-          ? "bg-secondary text-muted-foreground"
-          : "hidden";
+    equity?.refiSignal === "watch"
+      ? "bg-secondary text-muted-foreground"
+      : "hidden";
+
+  const savings = estimateRefiSavings(
+    equity?.loanBalanceEstimate,
+    mortgage?.interestRate,
+  );
+  const isHotRefi =
+    equity?.refiSignal === "strong" || equity?.refiSignal === "moderate";
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
@@ -62,13 +65,25 @@ export function EquityMortgagePanel() {
           </p>
         </div>
         {equity?.refiSignal && (
-          equity.refiSignal === "strong" || equity.refiSignal === "moderate" ? (
+          isHotRefi ? (
             <button
               onClick={() => setLenderOpen(true)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold transition hover:opacity-90 ${refiTone}`}
+              className="group relative inline-flex items-center gap-2 rounded-full gradient-brand px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-lg"
             >
-              Refi signal · {equity.refiSignal} · See options
-              <ArrowRight className="h-3 w-3" />
+              <span className="absolute -right-1 -top-1 flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-growth opacity-75" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-growth" />
+              </span>
+              <Sparkles className="h-4 w-4" />
+              <span className="text-left leading-tight">
+                Refi signal · {equity.refiSignal}
+                <span className="block text-[11px] font-medium opacity-90">
+                  {savings?.monthlySavings
+                    ? `Could save ~${fmtMoney(savings.monthlySavings)}/mo · See options`
+                    : "See your lending options"}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
           ) : (
             <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${refiTone}`}>
@@ -77,6 +92,7 @@ export function EquityMortgagePanel() {
           )
         )}
       </div>
+
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
