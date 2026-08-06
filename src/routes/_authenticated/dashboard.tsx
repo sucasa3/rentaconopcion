@@ -7,21 +7,22 @@ import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
 import { useHomeScore } from "@/hooks/use-home-score";
 
-import { MAINTENANCE_TASKS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
+import { type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
-import { MaintenanceTimelinePanel } from "@/components/maintenance-timeline-panel";
+import { HomeCarePanel } from "@/components/home-care-panel";
 import { DocumentsCard } from "@/components/documents-card";
 import { InspectionFindingsPanel } from "@/components/inspection-findings-panel";
-import { SuggestedServicesPanel } from "@/components/suggested-services-panel";
+import { RecommendedProsCard } from "@/components/recommended-pros-card";
 import { HomeAssistantCard } from "@/components/home-assistant-card";
 
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Plus, Sparkles, PenLine } from "lucide-react";
+import { ArrowRight, Plus, PenLine } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
@@ -152,32 +153,11 @@ function Dashboard() {
 
           <EquityMortgagePanel />
 
-          <MaintenanceTimelinePanel />
-
-          <SuggestedServicesPanel />
+          <HomeCarePanel />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
-            {/* Maintenance */}
-            <Card className="lg:col-span-2">
-              <CardHeader title="Maintenance checklist" action={<a className="text-xs font-medium text-primary" href="#">View all</a>} />
-              <ul className="mt-4 space-y-2">
-                {MAINTENANCE_TASKS.map(t => (
-                  <li key={t.title} className="flex items-center justify-between rounded-2xl border border-border p-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${t.done ? "bg-growth/15 text-growth" : t.overdue ? "bg-destructive/10 text-destructive" : "bg-secondary text-primary"}`}>
-                        <Sparkles className="h-3.5 w-3.5" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className={`truncate text-sm font-medium ${t.done ? "line-through opacity-60" : ""}`}>{t.title}</p>
-                        <p className="text-xs text-muted-foreground">{t.due}</p>
-                      </div>
-                    </div>
-                    <button className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary">{t.done ? "Done" : "Mark done"}</button>
-                  </li>
-                ))}
-              </ul>
-            </Card>
+
 
             {/* AI Assistant */}
             <HomeAssistantCard />
@@ -256,20 +236,9 @@ function Dashboard() {
             {/* Inspection findings (AI) */}
             <InspectionFindingsPanel />
 
-            {/* Recommended pros */}
-            <Card className="lg:col-span-2">
-              <CardHeader title="Recommended professionals" action={<Link to="/services" className="text-xs font-medium text-primary">Browse</Link>} />
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {RECOMMENDED_PROS.map(p => (
-                  <div key={p.name} className="rounded-2xl border border-border p-4">
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">{p.badge}</span>
-                    <p className="mt-3 text-sm font-semibold">{p.name}</p>
-                    <p className="text-xs text-muted-foreground">{p.category}</p>
-                    <p className="mt-2 text-xs">★ {p.rating} · {p.reviews} reviews</p>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            {/* Recommended pros — matched to current needs */}
+            <RecommendedProsCard />
+
 
             {/* Intelligence report */}
             <Card>
