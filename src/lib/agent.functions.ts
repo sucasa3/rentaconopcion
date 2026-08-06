@@ -160,6 +160,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         if (bucket.length >= 3) continue;
         bucket.push({
           id: f.id,
+          source: "inspection" as const,
           system: f.system,
           condition: f.condition,
           urgency: f.urgency,
