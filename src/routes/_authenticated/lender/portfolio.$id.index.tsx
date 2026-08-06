@@ -502,13 +502,11 @@ function PortfolioDetail() {
                   </div>
                 )}
               </div>
-            </>
-          ) : null}
-        </div>
-      </main>
-      <SiteFooter />
+        </>
+      ) : null}
       {contact && <ContactDialog client={contact} onClose={() => setContact(null)} />}
     </div>
+
   );
 }
 
