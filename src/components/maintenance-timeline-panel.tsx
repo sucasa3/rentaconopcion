@@ -7,6 +7,7 @@ import {
   buildMaintenanceTimeline,
   type TimelineItem,
 } from "@/lib/maintenance-rules";
+import { NextStepCard } from "@/components/next-step-card";
 
 export function MaintenanceTimelinePanel() {
   const fetchIntel = useServerFn(getMyHomeIntel);
@@ -39,6 +40,7 @@ export function MaintenanceTimelinePanel() {
 
   const overdue = items.filter((i) => i.status === "overdue");
   const dueSoon = items.filter((i) => i.status === "due_soon");
+  const nextStep = overdue[0] ?? dueSoon[0] ?? null;
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
@@ -63,6 +65,8 @@ export function MaintenanceTimelinePanel() {
           )}
         </div>
       </div>
+
+      {nextStep && <NextStepCard item={nextStep} />}
 
       <ul className="mt-4 divide-y divide-border rounded-2xl border border-border">
         {items.map((item) => (
