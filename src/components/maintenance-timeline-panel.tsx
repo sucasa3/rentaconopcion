@@ -39,6 +39,7 @@ export function MaintenanceTimelinePanel() {
 
   const overdue = items.filter((i) => i.status === "overdue");
   const dueSoon = items.filter((i) => i.status === "due_soon");
+  const nextStep = overdue[0] ?? dueSoon[0] ?? null;
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
