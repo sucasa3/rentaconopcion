@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_feed_seen: {
+        Row: {
+          created_at: string
+          first_seen_at: string
+          id: string
+          item_key: string
+          kind: string
+          portfolio_id: string
+          reviewed_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          item_key: string
+          kind: string
+          portfolio_id: string
+          reviewed_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          item_key?: string
+          kind?: string
+          portfolio_id?: string
+          reviewed_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attom_call_log: {
         Row: {
           address_normalized: string | null
