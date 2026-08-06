@@ -404,6 +404,45 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
     return { inserted: rows.length };
   });
 
+const AddClientSchema = z.object({
+  portfolioId: z.string().uuid(),
+  fullName: z.string().trim().min(1).max(160),
+  address: z.string().trim().min(1).max(240),
+  city: z.string().trim().max(120).optional().nullable(),
+  state: z.string().trim().max(40).optional().nullable(),
+  zip: z.string().trim().max(20).optional().nullable(),
+  email: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  phone: z.string().trim().max(40).optional().nullable(),
+  loanAmount: z.number().min(0).max(100_000_000).optional().nullable(),
+  rate: z.number().min(0).max(25).optional().nullable(),
+  closeDate: z.string().trim().max(20).optional().nullable(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+});
+export const addPortfolioClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => AddClientSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertLenderAccess(context.supabase, context.userId);
+    const { error } = await context.supabase.from("lender_portfolio_clients").insert({
+      portfolio_id: data.portfolioId,
+      client_name: data.fullName,
+      client_email: data.email || null,
+      client_phone: data.phone || null,
+      address_line1: data.address,
+      city: data.city || null,
+      state: data.state || null,
+      zip: data.zip || null,
+      loan_amount_at_close_cents:
+        data.loanAmount != null ? Math.round(data.loanAmount * 100) : null,
+      rate_at_close: data.rate ?? null,
+      close_date: data.closeDate || null,
+      notes: data.notes || null,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 const CreateOrgSchema = z.object({ name: z.string().trim().min(1).max(120) });
 export const createLenderOrg = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
