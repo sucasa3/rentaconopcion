@@ -14,19 +14,20 @@ async function assertLenderAccess(supabase: any, userId: string) {
 export const listMyPortfolios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertLenderAccess(context.supabase, context.userId);
+    const { isAdmin } = await assertLenderAccess(context.supabase, context.userId);
     const { data: memberships, error: mErr } = await context.supabase
       .from("lender_members")
-      .select("lender_org_id, role, lender_orgs(id, name)")
+      .select("lender_org_id, role, lender_orgs(id, name, plan, seat_limit)")
       .eq("user_id", context.userId);
     if (mErr) throw new Error(mErr.message);
 
     const orgIds = (memberships ?? []).map((m: any) => m.lender_org_id);
-    if (orgIds.length === 0) return { orgs: [], portfolios: [] as any[] };
+    if (orgIds.length === 0)
+      return { orgs: [], portfolios: [] as any[], members: [] as any[], isManager: isAdmin };
 
     const { data: portfolios, error: pErr } = await context.supabase
       .from("lender_portfolios")
-      .select("id, name, lender_org_id, created_at")
+      .select("id, name, lender_org_id, assigned_user_id, created_at")
       .in("lender_org_id", orgIds)
       .order("created_at", { ascending: false });
     if (pErr) throw new Error(pErr.message);
@@ -41,15 +42,97 @@ export const listMyPortfolios = createServerFn({ method: "GET" })
       }),
     );
 
+    // Org roster (names of the officers) — needs elevated read on profiles.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: allMembers } = await supabaseAdmin
+      .from("lender_members")
+      .select("lender_org_id, user_id, role")
+      .in("lender_org_id", orgIds);
+    const memberIds = [...new Set((allMembers ?? []).map((m: any) => m.user_id))];
+    const { data: profiles } = memberIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", memberIds)
+      : { data: [] as any[] };
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+
+    const orgs = (memberships ?? []).map((m: any) => ({
+      id: m.lender_org_id,
+      name: m.lender_orgs?.name ?? "Org",
+      plan: m.lender_orgs?.plan ?? "starter",
+      seat_limit: m.lender_orgs?.seat_limit ?? null,
+      role: m.role,
+    }));
+
+    const isManager = isAdmin || orgs.some((o: any) => o.role === "owner");
+
     return {
-      orgs: (memberships ?? []).map((m: any) => ({
-        id: m.lender_org_id,
-        name: m.lender_orgs?.name ?? "Org",
+      orgs,
+      isManager,
+      myUserId: context.userId,
+      members: (allMembers ?? []).map((m: any) => ({
+        org_id: m.lender_org_id,
+        user_id: m.user_id,
         role: m.role,
+        name: profileMap.get(m.user_id)?.full_name || profileMap.get(m.user_id)?.email || "Member",
+        email: profileMap.get(m.user_id)?.email ?? null,
       })),
-      portfolios: withCounts,
+      portfolios: withCounts.map((p: any) => ({
+        ...p,
+        // Back-compat alias used by older UI code.
+        org_id: p.lender_org_id,
+        assigned_name: p.assigned_user_id
+          ? profileMap.get(p.assigned_user_id)?.full_name ||
+            profileMap.get(p.assigned_user_id)?.email ||
+            "Assigned officer"
+          : null,
+      })),
     };
   });
+
+const AssignSchema = z.object({
+  portfolioId: z.string().uuid(),
+  userId: z.string().uuid().nullable(),
+});
+export const assignPortfolioOwner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => AssignSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { isAdmin } = await assertLenderAccess(context.supabase, context.userId);
+
+    const { data: portfolio } = await context.supabase
+      .from("lender_portfolios")
+      .select("id, lender_org_id")
+      .eq("id", data.portfolioId)
+      .maybeSingle();
+    if (!portfolio) throw new Error("Portfolio not found");
+
+    if (!isAdmin) {
+      const { data: me } = await context.supabase
+        .from("lender_members")
+        .select("role")
+        .eq("lender_org_id", (portfolio as any).lender_org_id)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!me || me.role !== "owner") throw new Error("Forbidden: manager access required");
+    }
+
+    if (data.userId) {
+      const { data: target } = await context.supabase
+        .from("lender_members")
+        .select("user_id")
+        .eq("lender_org_id", (portfolio as any).lender_org_id)
+        .eq("user_id", data.userId)
+        .maybeSingle();
+      if (!target) throw new Error("That user is not a member of this organization");
+    }
+
+    const { error } = await context.supabase
+      .from("lender_portfolios")
+      .update({ assigned_user_id: data.userId })
+      .eq("id", data.portfolioId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 const CreatePortfolioSchema = z.object({
   orgId: z.string().uuid(),
