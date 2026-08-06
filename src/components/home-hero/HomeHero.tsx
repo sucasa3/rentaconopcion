@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Home, TrendingUp, Sparkles, Activity, MapPin } from "lucide-react";
+import { Home, TrendingUp, Sparkles, Activity, MapPin, Info } from "lucide-react";
 import { HOME_HERO, projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroData } from "@/lib/home-hero-data";
+import type { HomeScoreResult } from "@/lib/home-score";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCountUp } from "./useCountUp";
 import heroPhoto from "@/assets/home-hero-photo.jpg.asset.json";
 
@@ -12,7 +14,17 @@ const fmtUsd = (n: number, compact = false) =>
     notation: compact ? "compact" : "standard",
   }).format(n);
 
-export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; refiChip?: React.ReactNode }) {
+export function HomeHero({
+  data = HOME_HERO,
+  refiChip,
+  scoreDetail,
+  scorePending,
+}: {
+  data?: HomeHeroData;
+  refiChip?: React.ReactNode;
+  scoreDetail?: HomeScoreResult | null;
+  scorePending?: boolean;
+}) {
   const [years, setYears] = useState(0);
   const projected = useMemo(
     () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
@@ -23,6 +35,8 @@ export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; 
   const equity = useCountUp(projected.equity);
   const roi = useCountUp(data.roi);
   const score = useCountUp(data.homeScore);
+  const scoreText = scorePending ? "—" : String(Math.round(score));
+
 
   return (
     <section className="relative overflow-hidden rounded-[2rem] border border-border bg-neutral-950 shadow-elevated">
@@ -48,23 +62,68 @@ export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; 
             {data.address}
           </h2>
           <p className="mt-1.5 text-sm text-white/70">
-            Home Score <span className="font-semibold text-white">{Math.round(score)}</span> · Top 18% in ZIP
+            Home Score <span className="font-semibold text-white">{scoreText}</span>
+            {scoreDetail ? ` · ${scoreDetail.summary}` : ""}
           </p>
         </div>
 
         {/* Top-right score ring + optional refi chip */}
         <div className="absolute right-5 top-5 flex flex-col items-end gap-2 sm:right-7 sm:top-7">
-          <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-2 backdrop-blur-md ring-1 ring-white/20">
-            <ScoreRing value={score} />
-            <div className="pr-1 text-white">
-              <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/70">
-                <Activity className="h-3 w-3" /> Score
-              </div>
-              <div className="text-lg font-semibold tabular-nums leading-none">{Math.round(score)}</div>
-            </div>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center gap-3 rounded-2xl bg-white/10 px-3 py-2 text-left backdrop-blur-md ring-1 ring-white/20 transition hover:bg-white/20"
+              >
+                <ScoreRing value={scorePending ? 0 : score} />
+                <div className="pr-1 text-white">
+                  <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-white/70">
+                    <Activity className="h-3 w-3" /> Score <Info className="h-3 w-3" />
+                  </div>
+                  <div className="text-lg font-semibold tabular-nums leading-none">{scoreText}</div>
+                </div>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 text-sm">
+              {scoreDetail ? (
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold">Home Score {scoreDetail.score}/100</p>
+                    <p className="text-xs text-muted-foreground">{scoreDetail.bandLabel}</p>
+                  </div>
+                  <ul className="space-y-2">
+                    {scoreDetail.breakdown.map((b) => (
+                      <li key={b.key} className="text-xs">
+                        <div className="flex items-center justify-between font-medium">
+                          <span>{b.label}</span>
+                          <span className="tabular-nums">
+                            {b.earned}/{b.max}
+                          </span>
+                        </div>
+                        <p className="text-muted-foreground">{b.detail}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <div>
+                    <p className="text-xs font-semibold">Raise your score</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                      {scoreDetail.topActions.map((a) => (
+                        <li key={a}>{a}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Your Home Score combines system condition, inspection findings and how complete
+                  your home records are. Add your home details to see it.
+                </p>
+              )}
+            </PopoverContent>
+          </Popover>
           {refiChip}
         </div>
+
 
 
         {/* Zone chips */}

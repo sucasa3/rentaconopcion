@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
+import { useHomeScore } from "@/hooks/use-home-score";
+
 import { MAINTENANCE_TASKS, RECOMMENDED_PROS, type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
@@ -105,13 +107,18 @@ function Dashboard() {
     okIntel?.equity?.equityPct ??
     (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
 
+  const { score: homeScore, isLoading: scoreLoading } = useHomeScore(!!profileAddr || !!okIntel?.address);
+
   const heroData: HomeHeroData = {
     ...HOME_HERO,
     address: okIntel?.address || profileAddr || HOME_HERO.address,
     value: heroValue,
     equity: heroEquity,
     equityPct: heroEquityPct,
+    homeScore: homeScore?.score ?? HOME_HERO.homeScore,
+    zones: homeScore?.zones ?? HOME_HERO.zones,
   };
+
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -133,7 +140,12 @@ function Dashboard() {
             </div>
           </div>
 
-          <HomeHero data={heroData} />
+          <HomeHero
+            data={heroData}
+            scoreDetail={homeScore}
+            scorePending={scoreLoading || !homeScore}
+          />
+
 
 
           <HomeIntelPanel />
