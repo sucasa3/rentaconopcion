@@ -65,10 +65,8 @@ const PAGE_SIZE = 25;
 function PortfolioDetail() {
   const { id } = Route.useParams();
   const getFn = useServerFn(getPortfolio);
-  const ingestFn = useServerFn(ingestPortfolioCsv);
   const enrichFn = useServerFn(enrichPortfolioFromAttom);
   const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const [benchmark, setBenchmark] = useState<number>(6.25);
   const [segment, setSegment] = useState<Segment>("all");
@@ -79,15 +77,6 @@ function PortfolioDetail() {
   const { data, isLoading, error } = useQuery({
     queryKey: ["lender-portfolio", id, benchmark],
     queryFn: () => getFn({ data: { id, benchmarkRate: benchmark } }),
-  });
-
-  const ingest = useMutation({
-    mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
-    onSuccess: (r: any) => {
-      toast.success(`Imported ${r.inserted} clients`);
-      qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
-    },
-    onError: (e: any) => toast.error(e.message),
   });
 
   const enrich = useMutation({
@@ -110,11 +99,6 @@ function PortfolioDetail() {
     onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
 
-  async function handleFile(f: File) {
-    const text = await f.text();
-    ingest.mutate(text);
-    if (fileRef.current) fileRef.current.value = "";
-  }
 
   const filtered = useMemo(() => {
     if (!data) return [];
