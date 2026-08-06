@@ -366,28 +366,35 @@ export interface PermitsSummary {
   totalValue: number | null;
   lastPermitDate: string | null;
 }
+type RawPermit = {
+  effectiveDate?: string;
+  type?: string;
+  subType?: string;
+  description?: string;
+  projectName?: string;
+  classifiers?: string[];
+  jobValue?: number;
+  status?: string;
+};
+
 export function extractPermits(raw: unknown): PermitsSummary {
-  const r = raw as {
-    property?: Array<{
-      building?: {
-        permits?: Array<{
-          effectiveDate?: string;
-          type?: string;
-          description?: string;
-          jobValue?: number;
-          status?: string;
-        }>;
-      };
-    }>;
-  } | null;
-  const rows = r?.property?.[0]?.building?.permits ?? [];
-  const events: PermitEvent[] = rows.map((p) => ({
-    date: p.effectiveDate ?? null,
-    type: p.type ?? null,
-    description: p.description ?? null,
-    value: p.jobValue ?? null,
-    status: p.status ?? null,
+  const p = (raw as { property?: Array<Record<string, unknown>> } | null)?.property?.[0] ?? null;
+  // ATTOM returns permits either at property[].buildingPermits (current) or
+  // nested under building.permits (older shape). Support both.
+  const rows = ((p?.["buildingPermits"] as RawPermit[] | undefined) ??
+    ((p?.["building"] as { permits?: RawPermit[] } | undefined)?.permits ??
+      [])) as RawPermit[];
+
+  const events: PermitEvent[] = rows.map((r) => ({
+    date: r.effectiveDate ?? null,
+    type: [r.type, r.subType].filter(Boolean).join(" · ") || null,
+    description:
+      [r.description, (r.classifiers ?? []).join(", ")].filter(Boolean).join(" — ") || null,
+    value: r.jobValue ?? null,
+    status: r.status ?? null,
   }));
+  events.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
+
   const totalValue = events.reduce((sum, e) => sum + (e.value ?? 0), 0) || null;
   return {
     events,

@@ -160,6 +160,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         if (bucket.length >= 3) continue;
         bucket.push({
           id: f.id,
+          source: "inspection" as const,
           system: f.system,
           condition: f.condition,
           urgency: f.urgency,
@@ -211,6 +212,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
     } = await import("@/lib/agent.server");
     const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
       await import("@/lib/valuation.server");
+    const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
+      "@/lib/maintenance-rules"
+    );
 
     const addrKey = (c: any) =>
       normalizeAddress(
@@ -286,8 +290,43 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       });
 
       const referrals = c.homeowner_id ? referralsByHomeowner[c.homeowner_id] ?? [] : [];
-      const recommendations = c.homeowner_id ? recsByHomeowner[c.homeowner_id] ?? [] : [];
+      const inspectionNeeds = c.homeowner_id ? recsByHomeowner[c.homeowner_id] ?? [] : [];
       const touches = touchesByClient[c.id] ?? [];
+
+      // Property-record needs: component lifespans projected off year built and
+      // any permit that reset the clock. Works without a linked homeowner.
+      const timeline = buildMaintenanceTimeline(chars?.yearBuilt ?? null, permits?.events ?? []);
+      const recordNeeds =
+        chars?.yearBuilt || (permits?.events?.length ?? 0) > 0
+          ? needsFromTimeline(timeline, c.id)
+          : [];
+      const permitNeeds = recentImprovementNeeds(permits?.events ?? [], c.id);
+
+      // Suppress anything already handled: an open/complete job in the same
+      // category, or a campaign already sent that covers it.
+      const handledCategories = new Set(
+        referrals.map((r: any) => String(r.category ?? "").toLowerCase()),
+      );
+      const communicatedText = touches
+        .map((t: any) => `${t.campaign_name ?? ""} ${t.subject ?? ""}`.toLowerCase())
+        .join(" | ");
+
+      const seenCategories = new Set<string>();
+      const recommendations = [...inspectionNeeds, ...recordNeeds, ...permitNeeds]
+        .filter((r: any) => {
+          const cat = String(r.recommended_category ?? "").toLowerCase();
+          if (cat) {
+            if (handledCategories.has(cat)) return false;
+            if (communicatedText.includes(cat)) return false;
+            if (seenCategories.has(cat)) return false;
+            seenCategories.add(cat);
+          }
+          return true;
+        })
+        .slice(0, 3);
+
+      const needsData = !chars?.yearBuilt && (permits?.events?.length ?? 0) === 0;
+
 
 
       return {
@@ -330,6 +369,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         referral_count: referrals.length,
         recommendations,
         recommendation_count: recommendations.length,
+        recommendations_need_data: needsData,
         touches,
         touch_count: touches.length,
       };
@@ -610,6 +650,9 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
     } = await import("@/lib/agent.server");
     const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
       await import("@/lib/valuation.server");
+    const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
+      "@/lib/maintenance-rules"
+    );
 
     const avm = intel?.avm ? extractAvm(intel.avm) : null;
     const sales = intel?.sales ? extractSales(intel.sales) : null;

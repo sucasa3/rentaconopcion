@@ -36,6 +36,22 @@ import {
   Info,
 } from "lucide-react";
 
+
+const SOURCE_LABEL: Record<string, string> = {
+  inspection: "Inspection",
+  property_records: "Property records",
+  recent_permit: "Permit",
+};
+
+function SourceBadge({ source }: { source?: string }) {
+  const label = SOURCE_LABEL[source ?? "inspection"] ?? "Inspection";
+  return (
+    <span className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+      {label}
+    </span>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
   head: () => ({
     meta: [
@@ -670,8 +686,9 @@ function AgentPortfolio() {
                     <TabsContent value="recommendations" className="mt-4 space-y-2">
                       {(data.recommendation_feed ?? []).length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          Nothing outstanding. Recommendations appear once a linked client uploads
-                          an inspection report.
+                          Nothing outstanding. Recommendations come from property records
+                          (home age + permits) and from inspection reports once a linked client
+                          uploads one.
                         </p>
                       ) : (
                         data.recommendation_feed.map((r: any) => (
@@ -689,15 +706,20 @@ function AgentPortfolio() {
                                 {r.recommended_action ? ` — ${r.recommended_action}` : ""}
                               </p>
                             </div>
-                            <span
-                              className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
-                                r.urgency === "high"
-                                  ? "border-destructive/40 bg-destructive/10 text-destructive"
-                                  : "border-amber-500/40 bg-amber-500/10 text-amber-700"
-                              }`}
-                            >
-                              {r.urgency}
-                            </span>
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              <SourceBadge source={r.source} />
+                              <span
+                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
+                                  r.urgency === "high"
+                                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                                    : r.urgency === "medium"
+                                      ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                                      : "border-border bg-secondary text-muted-foreground"
+                                }`}
+                              >
+                                {r.urgency}
+                              </span>
+                            </div>
                           </div>
                         ))
                       )}
@@ -1131,14 +1153,19 @@ function ClientDrawer({
                       {String(r.system).replace(/_/g, " ")}
                       {r.recommended_category ? ` · ${r.recommended_category}` : ""}
                     </span>
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
-                        r.urgency === "high"
-                          ? "border-destructive/40 bg-destructive/10 text-destructive"
-                          : "border-amber-500/40 bg-amber-500/10 text-amber-700"
-                      }`}
-                    >
-                      {r.urgency}
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <SourceBadge source={r.source} />
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
+                          r.urgency === "high"
+                            ? "border-destructive/40 bg-destructive/10 text-destructive"
+                            : r.urgency === "medium"
+                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                              : "border-border bg-secondary text-muted-foreground"
+                        }`}
+                      >
+                        {r.urgency}
+                      </span>
                     </span>
                   </div>
                   {r.recommended_action && (
