@@ -46,7 +46,16 @@ const SOURCE_LABEL: Record<string, string> = {
   recent_permit: "Permit",
 };
 
+function NewPill({ count }: { count?: number }) {
+  return (
+    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
+      {count ? `${count} new` : "New"}
+    </span>
+  );
+}
+
 function SourceBadge({ source }: { source?: string }) {
+
   const label = SOURCE_LABEL[source ?? "inspection"] ?? "Inspection";
   return (
     <span className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
