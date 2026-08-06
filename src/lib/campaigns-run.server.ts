@@ -189,8 +189,10 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       const due = isDue(campaign, facts, target, lastByPair.get(`${campaign.id}:${c.id}`) ?? null);
       if (!due.due && !opts.dryRun) { skip(due.reason); continue; }
 
-      const copy = await generateCopy(campaign, facts, target);
-      const payload = buildPayload(campaign, facts, target, copy);
+      const override = overrideByPair.get(`${org.id}:${campaign.id}`) ?? null;
+      const branding = brandingFromOrg(org);
+      const copy = await generateCopy(campaign, facts, target, "en", override);
+      const payload = buildPayload(campaign, facts, target, copy, branding, override);
       result.generated++;
 
       if (opts.dryRun) {
