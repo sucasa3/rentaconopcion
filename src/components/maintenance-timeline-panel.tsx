@@ -1,16 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { Wrench, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
+import { Wrench, AlertTriangle, CheckCircle2, Clock, CheckSquare } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import {
   buildMaintenanceTimeline,
   type TimelineItem,
 } from "@/lib/maintenance-rules";
 import { NextStepCard } from "@/components/next-step-card";
+import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
 
 export function MaintenanceTimelinePanel() {
   const fetchIntel = useServerFn(getMyHomeIntel);
+  const fetchLog = useServerFn(getMyComponentServiceLog);
+  const [markItem, setMarkItem] = useState<TimelineItem | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["home-intel-maintenance"],
     queryFn: () =>
@@ -21,6 +27,12 @@ export function MaintenanceTimelinePanel() {
         },
       }),
     staleTime: 30 * 60_000,
+  });
+
+  const { data: serviceLog } = useQuery({
+    queryKey: ["component-service-log"],
+    queryFn: () => fetchLog({ data: {} }),
+    staleTime: 60_000,
   });
 
   if (isLoading) {
@@ -46,12 +58,17 @@ export function MaintenanceTimelinePanel() {
     );
   }
 
-
-  const items: TimelineItem[] = buildMaintenanceTimeline(yearBuilt, permitEvents);
+  const items: TimelineItem[] = buildMaintenanceTimeline(
+    yearBuilt,
+    permitEvents,
+    new Date(),
+    serviceLog ?? [],
+  );
 
   const overdue = items.filter((i) => i.status === "overdue");
   const dueSoon = items.filter((i) => i.status === "due_soon");
   const nextStep = overdue[0] ?? dueSoon[0] ?? null;
+
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
