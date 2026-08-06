@@ -212,6 +212,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
     } = await import("@/lib/agent.server");
     const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
       await import("@/lib/valuation.server");
+    const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
+      "@/lib/maintenance-rules"
+    );
 
     const addrKey = (c: any) =>
       normalizeAddress(
@@ -366,6 +369,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         referral_count: referrals.length,
         recommendations,
         recommendation_count: recommendations.length,
+        recommendations_need_data: needsData,
         touches,
         touch_count: touches.length,
       };
@@ -646,6 +650,9 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
     } = await import("@/lib/agent.server");
     const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
       await import("@/lib/valuation.server");
+    const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
+      "@/lib/maintenance-rules"
+    );
 
     const avm = intel?.avm ? extractAvm(intel.avm) : null;
     const sales = intel?.sales ? extractSales(intel.sales) : null;
