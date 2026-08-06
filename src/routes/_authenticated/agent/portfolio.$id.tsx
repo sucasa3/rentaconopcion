@@ -359,6 +359,49 @@ function AgentPortfolio() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // --- Client activity: new markers + manual review -------------------------
+  const [activityTab, setActivityTab] = useState("recommendations");
+  const [showReviewed, setShowReviewed] = useState(false);
+  const seenSent = useRef<Set<string>>(new Set());
+
+  const recFeedAll = ((data as any)?.recommendation_feed ?? []) as any[];
+  const refFeed = ((data as any)?.referral_feed ?? []) as any[];
+  const recFeed = showReviewed ? recFeedAll : recFeedAll.filter((r) => !r.reviewed_at);
+  const reviewedCount = recFeedAll.filter((r) => r.reviewed_at).length;
+  const newRecCount = recFeedAll.filter((r) => r.is_new && !r.reviewed_at).length;
+  const newRefCount = refFeed.filter((r) => r.is_new).length;
+
+  const markSeen = useMutation({
+    mutationFn: (items: { itemKey: string; kind: "recommendation" | "referral" }[]) =>
+      markSeenFn({ data: { portfolioId: id, items } }),
+  });
+
+  useEffect(() => {
+    if (!data) return;
+    const rows =
+      activityTab === "recommendations"
+        ? recFeedAll.map((r) => ({ key: r.item_key, kind: "recommendation" as const }))
+        : activityTab === "referrals"
+          ? refFeed.map((r) => ({ key: r.item_key, kind: "referral" as const }))
+          : [];
+    const pending = rows.filter((r) => r.key && !seenSent.current.has(r.key));
+    if (!pending.length) return;
+    for (const p of pending) seenSent.current.add(p.key);
+    markSeen.mutate(pending.map((p) => ({ itemKey: p.key, kind: p.kind })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, activityTab]);
+
+  const setReviewed = useMutation({
+    mutationFn: (v: { itemKey: string; reviewed: boolean }) =>
+      reviewFn({ data: { portfolioId: id, ...v } }),
+    onSuccess: (_r, v) => {
+      toast.success(v.reviewed ? "Marked reviewed" : "Restored");
+      qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+
   const filtered = useMemo(() => {
     if (!data) return [];
     const q = search.trim().toLowerCase();
