@@ -352,24 +352,14 @@ function PortfolioDetail() {
                         className="w-64 rounded-full border border-border bg-background py-1.5 pl-9 pr-3 text-sm"
                       />
                     </div>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept=".csv,text/csv"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFile(f);
-                      }}
-                    />
-                    <button
-                      onClick={() => fileRef.current?.click()}
-                      disabled={ingest.isPending}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary disabled:opacity-60"
+                    <Link
+                      to="/lender/portfolio/$id/import"
+                      params={{ id }}
+                      className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary"
                     >
-                      <Upload className="h-3 w-3" />{" "}
-                      {ingest.isPending ? "Importing…" : "Upload CSV"}
-                    </button>
+                      <Upload className="h-3 w-3" /> Add clients
+                    </Link>
+
                     {missingCount > 0 && (
                       <button
                         onClick={() => enrich.mutate()}
