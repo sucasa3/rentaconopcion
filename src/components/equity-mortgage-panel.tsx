@@ -150,12 +150,7 @@ export function EquityMortgagePanel() {
         loanBalance={equity?.loanBalanceEstimate ?? null}
         cashOutHeadroom={equity?.cashOutHeadroom80 ?? null}
         benchmarkRate={BENCHMARK_REFI_RATE}
-        estSavingsMonthly={
-          estimateRefiSavings(
-            equity?.loanBalanceEstimate,
-            mortgage?.interestRate,
-          )?.monthlySavings ?? null
-        }
+        estSavingsMonthly={savings?.monthlySavings ?? null}
       />
 
     </div>
