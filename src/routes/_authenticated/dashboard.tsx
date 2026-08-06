@@ -127,7 +127,7 @@ function Dashboard() {
         <div className="mx-auto max-w-6xl space-y-6">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary">Your dashboard</p>
               <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">
                 {firstName ? `Welcome back, ${firstName}` : "Welcome back"}
               </h1>
