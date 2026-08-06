@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
-import { Home, TrendingUp, Sparkles, Activity, MapPin } from "lucide-react";
+import { Home, TrendingUp, Sparkles, Activity, MapPin, Info } from "lucide-react";
 import { HOME_HERO, projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroData } from "@/lib/home-hero-data";
+import type { HomeScoreResult } from "@/lib/home-score";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCountUp } from "./useCountUp";
 import heroPhoto from "@/assets/home-hero-photo.jpg.asset.json";
 
@@ -12,7 +14,17 @@ const fmtUsd = (n: number, compact = false) =>
     notation: compact ? "compact" : "standard",
   }).format(n);
 
-export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; refiChip?: React.ReactNode }) {
+export function HomeHero({
+  data = HOME_HERO,
+  refiChip,
+  scoreDetail,
+  scorePending,
+}: {
+  data?: HomeHeroData;
+  refiChip?: React.ReactNode;
+  scoreDetail?: HomeScoreResult | null;
+  scorePending?: boolean;
+}) {
   const [years, setYears] = useState(0);
   const projected = useMemo(
     () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
@@ -23,6 +35,8 @@ export function HomeHero({ data = HOME_HERO, refiChip }: { data?: HomeHeroData; 
   const equity = useCountUp(projected.equity);
   const roi = useCountUp(data.roi);
   const score = useCountUp(data.homeScore);
+  const scoreText = scorePending ? "—" : String(Math.round(score));
+
 
   return (
     <section className="relative overflow-hidden rounded-[2rem] border border-border bg-neutral-950 shadow-elevated">
