@@ -159,8 +159,18 @@ export function MaintenanceTimelinePanel() {
       </ul>
 
       <p className="mt-3 text-[11px] text-muted-foreground">
-        Estimates use standard component lifespans. Log a service to reset the clock.
+        Estimates use standard component lifespans. Marked something done? Add the year and we'll
+        reset the clock — permits aren't always pulled.
       </p>
+
+      {markItem && (
+        <MarkComponentDoneDialog
+          item={markItem}
+          open={!!markItem}
+          onOpenChange={(o) => !o && setMarkItem(null)}
+        />
+      )}
     </div>
+
   );
 }
