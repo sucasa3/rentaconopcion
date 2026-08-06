@@ -1167,3 +1167,67 @@ export const updateClientAddress = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ---------------------------------------------------------------------------
+// Client-activity "new" markers: auto-clear on view, plus manual review.
+// ---------------------------------------------------------------------------
+export const markAgentFeedSeen = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        items: z
+          .array(
+            z.object({
+              itemKey: z.string().min(1),
+              kind: z.enum(["recommendation", "referral"]),
+            }),
+          )
+          .max(200),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    if (!data.items.length) return { ok: true, marked: 0 };
+
+    const rows = data.items.map((it) => ({
+      user_id: context.userId,
+      portfolio_id: data.portfolioId,
+      item_key: it.itemKey,
+      kind: it.kind,
+    }));
+    const { error } = await context.supabase
+      .from("agent_feed_seen")
+      .upsert(rows, { onConflict: "user_id,portfolio_id,item_key", ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
+    return { ok: true, marked: rows.length };
+  });
+
+export const setAgentFeedReviewed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        itemKey: z.string().min(1),
+        reviewed: z.boolean(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    const { error } = await context.supabase.from("agent_feed_seen").upsert(
+      {
+        user_id: context.userId,
+        portfolio_id: data.portfolioId,
+        item_key: data.itemKey,
+        kind: "recommendation",
+        reviewed_at: data.reviewed ? new Date().toISOString() : null,
+      },
+      { onConflict: "user_id,portfolio_id,item_key" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
