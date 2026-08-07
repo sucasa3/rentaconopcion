@@ -1025,6 +1025,7 @@ export type Database = {
           plan: string
           primary_contact_email: string | null
           reply_to_email: string | null
+          seat_limit: number | null
           sender_name: string | null
           signoff: string | null
           updated_at: string
@@ -1043,6 +1044,7 @@ export type Database = {
           plan?: string
           primary_contact_email?: string | null
           reply_to_email?: string | null
+          seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
           updated_at?: string
@@ -1061,6 +1063,7 @@ export type Database = {
           plan?: string
           primary_contact_email?: string | null
           reply_to_email?: string | null
+          seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
           updated_at?: string
@@ -1140,6 +1143,7 @@ export type Database = {
       }
       lender_portfolios: {
         Row: {
+          assigned_user_id: string | null
           created_at: string
           id: string
           lender_org_id: string
@@ -1147,6 +1151,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_user_id?: string | null
           created_at?: string
           id?: string
           lender_org_id: string
@@ -1154,6 +1159,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_user_id?: string | null
           created_at?: string
           id?: string
           lender_org_id?: string

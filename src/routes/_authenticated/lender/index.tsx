@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { createPortfolio, listMyPortfolios, seedDemoPortfolio, seedRosterImport } from "@/lib/lender.functions";
+import { assignPortfolioOwner, createPortfolio, listMyPortfolios, seedDemoPortfolio, seedRosterImport } from "@/lib/lender.functions";
 import { Building2, Plus, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/")({
@@ -31,6 +31,17 @@ function LenderHome() {
   });
   const [name, setName] = useState("");
   const [orgId, setOrgId] = useState("");
+
+  // Loan officers (non-managers) land straight in their own book.
+  const myBook =
+    data && !data.isManager
+      ? (data.portfolios as any[]).find((p) => p.assigned_user_id === data.myUserId) ??
+        ((data.portfolios as any[]).length === 1 ? (data.portfolios as any[])[0] : null)
+      : null;
+  useEffect(() => {
+    if (myBook) navigate({ to: "/lender/portfolio/$id", params: { id: myBook.id }, replace: true });
+  }, [myBook?.id]);
+
 
   const create = useMutation({
     mutationFn: () => createFn({ data: { orgId, name } }),
@@ -74,9 +85,13 @@ function LenderHome() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Lender Portal</p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                Your portfolios
+                Team books
               </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                One book per loan officer. Officers land straight in their own book.
+              </p>
             </div>
+
             <div className="flex flex-wrap gap-2">
               <Link
                 to="/lender/campaigns"
@@ -153,23 +168,30 @@ function LenderHome() {
 
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {data?.portfolios.map((p: any) => (
-                      <Link
+                      <div
                         key={p.id}
-                        to="/lender/portfolio/$id"
-                        params={{ id: p.id }}
                         className="rounded-3xl border border-border bg-card p-6 shadow-soft transition hover:border-primary"
                       >
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-primary" />
-                          <span className="text-xs text-muted-foreground">
-                            {data.orgs.find((o: any) => o.id === p.org_id)?.name}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-lg font-semibold">{p.name}</p>
-                        <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="h-3 w-3" /> {p.client_count} clients
-                        </p>
-                      </Link>
+                        <Link to="/lender/portfolio/$id" params={{ id: p.id }} className="block">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            <span className="text-xs text-muted-foreground">
+                              {data.orgs.find((o: any) => o.id === p.org_id)?.name}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-lg font-semibold">{p.name}</p>
+                          <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users className="h-3 w-3" /> {p.client_count} clients
+                          </p>
+                        </Link>
+                        <AssignRow
+                          portfolioId={p.id}
+                          assignedUserId={p.assigned_user_id}
+                          members={(data.members as any[]).filter(
+                            (m) => m.org_id === p.lender_org_id,
+                          )}
+                        />
+                      </div>
                     ))}
                     {data && data.portfolios.length === 0 && (
                       <p className="text-sm text-muted-foreground">
@@ -177,6 +199,7 @@ function LenderHome() {
                       </p>
                     )}
                   </div>
+
                 </>
               )}
             </>
@@ -185,5 +208,45 @@ function LenderHome() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function AssignRow({
+  portfolioId,
+  assignedUserId,
+  members,
+}: {
+  portfolioId: string;
+  assignedUserId: string | null;
+  members: Array<{ user_id: string; name: string }>;
+}) {
+  const qc = useQueryClient();
+  const assignFn = useServerFn(assignPortfolioOwner);
+  const assign = useMutation({
+    mutationFn: (userId: string | null) => assignFn({ data: { portfolioId, userId } }),
+    onSuccess: () => {
+      toast.success("Assignment updated");
+      qc.invalidateQueries({ queryKey: ["lender-portfolios"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <label className="mt-4 block text-[11px] uppercase tracking-wider text-muted-foreground">
+      Loan officer
+      <select
+        value={assignedUserId ?? ""}
+        disabled={assign.isPending}
+        onChange={(e) => assign.mutate(e.target.value || null)}
+        className="mt-1 w-full rounded-full border border-border bg-background px-3 py-1.5 text-sm normal-case tracking-normal text-foreground"
+      >
+        <option value="">Unassigned (house book)</option>
+        {members.map((m) => (
+          <option key={m.user_id} value={m.user_id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
