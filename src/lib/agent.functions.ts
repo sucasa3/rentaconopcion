@@ -26,8 +26,9 @@ async function agentOrgIds(supabase: any, userId: string): Promise<{ ids: string
 export const listAgentPortfolios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { ids } = await agentOrgIds(context.supabase, context.userId);
-    if (!ids.length) return { orgs: [], portfolios: [] };
+    const { ids, isAdmin } = await agentOrgIds(context.supabase, context.userId);
+    if (!ids.length)
+      return { orgs: [], portfolios: [], members: [] as any[], isManager: isAdmin, myUserId: context.userId };
 
     const { data: orgs } = await context.supabase
       .from("lender_orgs")
@@ -36,7 +37,7 @@ export const listAgentPortfolios = createServerFn({ method: "GET" })
 
     const { data: portfolios, error } = await context.supabase
       .from("lender_portfolios")
-      .select("id, name, lender_org_id, created_at")
+      .select("id, name, lender_org_id, assigned_user_id, created_at")
       .in("lender_org_id", ids)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -45,6 +46,7 @@ export const listAgentPortfolios = createServerFn({ method: "GET" })
       id: string;
       name: string;
       lender_org_id: string;
+      assigned_user_id: string | null;
       created_at: string;
       client_count: number;
     }> = [];
@@ -57,12 +59,89 @@ export const listAgentPortfolios = createServerFn({ method: "GET" })
         id: p.id,
         name: p.name,
         lender_org_id: p.lender_org_id,
+        assigned_user_id: p.assigned_user_id ?? null,
         created_at: p.created_at,
         client_count: count ?? 0,
       });
     }
-    return { orgs: orgs ?? [], portfolios: withCounts };
+
+    // Roster of everyone in these agencies (names need an elevated read).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: allMembers } = await supabaseAdmin
+      .from("lender_members")
+      .select("lender_org_id, user_id, role")
+      .in("lender_org_id", ids);
+    const memberIds = [...new Set((allMembers ?? []).map((m: any) => m.user_id))];
+    const { data: profiles } = memberIds.length
+      ? await supabaseAdmin.from("profiles").select("id, full_name, email").in("id", memberIds)
+      : { data: [] as any[] };
+    const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+
+    const myRoles = (allMembers ?? []).filter((m: any) => m.user_id === context.userId);
+    const isManager = isAdmin || myRoles.some((m: any) => m.role === "owner");
+
+    return {
+      orgs: orgs ?? [],
+      portfolios: withCounts,
+      isManager,
+      myUserId: context.userId,
+      members: (allMembers ?? []).map((m: any) => ({
+        org_id: m.lender_org_id,
+        user_id: m.user_id,
+        role: m.role,
+        name:
+          profileMap.get(m.user_id)?.full_name ||
+          profileMap.get(m.user_id)?.email ||
+          "Team member",
+      })),
+    };
   });
+
+const AssignAgentSchema = z.object({
+  portfolioId: z.string().uuid(),
+  userId: z.string().uuid().nullable(),
+});
+export const assignAgentPortfolioOwner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => AssignAgentSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { isAdmin } = await agentOrgIds(context.supabase, context.userId);
+
+    const { data: portfolio } = await context.supabase
+      .from("lender_portfolios")
+      .select("id, lender_org_id")
+      .eq("id", data.portfolioId)
+      .maybeSingle();
+    if (!portfolio) throw new Error("Portfolio not found");
+
+    if (!isAdmin) {
+      const { data: me } = await context.supabase
+        .from("lender_members")
+        .select("role")
+        .eq("lender_org_id", (portfolio as any).lender_org_id)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (!me || me.role !== "owner") throw new Error("Forbidden: broker access required");
+    }
+
+    if (data.userId) {
+      const { data: target } = await context.supabase
+        .from("lender_members")
+        .select("user_id")
+        .eq("lender_org_id", (portfolio as any).lender_org_id)
+        .eq("user_id", data.userId)
+        .maybeSingle();
+      if (!target) throw new Error("That user is not a member of this agency");
+    }
+
+    const { error } = await context.supabase
+      .from("lender_portfolios")
+      .update({ assigned_user_id: data.userId })
+      .eq("id", data.portfolioId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 
 // ---------------------------------------------------------------------------
 // Portfolio view with move scores. Reads ONLY the cached property_intel rows
