@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { createPortfolio, listMyPortfolios, seedDemoPortfolio, seedRosterImport } from "@/lib/lender.functions";
+import { assignPortfolioOwner, createPortfolio, listMyPortfolios, seedDemoPortfolio, seedRosterImport } from "@/lib/lender.functions";
 import { Building2, Plus, Users, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/")({
@@ -208,5 +208,45 @@ function LenderHome() {
       </main>
       <SiteFooter />
     </div>
+  );
+}
+
+function AssignRow({
+  portfolioId,
+  assignedUserId,
+  members,
+}: {
+  portfolioId: string;
+  assignedUserId: string | null;
+  members: Array<{ user_id: string; name: string }>;
+}) {
+  const qc = useQueryClient();
+  const assignFn = useServerFn(assignPortfolioOwner);
+  const assign = useMutation({
+    mutationFn: (userId: string | null) => assignFn({ data: { portfolioId, userId } }),
+    onSuccess: () => {
+      toast.success("Assignment updated");
+      qc.invalidateQueries({ queryKey: ["lender-portfolios"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <label className="mt-4 block text-[11px] uppercase tracking-wider text-muted-foreground">
+      Loan officer
+      <select
+        value={assignedUserId ?? ""}
+        disabled={assign.isPending}
+        onChange={(e) => assign.mutate(e.target.value || null)}
+        className="mt-1 w-full rounded-full border border-border bg-background px-3 py-1.5 text-sm normal-case tracking-normal text-foreground"
+      >
+        <option value="">Unassigned (house book)</option>
+        {members.map((m) => (
+          <option key={m.user_id} value={m.user_id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
