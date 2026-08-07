@@ -99,24 +99,34 @@ function AgentHome() {
           <>
             <div className="grid gap-4 sm:grid-cols-2">
               {data.portfolios.map((p: any) => (
-                <Link
+                <div
                   key={p.id}
-                  to="/agent/portfolio/$id"
-                  params={{ id: p.id }}
                   className="group rounded-xl border border-border bg-card p-5 transition hover:border-primary/40 hover:shadow-lg"
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold">{p.name}</p>
-                      <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        {p.client_count} households
-                      </p>
+                  <Link to="/agent/portfolio/$id" params={{ id: p.id }} className="block">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-semibold">{p.name}</p>
+                        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Users className="h-3.5 w-3.5" />
+                          {p.client_count} households
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
-                  </div>
-                </Link>
+                  </Link>
+                  {data.isManager && (
+                    <AssignAgentRow
+                      portfolioId={p.id}
+                      assignedUserId={p.assigned_user_id}
+                      members={((data.members as any[]) ?? []).filter(
+                        (m) => m.org_id === p.lender_org_id,
+                      )}
+                    />
+                  )}
+                </div>
               ))}
+
             </div>
 
             {data.portfolios.length === 0 && (
