@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_guard_consent_change() FROM PUBLIC, anon, authenticated;
