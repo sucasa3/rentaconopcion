@@ -85,9 +85,13 @@ function LenderHome() {
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Lender Portal</p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                Your portfolios
+                Team books
               </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                One book per loan officer. Officers land straight in their own book.
+              </p>
             </div>
+
             <div className="flex flex-wrap gap-2">
               <Link
                 to="/lender/campaigns"
