@@ -168,23 +168,30 @@ function LenderHome() {
 
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {data?.portfolios.map((p: any) => (
-                      <Link
+                      <div
                         key={p.id}
-                        to="/lender/portfolio/$id"
-                        params={{ id: p.id }}
                         className="rounded-3xl border border-border bg-card p-6 shadow-soft transition hover:border-primary"
                       >
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-primary" />
-                          <span className="text-xs text-muted-foreground">
-                            {data.orgs.find((o: any) => o.id === p.org_id)?.name}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-lg font-semibold">{p.name}</p>
-                        <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                          <Users className="h-3 w-3" /> {p.client_count} clients
-                        </p>
-                      </Link>
+                        <Link to="/lender/portfolio/$id" params={{ id: p.id }} className="block">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            <span className="text-xs text-muted-foreground">
+                              {data.orgs.find((o: any) => o.id === p.org_id)?.name}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-lg font-semibold">{p.name}</p>
+                          <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users className="h-3 w-3" /> {p.client_count} clients
+                          </p>
+                        </Link>
+                        <AssignRow
+                          portfolioId={p.id}
+                          assignedUserId={p.assigned_user_id}
+                          members={(data.members as any[]).filter(
+                            (m) => m.org_id === p.lender_org_id,
+                          )}
+                        />
+                      </div>
                     ))}
                     {data && data.portfolios.length === 0 && (
                       <p className="text-sm text-muted-foreground">
@@ -192,6 +199,7 @@ function LenderHome() {
                       </p>
                     )}
                   </div>
+
                 </>
               )}
             </>
