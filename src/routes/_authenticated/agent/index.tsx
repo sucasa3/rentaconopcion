@@ -1,9 +1,14 @@
+import { useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
-import { listAgentPortfolios, seedAgentDemo } from "@/lib/agent.functions";
+import {
+  assignAgentPortfolioOwner,
+  listAgentPortfolios,
+  seedAgentDemo,
+} from "@/lib/agent.functions";
 import { Home, Users, Sparkles, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/agent/")({
@@ -31,6 +36,16 @@ function AgentHome() {
     queryFn: () => listFn(),
   });
 
+  // Individual agents (non-brokers) land straight in their own book.
+  const myBook =
+    data && !data.isManager
+      ? ((data.portfolios as any[]).find((p) => p.assigned_user_id === data.myUserId) ??
+        ((data.portfolios as any[]).length === 1 ? (data.portfolios as any[])[0] : null))
+      : null;
+  useEffect(() => {
+    if (myBook) navigate({ to: "/agent/portfolio/$id", params: { id: myBook.id }, replace: true });
+  }, [myBook?.id]);
+
   const seed = useMutation({
     mutationFn: () => seedFn(),
     onSuccess: (r: any) => {
@@ -40,6 +55,7 @@ function AgentHome() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
 
   return (
     <div className="min-h-screen bg-background">
