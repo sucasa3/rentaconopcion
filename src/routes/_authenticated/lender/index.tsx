@@ -32,6 +32,17 @@ function LenderHome() {
   const [name, setName] = useState("");
   const [orgId, setOrgId] = useState("");
 
+  // Loan officers (non-managers) land straight in their own book.
+  const myBook =
+    data && !data.isManager
+      ? (data.portfolios as any[]).find((p) => p.assigned_user_id === data.myUserId) ??
+        ((data.portfolios as any[]).length === 1 ? (data.portfolios as any[])[0] : null)
+      : null;
+  useEffect(() => {
+    if (myBook) navigate({ to: "/lender/portfolio/$id", params: { id: myBook.id }, replace: true });
+  }, [myBook?.id]);
+
+
   const create = useMutation({
     mutationFn: () => createFn({ data: { orgId, name } }),
     onSuccess: () => {
