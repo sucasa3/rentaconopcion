@@ -150,3 +150,43 @@ function AgentHome() {
     </div>
   );
 }
+
+function AssignAgentRow({
+  portfolioId,
+  assignedUserId,
+  members,
+}: {
+  portfolioId: string;
+  assignedUserId: string | null;
+  members: Array<{ user_id: string; name: string }>;
+}) {
+  const qc = useQueryClient();
+  const assignFn = useServerFn(assignAgentPortfolioOwner);
+  const assign = useMutation({
+    mutationFn: (userId: string | null) => assignFn({ data: { portfolioId, userId } }),
+    onSuccess: () => {
+      toast.success("Assignment updated");
+      qc.invalidateQueries({ queryKey: ["agent-portfolios"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <label className="mt-4 block text-[11px] uppercase tracking-wider text-muted-foreground">
+      Agent
+      <select
+        value={assignedUserId ?? ""}
+        disabled={assign.isPending}
+        onChange={(e) => assign.mutate(e.target.value || null)}
+        className="mt-1 w-full rounded-full border border-border bg-background px-3 py-1.5 text-sm normal-case tracking-normal text-foreground"
+      >
+        <option value="">Unassigned (house book)</option>
+        {members.map((m) => (
+          <option key={m.user_id} value={m.user_id}>
+            {m.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
