@@ -174,7 +174,8 @@ export const respondToIntroduction = createServerFn({ method: "POST" })
       .from("introduction_requests")
       .update({
         status: data.approve ? "approved" : "declined",
-        response_note: data.responseNote ?? null,
+        outcome_note: data.responseNote ?? null,
+        responded_by: context.userId,
       })
       .eq("id", data.requestId);
     if (error) throw new Error(error.message);
