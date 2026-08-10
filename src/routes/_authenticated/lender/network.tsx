@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { LenderIntroductionsPanel } from "@/components/lender-introductions-panel";
 import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
+import { LenderCampaignProposalsPanel } from "@/components/lender-campaign-proposals-panel";
 import {
   getLenderNetwork,
   inviteAgent,
@@ -58,7 +59,9 @@ function LenderNetwork() {
 
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [tab, setTab] = useState<"agents" | "introductions" | "sponsorships">("agents");
+  const [tab, setTab] = useState<
+    "agents" | "introductions" | "campaigns" | "sponsorships"
+  >("agents");
 
   const invite = useMutation({
     mutationFn: () => inviteFn({ data: { lenderOrgId: activeOrgId, email: inviteEmail } }),
@@ -110,6 +113,7 @@ function LenderNetwork() {
               [
                 ["agents", "Agents"],
                 ["introductions", "Introductions"],
+                ["campaigns", "Co-branded campaigns"],
                 ["sponsorships", "Sponsorships"],
               ] as const
             ).map(([key, label]) => (
@@ -128,6 +132,7 @@ function LenderNetwork() {
           </div>
 
           {tab === "introductions" && <LenderIntroductionsPanel orgId={activeOrgId} />}
+          {tab === "campaigns" && <LenderCampaignProposalsPanel orgId={activeOrgId} />}
           {tab === "sponsorships" && <LenderSponsorshipsPanel orgId={activeOrgId} />}
 
           {tab === "agents" && (
