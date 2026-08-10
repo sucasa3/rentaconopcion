@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { LenderIntroductionsPanel } from "@/components/lender-introductions-panel";
 import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
+import { LenderCampaignProposalsPanel } from "@/components/lender-campaign-proposals-panel";
 import {
   getLenderNetwork,
   inviteAgent,
