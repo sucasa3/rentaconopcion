@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { getPortfolio, listMyPortfolios } from "@/lib/lender.functions";
-import { ArrowLeft, Users, Mail, Upload } from "lucide-react";
+import { ArrowLeft, Users, Mail, Upload, Handshake } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
   head: () => ({
