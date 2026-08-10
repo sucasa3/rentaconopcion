@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { buildMaintenanceTimeline, type TimelineItem } from "@/lib/maintenance-rules";
+import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
