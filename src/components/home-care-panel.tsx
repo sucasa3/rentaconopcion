@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { buildMaintenanceTimeline, type TimelineItem } from "@/lib/maintenance-rules";
+import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
@@ -210,6 +211,7 @@ export function HomeCarePanel() {
                     {(item.status === "overdue" || item.status === "due_soon") && (
                       <Link
                         to="/request"
+                        search={{ category: toCategorySlug(item.category ?? item.label) }}
                         className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
                       >
                         Get quotes

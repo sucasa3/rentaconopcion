@@ -7,6 +7,7 @@ import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { getRecommendedPros } from "@/lib/pros.functions";
 import { buildMaintenanceTimeline } from "@/lib/maintenance-rules";
+import { toCategorySlug } from "@/lib/mock-data";
 
 type Need = { category: string; reason: string; rank: number };
 
@@ -168,6 +169,7 @@ export function RecommendedProsCard() {
 
                 <Link
                   to="/request"
+                  search={{ category: toCategorySlug(need.category) }}
                   className="mt-3 inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
                 >
                   Request quotes <ArrowRight className="h-3 w-3" />
