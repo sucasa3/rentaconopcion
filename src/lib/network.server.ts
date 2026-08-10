@@ -441,8 +441,8 @@ export async function sponsorshipSummary(supabase: any, orgId: string, orgType: 
     const { data: clients } = await supabase
       .from("lender_portfolio_clients")
       .select("id, client_name, city, state")
-      .in("id", named.map((r: any) => r.portfolio_client_id));
-    const map = new Map((clients ?? []).map((c: any) => [c.id, c]));
+      .in("id", named.map((r: any) => r.portfolio_client_id as string));
+    const map = new Map<string, any>((clients ?? []).map((c: any) => [c.id as string, c]));
     named = named.map((r: any) => ({
       ...r,
       client_name: map.get(r.portfolio_client_id)?.client_name ?? null,
