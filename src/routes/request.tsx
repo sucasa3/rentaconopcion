@@ -32,8 +32,11 @@ function parseBudget(s: string): { min?: number; max?: number } {
 
 function RequestFlow() {
   const navigate = useNavigate();
-  const { category: initial } = Route.useSearch();
-  const [step, setStep] = useState(0);
+  const { category: initialParam } = Route.useSearch();
+  // A category handed over from the dashboard skips the picker and drops the
+  // homeowner straight on "Tell us about the project".
+  const initial = toCategorySlug(initialParam);
+  const [step, setStep] = useState(initial ? 1 : 0);
   const [category, setCategory] = useState<string | undefined>(initial);
   const [description, setDescription] = useState("");
   const [budget, setBudget] = useState("");
