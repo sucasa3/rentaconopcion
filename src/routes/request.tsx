@@ -46,6 +46,7 @@ function RequestFlow() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const createFn = useServerFn(createServiceRequest);
+  const selected = SERVICE_CATEGORIES.find((c) => c.slug === category);
 
   const total = 5;
   const next = () => setStep((s) => Math.min(s + 1, total - 1));
