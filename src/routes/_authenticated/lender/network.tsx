@@ -58,6 +58,7 @@ function LenderNetwork() {
 
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [tab, setTab] = useState<"agents" | "introductions" | "sponsorships">("agents");
 
   const invite = useMutation({
     mutationFn: () => inviteFn({ data: { lenderOrgId: activeOrgId, email: inviteEmail } }),
@@ -104,61 +105,91 @@ function LenderNetwork() {
             </select>
           )}
 
-          {totals && (
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Stat label="Connected agents" value={totals.agents} />
-              <Stat label="Homeowners in network" value={totals.homeowners} />
-              <Stat label="Open opportunities" value={totals.opportunities} />
-            </div>
-          )}
-
-          <div className="rounded-3xl border border-border bg-card p-5 shadow-soft">
-            <p className="text-sm font-semibold">Invite an agent</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              They accept from their own dashboard. You'll only ever see de-identified rows.
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <input
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="agent@brokerage.com"
-                className="rounded-full border border-border bg-background px-3 py-2 text-sm"
-              />
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["agents", "Agents"],
+                ["introductions", "Introductions"],
+                ["sponsorships", "Sponsorships"],
+              ] as const
+            ).map(([key, label]) => (
               <button
-                disabled={!inviteEmail || !activeOrgId || invite.isPending}
-                onClick={() => invite.mutate()}
-                className="inline-flex items-center justify-center gap-1 rounded-full gradient-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                key={key}
+                onClick={() => setTab(key)}
+                className={`rounded-full border px-4 py-1.5 text-xs font-semibold transition ${
+                  tab === key
+                    ? "border-transparent gradient-brand text-white"
+                    : "border-border hover:bg-muted"
+                }`}
               >
-                <Mail className="h-3 w-3" /> {invite.isPending ? "Sending…" : "Send invite"}
+                {label}
               </button>
-            </div>
-          </div>
-
-          {isLoading && <p className="text-sm text-muted-foreground">Loading network…</p>}
-
-          {net && net.agents.length === 0 && (
-            <div className="rounded-3xl border border-dashed border-border p-8 text-center">
-              <Handshake className="mx-auto h-6 w-6 text-muted-foreground" />
-              <p className="mt-2 text-sm font-medium">No agent connections yet</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Invite an agent above to start seeing opportunity volume in their book.
-              </p>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {(net?.agents ?? []).map((a: any) => (
-              <AgentCard
-                key={a.connection_id}
-                agent={a}
-                lenderOrgId={activeOrgId}
-                open={openAgent === a.connection_id}
-                onToggle={() =>
-                  setOpenAgent(openAgent === a.connection_id ? null : a.connection_id)
-                }
-              />
             ))}
           </div>
+
+          {tab === "introductions" && <LenderIntroductionsPanel orgId={activeOrgId} />}
+          {tab === "sponsorships" && <LenderSponsorshipsPanel orgId={activeOrgId} />}
+
+          {tab === "agents" && (
+            <>
+              {totals && (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Stat label="Connected agents" value={totals.agents} />
+                  <Stat label="Homeowners in network" value={totals.homeowners} />
+                  <Stat label="Open opportunities" value={totals.opportunities} />
+                </div>
+              )}
+
+              <div className="rounded-3xl border border-border bg-card p-5 shadow-soft">
+                <p className="text-sm font-semibold">Invite an agent</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  They accept from their own dashboard. You'll only ever see de-identified rows.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                  <input
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="agent@brokerage.com"
+                    className="rounded-full border border-border bg-background px-3 py-2 text-sm"
+                  />
+                  <button
+                    disabled={!inviteEmail || !activeOrgId || invite.isPending}
+                    onClick={() => invite.mutate()}
+                    className="inline-flex items-center justify-center gap-1 rounded-full gradient-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    <Mail className="h-3 w-3" /> {invite.isPending ? "Sending…" : "Send invite"}
+                  </button>
+                </div>
+              </div>
+
+              {isLoading && <p className="text-sm text-muted-foreground">Loading network…</p>}
+
+              {net && net.agents.length === 0 && (
+                <div className="rounded-3xl border border-dashed border-border p-8 text-center">
+                  <Handshake className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="mt-2 text-sm font-medium">No agent connections yet</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Invite an agent above to start seeing opportunity volume in their book.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {(net?.agents ?? []).map((a: any) => (
+                  <AgentCard
+                    key={a.connection_id}
+                    agent={a}
+                    lenderOrgId={activeOrgId}
+                    open={openAgent === a.connection_id}
+                    onToggle={() =>
+                      setOpenAgent(openAgent === a.connection_id ? null : a.connection_id)
+                    }
+                  />
+                ))}
+              </div>
+            </>
+          )}
+
         </div>
       </main>
       <SiteFooter />
