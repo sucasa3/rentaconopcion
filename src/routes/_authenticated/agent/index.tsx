@@ -71,12 +71,21 @@ function AgentHome() {
             tenure, equity, permit activity, tax pressure and listing history — and drafts the
             opening line for you.
           </p>
-          <Link
-            to="/agent/campaigns"
-            className="mt-4 inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
-          >
-            Manage client campaigns
-          </Link>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              to="/agent/campaigns"
+              className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
+            >
+              Manage client campaigns
+            </Link>
+            <Link
+              to="/agent/network"
+              className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-xs font-semibold hover:bg-muted"
+            >
+              Lender network &amp; approvals
+            </Link>
+          </div>
+
         </div>
 
         {isLoading && <p className="text-muted-foreground">Loading…</p>}

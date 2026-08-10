@@ -434,12 +434,21 @@ function AgentPortfolio() {
       <SiteHeader />
       <main className="flex-1 px-5 py-8">
         <div className="mx-auto max-w-6xl space-y-6">
-          <Link
-            to="/agent"
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary"
-          >
-            <ArrowLeft className="h-3 w-3" /> All client lists
-          </Link>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              to="/agent"
+              className="inline-flex items-center gap-1 text-xs font-medium text-primary"
+            >
+              <ArrowLeft className="h-3 w-3" /> All client lists
+            </Link>
+            <Link
+              to="/agent/network"
+              className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+            >
+              Lender network &amp; approvals
+            </Link>
+          </div>
+
 
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
