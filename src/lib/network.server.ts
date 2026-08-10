@@ -569,7 +569,7 @@ export async function listCampaignApprovalRows(supabase: any, orgId: string, org
   const column = orgType === "agent" ? "agent_org_id" : "lender_org_id";
   const { data, error } = await supabase
     .from("campaign_approvals")
-    .select("id, lender_org_id, agent_org_id, campaign_id, category, audience_size, status, note, response_note, created_at, responded_at, campaigns(name, key)")
+    .select("id, lender_org_id, agent_org_id, campaign_id, opportunity_category, proposed_client_ids, approved_client_ids, status, note, created_at, responded_at, campaigns(name, key)")
     .eq(column, orgId)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -577,7 +577,9 @@ export async function listCampaignApprovalRows(supabase: any, orgId: string, org
 
   const rows = data ?? [];
   if (!rows.length) return [];
-  const orgIds = [...new Set(rows.flatMap((r: any) => [r.lender_org_id, r.agent_org_id]))];
+  const orgIds = [
+    ...new Set(rows.flatMap((r: any) => [r.lender_org_id as string, r.agent_org_id as string])),
+  ] as string[];
   const { data: orgs } = await supabaseAdmin.from("lender_orgs").select("id, name").in("id", orgIds);
   const orgNames = new Map<string, string>((orgs ?? []).map((o: any) => [o.id, o.name]));
 
@@ -589,11 +591,11 @@ export async function listCampaignApprovalRows(supabase: any, orgId: string, org
     agent_org_name: orgNames.get(r.agent_org_id) ?? "Agent",
     campaign_id: r.campaign_id,
     campaign_name: r.campaigns?.name ?? "Campaign",
-    category: r.category,
-    audience_size: r.audience_size,
+    category: r.opportunity_category ?? null,
+    proposed_count: (r.proposed_client_ids ?? []).length,
+    approved_count: (r.approved_client_ids ?? []).length,
     status: r.status,
     note: r.note,
-    response_note: r.response_note,
     created_at: r.created_at,
     responded_at: r.responded_at,
   }));
@@ -601,7 +603,8 @@ export async function listCampaignApprovalRows(supabase: any, orgId: string, org
 
 /**
  * A lender proposes sending a campaign to an agent's homeowners in one
- * opportunity category. Nothing sends until the agent approves.
+ * opportunity category. Nothing sends until the agent approves, and the agent
+ * can approve a subset of the proposed audience.
  */
 export async function proposeCampaignAudienceRow(
   supabase: any,
@@ -610,32 +613,36 @@ export async function proposeCampaignAudienceRow(
   campaignId: string,
   category: string | null,
   note: string | null,
-  createdBy: string,
+  proposedBy: string,
 ) {
-  await assertConnection(supabase, lenderOrgId, agentOrgId);
+  const connectionId = await assertConnection(supabase, lenderOrgId, agentOrgId);
 
-  let countQuery = supabaseAdmin
+  let audienceQuery = supabaseAdmin
     .from("homeowner_opportunities")
-    .select("id", { count: "exact", head: true })
+    .select("portfolio_client_id")
     .eq("org_id", agentOrgId)
     .eq("state", "open");
-  if (category) countQuery = countQuery.eq("category", category);
-  const { count } = await countQuery;
+  if (category) audienceQuery = audienceQuery.eq("category", category);
+  const { data: audience } = await audienceQuery;
+  const proposed = [
+    ...new Set((audience ?? []).map((a: any) => a.portfolio_client_id as string)),
+  ];
 
   const { data, error } = await supabase
     .from("campaign_approvals")
     .insert({
+      connection_id: connectionId,
       lender_org_id: lenderOrgId,
       agent_org_id: agentOrgId,
       campaign_id: campaignId,
-      category,
-      audience_size: count ?? 0,
+      opportunity_category: category,
+      proposed_client_ids: proposed,
       note,
       status: "pending",
-      created_by: createdBy,
+      proposed_by: proposedBy,
     })
-    .select("id, status, audience_size")
+    .select("id, status, proposed_client_ids")
     .single();
   if (error) throw new Error(error.message);
-  return data;
+  return { id: data.id, status: data.status, proposed_count: proposed.length };
 }
