@@ -249,7 +249,9 @@ export async function deidentifiedOpportunities(
     .select("id, opportunity_id, status")
     .eq("lender_org_id", lenderOrgId)
     .in("opportunity_id", rows.map((o: any) => o.id));
-  const requestByOpp = new Map((requests ?? []).map((r: any) => [r.opportunity_id, r]));
+  const requestByOpp = new Map<string, { id: string; status: string }>(
+    (requests ?? []).map((r: any) => [r.opportunity_id as string, { id: r.id, status: r.status }]),
+  );
 
   return rows.map((o: any) => {
     const loc = locations.get(o.portfolio_client_id);
