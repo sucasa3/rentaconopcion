@@ -26,6 +26,7 @@ import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
+import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
@@ -124,6 +125,12 @@ const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
   path: '/requests/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLenderNetworkRoute =
+  AuthenticatedLenderNetworkRouteImport.update({
+    id: '/network',
+    path: '/network',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
 const AuthenticatedLenderCampaignsRoute =
   AuthenticatedLenderCampaignsRouteImport.update({
     id: '/campaigns',
@@ -203,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
+  '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
+  '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
@@ -260,6 +269,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
+  '/_authenticated/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/agent/campaigns'
     | '/lender/campaigns'
+    | '/lender/network'
     | '/requests/$id'
     | '/agent/'
     | '/lender/'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/agent/campaigns'
     | '/lender/campaigns'
+    | '/lender/network'
     | '/requests/$id'
     | '/agent'
     | '/lender'
@@ -347,6 +359,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/agent/campaigns'
     | '/_authenticated/lender/campaigns'
+    | '/_authenticated/lender/network'
     | '/_authenticated/requests/$id'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
@@ -499,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRequestsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lender/network': {
+      id: '/_authenticated/lender/network'
+      path: '/network'
+      fullPath: '/lender/network'
+      preLoaderRoute: typeof AuthenticatedLenderNetworkRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
     '/_authenticated/lender/campaigns': {
       id: '/_authenticated/lender/campaigns'
       path: '/campaigns'
@@ -620,6 +640,7 @@ const AuthenticatedLenderPortfolioIdRouteWithChildren =
 
 interface AuthenticatedLenderRouteRouteChildren {
   AuthenticatedLenderCampaignsRoute: typeof AuthenticatedLenderCampaignsRoute
+  AuthenticatedLenderNetworkRoute: typeof AuthenticatedLenderNetworkRoute
   AuthenticatedLenderIndexRoute: typeof AuthenticatedLenderIndexRoute
   AuthenticatedLenderPortfolioIdRoute: typeof AuthenticatedLenderPortfolioIdRouteWithChildren
 }
@@ -627,6 +648,7 @@ interface AuthenticatedLenderRouteRouteChildren {
 const AuthenticatedLenderRouteRouteChildren: AuthenticatedLenderRouteRouteChildren =
   {
     AuthenticatedLenderCampaignsRoute: AuthenticatedLenderCampaignsRoute,
+    AuthenticatedLenderNetworkRoute: AuthenticatedLenderNetworkRoute,
     AuthenticatedLenderIndexRoute: AuthenticatedLenderIndexRoute,
     AuthenticatedLenderPortfolioIdRoute:
       AuthenticatedLenderPortfolioIdRouteWithChildren,
