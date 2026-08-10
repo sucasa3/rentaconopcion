@@ -190,6 +190,40 @@ export const revealIntroduction = createServerFn({ method: "POST" })
     revealApprovedContact(context.supabase, context.userId, data.requestId),
   );
 
+/** The requesting lender records how an approved introduction turned out. */
+export const recordIntroductionOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        requestId: uuid,
+        outcome: z.enum(["connected", "meeting_set", "closed", "no_fit"]),
+        note: z.string().max(600).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("introduction_requests")
+      .update({ outcome: data.outcome, outcome_note: data.note ?? null })
+      .eq("id", data.requestId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** The requesting lender withdraws a still-pending introduction request. */
+export const withdrawIntroduction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ requestId: uuid }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("introduction_requests")
+      .update({ status: "withdrawn" })
+      .eq("id", data.requestId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // --- Sponsored premium profiles -------------------------------------------
 
 export const getSponsorships = createServerFn({ method: "POST" })
