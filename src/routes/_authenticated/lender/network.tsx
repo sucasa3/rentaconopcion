@@ -59,7 +59,9 @@ function LenderNetwork() {
 
   const [openAgent, setOpenAgent] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [tab, setTab] = useState<"agents" | "introductions" | "sponsorships">("agents");
+  const [tab, setTab] = useState<
+    "agents" | "introductions" | "campaigns" | "sponsorships"
+  >("agents");
 
   const invite = useMutation({
     mutationFn: () => inviteFn({ data: { lenderOrgId: activeOrgId, email: inviteEmail } }),
@@ -111,6 +113,7 @@ function LenderNetwork() {
               [
                 ["agents", "Agents"],
                 ["introductions", "Introductions"],
+                ["campaigns", "Co-branded campaigns"],
                 ["sponsorships", "Sponsorships"],
               ] as const
             ).map(([key, label]) => (
