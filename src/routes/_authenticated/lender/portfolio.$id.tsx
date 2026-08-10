@@ -54,6 +54,14 @@ function PortfolioLayout() {
             <Tab to="/lender/portfolio/$id" id={id} exact label="Clients" icon={Users} />
             <Tab to="/lender/portfolio/$id/campaigns" id={id} label="Campaigns" icon={Mail} />
             <Tab to="/lender/portfolio/$id/import" id={id} label="Add clients" icon={Upload} />
+            <Link
+              to="/lender/network"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+              activeProps={{ className: "bg-primary/10 text-primary" }}
+            >
+              <Handshake className="h-3.5 w-3.5" />
+              Agent network
+            </Link>
           </nav>
 
           <Outlet />
