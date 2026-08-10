@@ -473,7 +473,7 @@ export async function allocateSponsorshipRow(
       portfolio_client_id: portfolioClientId,
       status: "active",
       started_at: new Date().toISOString(),
-      created_by: createdBy,
+      allocated_by: createdBy,
     })
     .select("id")
     .single();
