@@ -122,11 +122,9 @@ export function HomeCarePanel() {
         <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-growth" />
         <p className="text-xs leading-relaxed text-muted-foreground">
           <span className="font-medium text-foreground">
-            Every item you fix or log lifts your Home Score.
+            Update your home. Improve your Home Score.
           </span>{" "}
-          Take care of something overdue, or tell us the year a system was replaced, and we
-          recalculate right away — the more we know, the more accurate your score and
-          recommendations get.
+          The more we know, the smarter your recommendations.
         </p>
       </div>
 
