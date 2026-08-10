@@ -77,3 +77,35 @@ export const ADMIN_PROS = [
   { name: "BluePipe Plumbing", plan: "Pro", claimed: 28, rating: 4.8 },
   { name: "Evergreen Landscaping", plan: "Founding", claimed: 19, rating: 4.9 },
 ];
+
+/**
+ * Best-effort map from a free-text service/maintenance category (e.g. "HVAC",
+ * "Water Heater", "Roof") to a service-request category slug, so a homeowner
+ * lands on the request form with their service already selected.
+ */
+export function toCategorySlug(input?: string | null): string | undefined {
+  if (!input) return undefined;
+  const s = input.trim().toLowerCase();
+  if (!s) return undefined;
+  const direct = SERVICE_CATEGORIES.find(
+    (c) => c.slug === s || c.name.toLowerCase() === s,
+  );
+  if (direct) return direct.slug;
+  const keywords: Array<[RegExp, string]> = [
+    [/hvac|furnace|air condition|ac\b|heat pump|cooling|heating/, "hvac"],
+    [/plumb|water heater|pipe|leak|drain|faucet|sewer/, "plumbing"],
+    [/roof|gutter|shingle/, "roofing"],
+    [/electric|panel|wiring|breaker/, "electrical"],
+    [/paint|siding|exterior|trim/, "painting"],
+    [/landscap|lawn|yard|tree|irrigation/, "landscaping"],
+    [/mold|water damage|flood/, "water-mold"],
+    [/fire|storm|restoration/, "restoration"],
+    [/floor|carpet|tile/, "flooring"],
+    [/junk|debris|haul/, "junk-removal"],
+    [/mov(e|ing)/, "movers"],
+    [/mortgage|refinance|heloc|lend/, "mortgage-lender"],
+    [/agent|realtor|listing/, "real-estate-agent"],
+  ];
+  for (const [re, slug] of keywords) if (re.test(s)) return slug;
+  return "handyman";
+}
