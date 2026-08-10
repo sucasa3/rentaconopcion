@@ -6,7 +6,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // Access: an "agent" is a member of a lender_org whose org_type = 'agent'.
 // Admins can see everything.
 // ---------------------------------------------------------------------------
-async function agentOrgIds(supabase: any, userId: string): Promise<{ ids: string[]; isAdmin: boolean }> {
+async function agentOrgIds(
+  supabase: any,
+  userId: string,
+  opts: { allowEmpty?: boolean } = {},
+): Promise<{ ids: string[]; isAdmin: boolean }> {
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   if (isAdmin) {
     const { data } = await supabase.from("lender_orgs").select("id").eq("org_type", "agent");
@@ -19,16 +23,21 @@ async function agentOrgIds(supabase: any, userId: string): Promise<{ ids: string
   const ids = (members ?? [])
     .filter((m: any) => m.lender_orgs?.org_type === "agent")
     .map((m: any) => m.lender_org_id);
-  if (!ids.length) throw new Error("Forbidden: agent access required");
+  if (!ids.length && !opts.allowEmpty) throw new Error("Forbidden: agent access required");
   return { ids, isAdmin: false };
 }
 
 export const listAgentPortfolios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { ids, isAdmin } = await agentOrgIds(context.supabase, context.userId);
+    // Don't throw here: this is the agent portal landing page, and a signed-in
+    // user without agent access should see the empty state, not a crash.
+    const { ids, isAdmin } = await agentOrgIds(context.supabase, context.userId, {
+      allowEmpty: true,
+    });
     if (!ids.length)
       return { orgs: [], portfolios: [], members: [] as any[], isManager: isAdmin, myUserId: context.userId };
+
 
     const { data: orgs } = await context.supabase
       .from("lender_orgs")
