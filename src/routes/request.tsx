@@ -93,6 +93,32 @@ function RequestFlow() {
             </div>
           </div>
 
+          {selected && (
+            <div className="mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+              <span
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${selected.color} text-white`}
+              >
+                <selected.icon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                  Service requested
+                </p>
+                <p className="truncate text-sm font-semibold">{selected.name}</p>
+              </div>
+              {step > 0 && (
+                <button
+                  onClick={() => setStep(0)}
+                  className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-semibold hover:bg-secondary"
+                >
+                  Change
+                </button>
+              )}
+            </div>
+          )}
+
+
+
           <div className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
             {step === 0 && (
               <div>
