@@ -94,6 +94,12 @@ function LenderHome() {
 
             <div className="flex flex-wrap gap-2">
               <Link
+                to="/lender/network"
+                className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
+              >
+                Agent network
+              </Link>
+              <Link
                 to="/lender/campaigns"
                 className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted"
               >
