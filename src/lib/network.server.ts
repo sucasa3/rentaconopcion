@@ -327,3 +327,131 @@ export async function revealApprovedContact(
     zip: client.zip,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Invitations (agent side)
+// ---------------------------------------------------------------------------
+
+/**
+ * Invitations addressed to the caller's own email that are not yet attached to
+ * an agent organization. Requires an elevated read because the caller is not
+ * yet a party to the connection row; scoped strictly to their own email.
+ */
+export async function pendingInvitesForUser(userId: string, email: string | null) {
+  if (!email) return [];
+  const { data } = await supabaseAdmin
+    .from("agent_lender_connections")
+    .select("id, lender_org_id, invited_email, invited_name, message, created_at, lender_orgs!agent_lender_connections_lender_org_id_fkey(name)")
+    .is("agent_org_id", null)
+    .eq("status", "invited")
+    .ilike("invited_email", email);
+  return (data ?? []).map((c: any) => ({
+    id: c.id,
+    lender_org_id: c.lender_org_id,
+    lender_org_name: c.lender_orgs?.name ?? "Lender",
+    invited_name: c.invited_name ?? null,
+    message: c.message ?? null,
+    created_at: c.created_at,
+  }));
+}
+
+/** Accept (or decline) an invitation addressed to the caller's email. */
+export async function respondToInvite(
+  userId: string,
+  email: string | null,
+  connectionId: string,
+  agentOrgId: string,
+  accept: boolean,
+) {
+  const { data: conn } = await supabaseAdmin
+    .from("agent_lender_connections")
+    .select("id, invited_email, agent_org_id, status, lender_org_id")
+    .eq("id", connectionId)
+    .maybeSingle();
+  if (!conn) throw new Error("Invitation not found");
+
+  const addressedToMe =
+    conn.agent_org_id === agentOrgId ||
+    (!!email && !!conn.invited_email && conn.invited_email.toLowerCase() === email.toLowerCase());
+  if (!addressedToMe) throw new Error("This invitation is not addressed to you");
+  if (conn.status !== "invited") throw new Error("This invitation has already been answered");
+
+  const { error } = await supabaseAdmin
+    .from("agent_lender_connections")
+    .update({
+      agent_org_id: agentOrgId,
+      status: accept ? "connected" : "declined",
+      responded_by: userId,
+      responded_at: new Date().toISOString(),
+    })
+    .eq("id", connectionId);
+  if (error) throw new Error(error.message);
+
+  return { id: connectionId, status: accept ? "connected" : "declined" };
+}
+
+/** Lender partners visible to an agent organization. */
+export async function agentLenderPartners(supabase: any, agentOrgId: string) {
+  const { data, error } = await supabase
+    .from("agent_lender_connections")
+    .select("id, lender_org_id, status, created_at, lender_orgs!agent_lender_connections_lender_org_id_fkey(name, plan_key, sponsored_allocation, contact_name, contact_phone, reply_to_email, logo_url)")
+    .eq("agent_org_id", agentOrgId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((c: any) => ({
+    connection_id: c.id,
+    lender_org_id: c.lender_org_id,
+    lender_org_name: c.lender_orgs?.name ?? "Lender",
+    status: c.status,
+    contact_name: c.lender_orgs?.contact_name ?? null,
+    contact_phone: c.lender_orgs?.contact_phone ?? null,
+    contact_email: c.lender_orgs?.reply_to_email ?? null,
+    logo_url: c.lender_orgs?.logo_url ?? null,
+    created_at: c.created_at,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Sponsored premium profiles
+// ---------------------------------------------------------------------------
+
+export async function sponsorshipSummary(supabase: any, orgId: string, orgType: string) {
+  const column = orgType === "agent" ? "agent_org_id" : "sponsor_org_id";
+  const { data: rows, error } = await supabase
+    .from("sponsored_profiles")
+    .select("id, sponsor_org_id, agent_org_id, portfolio_client_id, status, started_at, grace_until, ended_at")
+    .eq(column, orgId)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const { data: org } = await supabase
+    .from("lender_orgs")
+    .select("sponsored_allocation, plan_key, plan_tiers(sponsored_allocation)")
+    .eq("id", orgId)
+    .maybeSingle();
+
+  const unlimited = !!org?.plan_key && org?.plan_tiers?.sponsored_allocation == null;
+  const allocation = unlimited ? null : (org?.sponsored_allocation ?? 0);
+  const used = (rows ?? []).filter((r: any) => r.status !== "ended").length;
+
+  // Client names are safe here: the agent owns these records, and a sponsoring
+  // lender only ever sees counts plus which of its own sponsorships are live.
+  let named: any[] = rows ?? [];
+  if (orgType === "agent" && named.length) {
+    const { data: clients } = await supabase
+      .from("lender_portfolio_clients")
+      .select("id, client_name, city, state")
+      .in("id", named.map((r: any) => r.portfolio_client_id));
+    const map = new Map((clients ?? []).map((c: any) => [c.id, c]));
+    named = named.map((r: any) => ({
+      ...r,
+      client_name: map.get(r.portfolio_client_id)?.client_name ?? null,
+      city: map.get(r.portfolio_client_id)?.city ?? null,
+      state: map.get(r.portfolio_client_id)?.state ?? null,
+    }));
+  } else {
+    named = named.map((r: any) => ({ ...r, client_name: null }));
+  }
+
+  return { allocation, unlimited, used, remaining: allocation == null ? null : Math.max(0, allocation - used), sponsorships: named };
+}
