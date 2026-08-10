@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { LenderIntroductionsPanel } from "@/components/lender-introductions-panel";
+import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
 import {
   getLenderNetwork,
   inviteAgent,
