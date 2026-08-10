@@ -132,6 +132,7 @@ function LenderNetwork() {
           </div>
 
           {tab === "introductions" && <LenderIntroductionsPanel orgId={activeOrgId} />}
+          {tab === "campaigns" && <LenderCampaignProposalsPanel orgId={activeOrgId} />}
           {tab === "sponsorships" && <LenderSponsorshipsPanel orgId={activeOrgId} />}
 
           {tab === "agents" && (
