@@ -268,33 +268,50 @@ export const proposeCampaignAudience = createServerFn({ method: "POST" })
     );
   });
 
-/** The agent approves or declines a lender-proposed campaign audience. */
+/**
+ * The agent approves or declines a lender-proposed campaign audience, and may
+ * approve only a subset of the proposed homeowners.
+ */
 export const respondToCampaignAudience = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
     z
-      .object({ id: uuid, approve: z.boolean(), responseNote: z.string().max(600).optional() })
+      .object({
+        id: uuid,
+        approve: z.boolean(),
+        approvedClientIds: z.array(uuid).optional(),
+      })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { data: row, error: readErr } = await context.supabase
       .from("campaign_approvals")
-      .select("id, agent_org_id")
+      .select("id, agent_org_id, proposed_client_ids")
       .eq("id", data.id)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
     if (!row) throw new Error("Campaign approval not found");
     await assertMember(context.supabase, context.userId, row.agent_org_id);
 
+    const proposed: string[] = row.proposed_client_ids ?? [];
+    const approved = data.approve
+      ? (data.approvedClientIds ?? proposed).filter((id) => proposed.includes(id))
+      : [];
+
     const { error } = await context.supabase
       .from("campaign_approvals")
       .update({
         status: data.approve ? "approved" : "declined",
-        response_note: data.responseNote ?? null,
+        approved_client_ids: approved,
+        responded_by: context.userId,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
-    return { id: data.id, status: data.approve ? "approved" : "declined" };
+    return {
+      id: data.id,
+      status: data.approve ? "approved" : "declined",
+      approved_count: approved.length,
+    };
   });
 
 // --- Plans -----------------------------------------------------------------
