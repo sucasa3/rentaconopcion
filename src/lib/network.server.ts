@@ -455,3 +455,184 @@ export async function sponsorshipSummary(supabase: any, orgId: string, orgType: 
 
   return { allocation, unlimited, used, remaining: allocation == null ? null : Math.max(0, allocation - used), sponsorships: named };
 }
+
+/** Allocate a sponsored premium profile to one of the agent's clients. */
+export async function allocateSponsorshipRow(
+  supabase: any,
+  sponsorOrgId: string,
+  agentOrgId: string,
+  portfolioClientId: string,
+  createdBy: string,
+) {
+  await assertConnection(supabase, sponsorOrgId, agentOrgId);
+  const { data, error } = await supabase
+    .from("sponsored_profiles")
+    .insert({
+      sponsor_org_id: sponsorOrgId,
+      agent_org_id: agentOrgId,
+      portfolio_client_id: portfolioClientId,
+      status: "active",
+      started_at: new Date().toISOString(),
+      created_by: createdBy,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Introductions
+// ---------------------------------------------------------------------------
+
+/** Introduction requests for an org, from either side of the relationship. */
+export async function listIntroductionRows(supabase: any, orgId: string, orgType: string) {
+  const column = orgType === "agent" ? "agent_org_id" : "lender_org_id";
+  const { data, error } = await supabase
+    .from("introduction_requests")
+    .select("id, lender_org_id, agent_org_id, portfolio_client_id, opportunity_id, category, status, note, response_note, created_at, responded_at, outcome")
+    .eq(column, orgId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(error.message);
+  const rows = data ?? [];
+  if (!rows.length) return [];
+
+  const orgIds = [...new Set(rows.flatMap((r: any) => [r.lender_org_id, r.agent_org_id]))];
+  const { data: orgs } = await supabaseAdmin
+    .from("lender_orgs")
+    .select("id, name")
+    .in("id", orgIds);
+  const orgNames = new Map<string, string>((orgs ?? []).map((o: any) => [o.id, o.name]));
+
+  // The agent (owner of the record) sees who the request is about; the lender
+  // sees only the banded opportunity until the agent approves.
+  let clientNames = new Map<string, string | null>();
+  if (orgType === "agent") {
+    const { data: clients } = await supabase
+      .from("lender_portfolio_clients")
+      .select("id, client_name")
+      .in("id", rows.map((r: any) => r.portfolio_client_id));
+    clientNames = new Map((clients ?? []).map((c: any) => [c.id, c.client_name]));
+  }
+
+  return rows.map((r: any) => ({
+    ...r,
+    lender_org_name: orgNames.get(r.lender_org_id) ?? "Lender",
+    agent_org_name: orgNames.get(r.agent_org_id) ?? "Agent",
+    client_name: orgType === "agent" ? (clientNames.get(r.portfolio_client_id) ?? null) : null,
+  }));
+}
+
+/** A lender asks the agent to introduce it on a specific opportunity. */
+export async function createIntroductionRequest(
+  supabase: any,
+  lenderOrgId: string,
+  opportunityId: string,
+  note: string | null,
+  createdBy: string,
+) {
+  const { data: opp } = await supabaseAdmin
+    .from("homeowner_opportunities")
+    .select("id, org_id, portfolio_client_id, category")
+    .eq("id", opportunityId)
+    .maybeSingle();
+  if (!opp) throw new Error("Opportunity not found");
+  await assertConnection(supabase, lenderOrgId, opp.org_id);
+
+  const { data, error } = await supabase
+    .from("introduction_requests")
+    .insert({
+      lender_org_id: lenderOrgId,
+      agent_org_id: opp.org_id,
+      opportunity_id: opp.id,
+      portfolio_client_id: opp.portfolio_client_id,
+      category: opp.category,
+      note,
+      status: "pending",
+      created_by: createdBy,
+    })
+    .select("id, status")
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Campaign approvals
+// ---------------------------------------------------------------------------
+
+export async function listCampaignApprovalRows(supabase: any, orgId: string, orgType: string) {
+  const column = orgType === "agent" ? "agent_org_id" : "lender_org_id";
+  const { data, error } = await supabase
+    .from("campaign_approvals")
+    .select("id, lender_org_id, agent_org_id, campaign_id, category, audience_size, status, note, response_note, created_at, responded_at, campaigns(name, key)")
+    .eq(column, orgId)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw new Error(error.message);
+
+  const rows = data ?? [];
+  if (!rows.length) return [];
+  const orgIds = [...new Set(rows.flatMap((r: any) => [r.lender_org_id, r.agent_org_id]))];
+  const { data: orgs } = await supabaseAdmin.from("lender_orgs").select("id, name").in("id", orgIds);
+  const orgNames = new Map<string, string>((orgs ?? []).map((o: any) => [o.id, o.name]));
+
+  return rows.map((r: any) => ({
+    id: r.id,
+    lender_org_id: r.lender_org_id,
+    agent_org_id: r.agent_org_id,
+    lender_org_name: orgNames.get(r.lender_org_id) ?? "Lender",
+    agent_org_name: orgNames.get(r.agent_org_id) ?? "Agent",
+    campaign_id: r.campaign_id,
+    campaign_name: r.campaigns?.name ?? "Campaign",
+    category: r.category,
+    audience_size: r.audience_size,
+    status: r.status,
+    note: r.note,
+    response_note: r.response_note,
+    created_at: r.created_at,
+    responded_at: r.responded_at,
+  }));
+}
+
+/**
+ * A lender proposes sending a campaign to an agent's homeowners in one
+ * opportunity category. Nothing sends until the agent approves.
+ */
+export async function proposeCampaignAudienceRow(
+  supabase: any,
+  lenderOrgId: string,
+  agentOrgId: string,
+  campaignId: string,
+  category: string | null,
+  note: string | null,
+  createdBy: string,
+) {
+  await assertConnection(supabase, lenderOrgId, agentOrgId);
+
+  let countQuery = supabaseAdmin
+    .from("homeowner_opportunities")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", agentOrgId)
+    .eq("state", "open");
+  if (category) countQuery = countQuery.eq("category", category);
+  const { count } = await countQuery;
+
+  const { data, error } = await supabase
+    .from("campaign_approvals")
+    .insert({
+      lender_org_id: lenderOrgId,
+      agent_org_id: agentOrgId,
+      campaign_id: campaignId,
+      category,
+      audience_size: count ?? 0,
+      note,
+      status: "pending",
+      created_by: createdBy,
+    })
+    .select("id, status, audience_size")
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+}
