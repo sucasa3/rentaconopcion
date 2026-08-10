@@ -490,7 +490,7 @@ export async function listIntroductionRows(supabase: any, orgId: string, orgType
   const column = orgType === "agent" ? "agent_org_id" : "lender_org_id";
   const { data, error } = await supabase
     .from("introduction_requests")
-    .select("id, lender_org_id, agent_org_id, portfolio_client_id, opportunity_id, category, status, note, response_note, created_at, responded_at, outcome")
+    .select("id, lender_org_id, agent_org_id, portfolio_client_id, opportunity_id, category, status, message, outcome, outcome_note, created_at, responded_at")
     .eq(column, orgId)
     .order("created_at", { ascending: false })
     .limit(200);
@@ -498,7 +498,9 @@ export async function listIntroductionRows(supabase: any, orgId: string, orgType
   const rows = data ?? [];
   if (!rows.length) return [];
 
-  const orgIds = [...new Set(rows.flatMap((r: any) => [r.lender_org_id, r.agent_org_id]))];
+  const orgIds = [
+    ...new Set(rows.flatMap((r: any) => [r.lender_org_id as string, r.agent_org_id as string])),
+  ] as string[];
   const { data: orgs } = await supabaseAdmin
     .from("lender_orgs")
     .select("id, name")
@@ -512,7 +514,7 @@ export async function listIntroductionRows(supabase: any, orgId: string, orgType
     const { data: clients } = await supabase
       .from("lender_portfolio_clients")
       .select("id, client_name")
-      .in("id", rows.map((r: any) => r.portfolio_client_id));
+      .in("id", rows.map((r: any) => r.portfolio_client_id as string));
     clientNames = new Map((clients ?? []).map((c: any) => [c.id, c.client_name]));
   }
 
@@ -529,8 +531,8 @@ export async function createIntroductionRequest(
   supabase: any,
   lenderOrgId: string,
   opportunityId: string,
-  note: string | null,
-  createdBy: string,
+  message: string | null,
+  requestedBy: string,
 ) {
   const { data: opp } = await supabaseAdmin
     .from("homeowner_opportunities")
@@ -538,19 +540,20 @@ export async function createIntroductionRequest(
     .eq("id", opportunityId)
     .maybeSingle();
   if (!opp) throw new Error("Opportunity not found");
-  await assertConnection(supabase, lenderOrgId, opp.org_id);
+  const connectionId = await assertConnection(supabase, lenderOrgId, opp.org_id);
 
   const { data, error } = await supabase
     .from("introduction_requests")
     .insert({
+      connection_id: connectionId,
       lender_org_id: lenderOrgId,
       agent_org_id: opp.org_id,
       opportunity_id: opp.id,
       portfolio_client_id: opp.portfolio_client_id,
       category: opp.category,
-      note,
+      message,
       status: "pending",
-      created_by: createdBy,
+      requested_by: requestedBy,
     })
     .select("id, status")
     .single();
