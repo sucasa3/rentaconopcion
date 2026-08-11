@@ -80,8 +80,8 @@ export function NextStepHero({
             </button>
           ) : (
             <Link
-              to={step.to}
-              search={step.search as never}
+              to={step.to as never}
+              search={(step.search ?? {}) as never}
               className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-5 py-3 text-sm font-semibold shadow-soft transition sm:w-auto ${tone.btn}`}
             >
               {step.ctaLabel} <ArrowRight className="h-4 w-4" />
