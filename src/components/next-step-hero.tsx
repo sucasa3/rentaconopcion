@@ -6,11 +6,12 @@ import {
   TrendingUp,
   CheckCircle2,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { NextStep, Completeness } from "@/lib/next-step";
 
 const TONE: Record<
   NextStep["tone"],
-  { ring: string; chip: string; icon: React.ElementType; btn: string }
+  { ring: string; chip: string; icon: LucideIcon; btn: string }
 > = {
   urgent: {
     ring: "border-destructive/40 bg-destructive/5",
