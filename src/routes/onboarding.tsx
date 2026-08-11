@@ -179,6 +179,13 @@ function Onboarding() {
                 <Field label="Full name"><input className={inputCls} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" /></Field>
                 <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="jane@example.com" /></Field>
                 <Field label="Phone"><input type="tel" className={inputCls} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" /></Field>
+                {needsAccount && (
+                  <>
+                    <Field label="Create a password"><input type="password" autoComplete="new-password" className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" /></Field>
+                    <Field label="Confirm password"><input type="password" autoComplete="new-password" className={inputCls} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" /></Field>
+                  </>
+                )}
+
                 <Field label="Desired language">
                   <div className="grid grid-cols-2 gap-2">
                     {(["en", "es"] as const).map(l => (
