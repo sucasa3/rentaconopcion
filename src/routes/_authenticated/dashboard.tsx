@@ -43,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function Dashboard() {
+  useLogOnMount("value_viewed");
   const [logOpen, setLogOpen] = useState(false);
   const [requests, setRequests] = useState<RecentRequest[]>([]);
 
