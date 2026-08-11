@@ -811,6 +811,33 @@ export type Database = {
           },
         ]
       }
+      homeowner_activity_events: {
+        Row: {
+          context: Json
+          created_at: string
+          event_type: string
+          homeowner_id: string
+          id: string
+          occurred_at: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          event_type: string
+          homeowner_id: string
+          id?: string
+          occurred_at?: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          event_type?: string
+          homeowner_id?: string
+          id?: string
+          occurred_at?: string
+        }
+        Relationships: []
+      }
       homeowner_lender_consents: {
         Row: {
           created_at: string
@@ -1943,6 +1970,36 @@ export type Database = {
           },
         ]
       }
+      seller_intent_submissions: {
+        Row: {
+          created_at: string
+          homeowner_id: string
+          id: string
+          kind: string
+          note: string | null
+          timeframe: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          homeowner_id: string
+          id?: string
+          kind: string
+          note?: string | null
+          timeframe?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          homeowner_id?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          timeframe?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       service_requests: {
         Row: {
           address: string | null
@@ -2188,6 +2245,21 @@ export type Database = {
       is_request_assigned_pro: {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
+      }
+      portfolio_engagement: {
+        Args: { _portfolio_id: string }
+        Returns: {
+          distinct_types_14d: number
+          equity_checks_30d: number
+          last_activity_at: string
+          portfolio_client_id: string
+          selling_form_at: string
+          selling_form_timeframe: string
+          sessions_7d: number
+          value_checks_14d: number
+          value_checks_30d: number
+          value_request_at: string
+        }[]
       }
     }
     Enums: {
