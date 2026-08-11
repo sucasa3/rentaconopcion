@@ -1,8 +1,18 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { getPortfolio, listMyPortfolios } from "@/lib/lender.functions";
+import { GuidedOnboarding } from "@/components/guided-onboarding";
+import { useUserId } from "@/hooks/use-user-id";
+import { readOnboarding } from "@/lib/onboarding";
 import { ArrowLeft, Users, Mail, Upload, Handshake } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
@@ -26,6 +36,33 @@ function PortfolioLayout() {
   });
   const { data: mine } = useQuery({ queryKey: ["lender-portfolios"], queryFn: () => listFn() });
   const isManager = !!mine?.isManager;
+  const userId = useUserId();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
+
+  const FOCUS_PATH: Record<string, string> = {
+    clients: `/lender/portfolio/${id}`,
+    campaigns: `/lender/portfolio/${id}/campaigns`,
+    network: `/lender/portfolio/${id}/network`,
+  };
+
+  // Land MLOs on the tab they picked during onboarding (only from the book root).
+  const applied = useRef(false);
+  useEffect(() => {
+    if (applied.current || userId === undefined) return;
+    applied.current = true;
+    const saved = readOnboarding("lender", userId);
+    const target = saved ? FOCUS_PATH[saved.focus] : undefined;
+    if (target && target !== FOCUS_PATH.clients && pathname === FOCUS_PATH.clients) {
+      navigate({ to: target, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  function goToFocus(focus: string) {
+    const target = FOCUS_PATH[focus];
+    if (target && target !== pathname) navigate({ to: target });
+  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -45,9 +82,20 @@ function PortfolioLayout() {
             <p className="text-xs uppercase tracking-wider text-muted-foreground">
               {data?.portfolio.orgName ?? "Lender portal"}
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-              {data?.portfolio.name ?? "Client book"}
-            </h1>
+            <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                {data?.portfolio.name ?? "Client book"}
+              </h1>
+              <GuidedOnboarding
+                role="lender"
+                userId={userId}
+                signals={{
+                  clientCount: (data as any)?.clients?.length ?? 0,
+                  connectionCount: (data as any)?.connectionCount ?? 0,
+                }}
+                onFocusChange={goToFocus}
+              />
+            </div>
           </div>
 
           <nav className="sticky top-0 z-20 -mx-1 flex gap-1 overflow-x-auto border-b border-border bg-background/90 px-1 py-2 backdrop-blur">

@@ -10,6 +10,8 @@ import { useHomeScore } from "@/hooks/use-home-score";
 import { type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
+import { GuidedOnboarding } from "@/components/guided-onboarding";
+import { readOnboarding } from "@/lib/onboarding";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { HomeCarePanel } from "@/components/home-care-panel";
@@ -52,6 +54,7 @@ function Dashboard() {
   useLogOnMount("value_viewed");
   const [logOpen, setLogOpen] = useState(false);
   const [tab, setTab] = useState<"home" | "care" | "documents">("home");
+  const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [requests, setRequests] = useState<RecentRequest[]>([]);
 
   const listReqFn = useServerFn(listMyRequests);
@@ -81,7 +84,11 @@ function Dashboard() {
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
-      if (!u.user) return;
+      if (!u.user) {
+        setUserId(null);
+        return;
+      }
+      setUserId(u.user.id);
       const { data: p } = await supabase
         .from("profiles")
         .select("full_name, address, city, state, zip, phone")
@@ -166,6 +173,17 @@ function Dashboard() {
     hasLogs: (serviceLog ?? []).length > 0,
   });
 
+  // Personalized default tab from the guided onboarding focus.
+  const [appliedFocus, setAppliedFocus] = useState(false);
+  useEffect(() => {
+    if (appliedFocus || userId === undefined) return;
+    const saved = readOnboarding("homeowner", userId);
+    if (saved && ["home", "care", "documents"].includes(saved.focus)) {
+      setTab(saved.focus as typeof tab);
+    }
+    setAppliedFocus(true);
+  }, [appliedFocus, userId]);
+
   const heroData: HomeHeroData = {
     ...HOME_HERO,
     address: okIntel?.address || profileAddr || HOME_HERO.address,
@@ -190,6 +208,19 @@ function Dashboard() {
               </h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <GuidedOnboarding
+                role="homeowner"
+                userId={userId}
+                signals={{
+                  urgentCount: (findings ?? []).filter(
+                    (f: any) => f.urgency === "high" || f.urgency === "medium",
+                  ).length,
+                  refiSignal: !!(okIntel as any)?.equity?.refiSignal,
+                  documentCount: (docs ?? []).length,
+                  completeness: completeness.pct,
+                }}
+                onFocusChange={(f) => setTab(f as typeof tab)}
+              />
               <OnboardingWalkthrough triggerLabel="Take the tour" />
               <Link to="/request" className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
                 <Plus className="h-4 w-4" /> Request
