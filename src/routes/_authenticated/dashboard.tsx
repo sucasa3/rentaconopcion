@@ -120,7 +120,51 @@ function Dashboard() {
     okIntel?.equity?.equityPct ??
     (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
 
-  const { score: homeScore, isLoading: scoreLoading } = useHomeScore(!!profileAddr || !!okIntel?.address);
+  const { score: homeScore, timeline, isLoading: scoreLoading } = useHomeScore(
+    !!profileAddr || !!okIntel?.address,
+  );
+
+  // Supporting signals for the "next step" hero (same query keys as the panels,
+  // so nothing is fetched twice).
+  const fetchLog = useServerFn(getMyComponentServiceLog);
+  const fetchFindings = useServerFn(listInspectionFindings);
+  const fetchDocs = useServerFn(listHomeDocuments);
+  const { data: serviceLog } = useQuery({
+    queryKey: ["component-service-log"],
+    queryFn: () => fetchLog(undefined),
+    staleTime: 60_000,
+  });
+  const { data: findings } = useQuery({
+    queryKey: ["inspection-findings"],
+    queryFn: () => fetchFindings({ data: {} }),
+    staleTime: 5 * 60_000,
+  });
+  const { data: docs } = useQuery({
+    queryKey: ["home-documents"],
+    queryFn: () => fetchDocs(undefined),
+    staleTime: 5 * 60_000,
+  });
+
+  const hasAddress = !!profileAddr || !!okIntel?.address;
+  const nextStep = pickNextStep({
+    hasAddress,
+    hasDocuments: (docs ?? []).length > 0,
+    hasLogs: (serviceLog ?? []).length > 0,
+    timeline,
+    openFindings: (findings ?? []).filter(
+      (f: any) => f.urgency === "high" || f.urgency === "medium",
+    ).length,
+    refiSignal: (okIntel as any)?.equity?.refiSignal ?? null,
+    monthlySavings: (okIntel as any)?.equity?.refiMonthlySavings ?? null,
+    openRequests: requests.filter((r) => r.status !== "Completed").length,
+  });
+  const completeness = profileCompleteness({
+    hasAddress,
+    hasName: !!firstName,
+    hasPhone,
+    hasDocuments: (docs ?? []).length > 0,
+    hasLogs: (serviceLog ?? []).length > 0,
+  });
 
   const heroData: HomeHeroData = {
     ...HOME_HERO,
