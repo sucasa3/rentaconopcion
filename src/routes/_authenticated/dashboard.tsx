@@ -19,6 +19,12 @@ import { RecommendedProsCard } from "@/components/recommended-pros-card";
 import { HomeAssistantCard } from "@/components/home-assistant-card";
 import { SellerIntentCard } from "@/components/seller-intent-card";
 import { useLogOnMount } from "@/hooks/use-activity-log";
+import { NextStepHero } from "@/components/next-step-hero";
+import { pickNextStep, profileCompleteness } from "@/lib/next-step";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
+import { listInspectionFindings } from "@/lib/inspection.functions";
+import { listHomeDocuments } from "@/lib/home-documents.functions";
 
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
@@ -45,6 +51,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   useLogOnMount("value_viewed");
   const [logOpen, setLogOpen] = useState(false);
+  const [tab, setTab] = useState<"home" | "care" | "documents">("home");
   const [requests, setRequests] = useState<RecentRequest[]>([]);
 
   const listReqFn = useServerFn(listMyRequests);
@@ -70,18 +77,20 @@ function Dashboard() {
   // Fetch profile (for name + address fallback) and property intel
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
   const [firstName, setFirstName] = useState<string | null>(null);
+  const [hasPhone, setHasPhone] = useState(false);
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;
       const { data: p } = await supabase
         .from("profiles")
-        .select("full_name, address, city, state, zip")
+        .select("full_name, address, city, state, zip, phone")
         .eq("id", u.user.id)
         .maybeSingle();
       if (p?.address) {
         setProfileAddr([p.address, p.city, p.state, p.zip].filter(Boolean).join(", "));
       }
+      if (p?.phone) setHasPhone(true);
       const first = (p?.full_name ?? "").trim().split(/\s+/)[0];
       if (first) setFirstName(first);
     })();
