@@ -248,7 +248,20 @@ function Onboarding() {
               </div>
             )}
 
+            {error && (
+              <div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                {error}
+                {emailTaken && (
+                  <>
+                    {" "}
+                    <Link to="/auth" className="font-semibold underline">Sign in instead</Link>
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="mt-8 flex items-center justify-between gap-3">
+
               {step > 0 ? (
                 <button onClick={back} className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium">
                   <ArrowLeft className="h-4 w-4" /> Back
