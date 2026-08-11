@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteHeader } from "@/components/site-header";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { supabase } from "@/integrations/supabase/client";
+
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -32,7 +33,30 @@ function Onboarding() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", address: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[], language: "en" as "en" | "es",
   });
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  // undefined while we check, null when signed out.
+  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [emailTaken, setEmailTaken] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!alive) return;
+      setSignedIn(Boolean(data.user));
+      if (data.user) {
+        setForm(f => ({
+          ...f,
+          email: f.email || data.user!.email || "",
+          name: f.name || (data.user!.user_metadata?.full_name as string) || "",
+        }));
+      }
+    });
+    return () => { alive = false; };
+  }, []);
+
+  const needsAccount = signedIn === false;
 
   const steps = ["About you", "Your home", "Your goals", "Review"];
   const total = steps.length;
@@ -42,6 +66,15 @@ function Onboarding() {
   const prewarmIntel = useServerFn(getMyHomeIntel);
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
+    setError(null);
+    setEmailTaken(false);
+
+    if (needsAccount) {
+      if (!form.email.trim()) { setError("Enter your email on the first step."); setStep(0); return; }
+      if (password.length < 6) { setError("Choose a password with at least 6 characters."); setStep(0); return; }
+      if (password !== confirmPassword) { setError("Passwords don't match."); setStep(0); return; }
+    }
+
     setSubmitting(true);
     try {
       const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
@@ -49,28 +82,57 @@ function Onboarding() {
       const city = m ? m[2].trim() : null;
       const state = m ? m[3].toUpperCase() : null;
       const zip = m ? (m[4] ?? null) : null;
-      const { data: userRes, error: uErr } = await supabase.auth.getUser();
-      console.log("[onboarding] getUser", uErr, userRes?.user?.id);
-      const uid = userRes?.user?.id;
-      if (uid) {
-        const upRes = await supabase.from("profiles").upsert({
-          id: uid,
-          full_name: form.name || null,
-          email: form.email || userRes.user?.email || null,
-          phone: form.phone || null,
-          address: street || null,
-          city, state, zip,
-          language: form.language,
-          last_activity_at: new Date().toISOString(),
 
-        }, { onConflict: "id" });
-        console.log("[onboarding] upsert result", JSON.stringify(upRes));
+      if (needsAccount) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: form.email.trim(),
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { full_name: form.name },
+          },
+        });
+        if (signUpError) {
+          const msg = signUpError.message || "";
+          if (/already|registered|exists/i.test(msg)) {
+            setEmailTaken(true);
+            setError("An account with this email already exists.");
+          } else {
+            setError(msg || "We couldn't create your account. Please try again.");
+          }
+          setSubmitting(false);
+          setStep(0);
+          return;
+        }
       }
+
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+
+      if (!uid) {
+        // Account created but no session yet (email confirmation required).
+        setSubmitting(false);
+        setError("Check your email to confirm your account, then sign in to finish your profile.");
+        return;
+      }
+
+      const upRes = await supabase.from("profiles").upsert({
+        id: uid,
+        full_name: form.name || null,
+        email: form.email || userRes.user?.email || null,
+        phone: form.phone || null,
+        address: street || null,
+        city, state, zip,
+        language: form.language,
+        last_activity_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+      if (upRes.error) console.log("[onboarding] profile save error", upRes.error.message);
+
       // Warm the property-records cache for the address they just entered so
       // the dashboard has value / equity / detail on first paint.
       // Requires a live session — the server fn is auth-only.
       const { data: sessionRes } = await supabase.auth.getSession();
-      if (uid && sessionRes.session?.access_token) {
+      if (sessionRes.session?.access_token) {
         try {
           await prewarmIntel({
             data: {
@@ -82,12 +144,15 @@ function Onboarding() {
           console.log("[onboarding] property records prewarm failed", e);
         }
       }
-
     } catch (e) {
       console.log("[onboarding] submit error", e);
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setSubmitting(false);
+      return;
     }
     navigate({ to: "/dashboard" });
   };
+
 
   const next = () => setStep(s => Math.min(s + 1, total - 1));
   const back = () => setStep(s => Math.max(s - 1, 0));
@@ -114,6 +179,13 @@ function Onboarding() {
                 <Field label="Full name"><input className={inputCls} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" /></Field>
                 <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="jane@example.com" /></Field>
                 <Field label="Phone"><input type="tel" className={inputCls} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" /></Field>
+                {needsAccount && (
+                  <>
+                    <Field label="Create a password"><input type="password" autoComplete="new-password" className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" /></Field>
+                    <Field label="Confirm password"><input type="password" autoComplete="new-password" className={inputCls} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" /></Field>
+                  </>
+                )}
+
                 <Field label="Desired language">
                   <div className="grid grid-cols-2 gap-2">
                     {(["en", "es"] as const).map(l => (
@@ -176,7 +248,20 @@ function Onboarding() {
               </div>
             )}
 
+            {error && (
+              <div className="mt-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+                {error}
+                {emailTaken && (
+                  <>
+                    {" "}
+                    <Link to="/auth" className="font-semibold underline">Sign in instead</Link>
+                  </>
+                )}
+              </div>
+            )}
+
             <div className="mt-8 flex items-center justify-between gap-3">
+
               {step > 0 ? (
                 <button onClick={back} className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium">
                   <ArrowLeft className="h-4 w-4" /> Back
