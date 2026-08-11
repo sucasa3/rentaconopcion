@@ -5,6 +5,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { AgentCoveragePanel } from "@/components/agent-coverage-panel";
+import { GuidedOnboarding } from "@/components/guided-onboarding";
+import { useUserId } from "@/hooks/use-user-id";
+import { readOnboarding } from "@/lib/onboarding";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -381,6 +384,16 @@ function AgentPortfolio() {
 
   // --- Client activity: new markers + manual review -------------------------
   const [activityTab, setActivityTab] = useState("recommendations");
+  const userId = useUserId();
+  const focusApplied = useRef(false);
+  useEffect(() => {
+    if (focusApplied.current || userId === undefined) return;
+    focusApplied.current = true;
+    const saved = readOnboarding("agent", userId);
+    if (saved && ["high_intent", "recommendations", "referrals"].includes(saved.focus)) {
+      setActivityTab(saved.focus);
+    }
+  }, [userId]);
   const [showReviewed, setShowReviewed] = useState(false);
   const seenSent = useRef<Set<string>>(new Set());
 
@@ -474,9 +487,21 @@ function AgentPortfolio() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">
                     {data.portfolio.orgName}
                   </p>
-                  <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    {data.portfolio.name}
-                  </h1>
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
+                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                      {data.portfolio.name}
+                    </h1>
+                    <GuidedOnboarding
+                      role="agent"
+                      userId={userId}
+                      signals={{
+                        clientCount: (data as any)?.clients?.length ?? 0,
+                        highIntentCount: highIntentFeed.length,
+                        recommendationsDue: (data as any)?.summary?.recommendations_due ?? 0,
+                      }}
+                      onFocusChange={(f) => setActivityTab(f)}
+                    />
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
