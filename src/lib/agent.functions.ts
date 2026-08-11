@@ -197,6 +197,16 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       for (const l of ls ?? []) listings[l.portfolio_client_id] = l;
     }
 
+    // Behavioral engagement — aggregate counts only, never the raw activity log.
+    const engagementByClient: Record<string, any> = {};
+    {
+      const { data: eng } = await (context.supabase as any).rpc("portfolio_engagement", {
+        _portfolio_id: data.id,
+      });
+      for (const row of (eng as any[]) ?? []) engagementByClient[row.portfolio_client_id] = row;
+    }
+
+
     // Referral visibility: service requests placed by linked homeowners in
     // this book. Every job is a touchpoint the agent can be credited for.
     const homeownerIds = (clients ?? [])
