@@ -33,7 +33,30 @@ function Onboarding() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", address: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[], language: "en" as "en" | "es",
   });
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  // undefined while we check, null when signed out.
+  const [signedIn, setSignedIn] = useState<boolean | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [emailTaken, setEmailTaken] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!alive) return;
+      setSignedIn(Boolean(data.user));
+      if (data.user) {
+        setForm(f => ({
+          ...f,
+          email: f.email || data.user!.email || "",
+          name: f.name || (data.user!.user_metadata?.full_name as string) || "",
+        }));
+      }
+    });
+    return () => { alive = false; };
+  }, []);
+
+  const needsAccount = signedIn === false;
 
   const steps = ["About you", "Your home", "Your goals", "Review"];
   const total = steps.length;
@@ -43,6 +66,15 @@ function Onboarding() {
   const prewarmIntel = useServerFn(getMyHomeIntel);
   const [submitting, setSubmitting] = useState(false);
   const submit = async () => {
+    setError(null);
+    setEmailTaken(false);
+
+    if (needsAccount) {
+      if (!form.email.trim()) { setError("Enter your email on the first step."); setStep(0); return; }
+      if (password.length < 6) { setError("Choose a password with at least 6 characters."); setStep(0); return; }
+      if (password !== confirmPassword) { setError("Passwords don't match."); setStep(0); return; }
+    }
+
     setSubmitting(true);
     try {
       const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
@@ -50,28 +82,57 @@ function Onboarding() {
       const city = m ? m[2].trim() : null;
       const state = m ? m[3].toUpperCase() : null;
       const zip = m ? (m[4] ?? null) : null;
-      const { data: userRes, error: uErr } = await supabase.auth.getUser();
-      console.log("[onboarding] getUser", uErr, userRes?.user?.id);
-      const uid = userRes?.user?.id;
-      if (uid) {
-        const upRes = await supabase.from("profiles").upsert({
-          id: uid,
-          full_name: form.name || null,
-          email: form.email || userRes.user?.email || null,
-          phone: form.phone || null,
-          address: street || null,
-          city, state, zip,
-          language: form.language,
-          last_activity_at: new Date().toISOString(),
 
-        }, { onConflict: "id" });
-        console.log("[onboarding] upsert result", JSON.stringify(upRes));
+      if (needsAccount) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: form.email.trim(),
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { full_name: form.name },
+          },
+        });
+        if (signUpError) {
+          const msg = signUpError.message || "";
+          if (/already|registered|exists/i.test(msg)) {
+            setEmailTaken(true);
+            setError("An account with this email already exists.");
+          } else {
+            setError(msg || "We couldn't create your account. Please try again.");
+          }
+          setSubmitting(false);
+          setStep(0);
+          return;
+        }
       }
+
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes?.user?.id;
+
+      if (!uid) {
+        // Account created but no session yet (email confirmation required).
+        setSubmitting(false);
+        setError("Check your email to confirm your account, then sign in to finish your profile.");
+        return;
+      }
+
+      const upRes = await supabase.from("profiles").upsert({
+        id: uid,
+        full_name: form.name || null,
+        email: form.email || userRes.user?.email || null,
+        phone: form.phone || null,
+        address: street || null,
+        city, state, zip,
+        language: form.language,
+        last_activity_at: new Date().toISOString(),
+      }, { onConflict: "id" });
+      if (upRes.error) console.log("[onboarding] profile save error", upRes.error.message);
+
       // Warm the property-records cache for the address they just entered so
       // the dashboard has value / equity / detail on first paint.
       // Requires a live session — the server fn is auth-only.
       const { data: sessionRes } = await supabase.auth.getSession();
-      if (uid && sessionRes.session?.access_token) {
+      if (sessionRes.session?.access_token) {
         try {
           await prewarmIntel({
             data: {
@@ -83,12 +144,15 @@ function Onboarding() {
           console.log("[onboarding] property records prewarm failed", e);
         }
       }
-
     } catch (e) {
       console.log("[onboarding] submit error", e);
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setSubmitting(false);
+      return;
     }
     navigate({ to: "/dashboard" });
   };
+
 
   const next = () => setStep(s => Math.min(s + 1, total - 1));
   const back = () => setStep(s => Math.max(s - 1, 0));
