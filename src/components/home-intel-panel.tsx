@@ -60,6 +60,7 @@ export function HomeIntelPanel() {
         </div>
         <button
           onClick={() => {
+            logActivity("value_refreshed");
             setRefreshTick((t) => t + 1);
             refetch();
           }}
