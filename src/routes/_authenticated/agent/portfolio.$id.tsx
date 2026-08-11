@@ -386,6 +386,7 @@ function AgentPortfolio() {
 
   const recFeedAll = ((data as any)?.recommendation_feed ?? []) as any[];
   const refFeed = ((data as any)?.referral_feed ?? []) as any[];
+  const highIntentFeed = ((data as any)?.high_intent_feed ?? []) as any[];
   const recFeed = showReviewed ? recFeedAll : recFeedAll.filter((r) => !r.reviewed_at);
   const reviewedCount = recFeedAll.filter((r) => r.reviewed_at).length;
   const newRecCount = recFeedAll.filter((r) => r.is_new && !r.reviewed_at).length;
@@ -561,7 +562,7 @@ function AgentPortfolio() {
                     setPage(0);
                   }}
                 />
-                {(["hot", "warm", "nurture", "hold"] as const).map((b) => (
+                {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
                   <SegChip
                     key={b}
                     label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
@@ -730,6 +731,10 @@ function AgentPortfolio() {
                     className="mt-4"
                   >
                     <TabsList>
+                      <TabsTrigger value="high_intent" className="gap-1.5">
+                        High intent
+                        {highIntentFeed.length > 0 && <NewPill count={highIntentFeed.length} />}
+                      </TabsTrigger>
                       <TabsTrigger value="recommendations" className="gap-1.5">
                         Recommendations due
                         {newRecCount > 0 && <NewPill count={newRecCount} />}
@@ -740,6 +745,39 @@ function AgentPortfolio() {
                         {newRefCount > 0 && <NewPill count={newRefCount} />}
                       </TabsTrigger>
                     </TabsList>
+
+                    <TabsContent value="high_intent" className="mt-4 space-y-2">
+                      {highIntentFeed.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                          No high-intent sellers right now. This fills in when a linked client
+                          repeatedly checks their home value or equity, or asks about selling.
+                        </p>
+                      ) : (
+                        highIntentFeed.map((h: any) => (
+                          <button
+                            key={h.client_id}
+                            onClick={() => setDetail(h.client_id)}
+                            className="flex w-full items-start justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-2.5 text-left transition hover:border-destructive"
+                          >
+                            <div className="min-w-0">
+                              <p className="flex items-center gap-1.5 text-sm font-medium">
+                                <Flame className="h-3.5 w-3.5 text-destructive" />
+                                {h.client_name ?? h.address ?? "Client"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{h.reason}</p>
+                              {h.detail && (
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  {h.detail}
+                                </p>
+                              )}
+                            </div>
+                            <span className="shrink-0 rounded-full border border-destructive/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                              {h.score} · High
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </TabsContent>
 
                     <TabsContent value="recommendations" className="mt-4 space-y-2">
                       {reviewedCount > 0 && (
