@@ -217,7 +217,7 @@ function Dashboard() {
                   ).length,
                   refiSignal: !!(okIntel as any)?.equity?.refiSignal,
                   documentCount: (docs ?? []).length,
-                  completeness,
+                  completeness: completeness.pct,
                 }}
                 onFocusChange={(f) => setTab(f as typeof tab)}
               />
