@@ -84,6 +84,7 @@ const moneyCompact = (n: number | null | undefined) => {
 };
 
 const BAND_META: Record<string, { label: string; tone: string }> = {
+  high: { label: "High intent", tone: "bg-destructive/10 text-destructive border-destructive/40" },
   hot: { label: "Hot", tone: "bg-growth/15 text-growth border-growth/40" },
   warm: { label: "Warm", tone: "bg-amber-500/10 text-amber-700 border-amber-500/40" },
   nurture: { label: "Nurture", tone: "bg-primary/10 text-primary border-primary/40" },
@@ -174,16 +175,24 @@ function IntentInfo() {
           Move intent
         </p>
         <p className="mt-1 text-muted-foreground">
-          A 0–100 score from property-record signals: time in the home, equity
-          position, recent permitted work, tax pressure, absentee ownership,
-          outgrown space, and any expired or withdrawn listing.
+          A 0–100 score with two halves. Property records: time in the home,
+          equity, recent permits, tax pressure, absentee ownership, outgrown
+          space, expired or withdrawn listings. Behavior: repeat home-value and
+          equity checks, "thinking of selling" submissions, and clustered
+          dashboard activity in the last few weeks.
+        </p>
+        <p className="mt-2 text-muted-foreground">
+          High intent always requires real recent behavior — property signals
+          alone can reach Hot, never High.
         </p>
         <ul className="mt-3 space-y-1.5">
-          {(["hot", "warm", "nurture", "hold"] as const).map((k) => (
+          {(["high", "hot", "warm", "nurture", "hold"] as const).map((k) => (
             <li key={k} className="flex items-start gap-2">
               <span
                 className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
-                  k === "hot"
+                  k === "high"
+                    ? "bg-destructive"
+                    : k === "hot"
                     ? "bg-growth"
                     : k === "warm"
                       ? "bg-amber-500"
@@ -195,7 +204,9 @@ function IntentInfo() {
               <span>
                 <span className="font-medium">{BAND_META[k].label}</span>
                 <span className="block text-muted-foreground">
-                  {k === "hot"
+                  {k === "high"
+                    ? "Score 75+ with recent homeowner activity. Actively looking — call today."
+                    : k === "hot"
                     ? "Score 60+. Clear, time-sensitive move signal — call today."
                     : k === "warm"
                       ? "Score 38–59. Several solid signals. Worth a real conversation."
@@ -375,6 +386,7 @@ function AgentPortfolio() {
 
   const recFeedAll = ((data as any)?.recommendation_feed ?? []) as any[];
   const refFeed = ((data as any)?.referral_feed ?? []) as any[];
+  const highIntentFeed = ((data as any)?.high_intent_feed ?? []) as any[];
   const recFeed = showReviewed ? recFeedAll : recFeedAll.filter((r) => !r.reviewed_at);
   const reviewedCount = recFeedAll.filter((r) => r.reviewed_at).length;
   const newRecCount = recFeedAll.filter((r) => r.is_new && !r.reviewed_at).length;
@@ -550,7 +562,7 @@ function AgentPortfolio() {
                     setPage(0);
                   }}
                 />
-                {(["hot", "warm", "nurture", "hold"] as const).map((b) => (
+                {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
                   <SegChip
                     key={b}
                     label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
@@ -719,6 +731,10 @@ function AgentPortfolio() {
                     className="mt-4"
                   >
                     <TabsList>
+                      <TabsTrigger value="high_intent" className="gap-1.5">
+                        High intent
+                        {highIntentFeed.length > 0 && <NewPill count={highIntentFeed.length} />}
+                      </TabsTrigger>
                       <TabsTrigger value="recommendations" className="gap-1.5">
                         Recommendations due
                         {newRecCount > 0 && <NewPill count={newRecCount} />}
@@ -729,6 +745,43 @@ function AgentPortfolio() {
                         {newRefCount > 0 && <NewPill count={newRefCount} />}
                       </TabsTrigger>
                     </TabsList>
+
+                    <TabsContent value="high_intent" className="mt-4 space-y-2">
+                      {highIntentFeed.length === 0 ? (
+                        <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
+                          No high-intent sellers right now. This fills in when a linked client
+                          repeatedly checks their home value or equity, or asks about selling.
+                        </p>
+                      ) : (
+                        highIntentFeed.map((h: any) => (
+                          <button
+                            key={h.client_id}
+                            onClick={() =>
+                              setSelected(
+                                (data.clients ?? []).find((c: any) => c.id === h.client_id) ?? null,
+                              )
+                            }
+                            className="flex w-full items-start justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-2.5 text-left transition hover:border-destructive"
+                          >
+                            <div className="min-w-0">
+                              <p className="flex items-center gap-1.5 text-sm font-medium">
+                                <Flame className="h-3.5 w-3.5 text-destructive" />
+                                {h.client_name ?? h.address ?? "Client"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{h.reason}</p>
+                              {h.detail && (
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  {h.detail}
+                                </p>
+                              )}
+                            </div>
+                            <span className="shrink-0 rounded-full border border-destructive/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-destructive">
+                              {h.score} · High
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </TabsContent>
 
                     <TabsContent value="recommendations" className="mt-4 space-y-2">
                       {reviewedCount > 0 && (
@@ -1070,7 +1123,7 @@ function BandPill({ band, score }: { band: string; score: number }) {
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${BAND_META[band]?.tone}`}
     >
-      {band === "hot" && <Flame className="h-3 w-3" />}
+      {(band === "hot" || band === "high") && <Flame className="h-3 w-3" />}
       {score} · {BAND_META[band]?.label}
     </span>
   );

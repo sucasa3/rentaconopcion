@@ -5,6 +5,7 @@ import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight, Sparkles } from "lucide-react";
 import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
 import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
+import { useActivityLog, useLogOnMount } from "@/hooks/use-activity-log";
 
 
 function fmtMoney(n: number | null | undefined): string {
@@ -18,6 +19,8 @@ function fmtPct(n: number | null | undefined): string {
 
 export function EquityMortgagePanel() {
   const [lenderOpen, setLenderOpen] = useState(false);
+  const logActivity = useActivityLog();
+  useLogOnMount("equity_opened");
   const fetchIntel = useServerFn(getMyHomeIntel);
   const { data, isLoading } = useQuery({
     queryKey: ["home-intel-equity"],
@@ -67,7 +70,10 @@ export function EquityMortgagePanel() {
         {equity?.refiSignal && (
           isHotRefi ? (
             <button
-              onClick={() => setLenderOpen(true)}
+              onClick={() => {
+                logActivity("refi_opened");
+                setLenderOpen(true);
+              }}
               className="group relative inline-flex items-center gap-2 rounded-full gradient-brand px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-lg"
             >
               <span className="absolute -right-1 -top-1 flex h-3 w-3">

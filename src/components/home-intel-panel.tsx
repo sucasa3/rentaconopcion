@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { Home, TrendingUp, Receipt, RefreshCw } from "lucide-react";
 import { useState } from "react";
+import { useActivityLog } from "@/hooks/use-activity-log";
 
 function fmtMoney(n: number | null): string {
   if (n == null) return "—";
@@ -11,6 +12,7 @@ function fmtMoney(n: number | null): string {
 
 export function HomeIntelPanel() {
   const [refreshTick, setRefreshTick] = useState(0);
+  const logActivity = useActivityLog();
   const fetchIntel = useServerFn(getMyHomeIntel);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: ["home-intel", refreshTick],
@@ -58,6 +60,7 @@ export function HomeIntelPanel() {
         </div>
         <button
           onClick={() => {
+            logActivity("value_refreshed");
             setRefreshTick((t) => t + 1);
             refetch();
           }}
