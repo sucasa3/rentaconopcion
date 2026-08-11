@@ -84,6 +84,7 @@ const moneyCompact = (n: number | null | undefined) => {
 };
 
 const BAND_META: Record<string, { label: string; tone: string }> = {
+  high: { label: "High intent", tone: "bg-destructive/10 text-destructive border-destructive/40" },
   hot: { label: "Hot", tone: "bg-growth/15 text-growth border-growth/40" },
   warm: { label: "Warm", tone: "bg-amber-500/10 text-amber-700 border-amber-500/40" },
   nurture: { label: "Nurture", tone: "bg-primary/10 text-primary border-primary/40" },
@@ -174,16 +175,24 @@ function IntentInfo() {
           Move intent
         </p>
         <p className="mt-1 text-muted-foreground">
-          A 0–100 score from property-record signals: time in the home, equity
-          position, recent permitted work, tax pressure, absentee ownership,
-          outgrown space, and any expired or withdrawn listing.
+          A 0–100 score with two halves. Property records: time in the home,
+          equity, recent permits, tax pressure, absentee ownership, outgrown
+          space, expired or withdrawn listings. Behavior: repeat home-value and
+          equity checks, "thinking of selling" submissions, and clustered
+          dashboard activity in the last few weeks.
+        </p>
+        <p className="mt-2 text-muted-foreground">
+          High intent always requires real recent behavior — property signals
+          alone can reach Hot, never High.
         </p>
         <ul className="mt-3 space-y-1.5">
-          {(["hot", "warm", "nurture", "hold"] as const).map((k) => (
+          {(["high", "hot", "warm", "nurture", "hold"] as const).map((k) => (
             <li key={k} className="flex items-start gap-2">
               <span
                 className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
-                  k === "hot"
+                  k === "high"
+                    ? "bg-destructive"
+                    : k === "hot"
                     ? "bg-growth"
                     : k === "warm"
                       ? "bg-amber-500"
@@ -195,7 +204,9 @@ function IntentInfo() {
               <span>
                 <span className="font-medium">{BAND_META[k].label}</span>
                 <span className="block text-muted-foreground">
-                  {k === "hot"
+                  {k === "high"
+                    ? "Score 75+ with recent homeowner activity. Actively looking — call today."
+                    : k === "hot"
                     ? "Score 60+. Clear, time-sensitive move signal — call today."
                     : k === "warm"
                       ? "Score 38–59. Several solid signals. Worth a real conversation."
@@ -1070,7 +1081,7 @@ function BandPill({ band, score }: { band: string; score: number }) {
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${BAND_META[band]?.tone}`}
     >
-      {band === "hot" && <Flame className="h-3 w-3" />}
+      {(band === "hot" || band === "high") && <Flame className="h-3 w-3" />}
       {score} · {BAND_META[band]?.label}
     </span>
   );
