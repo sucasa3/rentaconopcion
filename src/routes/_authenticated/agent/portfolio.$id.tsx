@@ -756,7 +756,11 @@ function AgentPortfolio() {
                         highIntentFeed.map((h: any) => (
                           <button
                             key={h.client_id}
-                            onClick={() => setDetail(h.client_id)}
+                            onClick={() =>
+                              setSelected(
+                                (data.clients ?? []).find((c: any) => c.id === h.client_id) ?? null,
+                              )
+                            }
                             className="flex w-full items-start justify-between gap-3 rounded-2xl border border-destructive/40 bg-destructive/5 px-4 py-2.5 text-left transition hover:border-destructive"
                           >
                             <div className="min-w-0">
