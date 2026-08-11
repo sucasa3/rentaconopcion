@@ -657,9 +657,11 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
           0,
         ),
         touches_30d: touches30d,
+        high_intent: highIntent.length,
 
       },
       top_listing_opportunities: topListing,
+      high_intent_feed: highIntent,
       referral_feed: referralFeed,
       recommendation_feed: recommendationFeed,
       touch_feed: touchFeed,
