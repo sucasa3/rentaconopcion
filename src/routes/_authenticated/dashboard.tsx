@@ -17,6 +17,8 @@ import { DocumentsCard } from "@/components/documents-card";
 import { InspectionFindingsPanel } from "@/components/inspection-findings-panel";
 import { RecommendedProsCard } from "@/components/recommended-pros-card";
 import { HomeAssistantCard } from "@/components/home-assistant-card";
+import { SellerIntentCard } from "@/components/seller-intent-card";
+import { useLogOnMount } from "@/hooks/use-activity-log";
 
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { listMyRequests } from "@/lib/service-requests.functions";
@@ -154,6 +156,8 @@ function Dashboard() {
           <EquityMortgagePanel />
 
           <HomeCarePanel />
+
+          <SellerIntentCard />
 
           {/* Grid */}
           <div className="grid gap-4 lg:grid-cols-3">
