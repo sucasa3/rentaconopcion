@@ -323,6 +323,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       computeListingReadiness,
       draftOpener,
     } = await import("@/lib/agent.server");
+    const { computeEngagement, combineIntent } = await import("@/lib/engagement");
     const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
       await import("@/lib/valuation.server");
     const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
@@ -389,6 +390,10 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         livingSqft: chars?.livingSqft ?? null,
         beds: chars?.beds ?? null,
       });
+
+      // Behavior layer: what the homeowner actually did lately.
+      const engagement = computeEngagement(engagementByClient[c.id] ?? null);
+      const intent = combineIntent(score.score, score.band, engagement);
 
       const readiness = computeListingReadiness({
         estimatedValue: value,
@@ -483,9 +488,23 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         tax_change_pct: tax?.taxChangePct ?? null,
         listing,
         has_intel: !!intel,
-        move_score: score.score,
-        band: score.band,
-        signals: score.signals,
+        move_score: intent.score,
+        band: intent.band,
+        property_score: score.score,
+        engagement_score: engagement.score,
+        engagement_signals: engagement.signals,
+        last_activity_at: engagement.lastActivityAt,
+        has_behavior: engagement.hasBehavior,
+        signals: [
+          ...engagement.signals.map((s: any) => ({
+            kind: "engagement",
+            label: s.label,
+            detail: s.detail,
+            weight: s.weight,
+            tone: "hot",
+          })),
+          ...score.signals,
+        ],
         opener: draftOpener(c.client_name, score),
         readiness_score: readiness.score,
         readiness_label: readiness.label,
@@ -505,7 +524,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
 
     enriched.sort((a, b) => b.move_score - a.move_score);
 
-    const bands = { hot: 0, warm: 0, nurture: 0, hold: 0 } as Record<string, number>;
+    const bands = { high: 0, hot: 0, warm: 0, nurture: 0, hold: 0 } as Record<string, number>;
     for (const c of enriched) bands[c.band] += 1;
 
     const readinessCounts = { "list-ready": 0, "prep-needed": 0, "not-ready": 0 } as Record<
@@ -524,6 +543,24 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
           (a.move_score * 1.5 + a.readiness_score),
       )
       .slice(0, 10);
+
+    // High intent seller feed: behavior-backed, freshest first.
+    const highIntent = enriched
+      .filter((c: any) => c.band === "high")
+      .sort((a: any, b: any) => b.move_score - a.move_score)
+      .map((c: any) => ({
+        client_id: c.id,
+        client_name: c.client_name,
+        address: c.address_line1,
+        score: c.move_score,
+        engagement_score: c.engagement_score,
+        last_activity_at: c.last_activity_at,
+        reason: c.engagement_signals?.[0]?.label ?? "Recent dashboard activity",
+        detail: c.engagement_signals?.[0]?.detail ?? null,
+        signals: c.engagement_signals ?? [],
+        readiness_label: c.readiness_label,
+        net_proceeds: c.net_proceeds,
+      }));
 
     const referralFeed = enriched
       .flatMap((c) =>
