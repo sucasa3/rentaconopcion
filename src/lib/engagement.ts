@@ -103,7 +103,6 @@ export function computeEngagement(row: EngagementRow | null | undefined): Engage
   }
 
   // 3. Repeated value / equity checks — Fello's single biggest passive tell.
-  const checks14 = (row.value_checks_14d ?? 0) + (row.equity_checks_30d ?? 0 ? 0 : 0);
   const combined14 = row.value_checks_14d ?? 0;
   if (combined14 >= 3) {
     score += 25;
@@ -130,7 +129,6 @@ export function computeEngagement(row: EngagementRow | null | undefined): Engage
       weight: 8,
     });
   }
-  void checks14;
 
   // 4. Signal clustering — several distinct actions close together.
   if ((row.distinct_types_14d ?? 0) >= 3) {
