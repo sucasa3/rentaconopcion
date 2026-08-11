@@ -68,16 +68,21 @@ function Onboarding() {
       }
       // Warm the property-records cache for the address they just entered so
       // the dashboard has value / equity / detail on first paint.
-      try {
-        await prewarmIntel({
-          data: {
-            classes: ["avm", "detail", "mortgage", "sales"],
-            revenueSource: "signup_enrichment",
-          },
-        });
-      } catch (e) {
-        console.log("[onboarding] property records prewarm failed", e);
+      // Requires a live session — the server fn is auth-only.
+      const { data: sessionRes } = await supabase.auth.getSession();
+      if (uid && sessionRes.session?.access_token) {
+        try {
+          await prewarmIntel({
+            data: {
+              classes: ["avm", "detail", "mortgage", "sales"],
+              revenueSource: "signup_enrichment",
+            },
+          });
+        } catch (e) {
+          console.log("[onboarding] property records prewarm failed", e);
+        }
       }
+
     } catch (e) {
       console.log("[onboarding] submit error", e);
     }
