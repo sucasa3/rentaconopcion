@@ -14,6 +14,8 @@ function fmtMoney(n: number | null): string {
 
 export function HomeIntelPanel() {
   const [refreshTick, setRefreshTick] = useState(0);
+  const [editingAddress, setEditingAddress] = useState(false);
+
   const logActivity = useActivityLog();
   const fetchIntel = useServerFn(getMyHomeIntel);
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
