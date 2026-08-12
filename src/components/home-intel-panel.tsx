@@ -60,7 +60,13 @@ export function HomeIntelPanel() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-base font-semibold">Home intelligence</h2>
-          <p className="truncate text-xs text-muted-foreground">{address}</p>
+          <button
+            onClick={() => setEditingAddress((v) => !v)}
+            className="flex max-w-full items-center gap-1 truncate text-xs text-muted-foreground underline-offset-2 hover:underline"
+          >
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{address}</span>
+          </button>
         </div>
         <button
           onClick={() => {
@@ -74,6 +80,13 @@ export function HomeIntelPanel() {
           <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
+
+      {editingAddress && (
+        <div className="mt-4">
+          <CompleteAddressCard compact mode="edit" />
+        </div>
+      )}
+
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <IntelCard
