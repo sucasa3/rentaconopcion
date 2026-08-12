@@ -216,7 +216,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {intel && !intel.ok && intel.error === "incomplete_address" ? (
+          {rawIntel && !rawIntel.ok && rawIntel.error === "incomplete_address" ? (
             <CompleteAddressCard />
           ) : null}
 
