@@ -3,9 +3,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AddressAutocomplete, type AddressValue } from "@/components/address-autocomplete";
 
-const inputCls =
-  "w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
 
 /**
  * Shown when a profile has a street address but no city/state/ZIP — property
