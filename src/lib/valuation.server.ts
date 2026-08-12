@@ -146,6 +146,49 @@ export async function getPropertyIntel(
     result.classes[cls] = { data: fetched.data, fetchedAt: now, stale: false };
   }
 
+  // 2b. Valuation fallback — the AVM endpoint is stricter about address
+  // matching than the rest. When it comes back empty but the detail lookup
+  // matched, retry using the provider's canonical one-line address, then by
+  // property id. Costs at most one extra call and only when we'd otherwise
+  // show a blank value.
+  const wantsAvm = opts.classes.includes("avm");
+  const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
+  if (wantsAvm && avmEmpty && !cacheOnly) {
+    const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
+    const matched = matchedProperty(detailData);
+    const attempts: Array<{ addr: string; attomId?: string | null }> = [];
+    if (matched.oneLine && normalizeAddress(matched.oneLine) !== normalized) {
+      attempts.push({ addr: matched.oneLine });
+    }
+    if (matched.attomId) attempts.push({ addr: address, attomId: matched.attomId });
+
+    for (const attempt of attempts) {
+      const retry = await attomFetch("avm", attempt.addr, { attomId: attempt.attomId ?? null });
+      callsUsed += 1;
+      await supabaseAdmin.from("attom_call_log").insert({
+        endpoint: "avm",
+        address_normalized: normalized,
+        requested_by: opts.requestedBy ?? null,
+        cache_hit: false,
+        cost_cents: attomCostCents("avm"),
+        status: retry.status,
+        error_message: retry.ok ? null : retry.error,
+        revenue_source: `${opts.revenueSource}_avm_fallback`,
+      });
+      if (retry.ok && extractAvm(retry.data).estimate != null) {
+        const now = new Date().toISOString();
+        updates["avm"] = retry.data;
+        updates["avm_fetched_at"] = now;
+        touched = true;
+        result.classes.avm = { data: retry.data, fetchedAt: now, stale: false };
+        delete result.errors.avm;
+        break;
+      }
+    }
+  }
+
+
+
   // 3. Persist any new/refreshed classes into property_intel (upsert)
   if (touched) {
     const parts = address.split(",").map((p) => p.trim());
