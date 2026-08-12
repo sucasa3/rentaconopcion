@@ -811,6 +811,39 @@ export type Database = {
           },
         ]
       }
+      home_value_snapshots: {
+        Row: {
+          address_normalized: string | null
+          captured_on: string
+          created_at: string
+          id: string
+          source: string
+          updated_at: string
+          user_id: string
+          value_cents: number
+        }
+        Insert: {
+          address_normalized?: string | null
+          captured_on?: string
+          created_at?: string
+          id?: string
+          source?: string
+          updated_at?: string
+          user_id: string
+          value_cents: number
+        }
+        Update: {
+          address_normalized?: string | null
+          captured_on?: string
+          created_at?: string
+          id?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+          value_cents?: number
+        }
+        Relationships: []
+      }
       homeowner_activity_events: {
         Row: {
           context: Json
