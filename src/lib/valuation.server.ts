@@ -77,6 +77,26 @@ export async function getPropertyIntel(
   const updates: Record<string, unknown> = {};
   let touched = false;
 
+  // Some properties simply have no coverage for a class (the provider answers
+  // "SuccessWithoutResult"). Remember that for a day so a dashboard reload
+  // doesn't re-buy the same empty answer over and over.
+  const EMPTY_RESULT_COOLDOWN_HOURS = 24;
+  const cooldownSince = new Date(
+    Date.now() - EMPTY_RESULT_COOLDOWN_HOURS * 3600 * 1000,
+  ).toISOString();
+  const { data: recentEmpty } = await supabaseAdmin
+    .from("attom_call_log")
+    .select("endpoint, error_message")
+    .eq("address_normalized", normalized)
+    .eq("cache_hit", false)
+    .gte("created_at", cooldownSince)
+    .not("error_message", "is", null);
+  const emptyClasses = new Set(
+    (recentEmpty ?? [])
+      .filter((r) => (r.error_message ?? "").includes("SuccessWithoutResult"))
+      .map((r) => r.endpoint),
+  );
+
   // Resolve `detail` first: its canonical address + property id are the
   // fallback keys we use when a raw address string fails to match.
   const ordered = [...opts.classes].sort((a, b) =>
@@ -84,6 +104,7 @@ export async function getPropertyIntel(
   );
 
   for (const cls of ordered) {
+
 
     const cachedData = existing?.[cls] as unknown;
     const cachedAt = existing?.[`${cls}_fetched_at`] as string | null;
@@ -110,6 +131,20 @@ export async function getPropertyIntel(
         result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
       } else {
         result.errors[cls] = "Monthly ATTOM budget cap reached; no cached data available.";
+      }
+      continue;
+    }
+
+    // Known-empty for this address recently — don't buy the same blank again.
+    if (emptyClasses.has(cls) && !opts.forceRefresh) {
+      if (cachedData) {
+        result.classes[cls] = {
+          data: cachedData,
+          fetchedAt: cachedAt ?? new Date(0).toISOString(),
+          stale: true,
+        };
+      } else {
+        result.errors[cls] = "No record on file for this address.";
       }
       continue;
     }
@@ -153,7 +188,7 @@ export async function getPropertyIntel(
   // show a blank value.
   const wantsAvm = opts.classes.includes("avm");
   const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
-  if (wantsAvm && avmEmpty && !cacheOnly) {
+  if (wantsAvm && avmEmpty && !cacheOnly && (!emptyClasses.has("avm") || opts.forceRefresh)) {
     const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
     const matched = matchedProperty(detailData);
     const attempts: Array<{ addr: string; attomId?: string | null }> = [];

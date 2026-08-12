@@ -27,7 +27,7 @@ export function EquityMortgagePanel() {
     queryFn: () =>
       fetchIntel({
         data: {
-          classes: ["avm", "sales", "mortgage", "permits"],
+          classes: ["avm", "tax", "sales", "mortgage", "permits"],
           revenueSource: "dashboard_equity",
         },
       }),
@@ -64,7 +64,9 @@ export function EquityMortgagePanel() {
         <div>
           <h2 className="text-base font-semibold">Equity & mortgage</h2>
           <p className="text-xs text-muted-foreground">
-            Estimated balance uses standard amortization from origination data.
+            {equity?.valueSource === "assessed"
+              ? "Based on assessor market value — no automated estimate on record for this address."
+              : "Estimated balance uses standard amortization from origination data."}
           </p>
         </div>
         {equity?.refiSignal && (
@@ -100,6 +102,13 @@ export function EquityMortgagePanel() {
       </div>
 
 
+      {equity && equity.estimatedValue == null && (
+        <p className="mt-4 rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-xs text-muted-foreground">
+          No valuation on record for this address yet, so equity and cash-out
+          headroom can't be estimated.
+        </p>
+      )}
+
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           icon={TrendingUp}
@@ -107,8 +116,8 @@ export function EquityMortgagePanel() {
           primary={fmtMoney(equity?.equityDollars)}
           secondary={
             equity?.equityPct != null
-              ? `${fmtPct(equity.equityPct)} of value${equity.valueSource === "assessed" ? " (assessed)" : ""}`
-              : "—"
+              ? `${fmtPct(equity.equityPct)} of ${equity.valueSource === "assessed" ? "assessed value" : "value"}`
+              : "No valuation on record"
           }
         />
 
@@ -116,8 +125,15 @@ export function EquityMortgagePanel() {
           icon={Wallet}
           label="Cash-out headroom"
           primary={fmtMoney(equity?.cashOutHeadroom80)}
-          secondary="At 80% LTV"
+          secondary={
+            equity?.cashOutHeadroom80 == null
+              ? "Needs a valuation"
+              : equity.valueSource === "assessed"
+                ? "At 80% LTV · assessed value"
+                : "At 80% LTV"
+          }
         />
+
         <Stat
           icon={Landmark}
           label="Loan balance (est.)"

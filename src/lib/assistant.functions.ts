@@ -158,11 +158,12 @@ export const askAssistant = createServerFn({ method: "POST" })
           extractDetail,
           extractMortgage,
           extractSales,
+          extractTax,
           computeEquityRibbon,
           estimateLoanBalance,
         } = await import("@/lib/valuation.server");
         const intel = await getPropertyIntel(fullAddress, {
-          classes: ["avm", "detail", "mortgage", "sales"],
+          classes: ["avm", "detail", "mortgage", "sales", "tax"],
           requestedBy: context.userId,
           revenueSource: "assistant_context",
         });
@@ -170,9 +171,10 @@ export const askAssistant = createServerFn({ method: "POST" })
         const detail = extractDetail(intel.classes.detail?.data);
         const mortgage = extractMortgage(intel.classes.mortgage?.data);
         const sales = extractSales(intel.classes.sales?.data);
-        const equity = computeEquityRibbon(avm, mortgage, sales);
+        const tax = intel.classes.tax ? extractTax(intel.classes.tax.data) : null;
+        const equity = computeEquityRibbon(avm, mortgage, sales, tax);
         const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-        snapshot.avm = avm?.estimate ?? null;
+        snapshot.avm = equity.estimatedValue ?? avm?.estimate ?? null;
         snapshot.yearBuilt = detail?.yearBuilt ?? null;
         snapshot.sqft = detail?.sqft ?? null;
         snapshot.beds = detail?.beds ?? null;
