@@ -1,23 +1,30 @@
-# Make the admin page reachable
+# Fix: no property data for 1010 Arbor Creek
 
-## What's actually happening
+## What's actually wrong
 
-Two separate things block you:
+The agent test account (`agent.officer@sucasatest.com`, Sam Agent) has this saved on its home profile:
 
-1. **The account you're using isn't an admin.** `neil@sucasa.com` (created today) only has the `homeowner` role. The admin role sits on `neilterc@hotmail.com` and `neil.yourcasa@gmail.com`. Recent sign-in attempts also failed with "invalid credentials", so the sign-in itself is failing before anything else.
-2. **There is no link to the admin page anywhere.** `/admin` exists but the header nav lists only Services, For Pros, For Lenders, For Agents, Dashboard. The only way in today is typing the URL.
+- address: `1010 Arbor Creek Dr.`
+- city: empty, state: empty, zip: empty
 
-There is also no role check on `/admin` — any signed-in user who types the URL sees it. That should be closed at the same time.
+Property lookups need a city/state or ZIP. Because those fields are blank, every lookup made tonight (value, detail, tax, sales, mortgage, permits) came back rejected with "Address1 and Address2 are required" — 12+ failed calls at 01:32 UTC today. Nothing is cached for that address, so the dashboard shows empty.
 
-## Plan
+So it isn't a Roswell-specific data gap: the address is incomplete, and the app let it be saved and then kept retrying anyway.
 
-1. **Grant admin to your working account** — add the `admin` role to `neil@sucasa.com` so the account you actually log in with can reach it. (If you'd rather keep admin on `neilterc@hotmail.com`, say so and I'll reset that account's password instead.)
-2. **Add an "Admin" link in the header** that appears only for users with the admin role, on both desktop and mobile menus.
-3. **Gate the admin route by role**: check the caller's admin role on entry and redirect non-admins to the dashboard, so the page can't be reached by URL guessing.
-4. Quietly fix the hydration warning currently showing on the sign-in page.
+## Fix
+
+1. Complete the address for that profile — set city `Roswell`, state `GA`, plus ZIP (30075/30076/30075 depending on the exact street; confirm) — then run one refresh so value/equity/detail populate.
+2. Prevent the repeat: on the homeowner dashboard, when a profile has a street but no city/state/ZIP, show a short "Finish your address" inline form instead of silently failing, and skip lookups until it's complete.
+3. Stop wasted lookups: the property-records layer returns a clear "incomplete address" result (no external call, no log spend) when city/state and ZIP are both missing.
+4. Tighten capture: onboarding's address parser already expects "street, city, ST zip"; if the entered address doesn't parse into city/state, require the user to fill city/state/ZIP fields before continuing.
 
 ## Technical notes
 
-- Role read via the existing `has_role(_user_id, _role)` security-definer function; add a small `useIsAdmin` hook (mirrors `use-user-id.ts`) for the header.
-- Route gate goes in `src/routes/_authenticated/admin.tsx` `beforeLoad` (client-side, the parent `_authenticated` layout is already `ssr: false`).
-- Role grant runs as a migration inserting into `public.user_roles`.
+- `src/lib/property-intel.functions.ts` `getMyHomeIntel` joins `address, city, state, zip`; add a guard returning `{ ok: false, error: "incomplete_address" }` when city/state and zip are all empty.
+- `src/lib/attom.server.ts` `splitAddress` yields `address2: ""` for this input; make `attomFetch` refuse to call out when `address2` is empty.
+- Dashboard (`src/routes/_authenticated/dashboard.tsx` + hero/equity panels) renders the completion prompt on that error code; saving writes back to `profiles` and invalidates the intel queries.
+- Data correction for Sam Agent's profile applied directly (one row update), not a schema change.
+
+## Open question
+
+Confirm the exact address so the ZIP is right: `1010 Arbor Creek Dr, Roswell, GA` — is this a real property you want live records for, or a placeholder for the test agent account?
