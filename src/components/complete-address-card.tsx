@@ -11,7 +11,14 @@ import { AddressAutocomplete, type AddressValue } from "@/components/address-aut
  * records can't be matched without them, so we ask for the missing pieces
  * instead of failing silently.
  */
-export function CompleteAddressCard({ compact = false }: { compact?: boolean }) {
+export function CompleteAddressCard({
+  compact = false,
+  mode = "complete",
+}: {
+  compact?: boolean;
+  mode?: "complete" | "edit";
+}) {
+
   const queryClient = useQueryClient();
   const [street, setStreet] = useState("");
   const [city, setCity] = useState("");
