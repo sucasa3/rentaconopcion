@@ -324,7 +324,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       draftOpener,
     } = await import("@/lib/agent.server");
     const { computeEngagement, combineIntent } = await import("@/lib/engagement");
-    const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
+    const { extractAvm, extractSales, extractMortgage, extractPermits, extractTax, estimateLoanBalance } =
       await import("@/lib/valuation.server");
     const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
       "@/lib/maintenance-rules"
@@ -355,7 +355,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       const permits = intel?.permits ? extractPermits(intel.permits) : null;
       const owner = intel?.owner ? extractOwnership(intel.owner) : null;
       const chars = intel?.detail ? extractCharacteristics(intel.detail) : null;
-      const value = avm?.estimate ?? null;
+      const assessedSummary = intel?.tax ? extractTax(intel.tax) : null;
+      const value =
+        avm?.estimate ?? assessedSummary?.marketTotal ?? assessedSummary?.assessedTotal ?? null;
       const tax = intel?.tax ? extractTaxTrend(intel.tax, value) : null;
 
       const balance = mortgage ? estimateLoanBalance(mortgage) : null;
@@ -827,7 +829,7 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
       extractTaxTrend,
       computeMoveScore,
     } = await import("@/lib/agent.server");
-    const { extractAvm, extractSales, extractMortgage, extractPermits, estimateLoanBalance } =
+    const { extractAvm, extractSales, extractMortgage, extractPermits, extractTax, estimateLoanBalance } =
       await import("@/lib/valuation.server");
     const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
       "@/lib/maintenance-rules"
