@@ -75,13 +75,22 @@ function Onboarding() {
       if (password !== confirmPassword) { setError("Passwords don't match."); setStep(0); return; }
     }
 
+    // Accept a pasted "123 Main St, Roswell, GA 30075" in the street field, but
+    // otherwise use the explicit city / state / ZIP inputs.
+    const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
+    const street = (m ? m[1] : form.address).trim().replace(/[.,\s]+$/, "");
+    const city = (m ? m[2].trim() : form.city.trim()) || null;
+    const state = (m ? m[3].toUpperCase() : form.state.trim().toUpperCase()) || null;
+    const zip = (m ? (m[4] ?? form.zip.trim()) : form.zip.trim()) || null;
+
+    if (street && !((city && state) || zip)) {
+      setError("Add the city and state (or ZIP) for your home so we can pull its property records.");
+      setStep(1);
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const m = form.address.match(/^\s*(.+?),\s*([^,]+?),\s*([A-Z]{2})\s*(\d{5})?\s*$/i);
-      const street = m ? m[1].trim() : form.address.trim();
-      const city = m ? m[2].trim() : null;
-      const state = m ? m[3].toUpperCase() : null;
-      const zip = m ? (m[4] ?? null) : null;
 
       if (needsAccount) {
         const { error: signUpError } = await supabase.auth.signUp({
