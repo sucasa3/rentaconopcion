@@ -228,11 +228,16 @@ function Dashboard() {
             </div>
           </div>
 
+          {intel && !intel.ok && intel.error === "incomplete_address" ? (
+            <CompleteAddressCard />
+          ) : null}
+
           <HomeHero
             data={heroData}
             scoreDetail={homeScore}
             scorePending={scoreLoading || !homeScore}
           />
+
           <NextStepHero
             step={nextStep}
             completeness={completeness}
