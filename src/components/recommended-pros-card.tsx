@@ -2,7 +2,7 @@ import { useQuery, useQueries } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Star, ArrowRight } from "lucide-react";
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { useHomeIntel } from "@/hooks/use-home-intel";
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { getRecommendedPros } from "@/lib/pros.functions";
@@ -13,19 +13,11 @@ type Need = { category: string; reason: string; rank: number };
 
 /** Pros for what the home actually needs right now — never filler vendors. */
 export function RecommendedProsCard() {
-  const fetchIntel = useServerFn(getMyHomeIntel);
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const fetchFindings = useServerFn(listInspectionFindings);
   const fetchPros = useServerFn(getRecommendedPros);
 
-  const { data: intel } = useQuery({
-    queryKey: ["home-intel-maintenance"],
-    queryFn: () =>
-      fetchIntel({
-        data: { classes: ["detail", "permits"], revenueSource: "dashboard_maintenance" },
-      }),
-    staleTime: 30 * 60_000,
-  });
+  const { intel: ok } = useHomeIntel();
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
     queryFn: () => fetchLog(undefined),
@@ -37,9 +29,9 @@ export function RecommendedProsCard() {
     staleTime: 5 * 60_000,
   });
 
-  const ok = intel?.ok ? intel : null;
   const yearBuilt = ok?.detail?.yearBuilt ?? null;
   const permitEvents = ok?.permits?.events ?? [];
+
   const timeline =
     yearBuilt || permitEvents.length
       ? buildMaintenanceTimeline(yearBuilt, permitEvents, new Date(), serviceLog ?? [])
