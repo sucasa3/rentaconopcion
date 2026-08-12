@@ -84,10 +84,9 @@ export const searchAddresses = createServerFn({ method: "POST" })
       const suggestions = matches.slice(0, 5).map((m) => {
         const c = m.addressComponents ?? {};
         return {
-          label: titleCase(m.matchedAddress ?? "").replace(
-            /\b([a-z]{2}),/gi,
-            (s) => s.toUpperCase(),
-          ),
+          label: [streetFrom(m), titleCase(c.city ?? ""), `${(c.state ?? "").toUpperCase()} ${c.zip ?? ""}`.trim()]
+            .filter(Boolean)
+            .join(", "),
           street: streetFrom(m),
           city: titleCase(c.city ?? ""),
           state: (c.state ?? "").toUpperCase(),
