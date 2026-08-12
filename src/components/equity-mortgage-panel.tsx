@@ -105,8 +105,13 @@ export function EquityMortgagePanel() {
           icon={TrendingUp}
           label="Estimated equity"
           primary={fmtMoney(equity?.equityDollars)}
-          secondary={equity?.equityPct != null ? `${fmtPct(equity.equityPct)} of value` : "—"}
+          secondary={
+            equity?.equityPct != null
+              ? `${fmtPct(equity.equityPct)} of value${equity.valueSource === "assessed" ? " (assessed)" : ""}`
+              : "—"
+          }
         />
+
         <Stat
           icon={Wallet}
           label="Cash-out headroom"
