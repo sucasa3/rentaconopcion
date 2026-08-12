@@ -77,13 +77,14 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     // next lookup is an exact match (a missing ZIP breaks valuation matching).
     if (result.classes.detail && (!profile.city || !profile.state || !profile.zip)) {
       const matched = matchedProperty(result.classes.detail.data);
-      const patch: Record<string, string> = {};
+      const patch: { city?: string; state?: string; zip?: string } = {};
       if (!profile.city && matched.city) patch.city = matched.city;
       if (!profile.state && matched.state) patch.state = matched.state;
       if (!profile.zip && matched.zip) patch.zip = matched.zip;
       if (Object.keys(patch).length > 0) {
         await context.supabase.from("profiles").update(patch).eq("id", context.userId);
       }
+
     }
 
 
