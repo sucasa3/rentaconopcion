@@ -232,7 +232,33 @@ export async function getPropertyIntel(
 
 const TRIAL_COST_CENTS_PER_CALL = 10;
 
+// ---------- Matched-property identity (from the `detail` response) ----------
+export function matchedProperty(raw: unknown): {
+  attomId: string | null;
+  oneLine: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+} {
+  const r = raw as {
+    property?: Array<{
+      identifier?: { attomId?: number | string; Id?: number | string };
+      address?: { oneLine?: string; locality?: string; countrySubd?: string; postal1?: string };
+    }>;
+  } | null;
+  const p = r?.property?.[0];
+  const id = p?.identifier?.attomId ?? p?.identifier?.Id ?? null;
+  return {
+    attomId: id != null ? String(id) : null,
+    oneLine: p?.address?.oneLine ?? null,
+    city: p?.address?.locality ?? null,
+    state: p?.address?.countrySubd ?? null,
+    zip: p?.address?.postal1 ?? null,
+  };
+}
+
 // ---------- Extractors: pull the fields UI actually cares about ----------
+
 // ATTOM responses are deeply nested; keep the shape stable for the UI.
 
 export interface AvmSummary {
