@@ -75,11 +75,15 @@ export function CompleteAddressCard({ compact = false }: { compact?: boolean }) 
           <MapPin className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-semibold">Finish your address</h2>
+          <h2 className="text-base font-semibold">
+            {mode === "edit" ? "Verify your home address" : "Finish your address"}
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            We have your street, but we need the city and state (or ZIP) to match your home to
-            property records for value, equity and property details.
+            {mode === "edit"
+              ? "Search for your address and confirm it on the map so we match the right property records."
+              : "We have your street, but we need the city and state (or ZIP) to match your home to property records for value, equity and property details."}
           </p>
+
 
           <div className="mt-4 space-y-2">
             <AddressAutocomplete
