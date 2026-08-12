@@ -573,11 +573,14 @@ export function computeEquityRibbon(
 
   return {
     estimatedValue: value,
+    valueSource,
     loanBalanceEstimate: balance,
     equityDollars: equity,
     equityPct,
     cashOutHeadroom80: cashOut,
     refiSignal: refi,
     tenureYears: sales?.tenureYears ?? null,
+    noMortgageOnRecord,
   };
 }
+
