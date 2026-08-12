@@ -27,9 +27,22 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    if (error) return { ok: false as const, error: "Could not load profile", classes: {}, budget: null };
+    if (error)
+      return {
+        ok: false as const,
+        error: "Could not load profile",
+        valueStatus: "no_address" as const,
+        classes: {},
+        budget: null,
+      };
     if (!profile?.address) {
-      return { ok: false as const, error: "No address on profile", classes: {}, budget: null };
+      return {
+        ok: false as const,
+        error: "No address on profile",
+        valueStatus: "no_address" as const,
+        classes: {},
+        budget: null,
+      };
     }
     // A street line alone can't be matched against property records — we need a
     // city/state or a ZIP. Bail out before spending a lookup.
@@ -37,11 +50,13 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         error: "incomplete_address",
+        valueStatus: "incomplete_address" as const,
         address: profile.address,
         classes: {},
         budget: null,
       };
     }
+
 
     const fullAddress = [profile.address, profile.city, profile.state, profile.zip]
       .filter(Boolean)
