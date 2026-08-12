@@ -188,7 +188,7 @@ export async function getPropertyIntel(
   // show a blank value.
   const wantsAvm = opts.classes.includes("avm");
   const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
-  if (wantsAvm && avmEmpty && !cacheOnly) {
+  if (wantsAvm && avmEmpty && !cacheOnly && (!emptyClasses.has("avm") || opts.forceRefresh)) {
     const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
     const matched = matchedProperty(detailData);
     const attempts: Array<{ addr: string; attomId?: string | null }> = [];
