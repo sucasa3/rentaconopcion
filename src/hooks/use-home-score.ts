@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { useHomeIntel } from "@/hooks/use-home-intel";
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
@@ -9,26 +9,19 @@ import { computeHomeScore, type HomeScoreResult } from "@/lib/home-score";
 
 /**
  * Shared source of truth for the maintenance timeline + computed Home Score.
- * Reuses the same query keys as the maintenance panel so nothing is fetched twice.
+ * Reads the single dashboard-wide property intel query.
  */
 export function useHomeScore(hasAddress: boolean): {
   timeline: TimelineItem[];
   score: HomeScoreResult | null;
   isLoading: boolean;
 } {
-  const fetchIntel = useServerFn(getMyHomeIntel);
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const fetchFindings = useServerFn(listInspectionFindings);
   const fetchDocs = useServerFn(listHomeDocuments);
 
-  const { data: intel, isLoading } = useQuery({
-    queryKey: ["home-intel-maintenance"],
-    queryFn: () =>
-      fetchIntel({
-        data: { classes: ["detail", "permits"], revenueSource: "dashboard_maintenance" },
-      }),
-    staleTime: 30 * 60_000,
-  });
+  const { intel, isLoading } = useHomeIntel();
+
 
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
