@@ -241,13 +241,15 @@ export function matchedProperty(raw: unknown): {
   zip: string | null;
 } {
   const r = raw as {
+    status?: { attomId?: number | string };
     property?: Array<{
       identifier?: { attomId?: number | string; Id?: number | string };
       address?: { oneLine?: string; locality?: string; countrySubd?: string; postal1?: string };
     }>;
   } | null;
   const p = r?.property?.[0];
-  const id = p?.identifier?.attomId ?? p?.identifier?.Id ?? null;
+  const id = p?.identifier?.attomId ?? p?.identifier?.Id ?? r?.status?.attomId ?? null;
+
   return {
     attomId: id != null ? String(id) : null,
     oneLine: p?.address?.oneLine ?? null,
