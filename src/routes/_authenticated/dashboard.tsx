@@ -118,12 +118,16 @@ function Dashboard() {
   });
 
   const okIntel = intel?.ok ? intel : null;
-  const heroValue: number = okIntel?.avm?.estimate || HOME_HERO.value;
+  const resolvedValue =
+    okIntel?.avm?.estimate ??
+    okIntel?.equity?.estimatedValue ??
+    okIntel?.tax?.marketTotal ??
+    okIntel?.tax?.assessedTotal ??
+    null;
+  const heroValue: number = resolvedValue || HOME_HERO.value;
   const heroEquity: number =
     okIntel?.equity?.equityDollars ??
-    (okIntel?.avm?.estimate
-      ? Math.round(okIntel.avm.estimate * HOME_HERO.equityPct)
-      : HOME_HERO.equity);
+    (resolvedValue ? Math.round(resolvedValue * HOME_HERO.equityPct) : HOME_HERO.equity);
   const heroEquityPct: number =
     okIntel?.equity?.equityPct ??
     (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
