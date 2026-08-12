@@ -841,7 +841,9 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
     const permits = intel?.permits ? extractPermits(intel.permits) : null;
     const owner = intel?.owner ? extractOwnership(intel.owner) : null;
     const chars = intel?.detail ? extractCharacteristics(intel.detail) : null;
-    const value = avm?.estimate ?? null;
+    const assessedSummary = intel?.tax ? extractTax(intel.tax) : null;
+    const value =
+      avm?.estimate ?? assessedSummary?.marketTotal ?? assessedSummary?.assessedTotal ?? null;
     const tax = intel?.tax ? extractTaxTrend(intel.tax, value) : null;
     const balance = mortgage ? estimateLoanBalance(mortgage) : null;
     const equity = value != null && balance != null ? value - balance : null;
