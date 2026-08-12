@@ -79,14 +79,17 @@ export function HomeIntelPanel() {
         <IntelCard
           icon={TrendingUp}
           label="Estimated value"
-          primary={fmtMoney(avm?.estimate ?? null)}
+          primary={fmtMoney(avm?.estimate ?? tax?.marketTotal ?? tax?.assessedTotal ?? null)}
           secondary={
             avm?.low != null && avm?.high != null
               ? `${fmtMoney(avm.low)} – ${fmtMoney(avm.high)}`
-              : avm?.asOf ?? "—"
+              : avm?.estimate == null && (tax?.marketTotal ?? tax?.assessedTotal) != null
+                ? "From assessor records"
+                : avm?.asOf ?? "—"
           }
           stale={staleClasses.includes("avm")}
         />
+
         <IntelCard
           icon={Home}
           label="Property"
