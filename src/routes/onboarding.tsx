@@ -210,13 +210,15 @@ function Onboarding() {
             {step === 1 && (
               <div className="space-y-4">
                 <Header title="About your home" desc="This helps us tailor value and maintenance insights." />
-                <Field label="Street address"><input className={inputCls} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="123 Main St" /></Field>
-                <div className="grid grid-cols-[1fr_5rem_7rem] gap-2">
-                  <Field label="City"><input className={inputCls} value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} placeholder="Roswell" /></Field>
-                  <Field label="State"><input className={inputCls} maxLength={2} value={form.state} onChange={e => setForm({ ...form, state: e.target.value.toUpperCase() })} placeholder="GA" /></Field>
-                  <Field label="ZIP"><input className={inputCls} inputMode="numeric" maxLength={10} value={form.zip} onChange={e => setForm({ ...form, zip: e.target.value })} placeholder="30075" /></Field>
-                </div>
-                <p className="text-xs text-muted-foreground">City and state (or ZIP) are required — we use them to match your home to property records.</p>
+                <Field label="Home address">
+                  <AddressAutocomplete
+                    value={{ street: form.address, city: form.city, state: form.state, zip: form.zip }}
+                    onChange={(v: AddressValue) =>
+                      setForm({ ...form, address: v.street, city: v.city, state: v.state, zip: v.zip })
+                    }
+                  />
+                </Field>
+
                 <Field label="Home type">
                   <div className="grid grid-cols-2 gap-2">
                     {HOME_TYPES.map(t => (
