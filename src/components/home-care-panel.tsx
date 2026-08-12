@@ -27,7 +27,6 @@ import { toast } from "sonner";
 type Tab = "systems" | "seasonal";
 
 export function HomeCarePanel() {
-  const fetchIntel = useServerFn(getMyHomeIntel);
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const logService = useServerFn(logComponentService);
   const qc = useQueryClient();
@@ -35,17 +34,8 @@ export function HomeCarePanel() {
   const [tab, setTab] = useState<Tab>("systems");
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["home-intel-maintenance"],
-    queryFn: () =>
-      fetchIntel({
-        data: {
-          classes: ["detail", "permits"],
-          revenueSource: "dashboard_maintenance",
-        },
-      }),
-    staleTime: 30 * 60_000,
-  });
+  const { intel: okIntel, isLoading } = useHomeIntel();
+
 
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
