@@ -528,12 +528,24 @@ export function computeEquityRibbon(
   avm: AvmSummary | null,
   mortgage: MortgageSummary | null,
   sales: SalesSummary | null,
+  tax?: TaxSummary | null,
 ): EquityRibbon {
-  const value = avm?.estimate ?? null;
-  const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-  const equity = value != null && balance != null ? value - balance : null;
+  // Prefer the automated valuation; fall back to the assessor's market value
+  // (or assessed total) so the card isn't blank where AVM coverage is missing.
+  const assessed = tax?.marketTotal ?? tax?.assessedTotal ?? null;
+  const value = avm?.estimate ?? assessed ?? null;
+  const valueSource: EquityRibbon["valueSource"] =
+    avm?.estimate != null ? "avm" : value != null ? "assessed" : null;
+
+  const noMortgageOnRecord = mortgage != null && mortgage.hasRecord === false;
+  const balance = mortgage && !noMortgageOnRecord ? estimateLoanBalance(mortgage) : null;
+  const effectiveBalance = noMortgageOnRecord ? 0 : balance;
+  const equity = value != null && effectiveBalance != null ? value - effectiveBalance : null;
   const equityPct = value && equity != null ? Math.max(0, Math.min(1, equity / value)) : null;
-  const cashOut = value != null && balance != null ? Math.max(0, Math.round(value * 0.8 - balance)) : null;
+  const cashOut =
+    value != null && effectiveBalance != null
+      ? Math.max(0, Math.round(value * 0.8 - effectiveBalance))
+      : null;
 
   let refi: EquityRibbon["refiSignal"] = null;
   const marketRate = BENCHMARK_REFI_RATE;
@@ -544,15 +556,15 @@ export function computeEquityRibbon(
     else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
     else if (equityPct >= 0.15) refi = "watch";
   } else if (equityPct != null) {
-    // Equity-driven signal when ATTOM has no mortgage record: cash-out / HELOC angle.
+    // Equity-driven signal when there's no mortgage record: cash-out / HELOC angle.
     if (equityPct >= 0.5) refi = "strong";
     else if (equityPct >= 0.3) refi = "moderate";
     else if (equityPct >= 0.2) refi = "watch";
-  } else if (value != null && mortgage == null) {
+  } else if (value != null && (mortgage == null || noMortgageOnRecord)) {
     // No mortgage on file at all — likely owned free-and-clear or unrecorded.
-    // Treat as moderate cash-out opportunity.
     refi = "moderate";
   }
+
 
   return {
     estimatedValue: value,
