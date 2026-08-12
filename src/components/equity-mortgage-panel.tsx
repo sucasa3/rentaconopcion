@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight, Sparkles } from "lucide-react";
+import { useHomeIntel } from "@/hooks/use-home-intel";
+import { valueStatusMessage } from "@/lib/home-value";
+import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
 import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
 import { useActivityLog, useLogOnMount } from "@/hooks/use-activity-log";
@@ -19,20 +18,10 @@ function fmtPct(n: number | null | undefined): string {
 
 export function EquityMortgagePanel() {
   const [lenderOpen, setLenderOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const logActivity = useActivityLog();
   useLogOnMount("equity_opened");
-  const fetchIntel = useServerFn(getMyHomeIntel);
-  const { data, isLoading } = useQuery({
-    queryKey: ["home-intel-equity"],
-    queryFn: () =>
-      fetchIntel({
-        data: {
-          classes: ["avm", "tax", "sales", "mortgage", "permits"],
-          revenueSource: "dashboard_equity",
-        },
-      }),
-    staleTime: 10 * 60_000,
-  });
+  const { intel: data, raw, isLoading, refresh } = useHomeIntel();
 
   if (isLoading) {
     return (
@@ -41,10 +30,21 @@ export function EquityMortgagePanel() {
       </div>
     );
   }
-  if (!data?.ok) return null;
+  if (!data) {
+    // Never disappear silently — say why and offer a retry.
+    const status = raw && !raw.ok ? raw.valueStatus : "no_coverage";
+    return (
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+        <h2 className="text-base font-semibold">Equity & mortgage</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {valueStatusMessage(status ?? "no_coverage")}
+        </p>
+      </div>
+    );
+  }
 
-  const { equity, mortgage, sales, permits } = data;
-  if (!equity && !mortgage && !permits) return null;
+  const { equity, mortgage, sales, permits, value, valueStatus } = data;
+
 
   const refiTone =
     equity?.refiSignal === "watch"
