@@ -13,6 +13,7 @@ import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 import { readOnboarding } from "@/lib/onboarding";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
+import { CompleteAddressCard } from "@/components/complete-address-card";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { HomeCarePanel } from "@/components/home-care-panel";
 import { DocumentsCard } from "@/components/documents-card";
