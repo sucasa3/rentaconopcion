@@ -102,12 +102,27 @@ export function EquityMortgagePanel() {
       </div>
 
 
-      {equity && equity.estimatedValue == null && (
-        <p className="mt-4 rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-xs text-muted-foreground">
-          No valuation on record for this address yet, so equity and cash-out
-          headroom can't be estimated.
-        </p>
+      {value?.value == null && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-secondary/40 px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            {valueStatusMessage(valueStatus)} Equity and cash-out headroom need a
+            value to calculate.
+          </p>
+          <button
+            onClick={async () => {
+              setRefreshing(true);
+              await refresh();
+              setRefreshing(false);
+            }}
+            disabled={refreshing}
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+            Retry
+          </button>
+        </div>
       )}
+
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
