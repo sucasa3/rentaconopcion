@@ -41,9 +41,10 @@ export function useHomeScore(hasAddress: boolean): {
     staleTime: 5 * 60_000,
   });
 
-  const ok = intel?.ok ? intel : null;
+  const ok = intel;
   const yearBuilt = ok?.detail?.yearBuilt ?? null;
   const permitEvents = ok?.permits?.events ?? [];
+
 
   if (isLoading || (!yearBuilt && permitEvents.length === 0)) {
     return { timeline: [], score: null, isLoading };
