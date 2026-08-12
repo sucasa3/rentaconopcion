@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { useHomeIntel } from "@/hooks/use-home-intel";
 import {
   getMyComponentServiceLog,
   logComponentService,
@@ -71,7 +71,7 @@ export function HomeCarePanel() {
     );
   }
 
-  const ok = data?.ok ? data : null;
+  const ok = okIntel;
   const yearBuilt = ok?.detail?.yearBuilt ?? null;
   const permitEvents = ok?.permits?.events ?? [];
   const hasSystems = !!yearBuilt || permitEvents.length > 0;
