@@ -64,10 +64,13 @@ export function EquityMortgagePanel() {
         <div>
           <h2 className="text-base font-semibold">Equity & mortgage</h2>
           <p className="text-xs text-muted-foreground">
-            {equity?.valueSource === "assessed"
-              ? "Based on assessor market value — no automated estimate on record for this address."
-              : "Estimated balance uses standard amortization from origination data."}
+            {value?.value == null
+              ? "Waiting on a value for your home."
+              : value.source === "assessed"
+                ? `Based on assessor market value (${fmtMoney(value.value)}) — no automated estimate on record for this address.`
+                : `Based on an automated estimate of ${fmtMoney(value.value)}.`}
           </p>
+
         </div>
         {equity?.refiSignal && (
           isHotRefi ? (
