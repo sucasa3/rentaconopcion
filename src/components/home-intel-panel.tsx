@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
-import { Home, TrendingUp, Receipt, RefreshCw } from "lucide-react";
+import { Home, TrendingUp, Receipt, RefreshCw, MapPin } from "lucide-react";
 import { useState } from "react";
+
 import { useActivityLog } from "@/hooks/use-activity-log";
 import { CompleteAddressCard } from "@/components/complete-address-card";
 
