@@ -83,34 +83,16 @@ export function CompleteAddressCard({ compact = false }: { compact?: boolean }) 
           </p>
 
           <div className="mt-4 space-y-2">
-            <input
-              className={inputCls}
-              placeholder="Street address"
-              value={street}
-              onChange={(e) => setStreet(e.target.value)}
+            <AddressAutocomplete
+              value={{ street, city, state, zip }}
+              onChange={(v) => {
+                setStreet(v.street);
+                setCity(v.city);
+                setState(v.state);
+                setZip(v.zip);
+              }}
             />
-            <div className="flex gap-2">
-              <input
-                className={inputCls}
-                placeholder="City"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-              <input
-                className={`${inputCls} w-20 shrink-0`}
-                placeholder="ST"
-                maxLength={2}
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-              />
-              <input
-                className={`${inputCls} w-28 shrink-0`}
-                placeholder="ZIP"
-                maxLength={10}
-                value={zip}
-                onChange={(e) => setZip(e.target.value)}
-              />
-            </div>
+
             <button
               onClick={save}
               disabled={!valid || saving}
