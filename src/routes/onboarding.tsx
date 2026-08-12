@@ -250,7 +250,7 @@ function Onboarding() {
                   <ReviewRow k="Name" v={form.name || "—"} />
                   <ReviewRow k="Email" v={form.email || "—"} />
                   <ReviewRow k="Phone" v={form.phone || "—"} />
-                  <ReviewRow k="Address" v={form.address || "—"} />
+                  <ReviewRow k="Address" v={[form.address, form.city, [form.state, form.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "—"} />
                   <ReviewRow k="Home type" v={form.homeType} />
                   <ReviewRow k="Year built" v={form.yearBuilt || "—"} />
                   <ReviewRow k="Goals" v={form.goals.length ? form.goals.map(id => GOALS.find(g => g.id === id)!.label).join(", ") : "—"} />
