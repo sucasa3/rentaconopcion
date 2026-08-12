@@ -31,6 +31,17 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     if (!profile?.address) {
       return { ok: false as const, error: "No address on profile", classes: {}, budget: null };
     }
+    // A street line alone can't be matched against property records — we need a
+    // city/state or a ZIP. Bail out before spending a lookup.
+    if (!(profile.city && profile.state) && !profile.zip) {
+      return {
+        ok: false as const,
+        error: "incomplete_address",
+        address: profile.address,
+        classes: {},
+        budget: null,
+      };
+    }
 
     const fullAddress = [profile.address, profile.city, profile.state, profile.zip]
       .filter(Boolean)
