@@ -495,13 +495,18 @@ export function extractPermits(raw: unknown): PermitsSummary {
 
 export interface EquityRibbon {
   estimatedValue: number | null;
+  /** where estimatedValue came from: automated valuation or assessor records */
+  valueSource: "avm" | "assessed" | null;
   loanBalanceEstimate: number | null;
   equityDollars: number | null;
   equityPct: number | null;
   cashOutHeadroom80: number | null; // 80% LTV cash-out ceiling
   refiSignal: "strong" | "moderate" | "watch" | null;
   tenureYears: number | null;
+  /** true when public records show no open mortgage */
+  noMortgageOnRecord: boolean;
 }
+
 
 /**
  * Straight-line amortization estimate of remaining balance. ATTOM gives us
