@@ -360,7 +360,10 @@ export function extractSales(raw: unknown): SalesSummary {
 
 // ---------- Mortgage ----------
 export interface MortgageSummary {
+  /** false when public records show no open mortgage for the property */
+  hasRecord: boolean;
   loanAmount: number | null;
+
   lender: string | null;
   originationDate: string | null;
   interestRate: number | null;
