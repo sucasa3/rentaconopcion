@@ -419,8 +419,13 @@ export function extractMortgage(raw: unknown): MortgageSummary {
     mtg?.loantypecode ??
     (typeof rawTerm === "object" ? rawTerm?.termType ?? null : null);
 
+  // A record with amount 0 and no lender means "nothing recorded", not a
+  // zero-dollar loan. Surface that as "no open mortgage on record".
+  const hasRecord = Boolean((amount && amount > 0) || lender || date || interestRate);
+
   return {
-    loanAmount: amount ?? null,
+    hasRecord,
+    loanAmount: amount && amount > 0 ? amount : null,
     lender: lender ?? null,
     originationDate: date ?? null,
     interestRate: interestRate ?? null,
@@ -429,6 +434,7 @@ export function extractMortgage(raw: unknown): MortgageSummary {
     termMonths,
   };
 }
+
 
 
 
