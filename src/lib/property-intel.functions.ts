@@ -103,6 +103,14 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     }
 
 
+    const resolved = resolveHomeValue({ avm, tax, equity });
+    const valueStatus: ValueStatus =
+      resolved.value != null
+        ? "resolved"
+        : result.budget?.cacheOnly
+          ? "budget_capped"
+          : "no_coverage";
+
     return {
       ok: true as const,
       address: fullAddress,
@@ -113,12 +121,16 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       mortgage,
       permits,
       equity,
+      /** canonical resolved value — every surface should read this */
+      value: resolved,
+      valueStatus,
       staleClasses: Object.entries(result.classes)
         .filter(([, v]) => v?.stale)
         .map(([k]) => k),
       errors: result.errors,
       budget: result.budget,
     };
+
   });
 
 /** Admin-only: current ATTOM spend widget data. */
