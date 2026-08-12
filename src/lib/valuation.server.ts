@@ -77,7 +77,14 @@ export async function getPropertyIntel(
   const updates: Record<string, unknown> = {};
   let touched = false;
 
-  for (const cls of opts.classes) {
+  // Resolve `detail` first: its canonical address + property id are the
+  // fallback keys we use when a raw address string fails to match.
+  const ordered = [...opts.classes].sort((a, b) =>
+    a === "detail" ? -1 : b === "detail" ? 1 : 0,
+  );
+
+  for (const cls of ordered) {
+
     const cachedData = existing?.[cls] as unknown;
     const cachedAt = existing?.[`${cls}_fetched_at`] as string | null;
     const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls);
