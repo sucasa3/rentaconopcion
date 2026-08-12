@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { useHomeIntel } from "@/hooks/use-home-intel";
 import {
   getMyComponentServiceLog,
   logComponentService,
@@ -27,7 +27,6 @@ import { toast } from "sonner";
 type Tab = "systems" | "seasonal";
 
 export function HomeCarePanel() {
-  const fetchIntel = useServerFn(getMyHomeIntel);
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const logService = useServerFn(logComponentService);
   const qc = useQueryClient();
@@ -35,17 +34,8 @@ export function HomeCarePanel() {
   const [tab, setTab] = useState<Tab>("systems");
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["home-intel-maintenance"],
-    queryFn: () =>
-      fetchIntel({
-        data: {
-          classes: ["detail", "permits"],
-          revenueSource: "dashboard_maintenance",
-        },
-      }),
-    staleTime: 30 * 60_000,
-  });
+  const { intel: okIntel, isLoading } = useHomeIntel();
+
 
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
@@ -81,7 +71,7 @@ export function HomeCarePanel() {
     );
   }
 
-  const ok = data?.ok ? data : null;
+  const ok = okIntel;
   const yearBuilt = ok?.detail?.yearBuilt ?? null;
   const permitEvents = ok?.permits?.events ?? [];
   const hasSystems = !!yearBuilt || permitEvents.length > 0;

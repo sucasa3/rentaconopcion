@@ -29,7 +29,7 @@ import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
 
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
+import { useHomeIntel } from "@/hooks/use-home-intel";
 import { listMyRequests } from "@/lib/service-requests.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Plus, PenLine } from "lucide-react";
@@ -104,26 +104,8 @@ function Dashboard() {
     })();
   }, []);
 
-  const fetchIntel = useServerFn(getMyHomeIntel);
-  const { data: intel } = useQuery({
-    queryKey: ["home-intel-hero"],
-    queryFn: () =>
-      fetchIntel({
-        data: {
-          classes: ["avm", "detail", "tax", "sales", "mortgage"],
-          revenueSource: "dashboard_hero",
-        },
-      }),
-    staleTime: 5 * 60_000,
-  });
-
-  const okIntel = intel?.ok ? intel : null;
-  const resolvedValue =
-    okIntel?.avm?.estimate ??
-    okIntel?.equity?.estimatedValue ??
-    okIntel?.tax?.marketTotal ??
-    okIntel?.tax?.assessedTotal ??
-    null;
+  const { intel: okIntel, raw: rawIntel } = useHomeIntel();
+  const resolvedValue = okIntel?.value.value ?? null;
   const heroValue: number = resolvedValue || HOME_HERO.value;
   const heroEquity: number =
     okIntel?.equity?.equityDollars ??
@@ -131,6 +113,7 @@ function Dashboard() {
   const heroEquityPct: number =
     okIntel?.equity?.equityPct ??
     (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
+
 
   const { score: homeScore, timeline, isLoading: scoreLoading } = useHomeScore(
     !!profileAddr || !!okIntel?.address,
@@ -233,7 +216,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {intel && !intel.ok && intel.error === "incomplete_address" ? (
+          {rawIntel && !rawIntel.ok && rawIntel.error === "incomplete_address" ? (
             <CompleteAddressCard />
           ) : null}
 

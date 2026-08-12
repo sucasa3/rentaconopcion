@@ -6,6 +6,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveHomeValue, type ValueStatus } from "@/lib/home-value";
+
 
 const GetMyHomeIntelInput = z.object({
   classes: z
@@ -27,9 +29,22 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
 
-    if (error) return { ok: false as const, error: "Could not load profile", classes: {}, budget: null };
+    if (error)
+      return {
+        ok: false as const,
+        error: "Could not load profile",
+        valueStatus: "no_address" as const,
+        classes: {},
+        budget: null,
+      };
     if (!profile?.address) {
-      return { ok: false as const, error: "No address on profile", classes: {}, budget: null };
+      return {
+        ok: false as const,
+        error: "No address on profile",
+        valueStatus: "no_address" as const,
+        classes: {},
+        budget: null,
+      };
     }
     // A street line alone can't be matched against property records — we need a
     // city/state or a ZIP. Bail out before spending a lookup.
@@ -37,11 +52,13 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       return {
         ok: false as const,
         error: "incomplete_address",
+        valueStatus: "incomplete_address" as const,
         address: profile.address,
         classes: {},
         budget: null,
       };
     }
+
 
     const fullAddress = [profile.address, profile.city, profile.state, profile.zip]
       .filter(Boolean)
@@ -88,6 +105,14 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     }
 
 
+    const resolved = resolveHomeValue({ avm, tax, equity });
+    const valueStatus: ValueStatus =
+      resolved.value != null
+        ? "resolved"
+        : result.budget?.cacheOnly
+          ? "budget_capped"
+          : "no_coverage";
+
     return {
       ok: true as const,
       address: fullAddress,
@@ -98,12 +123,16 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       mortgage,
       permits,
       equity,
+      /** canonical resolved value — every surface should read this */
+      value: resolved,
+      valueStatus,
       staleClasses: Object.entries(result.classes)
         .filter(([, v]) => v?.stale)
         .map(([k]) => k),
       errors: result.errors,
       budget: result.budget,
     };
+
   });
 
 /** Admin-only: current ATTOM spend widget data. */

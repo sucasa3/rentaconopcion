@@ -1,10 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { Home, TrendingUp, Receipt, RefreshCw, MapPin } from "lucide-react";
 import { useState } from "react";
 
 import { useActivityLog } from "@/hooks/use-activity-log";
+import { useHomeIntel } from "@/hooks/use-home-intel";
+import { valueStatusMessage } from "@/lib/home-value";
 import { CompleteAddressCard } from "@/components/complete-address-card";
 
 function fmtMoney(n: number | null): string {
@@ -13,23 +12,11 @@ function fmtMoney(n: number | null): string {
 }
 
 export function HomeIntelPanel() {
-  const [refreshTick, setRefreshTick] = useState(0);
   const [editingAddress, setEditingAddress] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const logActivity = useActivityLog();
-  const fetchIntel = useServerFn(getMyHomeIntel);
-  const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ["home-intel", refreshTick],
-    queryFn: () =>
-      fetchIntel({
-        data: {
-          classes: ["avm", "detail", "tax"],
-          forceRefresh: refreshTick > 0,
-          revenueSource: "dashboard_view",
-        },
-      }),
-    staleTime: 5 * 60_000,
-  });
+  const { intel: data, raw, isLoading, isError, refresh } = useHomeIntel();
 
   if (isLoading) {
     return (
@@ -39,8 +26,8 @@ export function HomeIntelPanel() {
     );
   }
 
-  if (isError || !data?.ok) {
-    const err = data && !data.ok ? data.error : "Could not load home intelligence.";
+  if (isError || !data) {
+    const err = raw && !raw.ok ? raw.error : "Could not load home intelligence.";
     if (err === "incomplete_address") {
       return <CompleteAddressCard />;
     }
@@ -56,7 +43,8 @@ export function HomeIntelPanel() {
     );
   }
 
-  const { avm, detail, tax, address, staleClasses, budget } = data;
+  const { avm, detail, tax, address, staleClasses, budget, value, valueStatus } = data;
+
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
@@ -72,15 +60,16 @@ export function HomeIntelPanel() {
           </button>
         </div>
         <button
-          onClick={() => {
+          onClick={async () => {
             logActivity("value_refreshed");
-            setRefreshTick((t) => t + 1);
-            refetch();
+            setRefreshing(true);
+            await refresh();
+            setRefreshing(false);
           }}
-          disabled={isFetching}
+          disabled={refreshing}
           className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50"
         >
-          <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} /> Refresh
+          <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
 
@@ -90,21 +79,29 @@ export function HomeIntelPanel() {
         </div>
       )}
 
+      {value.value == null && (
+        <p className="mt-4 rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-xs text-muted-foreground">
+          {valueStatusMessage(valueStatus)}
+        </p>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <IntelCard
           icon={TrendingUp}
           label="Estimated value"
-          primary={fmtMoney(avm?.estimate ?? tax?.marketTotal ?? tax?.assessedTotal ?? null)}
+          primary={fmtMoney(value.value)}
           secondary={
-            avm?.low != null && avm?.high != null
+            value.source === "avm" && avm?.low != null && avm?.high != null
               ? `${fmtMoney(avm.low)} – ${fmtMoney(avm.high)}`
-              : avm?.estimate == null && (tax?.marketTotal ?? tax?.assessedTotal) != null
+              : value.source === "assessed"
                 ? "From assessor records"
-                : avm?.asOf ?? "—"
+                : value.source === "avm"
+                  ? avm?.asOf ?? "Automated estimate"
+                  : "No valuation on record"
           }
           stale={staleClasses.includes("avm")}
         />
+
 
         <IntelCard
           icon={Home}
