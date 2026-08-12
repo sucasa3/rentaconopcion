@@ -105,8 +105,13 @@ export function EquityMortgagePanel() {
           icon={TrendingUp}
           label="Estimated equity"
           primary={fmtMoney(equity?.equityDollars)}
-          secondary={equity?.equityPct != null ? `${fmtPct(equity.equityPct)} of value` : "—"}
+          secondary={
+            equity?.equityPct != null
+              ? `${fmtPct(equity.equityPct)} of value${equity.valueSource === "assessed" ? " (assessed)" : ""}`
+              : "—"
+          }
         />
+
         <Stat
           icon={Wallet}
           label="Cash-out headroom"
@@ -116,13 +121,16 @@ export function EquityMortgagePanel() {
         <Stat
           icon={Landmark}
           label="Loan balance (est.)"
-          primary={fmtMoney(equity?.loanBalanceEstimate)}
+          primary={equity?.noMortgageOnRecord ? "None on record" : fmtMoney(equity?.loanBalanceEstimate)}
           secondary={
-            mortgage?.interestRate != null
-              ? `${mortgage.interestRate}% · ${mortgage.lender ?? "lender"}`
-              : mortgage?.lender ?? "—"
+            equity?.noMortgageOnRecord
+              ? "No open mortgage in public records"
+              : mortgage?.interestRate != null
+                ? `${mortgage.interestRate}% · ${mortgage.lender ?? "lender"}`
+                : mortgage?.lender ?? "—"
           }
         />
+
         <Stat
           icon={Hammer}
           label="Permits on file"

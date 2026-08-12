@@ -77,7 +77,14 @@ export async function getPropertyIntel(
   const updates: Record<string, unknown> = {};
   let touched = false;
 
-  for (const cls of opts.classes) {
+  // Resolve `detail` first: its canonical address + property id are the
+  // fallback keys we use when a raw address string fails to match.
+  const ordered = [...opts.classes].sort((a, b) =>
+    a === "detail" ? -1 : b === "detail" ? 1 : 0,
+  );
+
+  for (const cls of ordered) {
+
     const cachedData = existing?.[cls] as unknown;
     const cachedAt = existing?.[`${cls}_fetched_at`] as string | null;
     const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls);
@@ -139,6 +146,49 @@ export async function getPropertyIntel(
     result.classes[cls] = { data: fetched.data, fetchedAt: now, stale: false };
   }
 
+  // 2b. Valuation fallback — the AVM endpoint is stricter about address
+  // matching than the rest. When it comes back empty but the detail lookup
+  // matched, retry using the provider's canonical one-line address, then by
+  // property id. Costs at most one extra call and only when we'd otherwise
+  // show a blank value.
+  const wantsAvm = opts.classes.includes("avm");
+  const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
+  if (wantsAvm && avmEmpty && !cacheOnly) {
+    const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
+    const matched = matchedProperty(detailData);
+    const attempts: Array<{ addr: string; attomId?: string | null }> = [];
+    if (matched.oneLine && normalizeAddress(matched.oneLine) !== normalized) {
+      attempts.push({ addr: matched.oneLine });
+    }
+    if (matched.attomId) attempts.push({ addr: address, attomId: matched.attomId });
+
+    for (const attempt of attempts) {
+      const retry = await attomFetch("avm", attempt.addr, { attomId: attempt.attomId ?? null });
+      callsUsed += 1;
+      await supabaseAdmin.from("attom_call_log").insert({
+        endpoint: "avm",
+        address_normalized: normalized,
+        requested_by: opts.requestedBy ?? null,
+        cache_hit: false,
+        cost_cents: attomCostCents("avm"),
+        status: retry.status,
+        error_message: retry.ok ? null : retry.error,
+        revenue_source: `${opts.revenueSource}_avm_fallback`,
+      });
+      if (retry.ok && extractAvm(retry.data).estimate != null) {
+        const now = new Date().toISOString();
+        updates["avm"] = retry.data;
+        updates["avm_fetched_at"] = now;
+        touched = true;
+        result.classes.avm = { data: retry.data, fetchedAt: now, stale: false };
+        delete result.errors.avm;
+        break;
+      }
+    }
+  }
+
+
+
   // 3. Persist any new/refreshed classes into property_intel (upsert)
   if (touched) {
     const parts = address.split(",").map((p) => p.trim());
@@ -182,7 +232,35 @@ export async function getPropertyIntel(
 
 const TRIAL_COST_CENTS_PER_CALL = 10;
 
+// ---------- Matched-property identity (from the `detail` response) ----------
+export function matchedProperty(raw: unknown): {
+  attomId: string | null;
+  oneLine: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+} {
+  const r = raw as {
+    status?: { attomId?: number | string };
+    property?: Array<{
+      identifier?: { attomId?: number | string; Id?: number | string };
+      address?: { oneLine?: string; locality?: string; countrySubd?: string; postal1?: string };
+    }>;
+  } | null;
+  const p = r?.property?.[0];
+  const id = p?.identifier?.attomId ?? p?.identifier?.Id ?? r?.status?.attomId ?? null;
+
+  return {
+    attomId: id != null ? String(id) : null,
+    oneLine: p?.address?.oneLine ?? null,
+    city: p?.address?.locality ?? null,
+    state: p?.address?.countrySubd ?? null,
+    zip: p?.address?.postal1 ?? null,
+  };
+}
+
 // ---------- Extractors: pull the fields UI actually cares about ----------
+
 // ATTOM responses are deeply nested; keep the shape stable for the UI.
 
 export interface AvmSummary {
@@ -282,7 +360,10 @@ export function extractSales(raw: unknown): SalesSummary {
 
 // ---------- Mortgage ----------
 export interface MortgageSummary {
+  /** false when public records show no open mortgage for the property */
+  hasRecord: boolean;
   loanAmount: number | null;
+
   lender: string | null;
   originationDate: string | null;
   interestRate: number | null;
@@ -341,8 +422,13 @@ export function extractMortgage(raw: unknown): MortgageSummary {
     mtg?.loantypecode ??
     (typeof rawTerm === "object" ? rawTerm?.termType ?? null : null);
 
+  // A record with amount 0 and no lender means "nothing recorded", not a
+  // zero-dollar loan. Surface that as "no open mortgage on record".
+  const hasRecord = Boolean((amount && amount > 0) || lender || date || interestRate);
+
   return {
-    loanAmount: amount ?? null,
+    hasRecord,
+    loanAmount: amount && amount > 0 ? amount : null,
     lender: lender ?? null,
     originationDate: date ?? null,
     interestRate: interestRate ?? null,
@@ -351,6 +437,7 @@ export function extractMortgage(raw: unknown): MortgageSummary {
     termMonths,
   };
 }
+
 
 
 
@@ -408,13 +495,18 @@ export function extractPermits(raw: unknown): PermitsSummary {
 
 export interface EquityRibbon {
   estimatedValue: number | null;
+  /** where estimatedValue came from: automated valuation or assessor records */
+  valueSource: "avm" | "assessed" | null;
   loanBalanceEstimate: number | null;
   equityDollars: number | null;
   equityPct: number | null;
   cashOutHeadroom80: number | null; // 80% LTV cash-out ceiling
   refiSignal: "strong" | "moderate" | "watch" | null;
   tenureYears: number | null;
+  /** true when public records show no open mortgage */
+  noMortgageOnRecord: boolean;
 }
+
 
 /**
  * Straight-line amortization estimate of remaining balance. ATTOM gives us
@@ -441,12 +533,24 @@ export function computeEquityRibbon(
   avm: AvmSummary | null,
   mortgage: MortgageSummary | null,
   sales: SalesSummary | null,
+  tax?: TaxSummary | null,
 ): EquityRibbon {
-  const value = avm?.estimate ?? null;
-  const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-  const equity = value != null && balance != null ? value - balance : null;
+  // Prefer the automated valuation; fall back to the assessor's market value
+  // (or assessed total) so the card isn't blank where AVM coverage is missing.
+  const assessed = tax?.marketTotal ?? tax?.assessedTotal ?? null;
+  const value = avm?.estimate ?? assessed ?? null;
+  const valueSource: EquityRibbon["valueSource"] =
+    avm?.estimate != null ? "avm" : value != null ? "assessed" : null;
+
+  const noMortgageOnRecord = mortgage != null && mortgage.hasRecord === false;
+  const balance = mortgage && !noMortgageOnRecord ? estimateLoanBalance(mortgage) : null;
+  const effectiveBalance = noMortgageOnRecord ? 0 : balance;
+  const equity = value != null && effectiveBalance != null ? value - effectiveBalance : null;
   const equityPct = value && equity != null ? Math.max(0, Math.min(1, equity / value)) : null;
-  const cashOut = value != null && balance != null ? Math.max(0, Math.round(value * 0.8 - balance)) : null;
+  const cashOut =
+    value != null && effectiveBalance != null
+      ? Math.max(0, Math.round(value * 0.8 - effectiveBalance))
+      : null;
 
   let refi: EquityRibbon["refiSignal"] = null;
   const marketRate = BENCHMARK_REFI_RATE;
@@ -457,23 +561,26 @@ export function computeEquityRibbon(
     else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
     else if (equityPct >= 0.15) refi = "watch";
   } else if (equityPct != null) {
-    // Equity-driven signal when ATTOM has no mortgage record: cash-out / HELOC angle.
+    // Equity-driven signal when there's no mortgage record: cash-out / HELOC angle.
     if (equityPct >= 0.5) refi = "strong";
     else if (equityPct >= 0.3) refi = "moderate";
     else if (equityPct >= 0.2) refi = "watch";
-  } else if (value != null && mortgage == null) {
+  } else if (value != null && (mortgage == null || noMortgageOnRecord)) {
     // No mortgage on file at all — likely owned free-and-clear or unrecorded.
-    // Treat as moderate cash-out opportunity.
     refi = "moderate";
   }
 
+
   return {
     estimatedValue: value,
+    valueSource,
     loanBalanceEstimate: balance,
     equityDollars: equity,
     equityPct,
     cashOutHeadroom80: cashOut,
     refiSignal: refi,
     tenureYears: sales?.tenureYears ?? null,
+    noMortgageOnRecord,
   };
 }
+

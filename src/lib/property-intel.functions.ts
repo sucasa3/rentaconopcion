@@ -56,6 +56,7 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       extractMortgage,
       extractPermits,
       computeEquityRibbon,
+      matchedProperty,
     } = await import("@/lib/valuation.server");
     const result = await getPropertyIntel(fullAddress, {
       classes: data.classes,
@@ -70,7 +71,22 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     const sales = result.classes.sales ? extractSales(result.classes.sales.data) : null;
     const mortgage = result.classes.mortgage ? extractMortgage(result.classes.mortgage.data) : null;
     const permits = result.classes.permits ? extractPermits(result.classes.permits.data) : null;
-    const equity = avm || mortgage ? computeEquityRibbon(avm, mortgage, sales) : null;
+    const equity = avm || mortgage || tax ? computeEquityRibbon(avm, mortgage, sales, tax) : null;
+
+    // Backfill any missing address pieces from the matched public record so the
+    // next lookup is an exact match (a missing ZIP breaks valuation matching).
+    if (result.classes.detail && (!profile.city || !profile.state || !profile.zip)) {
+      const matched = matchedProperty(result.classes.detail.data);
+      const patch: { city?: string; state?: string; zip?: string } = {};
+      if (!profile.city && matched.city) patch.city = matched.city;
+      if (!profile.state && matched.state) patch.state = matched.state;
+      if (!profile.zip && matched.zip) patch.zip = matched.zip;
+      if (Object.keys(patch).length > 0) {
+        await context.supabase.from("profiles").update(patch).eq("id", context.userId);
+      }
+
+    }
+
 
     return {
       ok: true as const,

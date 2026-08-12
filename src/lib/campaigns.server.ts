@@ -183,7 +183,7 @@ export async function loadCachedFacts(t: CampaignTarget): Promise<CampaignFacts>
     facts.lastSalePrice = (sales as { lastSalePrice?: number | null } | null)?.lastSalePrice ?? null;
     facts.lastSaleDate = (sales as { lastSaleDate?: string | null } | null)?.lastSaleDate ?? null;
 
-    const ribbon = computeEquityRibbon(avm, mortgage, sales);
+    const ribbon = computeEquityRibbon(avm, mortgage, sales, tax);
     facts.equity = ribbon.equityDollars;
     facts.equityPct = ribbon.equityPct;
     facts.refiSignal = ribbon.refiSignal;

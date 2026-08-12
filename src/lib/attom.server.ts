@@ -72,23 +72,31 @@ function splitAddress(address: string): { address1: string; address2: string } {
 export async function attomFetch(
   endpoint: AttomEndpoint,
   address: string,
+  opts?: { attomId?: string | number | null },
 ): Promise<{ ok: true; data: unknown; status: number } | { ok: false; error: string; status: number }> {
   const apiKey = process.env.ATTOM_API_KEY;
   if (!apiKey) return { ok: false, error: "ATTOM_API_KEY not configured", status: 500 };
 
-  const { address1, address2 } = splitAddress(address);
-  // Without a city/state (or ZIP) the provider rejects the request outright.
-  // Fail locally so we don't burn a paid lookup on a request we know is invalid.
-  if (!address2) {
-    return {
-      ok: false,
-      error: "Incomplete address: city and state (or ZIP) are required",
-      status: 422,
-    };
-  }
   const url = new URL(`${ATTOM_BASE}${ENDPOINT_PATHS[endpoint]}`);
-  url.searchParams.set("address1", address1);
-  url.searchParams.set("address2", address2);
+  if (opts?.attomId) {
+    // Exact match by provider property id — used as a fallback when the raw
+    // address string doesn't match (missing ZIP, abbreviations, unit lines).
+    url.searchParams.set("attomid", String(opts.attomId));
+  } else {
+    const { address1, address2 } = splitAddress(address);
+    // Without a city/state (or ZIP) the provider rejects the request outright.
+    // Fail locally so we don't burn a paid lookup on a request we know is invalid.
+    if (!address2) {
+      return {
+        ok: false,
+        error: "Incomplete address: city and state (or ZIP) are required",
+        status: 422,
+      };
+    }
+    url.searchParams.set("address1", address1);
+    url.searchParams.set("address2", address2);
+  }
+
 
   try {
     const res = await fetch(url.toString(), {
