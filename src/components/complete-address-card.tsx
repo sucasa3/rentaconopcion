@@ -84,7 +84,7 @@ export function CompleteAddressCard({ compact = false }: { compact?: boolean }) 
           <div className="mt-4 space-y-2">
             <AddressAutocomplete
               value={{ street, city, state, zip }}
-              onChange={(v) => {
+              onChange={(v: AddressValue) => {
                 setStreet(v.street);
                 setCity(v.city);
                 setState(v.state);
