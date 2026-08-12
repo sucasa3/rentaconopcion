@@ -135,6 +135,20 @@ export async function getPropertyIntel(
       continue;
     }
 
+    // Known-empty for this address recently — don't buy the same blank again.
+    if (emptyClasses.has(cls) && !opts.forceRefresh) {
+      if (cachedData) {
+        result.classes[cls] = {
+          data: cachedData,
+          fetchedAt: cachedAt ?? new Date(0).toISOString(),
+          stale: true,
+        };
+      } else {
+        result.errors[cls] = "No record on file for this address.";
+      }
+      continue;
+    }
+
     // Cache miss + budget available → live fetch
     const fetched = await attomFetch(cls, address);
     const cost = attomCostCents(cls);
