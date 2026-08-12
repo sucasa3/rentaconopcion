@@ -4,6 +4,7 @@ import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { Home, TrendingUp, Receipt, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useActivityLog } from "@/hooks/use-activity-log";
+import { CompleteAddressCard } from "@/components/complete-address-card";
 
 function fmtMoney(n: number | null): string {
   if (n == null) return "—";
@@ -37,6 +38,9 @@ export function HomeIntelPanel() {
 
   if (isError || !data?.ok) {
     const err = data && !data.ok ? data.error : "Could not load home intelligence.";
+    if (err === "incomplete_address") {
+      return <CompleteAddressCard />;
+    }
     return (
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
         <h2 className="text-base font-semibold">Home intelligence</h2>

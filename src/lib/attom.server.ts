@@ -77,9 +77,18 @@ export async function attomFetch(
   if (!apiKey) return { ok: false, error: "ATTOM_API_KEY not configured", status: 500 };
 
   const { address1, address2 } = splitAddress(address);
+  // Without a city/state (or ZIP) the provider rejects the request outright.
+  // Fail locally so we don't burn a paid lookup on a request we know is invalid.
+  if (!address2) {
+    return {
+      ok: false,
+      error: "Incomplete address: city and state (or ZIP) are required",
+      status: 422,
+    };
+  }
   const url = new URL(`${ATTOM_BASE}${ENDPOINT_PATHS[endpoint]}`);
   url.searchParams.set("address1", address1);
-  if (address2) url.searchParams.set("address2", address2);
+  url.searchParams.set("address2", address2);
 
   try {
     const res = await fetch(url.toString(), {
