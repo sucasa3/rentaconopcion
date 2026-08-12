@@ -41,21 +41,27 @@ type CensusMatch = {
   };
 };
 
-function streetFrom(m: CensusMatch): string {
-  const c = m.addressComponents ?? {};
-  const parts = [
-    c.fromAddress,
-    c.preQualifier,
-    c.preDirection,
-    c.preType,
-    c.streetName,
-    c.suffixType,
-    c.suffixDirection,
-    c.suffixQualifier,
-  ].filter((p) => p && p.trim().length > 0);
-  if (parts.length > 0) return parts.join(" ");
-  return (m.matchedAddress ?? "").split(",")[0]?.trim() ?? "";
+/** The geocoder returns SHOUTING CASE; make it presentable. */
+function titleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\b([a-z])/g, (c) => c.toUpperCase())
+    .replace(/\b(Nw|Ne|Sw|Se)\b/g, (c) => c.toUpperCase());
 }
+
+function streetFrom(m: CensusMatch): string {
+  // `matchedAddress` echoes the house number the user typed; the
+  // `fromAddress` component is only the start of the block range.
+  const first = (m.matchedAddress ?? "").split(",")[0]?.trim();
+  if (first) return titleCase(first);
+  const c = m.addressComponents ?? {};
+  return titleCase(
+    [c.fromAddress, c.preDirection, c.streetName, c.suffixType, c.suffixDirection]
+      .filter((p) => p && p.trim().length > 0)
+      .join(" "),
+  );
+}
+
 
 /** Verify/complete a typed address. Returns 0-5 candidate matches. */
 export const searchAddresses = createServerFn({ method: "POST" })
