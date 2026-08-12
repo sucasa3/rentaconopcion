@@ -104,7 +104,7 @@ function Dashboard() {
     })();
   }, []);
 
-  const { intel: okIntel } = useHomeIntel();
+  const { intel: okIntel, raw: rawIntel } = useHomeIntel();
   const resolvedValue = okIntel?.value.value ?? null;
   const heroValue: number = resolvedValue || HOME_HERO.value;
   const heroEquity: number =
