@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { AddressAutocomplete, type AddressValue } from "@/components/address-autocomplete";
+
 
 
 export const Route = createFileRoute("/onboarding")({
