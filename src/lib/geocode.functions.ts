@@ -84,14 +84,18 @@ export const searchAddresses = createServerFn({ method: "POST" })
       const suggestions = matches.slice(0, 5).map((m) => {
         const c = m.addressComponents ?? {};
         return {
-          label: m.matchedAddress ?? "",
+          label: titleCase(m.matchedAddress ?? "").replace(
+            /\b([a-z]{2}),/gi,
+            (s) => s.toUpperCase(),
+          ),
           street: streetFrom(m),
-          city: c.city ?? "",
+          city: titleCase(c.city ?? ""),
           state: (c.state ?? "").toUpperCase(),
           zip: c.zip ?? "",
           lat: typeof m.coordinates?.y === "number" ? m.coordinates.y : null,
           lon: typeof m.coordinates?.x === "number" ? m.coordinates.x : null,
         };
+
       });
 
       return { suggestions, error: null };
