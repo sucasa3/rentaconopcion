@@ -60,15 +60,16 @@ export function HomeIntelPanel() {
           </button>
         </div>
         <button
-          onClick={() => {
+          onClick={async () => {
             logActivity("value_refreshed");
-            setRefreshTick((t) => t + 1);
-            refetch();
+            setRefreshing(true);
+            await refresh();
+            setRefreshing(false);
           }}
-          disabled={isFetching}
+          disabled={refreshing}
           className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50"
         >
-          <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} /> Refresh
+          <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} /> Refresh
         </button>
       </div>
 
@@ -78,21 +79,29 @@ export function HomeIntelPanel() {
         </div>
       )}
 
+      {value.value == null && (
+        <p className="mt-4 rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-xs text-muted-foreground">
+          {valueStatusMessage(valueStatus)}
+        </p>
+      )}
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <IntelCard
           icon={TrendingUp}
           label="Estimated value"
-          primary={fmtMoney(avm?.estimate ?? tax?.marketTotal ?? tax?.assessedTotal ?? null)}
+          primary={fmtMoney(value.value)}
           secondary={
-            avm?.low != null && avm?.high != null
+            value.source === "avm" && avm?.low != null && avm?.high != null
               ? `${fmtMoney(avm.low)} – ${fmtMoney(avm.high)}`
-              : avm?.estimate == null && (tax?.marketTotal ?? tax?.assessedTotal) != null
+              : value.source === "assessed"
                 ? "From assessor records"
-                : avm?.asOf ?? "—"
+                : value.source === "avm"
+                  ? avm?.asOf ?? "Automated estimate"
+                  : "No valuation on record"
           }
           stale={staleClasses.includes("avm")}
         />
+
 
         <IntelCard
           icon={Home}
