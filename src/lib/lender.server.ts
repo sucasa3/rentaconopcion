@@ -11,40 +11,122 @@ export type ClientRow = {
   note?: string | null;
 };
 
+/** Split a CSV line honoring quoted fields. */
+function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else inQuotes = false;
+      } else cur += ch;
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ",") {
+      out.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out.map((c) => c.trim());
+}
+
+const norm = (s: string) =>
+  s
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+
+const ALIASES: Record<keyof ClientRow | "first_name" | "last_name", string[]> = {
+  full_name: ["full_name", "fullname", "name", "client", "client_name", "owner", "owner_name", "homeowner", "contact", "contact_name", "borrower", "borrower_name"],
+  first_name: ["first_name", "firstname", "first"],
+  last_name: ["last_name", "lastname", "last", "surname"],
+  address: ["address", "address_1", "address1", "street", "street_address", "property_address", "site_address", "mailing_address", "addr"],
+  city: ["city", "property_city", "town"],
+  state: ["state", "property_state", "st"],
+  zip: ["zip", "zipcode", "zip_code", "postal_code", "postalcode", "property_zip"],
+  email: ["email", "email_address", "e_mail"],
+  loan_balance_cents: ["loan_balance", "balance", "loan_amount", "current_balance", "unpaid_balance", "upb"],
+  interest_rate_bps: ["rate", "interest_rate", "note_rate", "apr"],
+  note: ["note", "notes", "comment", "comments"],
+};
+
+function findCol(header: string[], key: keyof typeof ALIASES): number {
+  for (const a of ALIASES[key]) {
+    const i = header.indexOf(a);
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+const num = (v?: string) => {
+  if (!v) return null;
+  const n = Number(v.replace(/[^0-9.\-]/g, ""));
+  return Number.isFinite(n) ? n : null;
+};
+
 export function parseClientCsv(csv: string): ClientRow[] {
-  const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) return [];
-  const header = lines[0].split(",").map((h) => h.trim().toLowerCase());
-  const idx = (k: string) => header.indexOf(k);
-  const cFull = idx("full_name");
-  const cAddr = idx("address");
-  const cCity = idx("city");
-  const cState = idx("state");
-  const cZip = idx("zip");
-  const cEmail = idx("email");
-  const cLoan = idx("loan_balance");
-  const cRate = idx("rate");
-  const cNote = idx("note");
-  if (cFull < 0 || cAddr < 0) throw new Error("CSV must include full_name and address columns");
+
+  // Some exports have title/blank rows before the real header — find the first
+  // row that looks like a header with a name and an address column.
+  let headerIdx = -1;
+  let header: string[] = [];
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    const cells = splitCsvLine(lines[i]).map(norm);
+    const hasName = findCol(cells, "full_name") >= 0 || findCol(cells, "last_name") >= 0;
+    const hasAddr = findCol(cells, "address") >= 0;
+    if (hasName && hasAddr) {
+      headerIdx = i;
+      header = cells;
+      break;
+    }
+  }
+
+  if (headerIdx < 0) {
+    const first = splitCsvLine(lines[0]).map((c) => c.trim()).filter(Boolean).join(", ");
+    throw new Error(
+      `Couldn't find a name column and an address column in that file. Found columns: ${first || "(none)"}. Rename them to full_name and address (or download the template) and try again.`,
+    );
+  }
+
+  const cFull = findCol(header, "full_name");
+  const cFirst = findCol(header, "first_name");
+  const cLast = findCol(header, "last_name");
+  const cAddr = findCol(header, "address");
+  const cCity = findCol(header, "city");
+  const cState = findCol(header, "state");
+  const cZip = findCol(header, "zip");
+  const cEmail = findCol(header, "email");
+  const cLoan = findCol(header, "loan_balance_cents");
+  const cRate = findCol(header, "interest_rate_bps");
+  const cNote = findCol(header, "note");
 
   const out: ClientRow[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(",").map((c) => c.trim());
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const cells = splitCsvLine(lines[i]);
+    const name =
+      (cFull >= 0 ? cells[cFull] : "") ||
+      [cFirst >= 0 ? cells[cFirst] : "", cLast >= 0 ? cells[cLast] : ""].filter(Boolean).join(" ");
+    const loan = cLoan >= 0 ? num(cells[cLoan]) : null;
+    const rate = cRate >= 0 ? num(cells[cRate]) : null;
     const row: ClientRow = {
-      full_name: cells[cFull] ?? "",
-      address: cells[cAddr] ?? "",
+      full_name: (name ?? "").trim(),
+      address: (cells[cAddr] ?? "").trim(),
       city: cCity >= 0 ? cells[cCity] || null : null,
       state: cState >= 0 ? cells[cState] || null : null,
       zip: cZip >= 0 ? cells[cZip] || null : null,
       email: cEmail >= 0 ? cells[cEmail] || null : null,
-      loan_balance_cents:
-        cLoan >= 0 && cells[cLoan]
-          ? Math.round(Number(cells[cLoan].replace(/[^0-9.]/g, "")) * 100)
-          : null,
-      interest_rate_bps:
-        cRate >= 0 && cells[cRate]
-          ? Math.round(Number(cells[cRate].replace(/[^0-9.]/g, "")) * 100)
-          : null,
+      loan_balance_cents: loan != null ? Math.round(loan * 100) : null,
+      interest_rate_bps: rate != null ? Math.round(rate * 100) : null,
       note: cNote >= 0 ? cells[cNote] || null : null,
     };
     if (row.full_name && row.address) out.push(row);
