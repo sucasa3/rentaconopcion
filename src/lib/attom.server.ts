@@ -24,18 +24,21 @@ export type AttomEndpoint =
   | "owner"
   | "mortgage";
 
-// TTLs by class (per approved plan)
+// TTLs by class. Static records (base profile, assessor) effectively never
+// change between sales, so we buy them once and hold them; only the valuation
+// is genuinely time-sensitive.
 export const ATTOM_TTL_DAYS: Record<AttomEndpoint, number> = {
   avm: 30,
-  detail: 365,
-  tax: 365,
-  sales: 180,
+  detail: 3650,
+  tax: 3650,
+  sales: 365,
   permits: 90,
-  neighborhood: 180,
-  risk: 180,
-  owner: 90,
-  mortgage: 90,
+  neighborhood: 365,
+  risk: 365,
+  owner: 365,
+  mortgage: 180,
 };
+
 
 const ENDPOINT_PATHS: Record<AttomEndpoint, string> = {
   avm: "/attomavm/detail",
