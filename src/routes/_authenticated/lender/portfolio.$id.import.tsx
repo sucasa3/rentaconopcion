@@ -108,33 +108,7 @@ function PortfolioImport() {
         </button>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-        <div className="flex items-center gap-2">
-          <Upload className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold">Import a list</h2>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          CSV columns: <code>full_name, address, city, state, zip, email, loan_balance, rate, note</code>.
-          Only <code>full_name</code> and <code>address</code> are required.
-        </p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,text/csv"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-          }}
-        />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={ingest.isPending}
-          className="mt-4 inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-medium hover:bg-secondary disabled:opacity-60"
-        >
-          <Upload className="h-3 w-3" /> {ingest.isPending ? "Importing…" : "Choose CSV file"}
-        </button>
-      </div>
+      <BulkClientUpload onCsv={(csv) => ingest.mutate(csv)} busy={ingest.isPending} />
     </div>
   );
 }
