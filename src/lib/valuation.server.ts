@@ -260,7 +260,13 @@ export async function getPropertyIntel(
   // show a blank value.
   const wantsAvm = opts.classes.includes("avm");
   const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
-  if (wantsAvm && avmEmpty && !cacheOnly && (!emptyClasses.has("avm") || opts.forceRefresh)) {
+  if (
+    wantsAvm &&
+    avmEmpty &&
+    !cacheOnly &&
+    !disabledClasses.has("avm") &&
+    (!emptyClasses.has("avm") || opts.forceRefresh)
+  ) {
     const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
     const matched = matchedProperty(detailData);
     const attempts: Array<{ addr: string; attomId?: string | null }> = [];
@@ -271,13 +277,13 @@ export async function getPropertyIntel(
 
     for (const attempt of attempts) {
       const retry = await attomFetch("avm", attempt.addr, { attomId: attempt.attomId ?? null });
-      callsUsed += 1;
+      if (retry.ok) callsUsed += 1;
       await supabaseAdmin.from("attom_call_log").insert({
         endpoint: "avm",
         address_normalized: normalized,
         requested_by: opts.requestedBy ?? null,
         cache_hit: false,
-        cost_cents: attomCostCents("avm"),
+        cost_cents: retry.ok ? attomCostCents("avm") : 0,
         status: retry.status,
         error_message: retry.ok ? null : retry.error,
         revenue_source: `${opts.revenueSource}_avm_fallback`,
@@ -291,7 +297,10 @@ export async function getPropertyIntel(
         delete result.errors.avm;
         break;
       }
+      if (!retry.ok) await recordMiss("avm", retry.status ?? null, retry.error);
     }
+  }
+
   }
 
 
