@@ -22,14 +22,18 @@ import { persistPortfolioOpportunities } from "./opportunities.server";
 /** Share of the monthly allowance background work is allowed to consume. */
 export const BACKGROUND_BUDGET_PCT = 30;
 
-/** Classes we want for every client in a book, cheapest-identity-first. */
+/**
+ * Core records we want for every client in a book, cheapest-identity-first.
+ * Assessor/tax and sale history are deliberately excluded — they're pulled
+ * only when a specific fact can't be filled without them.
+ */
 export const DEFAULT_CLASSES: AttomEndpoint[] = [
   "detail",
-  "tax",
-  "sales",
   "mortgage",
   "avm",
+  "permits",
 ];
+
 
 const MAX_ATTEMPTS = 2;
 
@@ -269,6 +273,9 @@ export async function runEnrichmentTick(opts?: {
       const intel = await getPropertyIntel(address, {
         classes: missing,
         revenueSource: "background_enrichment",
+        // Background valuation refresh runs on a slower clock than on-demand
+        // user requests — dormant books don't need a monthly re-buy.
+        ttlOverrides: { avm: 90 },
       });
       remainingCalls -= missing.length;
       out.spentCalls += missing.length;
@@ -278,7 +285,19 @@ export async function runEnrichmentTick(opts?: {
 
       // Fill in loan facts we don't already hold, from the same pull.
       const m = intel.classes.mortgage ? extractMortgage(intel.classes.mortgage.data) : null;
-      const s = intel.classes.sales ? extractSales(intel.classes.sales.data) : null;
+      let s = intel.classes.sales ? extractSales(intel.classes.sales.data) : null;
+
+      // Sale history is conditional: only buy it when we still can't date the
+      // loan from mortgage records or from what the book already holds.
+      if (!s && !client.close_date && !m?.originationDate && remainingCalls > 0) {
+        const salesIntel = await getPropertyIntel(address, {
+          classes: ["sales"],
+          revenueSource: "background_enrichment_conditional",
+        });
+        remainingCalls -= 1;
+        out.spentCalls += 1;
+        s = salesIntel.classes.sales ? extractSales(salesIntel.classes.sales.data) : null;
+      }
       const patch: {
         last_intel_refreshed_at: string;
         loan_amount_at_close_cents?: number;
@@ -289,6 +308,7 @@ export async function runEnrichmentTick(opts?: {
         patch.loan_amount_at_close_cents = Math.round(m.loanAmount * 100);
       }
       const closeDate = m?.originationDate ?? s?.lastSale?.date ?? null;
+
       if (!client.close_date && closeDate) {
         patch.close_date = closeDate;
       }

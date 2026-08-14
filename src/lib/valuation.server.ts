@@ -21,6 +21,13 @@ export interface GetPropertyIntelOptions {
   revenueSource: string; // 'signup_enrichment' | 'refresh' | 'report' | 'lead_claim' | ...
   requestedBy?: string | null;
   forceRefresh?: boolean;
+  /**
+   * Per-class freshness overrides (days). Background work uses a longer
+   * valuation window than on-demand user requests.
+   */
+  ttlOverrides?: Partial<Record<IntelClass, number>>;
+  /** Never spend on these classes — serve them only if already cached. */
+  cachedOnlyClasses?: IntelClass[];
 }
 
 export interface PropertyIntelResult {
@@ -30,11 +37,12 @@ export interface PropertyIntelResult {
   errors: Partial<Record<IntelClass, string>>;
 }
 
-function ttlOk(fetchedAt: string | null, cls: IntelClass): boolean {
+function ttlOk(fetchedAt: string | null, cls: IntelClass, overrideDays?: number): boolean {
   if (!fetchedAt) return false;
   const ageMs = Date.now() - new Date(fetchedAt).getTime();
-  return ageMs < ATTOM_TTL_DAYS[cls] * 24 * 60 * 60 * 1000;
+  return ageMs < (overrideDays ?? ATTOM_TTL_DAYS[cls]) * 24 * 60 * 60 * 1000;
 }
+
 
 export async function getPropertyIntel(
   address: string,
@@ -108,11 +116,12 @@ export async function getPropertyIntel(
 
     const cachedData = existing?.[cls] as unknown;
     const cachedAt = existing?.[`${cls}_fetched_at`] as string | null;
-    const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls);
+    const cachedOnly = opts.cachedOnlyClasses?.includes(cls) ?? false;
+    const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls, opts.ttlOverrides?.[cls]);
 
     // Cache hit path
-    if (fresh && cachedData) {
-      result.classes[cls] = { data: cachedData, fetchedAt: cachedAt!, stale: false };
+    if ((fresh || cachedOnly) && cachedData) {
+      result.classes[cls] = { data: cachedData, fetchedAt: cachedAt!, stale: !fresh };
       await supabaseAdmin.from("attom_call_log").insert({
         endpoint: cls,
         address_normalized: normalized,
@@ -124,9 +133,12 @@ export async function getPropertyIntel(
       });
       continue;
     }
+    // Caller asked for this class only if free — never spend on it.
+    if (cachedOnly) continue;
 
     // Cache-only mode: return stale if we have it, else record the miss.
     if (cacheOnly) {
+
       if (cachedData) {
         result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
       } else {
