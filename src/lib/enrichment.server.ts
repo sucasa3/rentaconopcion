@@ -384,7 +384,7 @@ export async function portfolioCoverage(
     .select("portfolio_client_id, status, last_error")
     .eq("portfolio_id", portfolioId);
 
-  const byClient = new Map((queue ?? []).map((q: any) => [q.portfolio_client_id, q]));
+  
   const queued = (queue ?? []).filter((q: any) => q.status === "pending" || q.status === "running")
     .length;
   const flagged = (queue ?? []).filter(
