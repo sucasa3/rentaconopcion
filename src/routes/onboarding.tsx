@@ -147,7 +147,7 @@ function Onboarding() {
         try {
           await prewarmIntel({
             data: {
-              classes: ["avm", "detail", "mortgage", "sales"],
+              classes: ["avm", "detail", "mortgage"],
               revenueSource: "signup_enrichment",
             },
           });
