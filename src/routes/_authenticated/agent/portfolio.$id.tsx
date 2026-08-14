@@ -726,7 +726,8 @@ function AgentPortfolio() {
 
               {/* Agent widgets: readiness mix + referral visibility */}
               <div className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+                <div className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
+
                   <h3 className="flex items-center gap-1.5 text-sm font-semibold">
                     Listing readiness mix
                     <ReadinessInfo />
