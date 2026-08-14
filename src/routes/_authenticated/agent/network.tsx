@@ -101,7 +101,7 @@ function AgentNetwork() {
             </div>
           ) : (
             <>
-              <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1 py-2">
+              <nav className="-mx-1 grid grid-cols-2 gap-1 border-b border-border px-1 py-2 sm:flex sm:flex-wrap">
                 <TabButton
                   active={tab === "intros"}
                   onClick={() => setTab("intros")}

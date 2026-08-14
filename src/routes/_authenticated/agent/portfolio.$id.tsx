@@ -990,8 +990,8 @@ function AgentPortfolio() {
                   <h2 className="text-base font-semibold">
                     Households ({filtered.length.toLocaleString()})
                   </h2>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <div className="relative w-full sm:w-auto">
+                    <Search className="pointer-events-none absolute left-3 top-3 h-3.5 w-3.5 text-muted-foreground" />
                     <input
                       value={search}
                       onChange={(e) => {
@@ -999,12 +999,52 @@ function AgentPortfolio() {
                         setPage(0);
                       }}
                       placeholder="Name, address, city, zip"
-                      className="w-64 rounded-full border border-border bg-background py-1.5 pl-8 pr-3 text-sm outline-none focus:border-primary"
+                      className="w-full rounded-full border border-border bg-background py-2 pl-8 pr-3 text-sm outline-none focus:border-primary sm:w-64"
                     />
                   </div>
                 </div>
 
-                <div className="mt-4 overflow-x-auto">
+                <div className="mt-4 space-y-3 md:hidden">
+                  {pageRows.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">
+                      No households match this filter.
+                    </p>
+                  ) : (
+                    pageRows.map((c: any) => (
+                      <PersonCard
+                        key={c.id}
+                        name={c.name ?? "—"}
+                        subtitle={[c.address, c.city].filter(Boolean).join(", ")}
+                        pills={
+                          <>
+                            <BandPill band={c.band} score={c.move_score} />
+                            <StatusPill tone="muted">
+                              {c.listing
+                                ? String(c.listing.status).replace("_", " ")
+                                : "off market"}
+                            </StatusPill>
+                          </>
+                        }
+                        metrics={[
+                          { label: "Value", value: moneyCompact(c.estimated_value) },
+                          { label: "Equity", value: moneyCompact(c.equity_dollars) },
+                          { label: "Net proceeds", value: moneyCompact(c.net_proceeds) },
+                          {
+                            label: "Tenure",
+                            value: c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—",
+                          },
+                        ]}
+                        extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
+                        onAction={() => {
+                          setSelected(c);
+                          setBrief("");
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-4 hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[980px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
