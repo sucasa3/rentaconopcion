@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Home, HeartPulse, FileText, Wrench, LogOut, BarChart3 } from "lucide-react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { Home, HeartPulse, FileText, Wrench, BarChart3 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
-import { supabase } from "@/integrations/supabase/client";
+import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { cn } from "@/lib/utils";
+
 
 interface Item {
   label: string;
