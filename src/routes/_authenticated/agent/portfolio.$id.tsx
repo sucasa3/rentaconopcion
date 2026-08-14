@@ -307,6 +307,18 @@ function AgentPortfolio() {
     queryFn: () => getFn({ data: { id, sellCostPct: sellCost } }),
   });
 
+  // Deep link: /agent/portfolio/$id?client=<clientId> opens that homeowner directly.
+  const openedParam = useRef<string | null>(null);
+  useEffect(() => {
+    if (!clientParam || !data || openedParam.current === clientParam) return;
+    const match = (data as any).clients?.find((c: any) => c.id === clientParam);
+    if (match) {
+      openedParam.current = clientParam;
+      setSelected(match);
+    }
+  }, [clientParam, data]);
+
+
   const enrich = useMutation({
     // Runs batch after batch until every mappable home in the book is covered
     // (or a batch stops making progress), so one click finishes the portfolio.
