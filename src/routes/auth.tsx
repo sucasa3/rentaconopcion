@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { getMyWorkspace } from "@/lib/business.functions";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 
 export const Route = createFileRoute("/auth")({
@@ -62,7 +63,7 @@ function AuthPage() {
         if (error) throw error;
       }
       router.invalidate();
-      navigate({ to: "/dashboard" });
+      navigate({ to: await landing() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
