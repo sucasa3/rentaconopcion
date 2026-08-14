@@ -22,14 +22,18 @@ import { persistPortfolioOpportunities } from "./opportunities.server";
 /** Share of the monthly allowance background work is allowed to consume. */
 export const BACKGROUND_BUDGET_PCT = 30;
 
-/** Classes we want for every client in a book, cheapest-identity-first. */
+/**
+ * Core records we want for every client in a book, cheapest-identity-first.
+ * Assessor/tax and sale history are deliberately excluded — they're pulled
+ * only when a specific fact can't be filled without them.
+ */
 export const DEFAULT_CLASSES: AttomEndpoint[] = [
   "detail",
-  "tax",
-  "sales",
   "mortgage",
   "avm",
+  "permits",
 ];
+
 
 const MAX_ATTEMPTS = 2;
 
