@@ -371,7 +371,14 @@ export async function runEnrichmentTick(opts?: {
 
       // Sale history is conditional: only buy it when we still can't date the
       // loan from mortgage records or from what the book already holds.
-      if (!s && !client.close_date && !m?.originationDate && remainingCalls > 0) {
+      if (
+        !s &&
+        allowedClasses.has("sales") &&
+        !client.close_date &&
+        !m?.originationDate &&
+        remainingCalls > 0
+      ) {
+
         const salesIntel = await getPropertyIntel(address, {
           classes: ["sales"],
           revenueSource: "background_enrichment_conditional",
