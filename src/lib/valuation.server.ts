@@ -190,7 +190,7 @@ export async function getPropertyIntel(
       continue;
     }
 
-    // Known-empty for this address recently — don't buy the same blank again.
+    // Known-empty for this address — don't buy the same blank again.
     if (emptyClasses.has(cls) && !opts.forceRefresh) {
       if (cachedData) {
         result.classes[cls] = {
@@ -204,17 +204,32 @@ export async function getPropertyIntel(
       continue;
     }
 
+    // Record class switched off (e.g. no provider entitlement yet).
+    if (disabledClasses.has(cls) && !opts.forceRefresh) {
+      if (cachedData) {
+        result.classes[cls] = {
+          data: cachedData,
+          fetchedAt: cachedAt ?? new Date(0).toISOString(),
+          stale: true,
+        };
+      } else {
+        result.errors[cls] = "This record type is not enabled on our account yet.";
+      }
+      continue;
+    }
+
     // Cache miss + budget available → live fetch
     const fetched = await attomFetch(cls, address);
     const cost = attomCostCents(cls);
-    callsUsed += 1;
+    // Only successful, data-bearing calls count against the monthly allowance.
+    if (fetched.ok) callsUsed += 1;
 
     await supabaseAdmin.from("attom_call_log").insert({
       endpoint: cls,
       address_normalized: normalized,
       requested_by: opts.requestedBy ?? null,
       cache_hit: false,
-      cost_cents: cost,
+      cost_cents: fetched.ok ? cost : 0,
       status: fetched.status,
       error_message: fetched.ok ? null : fetched.error,
       revenue_source: opts.revenueSource,
@@ -222,12 +237,14 @@ export async function getPropertyIntel(
 
     if (!fetched.ok) {
       result.errors[cls] = fetched.error;
+      await recordMiss(cls, fetched.status ?? null, fetched.error);
       // Serve stale on error if we have it
       if (cachedData) {
         result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
       }
       continue;
     }
+
 
     const now = new Date().toISOString();
     updates[cls] = fetched.data;
