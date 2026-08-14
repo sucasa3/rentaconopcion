@@ -39,6 +39,7 @@ import { Route as ApiPublicEnrichTickRouteImport } from './routes/api/public/enr
 import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 import { Route as AuthenticatedAgentPortfolioIdRouteImport } from './routes/_authenticated/agent/portfolio.$id'
+import { Route as AuthenticatedAgentAddClientIdRouteImport } from './routes/_authenticated/agent/add-client.$id'
 import { Route as AuthenticatedLenderPortfolioIdIndexRouteImport } from './routes/_authenticated/lender/portfolio.$id.index'
 import { Route as AuthenticatedLenderPortfolioIdNetworkRouteImport } from './routes/_authenticated/lender/portfolio.$id.network'
 import { Route as AuthenticatedLenderPortfolioIdImportRouteImport } from './routes/_authenticated/lender/portfolio.$id.import'
@@ -203,6 +204,12 @@ const AuthenticatedAgentPortfolioIdRoute =
     path: '/portfolio/$id',
     getParentRoute: () => AuthenticatedAgentRouteRoute,
   } as any)
+const AuthenticatedAgentAddClientIdRoute =
+  AuthenticatedAgentAddClientIdRouteImport.update({
+    id: '/add-client/$id',
+    path: '/add-client/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
 const AuthenticatedLenderPortfolioIdIndexRoute =
   AuthenticatedLenderPortfolioIdIndexRouteImport.update({
     id: '/',
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
+  '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRouteWithChildren
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
+  '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
@@ -320,6 +329,7 @@ export interface FileRoutesById {
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
+  '/_authenticated/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
   '/_authenticated/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRouteWithChildren
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/requests/$id'
     | '/agent/'
     | '/lender/'
+    | '/agent/add-client/$id'
     | '/agent/portfolio/$id'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/requests/$id'
     | '/agent'
     | '/lender'
+    | '/agent/add-client/$id'
     | '/agent/portfolio/$id'
     | '/api/public/campaigns/tick'
     | '/api/public/enrich/tick'
@@ -425,6 +437,7 @@ export interface FileRouteTypes {
     | '/_authenticated/requests/$id'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
+    | '/_authenticated/agent/add-client/$id'
     | '/_authenticated/agent/portfolio/$id'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
@@ -668,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentPortfolioIdRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
     }
+    '/_authenticated/agent/add-client/$id': {
+      id: '/_authenticated/agent/add-client/$id'
+      path: '/add-client/$id'
+      fullPath: '/agent/add-client/$id'
+      preLoaderRoute: typeof AuthenticatedAgentAddClientIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
     '/_authenticated/lender/portfolio/$id/': {
       id: '/_authenticated/lender/portfolio/$id/'
       path: '/'
@@ -704,6 +724,7 @@ interface AuthenticatedAgentRouteRouteChildren {
   AuthenticatedAgentNetworkRoute: typeof AuthenticatedAgentNetworkRoute
   AuthenticatedAgentOpportunitiesRoute: typeof AuthenticatedAgentOpportunitiesRoute
   AuthenticatedAgentIndexRoute: typeof AuthenticatedAgentIndexRoute
+  AuthenticatedAgentAddClientIdRoute: typeof AuthenticatedAgentAddClientIdRoute
   AuthenticatedAgentPortfolioIdRoute: typeof AuthenticatedAgentPortfolioIdRoute
 }
 
@@ -713,6 +734,7 @@ const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren
     AuthenticatedAgentNetworkRoute: AuthenticatedAgentNetworkRoute,
     AuthenticatedAgentOpportunitiesRoute: AuthenticatedAgentOpportunitiesRoute,
     AuthenticatedAgentIndexRoute: AuthenticatedAgentIndexRoute,
+    AuthenticatedAgentAddClientIdRoute: AuthenticatedAgentAddClientIdRoute,
     AuthenticatedAgentPortfolioIdRoute: AuthenticatedAgentPortfolioIdRoute,
   }
 
