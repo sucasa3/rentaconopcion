@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { GhlSyncPanel } from "@/components/ghl-sync-panel";
 import { AdminLeadsPanel } from "@/components/admin-leads-panel";
@@ -9,7 +11,7 @@ import { AdminProfilesPanel } from "@/components/admin-profiles-panel";
 import { AdminPartnerPanel } from "@/components/admin-partner-panel";
 import { AdminCampaignPanel } from "@/components/admin-campaign-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
-import { Building2, Users, Wrench, DollarSign } from "lucide-react";
+import { Building2, Users, Wrench, DollarSign, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -22,7 +24,58 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: Admin,
 });
 
+function useIsAdmin() {
+  return useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return false;
+      const { data } = await supabase.rpc("has_role", { _user_id: auth.user.id, _role: "admin" });
+      return Boolean(data);
+    },
+    staleTime: 60_000,
+  });
+}
+
 function Admin() {
+  const { data: isAdmin, isPending } = useIsAdmin();
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex-1 px-5 py-16 text-center text-sm text-muted-foreground">Checking access…</main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <SiteHeader />
+        <main className="flex-1 px-5 py-16">
+          <div className="mx-auto max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-soft">
+            <span className="mx-auto grid h-11 w-11 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <ShieldAlert className="h-5 w-5" />
+            </span>
+            <h1 className="mt-4 text-lg font-semibold">Admin access required</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This account doesn’t have the admin role. Sign in with an admin account to open the operations dashboard.
+            </p>
+            <Link
+              to="/dashboard"
+              className="mt-5 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground"
+            >
+              Back to dashboard
+            </Link>
+          </div>
+        </main>
+        <SiteFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -32,6 +85,7 @@ function Admin() {
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">Admin</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Operations dashboard</h1>
           </div>
+
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Metric icon={Users} label="Homeowners" value="1,284" delta="+42 wk" />
