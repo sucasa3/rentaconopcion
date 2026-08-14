@@ -279,7 +279,12 @@ export async function runEnrichmentTick(opts?: {
       // Fill in loan facts we don't already hold, from the same pull.
       const m = intel.classes.mortgage ? extractMortgage(intel.classes.mortgage.data) : null;
       const s = intel.classes.sales ? extractSales(intel.classes.sales.data) : null;
-      const patch: Record<string, unknown> = { last_intel_refreshed_at: now };
+      const patch: {
+        last_intel_refreshed_at: string;
+        loan_amount_at_close_cents?: number;
+        close_date?: string;
+        term_months?: number;
+      } = { last_intel_refreshed_at: now };
       if (client.loan_amount_at_close_cents == null && m?.loanAmount) {
         patch.loan_amount_at_close_cents = Math.round(m.loanAmount * 100);
       }
