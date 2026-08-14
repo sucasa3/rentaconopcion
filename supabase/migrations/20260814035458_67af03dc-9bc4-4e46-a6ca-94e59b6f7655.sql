@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_enqueue_property_enrichment() FROM PUBLIC, anon, authenticated;
