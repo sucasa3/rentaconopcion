@@ -38,6 +38,11 @@
   --color-growth-foreground: var(--growth-foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --color-attention: var(--attention);
+  --color-attention-foreground: var(--attention-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -82,6 +87,11 @@
   --input: oklch(0.915 0.014 70);
   --ring: oklch(0.5 0.13 255);
   --surface: oklch(0.985 0.006 240);
+  --attention: oklch(0.78 0.15 75);
+  --attention-foreground: oklch(0.28 0.08 75);
+  --info: oklch(0.62 0.13 250);
+  --info-foreground: oklch(0.99 0 0);
+
   --surface-elevated: oklch(1 0 0);
   --chart-1: oklch(0.5 0.15 255);
   --chart-2: oklch(0.62 0.15 155);
@@ -123,6 +133,11 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.6 0.13 255);
   --surface: oklch(0.17 0.02 255);
+  --attention: oklch(0.8 0.15 75);
+  --attention-foreground: oklch(0.2 0.05 75);
+  --info: oklch(0.7 0.13 250);
+  --info-foreground: oklch(0.15 0.02 255);
+
   --surface-elevated: oklch(0.22 0.03 255);
   --sidebar: oklch(0.2 0.03 255);
   --sidebar-foreground: oklch(0.97 0.01 250);

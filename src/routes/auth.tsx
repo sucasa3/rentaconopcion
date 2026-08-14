@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { getMyWorkspace } from "@/lib/business.functions";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 
 export const Route = createFileRoute("/auth")({
@@ -25,11 +26,22 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Agents and lenders go straight to their business dashboard; homeowners home.
+  async function landing() {
+    try {
+      const { home } = await getMyWorkspace();
+      return home as "/agent" | "/lender" | "/admin" | "/dashboard";
+    } catch {
+      return "/dashboard" as const;
+    }
+  }
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session) navigate({ to: await landing() });
     });
   }, [navigate]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -51,7 +63,7 @@ function AuthPage() {
         if (error) throw error;
       }
       router.invalidate();
-      navigate({ to: "/dashboard" });
+      navigate({ to: await landing() });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
