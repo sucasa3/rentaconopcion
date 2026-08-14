@@ -528,20 +528,8 @@ function AgentPortfolio() {
                     )}
                     Pull records
                   </button>
-                  {auto.running && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Auto-pulling records…
-                    </span>
-                  )}
-                  {!auto.running && auto.paused && autoPending > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {auto.paused === "cache_only"
-                        ? "Auto-pull paused — records paused for this month"
-                        : auto.paused === "soft_cap"
-                          ? "Auto-pull paused — monthly allowance nearly used"
-                          : "Auto-pull off — no allowance configured"}
-                    </span>
-                  )}
+
+
                 </div>
 
 
