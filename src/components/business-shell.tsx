@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   LayoutGrid,
   Users,
   Sparkles,
   Megaphone,
   Network,
-  LogOut,
   Home,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
-import { supabase } from "@/integrations/supabase/client";
+import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { cn } from "@/lib/utils";
+
 
 export type BusinessKind = "agent" | "lender";
 
@@ -58,12 +58,8 @@ export function BusinessShell({
   children: ReactNode;
 }) {
   const items = navItems(kind, bookId);
-  const navigate = useNavigate();
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/" });
-  }
+
 
   return (
     <div className="min-h-screen bg-surface">
@@ -94,16 +90,16 @@ export function BusinessShell({
             <Home className="h-5 w-5" />
             My home
           </Link>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <LogOut className="h-5 w-5" />
-            Sign out
-          </button>
+          <div className="mt-1 border-t border-border/60 pt-2">
+            <AccountMenu role={kind} showName className="w-full" />
+          </div>
         </aside>
 
-        <main className="min-w-0 flex-1 pb-24 md:pb-10">{children}</main>
+        <main className="min-w-0 flex-1 pb-24 md:pb-10">
+          <MobileTopBar role={kind} />
+          {children}
+        </main>
+
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/95 backdrop-blur-xl md:hidden">
