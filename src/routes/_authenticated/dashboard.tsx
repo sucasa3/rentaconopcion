@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { HomeownerShell } from "@/components/homeowner-shell";
+
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
 import { useHomeScore } from "@/hooks/use-home-score";
@@ -37,6 +38,15 @@ import { ArrowRight, Plus, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: "home" | "care" | "documents" } => ({
+    tab:
+      search.tab === "care" || search.tab === "documents" || search.tab === "home"
+        ? (search.tab as "home" | "care" | "documents")
+        : undefined,
+  }),
+
   head: () => ({
     meta: [
       { title: "Your Home Dashboard — SuCasa" },
@@ -53,10 +63,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   useLogOnMount("value_viewed");
+  const navigate = useNavigate();
+  const { tab } = Route.useSearch();
+  const setTab = (t: "home" | "care" | "documents") =>
+    navigate({ to: "/dashboard", search: { tab: t } });
   const [logOpen, setLogOpen] = useState(false);
-  const [tab, setTab] = useState<"home" | "care" | "documents">("home");
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [requests, setRequests] = useState<RecentRequest[]>([]);
+
 
   const listReqFn = useServerFn(listMyRequests);
   const { data: dbRequests } = useQuery({
@@ -167,7 +181,7 @@ function Dashboard() {
     if (appliedFocus || userId === undefined) return;
     const saved = readOnboarding("homeowner", userId);
     if (saved && ["home", "care", "documents"].includes(saved.focus)) {
-      setTab(saved.focus as typeof tab);
+      setTab(saved.focus as "home" | "care" | "documents");
     }
     setAppliedFocus(true);
   }, [appliedFocus, userId]);
@@ -184,10 +198,10 @@ function Dashboard() {
 
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <HomeownerShell>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-6xl space-y-6">
+
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
@@ -207,7 +221,7 @@ function Dashboard() {
                   documentCount: (docs ?? []).length,
                   completeness: completeness.pct,
                 }}
-                onFocusChange={(f) => setTab(f as typeof tab)}
+                onFocusChange={(f) => setTab(f as "home" | "care" | "documents")}
               />
               <OnboardingWalkthrough triggerLabel="Take the tour" />
               <Link to="/request" className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
@@ -238,8 +252,9 @@ function Dashboard() {
           />
 
           <div id="dash-tabs" className="scroll-mt-20">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-              <TabsList className="w-full justify-start overflow-x-auto">
+            <Tabs value={tab ?? "home"} onValueChange={(v) => setTab(v as "home" | "care" | "documents")}>
+              <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-secondary p-1">
+
                 <TabsTrigger value="home">Home</TabsTrigger>
                 <TabsTrigger value="care">Care</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -352,8 +367,8 @@ function Dashboard() {
 
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </HomeownerShell>
+
   );
 }
 

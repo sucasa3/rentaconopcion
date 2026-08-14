@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { HomeownerShell } from "@/components/homeowner-shell";
 import {
   getMyRequestDetail,
   cancelMyRequest,
@@ -301,13 +301,11 @@ function RequestDetail() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <HomeownerShell>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-2xl">{children}</div>
       </main>
-      <SiteFooter />
-    </div>
+    </HomeownerShell>
   );
 }
 

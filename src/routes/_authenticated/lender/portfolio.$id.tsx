@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { BusinessShell } from "@/components/business-shell";
 import { getPortfolio, listMyPortfolios } from "@/lib/lender.functions";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 import { useUserId } from "@/hooks/use-user-id";
@@ -65,9 +65,8 @@ function PortfolioLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <BusinessShell kind="lender" bookId={id}>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-6xl space-y-5">
           {isManager && (
             <Link
@@ -113,8 +112,7 @@ function PortfolioLayout() {
           <Outlet />
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </BusinessShell>
   );
 }
 
