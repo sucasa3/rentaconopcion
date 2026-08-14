@@ -3,13 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  getPortfolio,
-  enrichPortfolioFromAttom,
-  getLenderRecordsBudget,
-} from "@/lib/lender.functions";
-import { useAutoEnrich } from "@/hooks/use-auto-enrich";
+import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
+import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
 import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
+
 
 import {
   Upload,
