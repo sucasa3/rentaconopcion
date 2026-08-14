@@ -409,7 +409,5 @@ export async function portfolioCoverage(
     queued,
     needsReview: flagged.length,
     reviewList,
-    // byClient kept local; exposing per-client status is not needed by the UI
-    ...(byClient.size ? {} : {}),
   };
 }
