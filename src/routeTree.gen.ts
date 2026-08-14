@@ -28,6 +28,7 @@ import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
+import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
@@ -139,6 +140,12 @@ const AuthenticatedLenderCampaignsRoute =
     path: '/campaigns',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedAgentOpportunitiesRoute =
+  AuthenticatedAgentOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
 const AuthenticatedAgentNetworkRoute =
   AuthenticatedAgentNetworkRouteImport.update({
     id: '/network',
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
+  '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
@@ -254,6 +262,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
+  '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
@@ -287,6 +296,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/_authenticated/agent/network': typeof AuthenticatedAgentNetworkRoute
+  '/_authenticated/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/_authenticated/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/agent/campaigns'
     | '/agent/network'
+    | '/agent/opportunities'
     | '/lender/campaigns'
     | '/lender/network'
     | '/requests/$id'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/agent/campaigns'
     | '/agent/network'
+    | '/agent/opportunities'
     | '/lender/campaigns'
     | '/lender/network'
     | '/requests/$id'
@@ -383,6 +395,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/agent/campaigns'
     | '/_authenticated/agent/network'
+    | '/_authenticated/agent/opportunities'
     | '/_authenticated/lender/campaigns'
     | '/_authenticated/lender/network'
     | '/_authenticated/requests/$id'
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderCampaignsRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
+    '/_authenticated/agent/opportunities': {
+      id: '/_authenticated/agent/opportunities'
+      path: '/opportunities'
+      fullPath: '/agent/opportunities'
+      preLoaderRoute: typeof AuthenticatedAgentOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
     '/_authenticated/agent/network': {
       id: '/_authenticated/agent/network'
       path: '/network'
@@ -642,6 +662,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAgentRouteRouteChildren {
   AuthenticatedAgentCampaignsRoute: typeof AuthenticatedAgentCampaignsRoute
   AuthenticatedAgentNetworkRoute: typeof AuthenticatedAgentNetworkRoute
+  AuthenticatedAgentOpportunitiesRoute: typeof AuthenticatedAgentOpportunitiesRoute
   AuthenticatedAgentIndexRoute: typeof AuthenticatedAgentIndexRoute
   AuthenticatedAgentPortfolioIdRoute: typeof AuthenticatedAgentPortfolioIdRoute
 }
@@ -650,6 +671,7 @@ const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren
   {
     AuthenticatedAgentCampaignsRoute: AuthenticatedAgentCampaignsRoute,
     AuthenticatedAgentNetworkRoute: AuthenticatedAgentNetworkRoute,
+    AuthenticatedAgentOpportunitiesRoute: AuthenticatedAgentOpportunitiesRoute,
     AuthenticatedAgentIndexRoute: AuthenticatedAgentIndexRoute,
     AuthenticatedAgentPortfolioIdRoute: AuthenticatedAgentPortfolioIdRoute,
   }
