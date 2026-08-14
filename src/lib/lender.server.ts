@@ -119,18 +119,37 @@ export function parseClientCsv(csv: string): ClientRow[] {
       [cFirst >= 0 ? cells[cFirst] : "", cLast >= 0 ? cells[cLast] : ""].filter(Boolean).join(" ");
     const loan = cLoan >= 0 ? num(cells[cLoan]) : null;
     const rate = cRate >= 0 ? num(cells[cRate]) : null;
+    let street = (cells[cAddr] ?? "").trim();
+    let city = cCity >= 0 ? cells[cCity] || null : null;
+    let state = cState >= 0 ? cells[cState] || null : null;
+    let zip = cZip >= 0 ? cells[cZip] || null : null;
+    // Single combined address column ("123 Main St, Roswell, GA 30075")
+    if (street.includes(",") && (!city || !state || !zip)) {
+      const parts = street.split(",").map((p) => p.trim()).filter(Boolean);
+      if (parts.length >= 3) {
+        const tail = parts[parts.length - 1];
+        const m = tail.match(/^([A-Za-z]{2})\s*(\d{5})?/);
+        if (m) {
+          state = state || m[1].toUpperCase();
+          zip = zip || m[2] || null;
+          city = city || parts[parts.length - 2];
+          street = parts.slice(0, parts.length - 2).join(", ");
+        }
+      }
+    }
     const row: ClientRow = {
       full_name: (name ?? "").trim(),
-      address: (cells[cAddr] ?? "").trim(),
-      city: cCity >= 0 ? cells[cCity] || null : null,
-      state: cState >= 0 ? cells[cState] || null : null,
-      zip: cZip >= 0 ? cells[cZip] || null : null,
+      address: street,
+      city,
+      state,
+      zip,
       email: cEmail >= 0 ? cells[cEmail] || null : null,
       loan_balance_cents: loan != null ? Math.round(loan * 100) : null,
       interest_rate_bps: rate != null ? Math.round(rate * 100) : null,
       note: cNote >= 0 ? cells[cNote] || null : null,
     };
     if (row.full_name && row.address) out.push(row);
+
   }
   return out;
 }
