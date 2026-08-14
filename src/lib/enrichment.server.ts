@@ -471,7 +471,7 @@ export async function runEnrichmentTick(opts?: {
   return out;
 }
 
-/** Coverage + queue health for one book. */
+/** Coverage + live queue progress for one book. */
 export async function portfolioCoverage(
   supabase: any,
   portfolioId: string,
@@ -479,7 +479,13 @@ export async function portfolioCoverage(
   total: number;
   covered: number;
   queued: number;
+  pending: number;
+  running: number;
   needsReview: number;
+  done: number;
+  pctComplete: number;
+  working: boolean;
+  lastCompletedAt: string | null;
   reviewList: Array<{ id: string; name: string | null; address: string; reason: string | null }>;
 }> {
   const { data: clients } = await supabase
@@ -490,33 +496,49 @@ export async function portfolioCoverage(
 
   const { data: queue } = await supabase
     .from("property_enrichment_queue")
-    .select("portfolio_client_id, status, last_error")
+    .select("portfolio_client_id, status, last_error, completed_at")
     .eq("portfolio_id", portfolioId);
 
-  
-  const queued = (queue ?? []).filter((q: any) => q.status === "pending" || q.status === "running")
-    .length;
-  const flagged = (queue ?? []).filter(
-    (q: any) => q.status === "needs_review" || q.status === "failed",
-  );
+  const q = queue ?? [];
+  const pending = q.filter((r: any) => r.status === "pending").length;
+  const running = q.filter((r: any) => r.status === "running").length;
+  const queued = pending + running;
+  const flagged = q.filter((r: any) => r.status === "needs_review" || r.status === "failed");
+  const done = q.filter((r: any) => r.status === "done").length;
 
   const covered = rows.filter((r: any) => r.last_intel_refreshed_at != null).length;
 
-  const reviewList = flagged.slice(0, 25).map((q: any) => {
-    const c = rows.find((r: any) => r.id === q.portfolio_client_id);
+  const completedTimes = q
+    .map((r: any) => r.completed_at)
+    .filter(Boolean)
+    .sort();
+  const lastCompletedAt = completedTimes.length
+    ? (completedTimes[completedTimes.length - 1] as string)
+    : null;
+
+  const reviewList = flagged.slice(0, 25).map((r: any) => {
+    const c = rows.find((x: any) => x.id === r.portfolio_client_id);
     return {
-      id: q.portfolio_client_id as string,
+      id: r.portfolio_client_id as string,
       name: c?.client_name ?? null,
       address: c ? fullAddress(c) : "",
-      reason: q.last_error ?? null,
+      reason: r.last_error ?? null,
     };
   });
 
+  const total = rows.length;
   return {
-    total: rows.length,
+    total,
     covered,
     queued,
+    pending,
+    running,
     needsReview: flagged.length,
+    done,
+    pctComplete: total ? Math.round(((covered + flagged.length) / total) * 100) : 100,
+    working: queued > 0,
+    lastCompletedAt,
     reviewList,
   };
+
 }
