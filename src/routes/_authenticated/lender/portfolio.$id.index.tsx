@@ -9,6 +9,7 @@ import {
   getLenderRecordsBudget,
 } from "@/lib/lender.functions";
 import { useAutoEnrich } from "@/hooks/use-auto-enrich";
+import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
 
 import {
   Upload,
@@ -243,7 +244,7 @@ function PortfolioDetail() {
                     }}
                   />
                 ))}
-                <span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
                   <span className="inline-flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3 text-growth" />
                     {data.consent_counts.granted ?? 0} consented
@@ -264,10 +265,33 @@ function PortfolioDetail() {
                   </h2>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Sorted by estimated monthly savings vs. current note rate. Model only — not a
-                  quote.
+                  Ranked by estimated monthly savings. Model only.
                 </p>
-                <div className="mt-4 overflow-x-auto">
+                <div className="mt-4 space-y-3 md:hidden">
+                  {data.top_refi_opportunities.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      No savings above assumed rate.
+                    </p>
+                  ) : (
+                    data.top_refi_opportunities.map((c: any) => (
+                      <OpportunityCard
+                        key={c.id}
+                        pill={<StatusPill tone="attention">High opportunity</StatusPill>}
+                        name={c.full_name}
+                        subtitle={[c.city, c.state].filter(Boolean).join(", ")}
+                        heroLabel="Est. savings / mo"
+                        heroValue={`$${c.savings_per_month_dollars.toLocaleString()}`}
+                        metrics={[
+                          { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
+                          { label: "Rate", value: c.rate_at_close ? `${c.rate_at_close}%` : "—" },
+                          { label: "LTV", value: c.ltv_pct != null ? `${c.ltv_pct}%` : "—" },
+                        ]}
+                        onAction={() => setContact(c)}
+                      />
+                    ))
+                  )}
+                </div>
+                <div className="mt-4 hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[640px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
@@ -323,8 +347,8 @@ function PortfolioDetail() {
                   <h2 className="text-base font-semibold">
                     Clients ({filtered.length.toLocaleString()})
                   </h2>
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
+                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                    <div className="relative w-full sm:w-auto">
                       <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <input
                         placeholder="Search name, address, zip…"
@@ -333,13 +357,13 @@ function PortfolioDetail() {
                           setSearch(e.target.value);
                           setPage(0);
                         }}
-                        className="w-64 rounded-full border border-border bg-background py-1.5 pl-9 pr-3 text-sm"
+                        className="w-full rounded-full border border-border bg-background py-2 pl-9 pr-3 text-sm sm:w-64"
                       />
                     </div>
                     <Link
                       to="/lender/portfolio/$id/import"
                       params={{ id }}
-                      className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground hover:border-primary"
+                      className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-border bg-background px-3 py-2.5 text-xs font-medium text-foreground hover:border-primary sm:w-auto sm:py-1.5"
                     >
                       <Upload className="h-3 w-3" /> Add clients
                     </Link>
@@ -377,7 +401,50 @@ function PortfolioDetail() {
                   </div>
 
                 </div>
-                <div className={`mt-4 overflow-x-auto ${enrich.isPending ? "pointer-events-none opacity-60" : ""}`}>
+                <div
+                  className={`mt-4 space-y-3 md:hidden ${
+                    enrich.isPending ? "pointer-events-none opacity-60" : ""
+                  }`}
+                >
+                  {pageRows.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">
+                      No clients match this filter.
+                    </p>
+                  ) : (
+                    pageRows.map((c: any) => (
+                      <PersonCard
+                        key={c.id}
+                        name={c.full_name}
+                        subtitle={[c.city, c.state].filter(Boolean).join(", ")}
+                        pills={
+                          <>
+                            <span
+                              className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+                                SEGMENT_META[c.segment as keyof typeof SEGMENT_META]?.tone ??
+                                "bg-secondary text-muted-foreground border-border"
+                              }`}
+                            >
+                              {SEGMENT_META[c.segment as keyof typeof SEGMENT_META]?.label ??
+                                c.segment}
+                            </span>
+                            <ConsentPill state={c.consent_state} />
+                          </>
+                        }
+                        metrics={[
+                          { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
+                          { label: "Equity", value: moneyCompact(c.equity_cents) },
+                          { label: "Rate", value: c.rate_at_close ? `${c.rate_at_close}%` : "—" },
+                          {
+                            label: "Tenure",
+                            value: `${Math.round(c.months_since_close / 12)}y`,
+                          },
+                        ]}
+                        onAction={() => setContact(c)}
+                      />
+                    ))
+                  )}
+                </div>
+                <div className={`mt-4 hidden overflow-x-auto md:block ${enrich.isPending ? "pointer-events-none opacity-60" : ""}`}>
                   <table className="w-full min-w-[900px] text-left text-sm">
                     <thead className="sticky top-0 bg-card">
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
