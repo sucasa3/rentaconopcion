@@ -26,6 +26,7 @@ import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
+import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
 import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
 import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
@@ -128,6 +129,12 @@ const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
   path: '/requests/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLenderOpportunitiesRoute =
+  AuthenticatedLenderOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
 const AuthenticatedLenderNetworkRoute =
   AuthenticatedLenderNetworkRouteImport.update({
     id: '/network',
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
+  '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
@@ -265,6 +273,7 @@ export interface FileRoutesByTo {
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
+  '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
@@ -299,6 +308,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/_authenticated/lender/network': typeof AuthenticatedLenderNetworkRoute
+  '/_authenticated/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/agent/opportunities'
     | '/lender/campaigns'
     | '/lender/network'
+    | '/lender/opportunities'
     | '/requests/$id'
     | '/agent/'
     | '/lender/'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/agent/opportunities'
     | '/lender/campaigns'
     | '/lender/network'
+    | '/lender/opportunities'
     | '/requests/$id'
     | '/agent'
     | '/lender'
@@ -398,6 +410,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/opportunities'
     | '/_authenticated/lender/campaigns'
     | '/_authenticated/lender/network'
+    | '/_authenticated/lender/opportunities'
     | '/_authenticated/requests/$id'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/requests/$id'
       preLoaderRoute: typeof AuthenticatedRequestsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lender/opportunities': {
+      id: '/_authenticated/lender/opportunities'
+      path: '/opportunities'
+      fullPath: '/lender/opportunities'
+      preLoaderRoute: typeof AuthenticatedLenderOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
     }
     '/_authenticated/lender/network': {
       id: '/_authenticated/lender/network'
@@ -708,6 +728,7 @@ const AuthenticatedLenderPortfolioIdRouteWithChildren =
 interface AuthenticatedLenderRouteRouteChildren {
   AuthenticatedLenderCampaignsRoute: typeof AuthenticatedLenderCampaignsRoute
   AuthenticatedLenderNetworkRoute: typeof AuthenticatedLenderNetworkRoute
+  AuthenticatedLenderOpportunitiesRoute: typeof AuthenticatedLenderOpportunitiesRoute
   AuthenticatedLenderIndexRoute: typeof AuthenticatedLenderIndexRoute
   AuthenticatedLenderPortfolioIdRoute: typeof AuthenticatedLenderPortfolioIdRouteWithChildren
 }
@@ -716,6 +737,8 @@ const AuthenticatedLenderRouteRouteChildren: AuthenticatedLenderRouteRouteChildr
   {
     AuthenticatedLenderCampaignsRoute: AuthenticatedLenderCampaignsRoute,
     AuthenticatedLenderNetworkRoute: AuthenticatedLenderNetworkRoute,
+    AuthenticatedLenderOpportunitiesRoute:
+      AuthenticatedLenderOpportunitiesRoute,
     AuthenticatedLenderIndexRoute: AuthenticatedLenderIndexRoute,
     AuthenticatedLenderPortfolioIdRoute:
       AuthenticatedLenderPortfolioIdRouteWithChildren,
