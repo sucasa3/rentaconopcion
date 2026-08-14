@@ -756,17 +756,28 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
       try {
         const intel = await getPropertyIntel(fullAddress, {
           classes: ["mortgage", "sales"],
+          // Sale history is conditional — free if cached, bought below only
+          // when mortgage records can't date the loan.
           cachedOnlyClasses: ["sales"],
           revenueSource: "lender_enrichment",
           requestedBy: context.userId,
         });
         const mRaw = intel.classes.mortgage?.data ?? null;
-        const sRaw = intel.classes.sales?.data ?? null;
+        let sRaw = intel.classes.sales?.data ?? null;
         const m = mRaw ? extractMortgage(mRaw) : null;
+        if (!sRaw && !m?.originationDate) {
+          const salesIntel = await getPropertyIntel(fullAddress, {
+            classes: ["sales"],
+            revenueSource: "lender_enrichment_conditional",
+            requestedBy: context.userId,
+          });
+          sRaw = salesIntel.classes.sales?.data ?? null;
+        }
         const s = sRaw ? extractSales(sRaw) : null;
 
         const closeDate =
           m?.originationDate ?? s?.lastSale?.date ?? null;
+
         const loanCents = m?.loanAmount ? Math.round(m.loanAmount * 100) : null;
         const termMonths = m?.termMonths ?? null;
 
