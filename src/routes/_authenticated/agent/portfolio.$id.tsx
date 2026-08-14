@@ -1175,7 +1175,8 @@ function AgentPortfolio() {
           saving={saveListing.isPending}
         />
       )}
-    </div>
+    </BusinessShell>
+
   );
 }
 
