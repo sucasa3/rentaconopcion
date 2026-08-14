@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { BusinessShell } from "@/components/business-shell";
 import { AgentCoveragePanel } from "@/components/agent-coverage-panel";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 import { useUserId } from "@/hooks/use-user-id";
@@ -456,9 +456,8 @@ function AgentPortfolio() {
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <BusinessShell kind="agent" bookId={id}>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-6xl space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
@@ -1163,7 +1162,6 @@ function AgentPortfolio() {
           ) : null}
         </div>
       </main>
-      <SiteFooter />
 
       {selected && (
         <ClientDrawer
