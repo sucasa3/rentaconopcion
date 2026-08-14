@@ -46,13 +46,14 @@ const norm = (s: string) =>
 
 const ALIASES: Record<keyof ClientRow | "first_name" | "last_name", string[]> = {
   full_name: ["full_name", "fullname", "name", "client", "client_name", "owner", "owner_name", "homeowner", "contact", "contact_name", "borrower", "borrower_name"],
-  first_name: ["first_name", "firstname", "first"],
-  last_name: ["last_name", "lastname", "last", "surname"],
-  address: ["address", "address_1", "address1", "street", "street_address", "property_address", "site_address", "mailing_address", "addr"],
-  city: ["city", "property_city", "town"],
-  state: ["state", "property_state", "st"],
-  zip: ["zip", "zipcode", "zip_code", "postal_code", "postalcode", "property_zip"],
-  email: ["email", "email_address", "e_mail"],
+  first_name: ["first_name", "firstname", "first", "contact_first_name", "owner_first_name", "borrower_first_name"],
+  last_name: ["last_name", "lastname", "last", "surname", "contact_last_name", "owner_last_name", "borrower_last_name"],
+  address: ["address", "address_1", "address1", "street", "street_address", "property_address", "site_address", "mailing_address", "addr", "full_address", "property_full_address"],
+  city: ["city", "property_city", "town", "contact_city"],
+  state: ["state", "property_state", "st", "contact_state"],
+  zip: ["zip", "zipcode", "zip_code", "postal_code", "postalcode", "property_zip", "contact_zip"],
+  email: ["email", "email_address", "e_mail", "contact_email", "primary_email"],
+
   loan_balance_cents: ["loan_balance", "balance", "loan_amount", "current_balance", "unpaid_balance", "upb"],
   interest_rate_bps: ["rate", "interest_rate", "note_rate", "apr"],
   note: ["note", "notes", "comment", "comments"],
