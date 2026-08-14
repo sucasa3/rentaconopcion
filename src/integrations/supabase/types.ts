@@ -1749,6 +1749,72 @@ export type Database = {
         }
         Relationships: []
       }
+      property_enrichment_queue: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          last_result: string | null
+          next_attempt_at: string
+          portfolio_client_id: string
+          portfolio_id: string
+          priority: number
+          requested_classes: string[]
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_result?: string | null
+          next_attempt_at?: string
+          portfolio_client_id: string
+          portfolio_id: string
+          priority?: number
+          requested_classes?: string[]
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_result?: string | null
+          next_attempt_at?: string
+          portfolio_client_id?: string
+          portfolio_id?: string
+          priority?: number
+          requested_classes?: string[]
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_enrichment_queue_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: true
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_enrichment_queue_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       property_intel: {
         Row: {
           address_line1: string

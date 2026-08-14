@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -246,6 +247,7 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
 
       {open && (
         <div className="border-t border-border px-4 py-3">
+          <EnrichmentQueueStrip portfolioId={portfolioId} />
           {isLoading ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" /> Checking coverage…
