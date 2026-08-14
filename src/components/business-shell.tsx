@@ -1,17 +1,17 @@
 import type { ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   LayoutGrid,
   Users,
   Sparkles,
   Megaphone,
   Network,
-  LogOut,
   Home,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
-import { supabase } from "@/integrations/supabase/client";
+import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { cn } from "@/lib/utils";
+
 
 export type BusinessKind = "agent" | "lender";
 
