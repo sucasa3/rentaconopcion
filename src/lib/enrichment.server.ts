@@ -160,12 +160,17 @@ async function backgroundSpend(
     Boolean(budget?.cache_only_mode) ||
     ((budget?.calls_used ?? 0) / included) * 100 >= softCapPct;
 
+  // Only successful, data-bearing calls count as spend — failures, blanks and
+  // unauthorized responses are logged but never billed against the allowance.
   const { count } = await supabaseAdmin
     .from("attom_call_log")
     .select("id", { count: "exact", head: true })
     .eq("cache_hit", false)
+    .eq("status", 200)
+    .is("error_message", null)
     .like("revenue_source", "background_enrichment%")
     .gte("created_at", monthStart.toISOString());
+
 
   const allowed = Math.floor((BACKGROUND_BUDGET_PCT / 100) * included);
   return { used: count ?? 0, included, cacheOnly, allowed };
