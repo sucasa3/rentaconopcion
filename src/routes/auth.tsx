@@ -25,11 +25,22 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Agents and lenders go straight to their business dashboard; homeowners home.
+  async function landing() {
+    try {
+      const { home } = await getMyWorkspace();
+      return home as "/agent" | "/lender" | "/admin" | "/dashboard";
+    } catch {
+      return "/dashboard" as const;
+    }
+  }
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session) navigate({ to: await landing() });
     });
   }, [navigate]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
