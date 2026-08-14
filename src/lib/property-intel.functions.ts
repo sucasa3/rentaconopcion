@@ -75,20 +75,54 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       computeEquityRibbon,
       matchedProperty,
     } = await import("@/lib/valuation.server");
+    // Call policy: the core records (profile, valuation, mortgage, permits) are
+    // always resolved. Assessor/tax and sale history are conditional — served
+    // from cache when we already have them, and only bought when a screen
+    // genuinely can't be filled without them.
+    const CONDITIONAL = ["tax", "sales", "owner", "neighborhood", "risk"] as const;
+    const requested = data.classes;
+    const core = requested.filter((c) => !CONDITIONAL.includes(c as never));
+    const conditional = requested.filter((c) => CONDITIONAL.includes(c as never));
+
     const result = await getPropertyIntel(fullAddress, {
-      classes: data.classes,
+      classes: requested,
       revenueSource: data.revenueSource,
       requestedBy: context.userId,
       forceRefresh: data.forceRefresh,
+      // conditional classes on this first pass are free-only
+      cachedOnlyClasses: conditional,
     });
+    void core;
 
-    const avm = result.classes.avm ? extractAvm(result.classes.avm.data) : null;
+    let avm = result.classes.avm ? extractAvm(result.classes.avm.data) : null;
     const detail = result.classes.detail ? extractDetail(result.classes.detail.data) : null;
-    const tax = result.classes.tax ? extractTax(result.classes.tax.data) : null;
-    const sales = result.classes.sales ? extractSales(result.classes.sales.data) : null;
+    let tax = result.classes.tax ? extractTax(result.classes.tax.data) : null;
+    let sales = result.classes.sales ? extractSales(result.classes.sales.data) : null;
     const mortgage = result.classes.mortgage ? extractMortgage(result.classes.mortgage.data) : null;
     const permits = result.classes.permits ? extractPermits(result.classes.permits.data) : null;
+
+    // Follow-up spend, only where it buys a value we can't otherwise show:
+    //  - assessor/tax when the valuation came back empty (assessed fallback),
+    //  - sale history when we have none on file (bought once, held a year).
+    const followUp: typeof conditional = [];
+    if (conditional.includes("tax") && !tax && avm?.estimate == null) followUp.push("tax");
+    if (conditional.includes("sales") && !sales) followUp.push("sales");
+    if (followUp.length > 0) {
+      const extra = await getPropertyIntel(fullAddress, {
+        classes: followUp,
+        revenueSource: `${data.revenueSource}_conditional`,
+        requestedBy: context.userId,
+      });
+      if (extra.classes.tax) tax = extractTax(extra.classes.tax.data);
+      if (extra.classes.sales) sales = extractSales(extra.classes.sales.data);
+      if (extra.classes.avm) avm = extractAvm(extra.classes.avm.data);
+      Object.assign(result.classes, extra.classes);
+      Object.assign(result.errors, extra.errors);
+      result.budget = extra.budget;
+    }
+
     const equity = avm || mortgage || tax ? computeEquityRibbon(avm, mortgage, sales, tax) : null;
+
 
     // Backfill any missing address pieces from the matched public record so the
     // next lookup is an exact match (a missing ZIP breaks valuation matching).
