@@ -56,16 +56,12 @@ const ITEMS: Item[] = [
  * same native app.
  */
 export function HomeownerShell({ children }: { children: ReactNode }) {
-  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const tab = useRouterState({
     select: (s) => (s.location.search as { tab?: string } | undefined)?.tab,
   });
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/" });
-  }
+
 
   return (
     <div className="min-h-screen bg-surface">
