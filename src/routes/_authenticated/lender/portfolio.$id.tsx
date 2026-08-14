@@ -98,7 +98,7 @@ function PortfolioLayout() {
             </div>
           </div>
 
-          <nav className="sticky top-0 z-20 -mx-1 flex gap-1 overflow-x-auto border-b border-border bg-background/90 px-1 py-2 backdrop-blur">
+          <nav className="sticky top-0 z-20 -mx-1 grid grid-cols-2 gap-1 border-b border-border bg-background/90 px-1 py-2 backdrop-blur sm:flex sm:flex-wrap">
             <Tab to="/lender/portfolio/$id" id={id} exact label="Clients" icon={Users} />
             <Tab to="/lender/portfolio/$id/campaigns" id={id} label="Campaigns" icon={Mail} />
             <Tab to="/lender/portfolio/$id/import" id={id} label="Add clients" icon={Upload} />
@@ -136,7 +136,7 @@ function Tab({
       to={to}
       params={{ id }}
       activeOptions={{ exact: !!exact }}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
       activeProps={{ className: "bg-primary/10 text-primary" }}
     >
       <Icon className="h-3.5 w-3.5" />
