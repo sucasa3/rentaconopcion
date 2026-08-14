@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { addPortfolioClient, ingestPortfolioCsv } from "@/lib/lender.functions";
-import { Upload, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
+import { BulkClientUpload } from "@/components/bulk-client-upload";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   component: PortfolioImport,
@@ -27,7 +28,6 @@ function PortfolioImport() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const fileRef = useRef<HTMLInputElement>(null);
   const ingestFn = useServerFn(ingestPortfolioCsv);
   const addFn = useServerFn(addPortfolioClient);
   const [form, setForm] = useState({ ...EMPTY });
@@ -68,12 +68,6 @@ function PortfolioImport() {
     onError: (e: any) => toast.error(e.message),
   });
 
-  async function handleFile(f: File) {
-    const text = await f.text();
-    ingest.mutate(text);
-    if (fileRef.current) fileRef.current.value = "";
-  }
-
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
@@ -108,33 +102,7 @@ function PortfolioImport() {
         </button>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-        <div className="flex items-center gap-2">
-          <Upload className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold">Import a list</h2>
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          CSV columns: <code>full_name, address, city, state, zip, email, loan_balance, rate, note</code>.
-          Only <code>full_name</code> and <code>address</code> are required.
-        </p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,text/csv"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-          }}
-        />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={ingest.isPending}
-          className="mt-4 inline-flex items-center gap-1 rounded-full border border-border px-5 py-2 text-sm font-medium hover:bg-secondary disabled:opacity-60"
-        >
-          <Upload className="h-3 w-3" /> {ingest.isPending ? "Importing…" : "Choose CSV file"}
-        </button>
-      </div>
+      <BulkClientUpload onCsv={(csv) => ingest.mutate(csv)} busy={ingest.isPending} />
     </div>
   );
 }

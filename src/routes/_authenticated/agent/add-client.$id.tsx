@@ -5,7 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { BusinessShell } from "@/components/business-shell";
-import { addAgentPortfolioClient } from "@/lib/agent.functions";
+import { addAgentPortfolioClient, ingestAgentPortfolioCsv } from "@/lib/agent.functions";
+import { BulkClientUpload } from "@/components/bulk-client-upload";
 
 export const Route = createFileRoute("/_authenticated/agent/add-client/$id")({
   head: () => ({
@@ -33,6 +34,7 @@ function AddAgentClient() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const addFn = useServerFn(addAgentPortfolioClient);
+  const ingestFn = useServerFn(ingestAgentPortfolioCsv);
   const [form, setForm] = useState({ ...EMPTY });
 
   const add = useMutation({
@@ -58,6 +60,15 @@ function AddAgentClient() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const ingest = useMutation({
+    mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
+    onSuccess: (r: any) => {
+      toast.success(`Imported ${r.inserted} homeowner${r.inserted === 1 ? "" : "s"}`);
+      qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
@@ -76,7 +87,7 @@ function AddAgentClient() {
           <div>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Add a homeowner</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Name and address are required — the rest fills in from property records.
+              Add one below, or upload an Excel/CSV list to add many at once.
             </p>
           </div>
 
@@ -108,6 +119,12 @@ function AddAgentClient() {
               </button>
             </div>
           </div>
+
+          <BulkClientUpload
+            onCsv={(csv) => ingest.mutate(csv)}
+            busy={ingest.isPending}
+            title="Add many at once"
+          />
         </div>
       </main>
     </BusinessShell>

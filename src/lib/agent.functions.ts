@@ -1411,3 +1411,35 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true, id: row.id as string };
   });
+
+// Bulk-add homeowners to an agent's sphere from a CSV/Excel upload.
+export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        csv: z.string().min(1).max(2_000_000),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    const { parseClientCsv } = await import("./lender.server");
+    const rows = parseClientCsv(data.csv);
+    if (rows.length === 0) return { inserted: 0 };
+
+    const payload = rows.map((r) => ({
+      portfolio_id: data.portfolioId,
+      client_name: r.full_name,
+      client_email: r.email ?? null,
+      address_line1: r.address,
+      city: r.city ?? null,
+      state: r.state ?? null,
+      zip: r.zip ?? null,
+      notes: r.note ?? null,
+    }));
+    const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
+    if (error) throw new Error(error.message);
+    return { inserted: rows.length };
+  });
