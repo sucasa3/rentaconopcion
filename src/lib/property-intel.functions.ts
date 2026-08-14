@@ -81,7 +81,6 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     // genuinely can't be filled without them.
     const CONDITIONAL = ["tax", "sales", "owner", "neighborhood", "risk"] as const;
     const requested = data.classes;
-    const core = requested.filter((c) => !CONDITIONAL.includes(c as never));
     const conditional = requested.filter((c) => CONDITIONAL.includes(c as never));
 
     const result = await getPropertyIntel(fullAddress, {
@@ -92,7 +91,6 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       // conditional classes on this first pass are free-only
       cachedOnlyClasses: conditional,
     });
-    void core;
 
     let avm = result.classes.avm ? extractAvm(result.classes.avm.data) : null;
     const detail = result.classes.detail ? extractDetail(result.classes.detail.data) : null;
