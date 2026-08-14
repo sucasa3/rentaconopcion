@@ -37,6 +37,29 @@ A coverage strip on the lender and agent dashboards: "Property data on X of Y cl
 ### 7. Backfill
 Seed the queue with the existing 402 clients at their correct priority and let the worker drain it over time — no single burst of spend.
 
+## Spend policy: most value per record
+
+**Buy once, reuse forever.** Property details and assessor/tax records almost never change — pull them a single time per address and never refresh unless the home is sold. Sale history refreshes yearly. Only the automated valuation is genuinely time-sensitive.
+
+**Deduplicate by address, not by user.** The same home can sit in a lender book, an agent book and a homeowner account. One cached record serves all three; the cache is already keyed by normalized address, so the queue must always check it before spending — including across organizations.
+
+**Tier valuation refresh by engagement, not by calendar.**
+- Homeowner logged in or a partner opened the client this month → refresh valuation monthly.
+- Dormant but in a book → refresh quarterly.
+- No account, no partner activity, no campaign → never refresh in the background; pull on first view.
+
+**Spend on request, cache for everyone else.** When a homeowner, lender or agent explicitly asks (opens a profile, taps Refresh, requests a report), we pull immediately if the data is stale — that is the moment worth paying for. Background work only fills gaps for people who will actually be shown the result.
+
+**Validate the address before spending.** Roughly 2,300 rejected requests this month were wasted on unusable addresses. Verify street/city/state/ZIP through the free geocoder first; only queue addresses that resolve. Bad ones go to a "needs review" list instead of retrying.
+
+**Store the answer, not just the raw record.** Every resolved value writes a daily snapshot, so trends, appreciation and "since last month" charts are computed from our own history rather than repeated lookups.
+
+**Budget envelope.** Split the monthly allowance: ~60% reserved for on-demand user requests, ~30% for background backfill, ~10% held back. Background work halts at the soft cap; on-demand requests keep working. If the reserve is hit, show cached values with an honest "last updated" label rather than a blank card.
+
+**Cheapest path first.** For a new address, pull detail + tax (which also yields the property id and canonical address) before valuation — matching by property id avoids the failed valuation lookups that address strings cause.
+
+
+
 ## Technical notes
 
 - New table `property_enrichment_queue` (client id, portfolio id, priority int, status, attempts, last_error, next_attempt_at, requested_classes) with RLS scoped to org members plus service-role access.
