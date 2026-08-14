@@ -58,12 +58,8 @@ export function BusinessShell({
   children: ReactNode;
 }) {
   const items = navItems(kind, bookId);
-  const navigate = useNavigate();
 
-  async function signOut() {
-    await supabase.auth.signOut();
-    navigate({ to: "/" });
-  }
+
 
   return (
     <div className="min-h-screen bg-surface">
