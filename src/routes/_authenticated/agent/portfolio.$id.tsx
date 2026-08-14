@@ -349,37 +349,9 @@ function AgentPortfolio() {
     onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
   });
 
-  // Automatic record pulls when the dashboard opens, guarded by the monthly
-  // allowance so background enrichment can't overspend.
-  const budgetFn = useServerFn(getRecordsBudget);
-  const { data: budget } = useQuery({
-    queryKey: ["records-budget"],
-    queryFn: () => budgetFn(),
-    staleTime: 60_000,
-  });
+  // Records fill in continuously via the background engine; the coverage panel
+  // shows live progress. Nothing is pulled on page load.
 
-  const cov: any = (data as any)?.coverage;
-  const autoPending = cov
-    ? Math.max(0, (cov.total ?? 0) - (cov.with_intel ?? 0) - (cov.unmappable ?? 0))
-    : 0;
-
-  const auto = useAutoEnrich({
-    key: `agent:${id}`,
-    pending: autoPending,
-    budget: budget as any,
-    ready: !!data && !enrich.isPending,
-    batchSize: 10,
-    maxAuto: 40,
-    runBatch: async (limit) => {
-      const r: any = await enrichFn({ data: { portfolioId: id, limit } });
-      return { enriched: r.enriched, remaining: r.remaining ?? 0 };
-    },
-    onDone: () => {
-      qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
-      qc.invalidateQueries({ queryKey: ["records-budget"] });
-      qc.invalidateQueries({ queryKey: ["agent-coverage", id] });
-    },
-  });
 
 
   const saveListing = useMutation({
@@ -556,20 +528,8 @@ function AgentPortfolio() {
                     )}
                     Pull records
                   </button>
-                  {auto.running && (
-                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Auto-pulling records…
-                    </span>
-                  )}
-                  {!auto.running && auto.paused && autoPending > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {auto.paused === "cache_only"
-                        ? "Auto-pull paused — records paused for this month"
-                        : auto.paused === "soft_cap"
-                          ? "Auto-pull paused — monthly allowance nearly used"
-                          : "Auto-pull off — no allowance configured"}
-                    </span>
-                  )}
+
+
                 </div>
 
 

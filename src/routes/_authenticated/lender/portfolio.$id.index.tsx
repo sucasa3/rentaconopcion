@@ -3,13 +3,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  getPortfolio,
-  enrichPortfolioFromAttom,
-  getLenderRecordsBudget,
-} from "@/lib/lender.functions";
-import { useAutoEnrich } from "@/hooks/use-auto-enrich";
+import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
+import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
 import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
+
 
 import {
   Upload,
@@ -144,30 +141,9 @@ function PortfolioDetail() {
     ? data.clients.filter((c: any) => c.missing_loan_data).length
     : 0;
 
-  // Automatic top-up of missing loan data, budget-guarded.
-  const budgetFn = useServerFn(getLenderRecordsBudget);
-  const { data: budget } = useQuery({
-    queryKey: ["records-budget"],
-    queryFn: () => budgetFn(),
-    staleTime: 60_000,
-  });
+  // Records are filled in continuously by the background engine — the queue
+  // strip below shows live progress. Nothing is pulled on page load.
 
-  const auto = useAutoEnrich({
-    key: `lender:${id}`,
-    pending: missingCount,
-    budget: budget as any,
-    ready: !!data && !enrich.isPending,
-    batchSize: 10,
-    maxAuto: 40,
-    runBatch: async (limit) => {
-      const r: any = await enrichFn({ data: { portfolioId: id, limit } });
-      return { enriched: r.enriched, remaining: r.remaining ?? 0 };
-    },
-    onDone: () => {
-      qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
-      qc.invalidateQueries({ queryKey: ["records-budget"] });
-    },
-  });
 
 
 
@@ -384,23 +360,14 @@ function PortfolioDetail() {
                           : `Enrich ${missingCount} from property records`}
                       </button>
                     )}
-                    {auto.running && (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" /> Auto-filling records…
-                      </span>
-                    )}
-                    {!auto.running && auto.paused && missingCount > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {auto.paused === "cache_only"
-                          ? "Auto-fill paused — records paused for this month"
-                          : auto.paused === "soft_cap"
-                            ? "Auto-fill paused — monthly records allowance nearly used"
-                            : "Auto-fill off — no records allowance configured"}
-                      </span>
-                    )}
                   </div>
 
                 </div>
+
+                <div className="mt-4">
+                  <EnrichmentQueueStrip portfolioId={id} />
+                </div>
+
                 <div
                   className={`mt-4 space-y-3 md:hidden ${
                     enrich.isPending ? "pointer-events-none opacity-60" : ""

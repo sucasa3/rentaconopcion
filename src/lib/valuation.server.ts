@@ -86,24 +86,67 @@ export async function getPropertyIntel(
   let touched = false;
 
   // Some properties simply have no coverage for a class (the provider answers
-  // "SuccessWithoutResult"). Remember that for a day so a dashboard reload
-  // doesn't re-buy the same empty answer over and over.
-  const EMPTY_RESULT_COOLDOWN_HOURS = 24;
-  const cooldownSince = new Date(
-    Date.now() - EMPTY_RESULT_COOLDOWN_HOURS * 3600 * 1000,
-  ).toISOString();
-  const { data: recentEmpty } = await supabaseAdmin
-    .from("attom_call_log")
-    .select("endpoint, error_message")
+  // "SuccessWithoutResult"). Remember that for 180 days so we never re-buy the
+  // same blank answer — misses live in their own table, apart from spend.
+  const { data: missRows } = await supabaseAdmin
+    .from("property_intel_misses")
+    .select("endpoint, suppressed_until")
     .eq("address_normalized", normalized)
-    .eq("cache_hit", false)
-    .gte("created_at", cooldownSince)
-    .not("error_message", "is", null);
-  const emptyClasses = new Set(
-    (recentEmpty ?? [])
-      .filter((r) => (r.error_message ?? "").includes("SuccessWithoutResult"))
-      .map((r) => r.endpoint),
+    .gt("suppressed_until", new Date().toISOString());
+  const emptyClasses = new Set((missRows ?? []).map((r) => r.endpoint));
+
+  // Record classes we're currently entitled to call. Anything switched off
+  // (e.g. awaiting provider entitlement) is skipped instead of burning a call.
+  const { data: healthRows } = await supabaseAdmin
+    .from("attom_endpoint_health")
+    .select("endpoint, enabled");
+  const disabledClasses = new Set(
+    (healthRows ?? []).filter((r) => !r.enabled).map((r) => r.endpoint),
   );
+
+  // Log a miss / disable an endpoint that keeps answering 401.
+  const recordMiss = async (cls: string, status: number | null, error: string) => {
+    const noResult = /SuccessWithoutResult|no record|not found/i.test(error);
+    const unauthorized = status === 401 || status === 403;
+    const days = noResult ? 180 : unauthorized ? 7 : 1;
+    const { data: prev } = await supabaseAdmin
+      .from("property_intel_misses")
+      .select("occurrences")
+      .eq("address_normalized", normalized)
+      .eq("endpoint", cls)
+      .maybeSingle();
+    await supabaseAdmin.from("property_intel_misses").upsert(
+      {
+        address_normalized: normalized,
+        endpoint: cls,
+        reason: noResult ? "no_result" : unauthorized ? "unauthorized" : "error",
+        status,
+        occurrences: (prev?.occurrences ?? 0) + 1,
+        last_seen_at: new Date().toISOString(),
+        suppressed_until: new Date(Date.now() + days * 86400_000).toISOString(),
+      },
+      { onConflict: "address_normalized,endpoint" },
+    );
+    if (unauthorized) {
+      const { data: h } = await supabaseAdmin
+        .from("attom_endpoint_health")
+        .select("unauthorized_count")
+        .eq("endpoint", cls)
+        .maybeSingle();
+      const count = (h?.unauthorized_count ?? 0) + 1;
+      await supabaseAdmin.from("attom_endpoint_health").upsert(
+        {
+          endpoint: cls,
+          unauthorized_count: count,
+          last_unauthorized_at: new Date().toISOString(),
+          enabled: count < 3,
+          note: count >= 3 ? "Auto-disabled after repeated 401s from the provider" : null,
+        },
+        { onConflict: "endpoint" },
+      );
+    }
+  };
+
 
   // Resolve `detail` first: its canonical address + property id are the
   // fallback keys we use when a raw address string fails to match.
@@ -147,7 +190,7 @@ export async function getPropertyIntel(
       continue;
     }
 
-    // Known-empty for this address recently — don't buy the same blank again.
+    // Known-empty for this address — don't buy the same blank again.
     if (emptyClasses.has(cls) && !opts.forceRefresh) {
       if (cachedData) {
         result.classes[cls] = {
@@ -161,17 +204,32 @@ export async function getPropertyIntel(
       continue;
     }
 
+    // Record class switched off (e.g. no provider entitlement yet).
+    if (disabledClasses.has(cls) && !opts.forceRefresh) {
+      if (cachedData) {
+        result.classes[cls] = {
+          data: cachedData,
+          fetchedAt: cachedAt ?? new Date(0).toISOString(),
+          stale: true,
+        };
+      } else {
+        result.errors[cls] = "This record type is not enabled on our account yet.";
+      }
+      continue;
+    }
+
     // Cache miss + budget available → live fetch
     const fetched = await attomFetch(cls, address);
     const cost = attomCostCents(cls);
-    callsUsed += 1;
+    // Only successful, data-bearing calls count against the monthly allowance.
+    if (fetched.ok) callsUsed += 1;
 
     await supabaseAdmin.from("attom_call_log").insert({
       endpoint: cls,
       address_normalized: normalized,
       requested_by: opts.requestedBy ?? null,
       cache_hit: false,
-      cost_cents: cost,
+      cost_cents: fetched.ok ? cost : 0,
       status: fetched.status,
       error_message: fetched.ok ? null : fetched.error,
       revenue_source: opts.revenueSource,
@@ -179,12 +237,14 @@ export async function getPropertyIntel(
 
     if (!fetched.ok) {
       result.errors[cls] = fetched.error;
+      await recordMiss(cls, fetched.status ?? null, fetched.error);
       // Serve stale on error if we have it
       if (cachedData) {
         result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
       }
       continue;
     }
+
 
     const now = new Date().toISOString();
     updates[cls] = fetched.data;
@@ -200,7 +260,13 @@ export async function getPropertyIntel(
   // show a blank value.
   const wantsAvm = opts.classes.includes("avm");
   const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
-  if (wantsAvm && avmEmpty && !cacheOnly && (!emptyClasses.has("avm") || opts.forceRefresh)) {
+  if (
+    wantsAvm &&
+    avmEmpty &&
+    !cacheOnly &&
+    !disabledClasses.has("avm") &&
+    (!emptyClasses.has("avm") || opts.forceRefresh)
+  ) {
     const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
     const matched = matchedProperty(detailData);
     const attempts: Array<{ addr: string; attomId?: string | null }> = [];
@@ -211,13 +277,13 @@ export async function getPropertyIntel(
 
     for (const attempt of attempts) {
       const retry = await attomFetch("avm", attempt.addr, { attomId: attempt.attomId ?? null });
-      callsUsed += 1;
+      if (retry.ok) callsUsed += 1;
       await supabaseAdmin.from("attom_call_log").insert({
         endpoint: "avm",
         address_normalized: normalized,
         requested_by: opts.requestedBy ?? null,
         cache_hit: false,
-        cost_cents: attomCostCents("avm"),
+        cost_cents: retry.ok ? attomCostCents("avm") : 0,
         status: retry.status,
         error_message: retry.ok ? null : retry.error,
         revenue_source: `${opts.revenueSource}_avm_fallback`,
@@ -231,8 +297,11 @@ export async function getPropertyIntel(
         delete result.errors.avm;
         break;
       }
+      if (!retry.ok) await recordMiss("avm", retry.status ?? null, retry.error);
     }
   }
+
+
 
 
 

@@ -18,24 +18,40 @@
 
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 import { persistPortfolioOpportunities } from "./opportunities.server";
+import { verifyAddress } from "./geocode.server";
 
 /** Share of the monthly allowance background work is allowed to consume. */
-export const BACKGROUND_BUDGET_PCT = 30;
+export const BACKGROUND_BUDGET_PCT = 70;
 
 /**
  * Core records we want for every client in a book, cheapest-identity-first.
- * Assessor/tax and sale history are deliberately excluded — they're pulled
- * only when a specific fact can't be filled without them.
+ * Mortgage is included only when the provider has confirmed entitlement (see
+ * `attom_endpoint_health`). Assessor/tax, owner and sale history are
+ * conditional — pulled only when a specific fact can't be filled without them.
  */
-export const DEFAULT_CLASSES: AttomEndpoint[] = [
-  "detail",
-  "mortgage",
-  "avm",
-  "permits",
-];
+export const DEFAULT_CLASSES: AttomEndpoint[] = ["detail", "avm", "permits", "mortgage"];
 
+/** Record classes currently switched on for our account. */
+async function enabledClasses(supabaseAdmin: any): Promise<Set<string>> {
+  const { data } = await supabaseAdmin
+    .from("attom_endpoint_health")
+    .select("endpoint, enabled");
+  const off = new Set((data ?? []).filter((r: any) => !r.enabled).map((r: any) => r.endpoint));
+  return new Set(Object.keys(ATTOM_TTL_DAYS).filter((c) => !off.has(c)));
+}
+
+/** Rows stuck mid-flight (worker died / timed out) go back on the queue. */
+async function reapStuck(supabaseAdmin: any): Promise<void> {
+  const cutoff = new Date(Date.now() - 15 * 60_000).toISOString();
+  await supabaseAdmin
+    .from("property_enrichment_queue")
+    .update({ status: "pending", started_at: null })
+    .eq("status", "running")
+    .lt("started_at", cutoff);
+}
 
 const MAX_ATTEMPTS = 2;
+
 
 export interface EnrichTickResult {
   processed: number;
@@ -144,12 +160,17 @@ async function backgroundSpend(
     Boolean(budget?.cache_only_mode) ||
     ((budget?.calls_used ?? 0) / included) * 100 >= softCapPct;
 
+  // Only successful, data-bearing calls count as spend — failures, blanks and
+  // unauthorized responses are logged but never billed against the allowance.
   const { count } = await supabaseAdmin
     .from("attom_call_log")
     .select("id", { count: "exact", head: true })
     .eq("cache_hit", false)
+    .eq("status", 200)
+    .is("error_message", null)
     .like("revenue_source", "background_enrichment%")
     .gte("created_at", monthStart.toISOString());
+
 
   const allowed = Math.floor((BACKGROUND_BUDGET_PCT / 100) * included);
   return { used: count ?? 0, included, cacheOnly, allowed };
@@ -182,7 +203,9 @@ export async function runEnrichmentTick(opts?: {
     return out;
   }
 
+  await reapStuck(supabaseAdmin);
   await reprioritize(supabaseAdmin);
+  const allowedClasses = await enabledClasses(supabaseAdmin);
 
   const { data: queue } = await supabaseAdmin
     .from("property_enrichment_queue")
@@ -218,30 +241,87 @@ export async function runEnrichmentTick(opts?: {
   const { getPropertyIntel, extractMortgage, extractSales } = await import("./valuation.server");
   const touchedPortfolios = new Set<string>();
   let remainingCalls = spend.allowed - spend.used;
+  // One property = one Home Profile: if two rows in this batch resolve to the
+  // same address we only pull records once and share the outcome.
+  const seenAddresses = new Map<string, string>();
 
   for (const item of queue) {
     out.processed += 1;
     const client = clientById.get(item.portfolio_client_id);
     const now = new Date().toISOString();
 
-    if (!client || !addressUsable(client)) {
+    if (!client || !client.address_line1?.trim()) {
       out.needsReview += 1;
       await supabaseAdmin
         .from("property_enrichment_queue")
         .update({
           status: "needs_review",
-          last_error: "Address is missing a city/state or ZIP",
+          last_error: "No street address on file",
           completed_at: now,
         })
         .eq("id", item.id);
       continue;
     }
 
+    // Pre-flight: verify/complete the address for free before spending a call.
+    if (!addressUsable(client)) {
+      const verified = await verifyAddress(fullAddress(client));
+      if (!verified) {
+        out.needsReview += 1;
+        await supabaseAdmin
+          .from("property_enrichment_queue")
+          .update({
+            status: "needs_review",
+            last_error: "Address couldn't be verified (missing city/state or ZIP)",
+            completed_at: now,
+          })
+          .eq("id", item.id);
+        continue;
+      }
+      await supabaseAdmin
+        .from("lender_portfolio_clients")
+        .update({
+          address_line1: verified.street || client.address_line1,
+          city: client.city || verified.city,
+          state: client.state || verified.state,
+          zip: client.zip || verified.zip,
+        })
+        .eq("id", client.id);
+      client.address_line1 = verified.street || client.address_line1;
+      client.city = client.city || verified.city;
+      client.state = client.state || verified.state;
+      client.zip = client.zip || verified.zip;
+    }
+
     const address = fullAddress(client);
+    const normalized = normalizeAddress(address);
+    await supabaseAdmin
+      .from("property_enrichment_queue")
+      .update({ address_normalized: normalized, address_verified_at: now })
+      .eq("id", item.id);
+
+    // Duplicate of a property already handled in this batch — reuse it.
+    if (seenAddresses.has(normalized)) {
+      out.completed += 1;
+      out.cachedOnly += 1;
+      await supabaseAdmin
+        .from("property_enrichment_queue")
+        .update({ status: "done", last_result: "shared_profile", last_error: null, completed_at: now })
+        .eq("id", item.id);
+      await supabaseAdmin
+        .from("lender_portfolio_clients")
+        .update({ last_intel_refreshed_at: now })
+        .eq("id", client.id);
+      touchedPortfolios.add(client.portfolio_id);
+      continue;
+    }
+    seenAddresses.set(normalized, client.id);
+
     const wanted = ((item.requested_classes as AttomEndpoint[]) ?? DEFAULT_CLASSES).filter(
-      (c) => c in ATTOM_TTL_DAYS,
+      (c) => c in ATTOM_TTL_DAYS && allowedClasses.has(c),
     );
     const { missing } = await missingClasses(supabaseAdmin, address, wanted);
+
 
     // Everything we need is already cached — finish without spending anything.
     if (!missing.length) {
@@ -277,10 +357,12 @@ export async function runEnrichmentTick(opts?: {
         // user requests — dormant books don't need a monthly re-buy.
         ttlOverrides: { avm: 90 },
       });
-      remainingCalls -= missing.length;
-      out.spentCalls += missing.length;
-
       const resolved = missing.filter((c) => intel.classes[c]);
+      // Only successful pulls consume the allowance.
+      remainingCalls -= resolved.length;
+      out.spentCalls += resolved.length;
+
+
       const attempts = (item.attempts ?? 0) + 1;
 
       // Fill in loan facts we don't already hold, from the same pull.
@@ -289,7 +371,14 @@ export async function runEnrichmentTick(opts?: {
 
       // Sale history is conditional: only buy it when we still can't date the
       // loan from mortgage records or from what the book already holds.
-      if (!s && !client.close_date && !m?.originationDate && remainingCalls > 0) {
+      if (
+        !s &&
+        allowedClasses.has("sales") &&
+        !client.close_date &&
+        !m?.originationDate &&
+        remainingCalls > 0
+      ) {
+
         const salesIntel = await getPropertyIntel(address, {
           classes: ["sales"],
           revenueSource: "background_enrichment_conditional",
@@ -382,7 +471,7 @@ export async function runEnrichmentTick(opts?: {
   return out;
 }
 
-/** Coverage + queue health for one book. */
+/** Coverage + live queue progress for one book. */
 export async function portfolioCoverage(
   supabase: any,
   portfolioId: string,
@@ -390,7 +479,13 @@ export async function portfolioCoverage(
   total: number;
   covered: number;
   queued: number;
+  pending: number;
+  running: number;
   needsReview: number;
+  done: number;
+  pctComplete: number;
+  working: boolean;
+  lastCompletedAt: string | null;
   reviewList: Array<{ id: string; name: string | null; address: string; reason: string | null }>;
 }> {
   const { data: clients } = await supabase
@@ -401,33 +496,49 @@ export async function portfolioCoverage(
 
   const { data: queue } = await supabase
     .from("property_enrichment_queue")
-    .select("portfolio_client_id, status, last_error")
+    .select("portfolio_client_id, status, last_error, completed_at")
     .eq("portfolio_id", portfolioId);
 
-  
-  const queued = (queue ?? []).filter((q: any) => q.status === "pending" || q.status === "running")
-    .length;
-  const flagged = (queue ?? []).filter(
-    (q: any) => q.status === "needs_review" || q.status === "failed",
-  );
+  const q = queue ?? [];
+  const pending = q.filter((r: any) => r.status === "pending").length;
+  const running = q.filter((r: any) => r.status === "running").length;
+  const queued = pending + running;
+  const flagged = q.filter((r: any) => r.status === "needs_review" || r.status === "failed");
+  const done = q.filter((r: any) => r.status === "done").length;
 
   const covered = rows.filter((r: any) => r.last_intel_refreshed_at != null).length;
 
-  const reviewList = flagged.slice(0, 25).map((q: any) => {
-    const c = rows.find((r: any) => r.id === q.portfolio_client_id);
+  const completedTimes = q
+    .map((r: any) => r.completed_at)
+    .filter(Boolean)
+    .sort();
+  const lastCompletedAt = completedTimes.length
+    ? (completedTimes[completedTimes.length - 1] as string)
+    : null;
+
+  const reviewList = flagged.slice(0, 25).map((r: any) => {
+    const c = rows.find((x: any) => x.id === r.portfolio_client_id);
     return {
-      id: q.portfolio_client_id as string,
+      id: r.portfolio_client_id as string,
       name: c?.client_name ?? null,
       address: c ? fullAddress(c) : "",
-      reason: q.last_error ?? null,
+      reason: r.last_error ?? null,
     };
   });
 
+  const total = rows.length;
   return {
-    total: rows.length,
+    total,
     covered,
     queued,
+    pending,
+    running,
     needsReview: flagged.length,
+    done,
+    pctComplete: total ? Math.round(((covered + flagged.length) / total) * 100) : 100,
+    working: queued > 0,
+    lastCompletedAt,
     reviewList,
   };
+
 }
