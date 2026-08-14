@@ -38,6 +38,12 @@ import { ArrowRight, Plus, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab:
+      search.tab === "care" || search.tab === "documents"
+        ? (search.tab as "care" | "documents")
+        : ("home" as const),
+  }),
   head: () => ({
     meta: [
       { title: "Your Home Dashboard — SuCasa" },
@@ -54,10 +60,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   useLogOnMount("value_viewed");
+  const navigate = useNavigate();
+  const { tab } = Route.useSearch();
+  const setTab = (t: "home" | "care" | "documents") =>
+    navigate({ to: "/dashboard", search: { tab: t } });
   const [logOpen, setLogOpen] = useState(false);
-  const [tab, setTab] = useState<"home" | "care" | "documents">("home");
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [requests, setRequests] = useState<RecentRequest[]>([]);
+
 
   const listReqFn = useServerFn(listMyRequests);
   const { data: dbRequests } = useQuery({
