@@ -21,6 +21,13 @@ export interface GetPropertyIntelOptions {
   revenueSource: string; // 'signup_enrichment' | 'refresh' | 'report' | 'lead_claim' | ...
   requestedBy?: string | null;
   forceRefresh?: boolean;
+  /**
+   * Per-class freshness overrides (days). Background work uses a longer
+   * valuation window than on-demand user requests.
+   */
+  ttlOverrides?: Partial<Record<IntelClass, number>>;
+  /** Never spend on these classes — serve them only if already cached. */
+  cachedOnlyClasses?: IntelClass[];
 }
 
 export interface PropertyIntelResult {
@@ -30,11 +37,12 @@ export interface PropertyIntelResult {
   errors: Partial<Record<IntelClass, string>>;
 }
 
-function ttlOk(fetchedAt: string | null, cls: IntelClass): boolean {
+function ttlOk(fetchedAt: string | null, cls: IntelClass, overrideDays?: number): boolean {
   if (!fetchedAt) return false;
   const ageMs = Date.now() - new Date(fetchedAt).getTime();
-  return ageMs < ATTOM_TTL_DAYS[cls] * 24 * 60 * 60 * 1000;
+  return ageMs < (overrideDays ?? ATTOM_TTL_DAYS[cls]) * 24 * 60 * 60 * 1000;
 }
+
 
 export async function getPropertyIntel(
   address: string,
