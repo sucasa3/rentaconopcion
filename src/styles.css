@@ -133,6 +133,11 @@
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.6 0.13 255);
   --surface: oklch(0.17 0.02 255);
+  --attention: oklch(0.8 0.15 75);
+  --attention-foreground: oklch(0.2 0.05 75);
+  --info: oklch(0.7 0.13 250);
+  --info-foreground: oklch(0.15 0.02 255);
+
   --surface-elevated: oklch(0.22 0.03 255);
   --sidebar: oklch(0.2 0.03 255);
   --sidebar-foreground: oklch(0.97 0.01 250);
