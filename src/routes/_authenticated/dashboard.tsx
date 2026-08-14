@@ -38,12 +38,15 @@ import { ArrowRight, Plus, PenLine } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: "home" | "care" | "documents" } => ({
     tab:
-      search.tab === "care" || search.tab === "documents"
-        ? (search.tab as "care" | "documents")
-        : ("home" as const),
+      search.tab === "care" || search.tab === "documents" || search.tab === "home"
+        ? (search.tab as "home" | "care" | "documents")
+        : undefined,
   }),
+
   head: () => ({
     meta: [
       { title: "Your Home Dashboard — SuCasa" },
