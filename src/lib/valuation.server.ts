@@ -301,7 +301,7 @@ export async function getPropertyIntel(
     }
   }
 
-  }
+
 
 
 
