@@ -80,7 +80,11 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
         </div>
         {book && (
           <Link
-            to={`${base}/portfolio/$id` as never}
+            to={
+              (kind === "agent"
+                ? "/agent/add-client/$id"
+                : "/lender/portfolio/$id/import") as never
+            }
             params={{ id: book.id } as never}
             className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft"
           >
@@ -147,6 +151,9 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
                 actionLabel="View homeowner"
                 to={t.portfolioId ? (`${base}/portfolio/$id` as never) : undefined}
                 params={t.portfolioId ? { id: t.portfolioId } : undefined}
+                search={
+                  t.portfolioId && t.clientId ? ({ client: t.clientId } as never) : undefined
+                }
               />
             ))}
           </div>
@@ -188,6 +195,9 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
                 actionLabel="View homeowner"
                 to={o.portfolioId ? (`${base}/portfolio/$id` as never) : undefined}
                 params={o.portfolioId ? { id: o.portfolioId } : undefined}
+                search={
+                  o.portfolioId && o.clientId ? ({ client: o.clientId } as never) : undefined
+                }
               />
             ))}
           </div>

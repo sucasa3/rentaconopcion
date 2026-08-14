@@ -73,6 +73,11 @@ export function OpportunitiesBoard({ kind }: { kind: "agent" | "lender" }) {
               actionLabel="View homeowner"
               to={o.portfolioId ? (`${base}/portfolio/$id` as never) : undefined}
               params={o.portfolioId ? { id: o.portfolioId } : undefined}
+              search={
+                o.portfolioId && (o as any).clientId
+                  ? ({ client: (o as any).clientId } as never)
+                  : undefined
+              }
             />
           ))}
         </div>

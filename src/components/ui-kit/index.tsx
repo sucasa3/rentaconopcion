@@ -95,6 +95,7 @@ export function SignalCard({
   actionLabel = "View",
   to,
   params,
+  search,
 }: {
   icon: ReactNode;
   name: string;
@@ -105,6 +106,7 @@ export function SignalCard({
   actionLabel?: string;
   to?: string;
   params?: Record<string, string>;
+  search?: Record<string, string>;
 }) {
   return (
     <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
@@ -127,6 +129,7 @@ export function SignalCard({
             <Link
               to={to}
               params={params as never}
+              search={search as never}
               className="inline-flex w-full items-center justify-center rounded-2xl bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
             >
               {actionLabel}

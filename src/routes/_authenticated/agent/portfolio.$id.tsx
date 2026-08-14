@@ -69,6 +69,8 @@ function SourceBadge({ source }: { source?: string }) {
 }
 
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
+  validateSearch: (s: Record<string, unknown>): { client?: string } =>
+    typeof s.client === "string" ? { client: s.client } : {},
   head: () => ({
     meta: [
       { title: "Sphere intelligence — SuCasa Agent" },
@@ -283,6 +285,7 @@ const PAGE_SIZE = 25;
 
 function AgentPortfolio() {
   const { id } = Route.useParams();
+  const { client: clientParam } = Route.useSearch();
   const getFn = useServerFn(getAgentPortfolio);
   const enrichFn = useServerFn(enrichAgentPortfolio);
   const listingFn = useServerFn(setListingStatus);
@@ -303,6 +306,18 @@ function AgentPortfolio() {
     queryKey: ["agent-portfolio", id, sellCost],
     queryFn: () => getFn({ data: { id, sellCostPct: sellCost } }),
   });
+
+  // Deep link: /agent/portfolio/$id?client=<clientId> opens that homeowner directly.
+  const openedParam = useRef<string | null>(null);
+  useEffect(() => {
+    if (!clientParam || !data || openedParam.current === clientParam) return;
+    const match = (data as any).clients?.find((c: any) => c.id === clientParam);
+    if (match) {
+      openedParam.current = clientParam;
+      setSelected(match);
+    }
+  }, [clientParam, data]);
+
 
   const enrich = useMutation({
     // Runs batch after batch until every mappable home in the book is covered
