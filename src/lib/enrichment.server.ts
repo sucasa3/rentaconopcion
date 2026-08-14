@@ -357,10 +357,12 @@ export async function runEnrichmentTick(opts?: {
         // user requests — dormant books don't need a monthly re-buy.
         ttlOverrides: { avm: 90 },
       });
-      remainingCalls -= missing.length;
-      out.spentCalls += missing.length;
-
       const resolved = missing.filter((c) => intel.classes[c]);
+      // Only successful pulls consume the allowance.
+      remainingCalls -= resolved.length;
+      out.spentCalls += resolved.length;
+
+
       const attempts = (item.attempts ?? 0) + 1;
 
       // Fill in loan facts we don't already hold, from the same pull.
