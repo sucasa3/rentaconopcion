@@ -164,6 +164,8 @@ export const askAssistant = createServerFn({ method: "POST" })
         } = await import("@/lib/valuation.server");
         const intel = await getPropertyIntel(fullAddress, {
           classes: ["avm", "detail", "mortgage", "sales", "tax"],
+          // the assistant reads context; it never buys the conditional records
+          cachedOnlyClasses: ["sales", "tax"],
           requestedBy: context.userId,
           revenueSource: "assistant_context",
         });

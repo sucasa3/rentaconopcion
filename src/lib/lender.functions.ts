@@ -756,6 +756,7 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
       try {
         const intel = await getPropertyIntel(fullAddress, {
           classes: ["mortgage", "sales"],
+          cachedOnlyClasses: ["sales"],
           revenueSource: "lender_enrichment",
           requestedBy: context.userId,
         });

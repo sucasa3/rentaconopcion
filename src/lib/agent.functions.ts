@@ -768,7 +768,7 @@ export const enrichAgentPortfolio = createServerFn({ method: "POST" })
     for (const full of targets) {
       try {
         await getPropertyIntel(full, {
-          classes: ["avm", "detail", "owner", "sales", "tax", "permits", "mortgage"],
+          classes: ["avm", "detail", "mortgage", "permits"],
           revenueSource: "agent_dashboard",
           requestedBy: context.userId,
         });
