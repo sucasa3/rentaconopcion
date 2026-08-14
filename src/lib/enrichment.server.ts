@@ -18,24 +18,40 @@
 
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 import { persistPortfolioOpportunities } from "./opportunities.server";
+import { verifyAddress } from "./geocode.server";
 
 /** Share of the monthly allowance background work is allowed to consume. */
-export const BACKGROUND_BUDGET_PCT = 30;
+export const BACKGROUND_BUDGET_PCT = 70;
 
 /**
  * Core records we want for every client in a book, cheapest-identity-first.
- * Assessor/tax and sale history are deliberately excluded — they're pulled
- * only when a specific fact can't be filled without them.
+ * Mortgage is included only when the provider has confirmed entitlement (see
+ * `attom_endpoint_health`). Assessor/tax, owner and sale history are
+ * conditional — pulled only when a specific fact can't be filled without them.
  */
-export const DEFAULT_CLASSES: AttomEndpoint[] = [
-  "detail",
-  "mortgage",
-  "avm",
-  "permits",
-];
+export const DEFAULT_CLASSES: AttomEndpoint[] = ["detail", "avm", "permits", "mortgage"];
 
+/** Record classes currently switched on for our account. */
+async function enabledClasses(supabaseAdmin: any): Promise<Set<string>> {
+  const { data } = await supabaseAdmin
+    .from("attom_endpoint_health")
+    .select("endpoint, enabled");
+  const off = new Set((data ?? []).filter((r: any) => !r.enabled).map((r: any) => r.endpoint));
+  return new Set(Object.keys(ATTOM_TTL_DAYS).filter((c) => !off.has(c)));
+}
+
+/** Rows stuck mid-flight (worker died / timed out) go back on the queue. */
+async function reapStuck(supabaseAdmin: any): Promise<void> {
+  const cutoff = new Date(Date.now() - 15 * 60_000).toISOString();
+  await supabaseAdmin
+    .from("property_enrichment_queue")
+    .update({ status: "pending", started_at: null })
+    .eq("status", "running")
+    .lt("started_at", cutoff);
+}
 
 const MAX_ATTEMPTS = 2;
+
 
 export interface EnrichTickResult {
   processed: number;
