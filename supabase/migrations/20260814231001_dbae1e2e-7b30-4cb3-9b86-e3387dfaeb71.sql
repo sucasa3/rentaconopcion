@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.tg_requeue_on_address_change() FROM PUBLIC, anon, authenticated;
