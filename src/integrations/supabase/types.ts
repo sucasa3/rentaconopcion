@@ -152,6 +152,36 @@ export type Database = {
         }
         Relationships: []
       }
+      attom_endpoint_health: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          last_unauthorized_at: string | null
+          note: string | null
+          unauthorized_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          last_unauthorized_at?: string | null
+          note?: string | null
+          unauthorized_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          last_unauthorized_at?: string | null
+          note?: string | null
+          unauthorized_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       attom_monthly_budget: {
         Row: {
           cache_only_mode: boolean
@@ -1751,6 +1781,8 @@ export type Database = {
       }
       property_enrichment_queue: {
         Row: {
+          address_normalized: string | null
+          address_verified_at: string | null
           attempts: number
           completed_at: string | null
           created_at: string
@@ -1767,6 +1799,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          address_normalized?: string | null
+          address_verified_at?: string | null
           attempts?: number
           completed_at?: string | null
           created_at?: string
@@ -1783,6 +1817,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          address_normalized?: string | null
+          address_verified_at?: string | null
           attempts?: number
           completed_at?: string | null
           created_at?: string
@@ -1902,6 +1938,45 @@ export type Database = {
           tax_fetched_at?: string | null
           updated_at?: string
           zip?: string | null
+        }
+        Relationships: []
+      }
+      property_intel_misses: {
+        Row: {
+          address_normalized: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_seen_at: string
+          occurrences: number
+          reason: string
+          status: number | null
+          suppressed_until: string
+          updated_at: string
+        }
+        Insert: {
+          address_normalized: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          occurrences?: number
+          reason: string
+          status?: number | null
+          suppressed_until?: string
+          updated_at?: string
+        }
+        Update: {
+          address_normalized?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          occurrences?: number
+          reason?: string
+          status?: number | null
+          suppressed_until?: string
+          updated_at?: string
         }
         Relationships: []
       }
