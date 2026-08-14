@@ -22,6 +22,7 @@ import {
 
 } from "@/lib/agent.functions";
 import { useAutoEnrich } from "@/hooks/use-auto-enrich";
+import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
 import {
   ArrowLeft,
   Search,
@@ -599,7 +600,7 @@ function AgentPortfolio() {
                     }}
                   />
                 ))}
-                <span className="ml-auto flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
                   <span className="inline-flex items-center gap-1">
                     <AlertCircle className="h-3 w-3 text-growth" />
                     {data.summary.expired} expired / withdrawn
@@ -620,10 +621,39 @@ function AgentPortfolio() {
                   </h2>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Ranked on move intent × listing readiness. Net proceeds are modeled from public
-                  records — not an appraisal.
+                  Ranked on move intent × listing readiness. Modeled, not an appraisal.
                 </p>
-                <div className="mt-4 overflow-x-auto">
+                <div className="mt-4 space-y-3 md:hidden">
+                  {data.top_listing_opportunities.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-muted-foreground">
+                      No scored opportunities yet.
+                    </p>
+                  ) : (
+                    data.top_listing_opportunities.map((c: any) => (
+                      <OpportunityCard
+                        key={c.id}
+                        pill={<BandPill band={c.band} score={c.move_score} />}
+                        name={c.name}
+                        subtitle={[c.city, c.state].filter(Boolean).join(", ")}
+                        heroLabel="Net proceeds"
+                        heroValue={moneyCompact(c.net_proceeds)}
+                        metrics={[
+                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
+                          { label: "Readiness", value: c.readiness_label ?? c.readiness_score },
+                        ]}
+                        extra={
+                          <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
+                        }
+                        signal={c.signals?.[0]?.label}
+                        onAction={() => {
+                          setSelected(c);
+                          setBrief("");
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
+                <div className="mt-4 hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[720px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
