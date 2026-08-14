@@ -288,8 +288,9 @@ export async function runEnrichmentTick(opts?: {
       if (client.loan_amount_at_close_cents == null && m?.loanAmount) {
         patch.loan_amount_at_close_cents = Math.round(m.loanAmount * 100);
       }
-      if (!client.close_date && (m?.originationDate || s?.lastSale?.date)) {
-        patch.close_date = m?.originationDate ?? s?.lastSale?.date;
+      const closeDate = m?.originationDate ?? s?.lastSale?.date ?? null;
+      if (!client.close_date && closeDate) {
+        patch.close_date = closeDate;
       }
       if (client.term_months == null && m?.termMonths) patch.term_months = m.termMonths;
       await supabaseAdmin.from("lender_portfolio_clients").update(patch).eq("id", client.id);
