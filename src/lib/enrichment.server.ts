@@ -203,7 +203,9 @@ export async function runEnrichmentTick(opts?: {
     return out;
   }
 
+  await reapStuck(supabaseAdmin);
   await reprioritize(supabaseAdmin);
+  const allowedClasses = await enabledClasses(supabaseAdmin);
 
   const { data: queue } = await supabaseAdmin
     .from("property_enrichment_queue")
@@ -239,30 +241,87 @@ export async function runEnrichmentTick(opts?: {
   const { getPropertyIntel, extractMortgage, extractSales } = await import("./valuation.server");
   const touchedPortfolios = new Set<string>();
   let remainingCalls = spend.allowed - spend.used;
+  // One property = one Home Profile: if two rows in this batch resolve to the
+  // same address we only pull records once and share the outcome.
+  const seenAddresses = new Map<string, string>();
 
   for (const item of queue) {
     out.processed += 1;
     const client = clientById.get(item.portfolio_client_id);
     const now = new Date().toISOString();
 
-    if (!client || !addressUsable(client)) {
+    if (!client || !client.address_line1?.trim()) {
       out.needsReview += 1;
       await supabaseAdmin
         .from("property_enrichment_queue")
         .update({
           status: "needs_review",
-          last_error: "Address is missing a city/state or ZIP",
+          last_error: "No street address on file",
           completed_at: now,
         })
         .eq("id", item.id);
       continue;
     }
 
+    // Pre-flight: verify/complete the address for free before spending a call.
+    if (!addressUsable(client)) {
+      const verified = await verifyAddress(fullAddress(client));
+      if (!verified) {
+        out.needsReview += 1;
+        await supabaseAdmin
+          .from("property_enrichment_queue")
+          .update({
+            status: "needs_review",
+            last_error: "Address couldn't be verified (missing city/state or ZIP)",
+            completed_at: now,
+          })
+          .eq("id", item.id);
+        continue;
+      }
+      await supabaseAdmin
+        .from("lender_portfolio_clients")
+        .update({
+          address_line1: verified.street || client.address_line1,
+          city: client.city || verified.city,
+          state: client.state || verified.state,
+          zip: client.zip || verified.zip,
+        })
+        .eq("id", client.id);
+      client.address_line1 = verified.street || client.address_line1;
+      client.city = client.city || verified.city;
+      client.state = client.state || verified.state;
+      client.zip = client.zip || verified.zip;
+    }
+
     const address = fullAddress(client);
+    const normalized = normalizeAddress(address);
+    await supabaseAdmin
+      .from("property_enrichment_queue")
+      .update({ address_normalized: normalized, address_verified_at: now })
+      .eq("id", item.id);
+
+    // Duplicate of a property already handled in this batch — reuse it.
+    if (seenAddresses.has(normalized)) {
+      out.completed += 1;
+      out.cachedOnly += 1;
+      await supabaseAdmin
+        .from("property_enrichment_queue")
+        .update({ status: "done", last_result: "shared_profile", last_error: null, completed_at: now })
+        .eq("id", item.id);
+      await supabaseAdmin
+        .from("lender_portfolio_clients")
+        .update({ last_intel_refreshed_at: now })
+        .eq("id", client.id);
+      touchedPortfolios.add(client.portfolio_id);
+      continue;
+    }
+    seenAddresses.set(normalized, client.id);
+
     const wanted = ((item.requested_classes as AttomEndpoint[]) ?? DEFAULT_CLASSES).filter(
-      (c) => c in ATTOM_TTL_DAYS,
+      (c) => c in ATTOM_TTL_DAYS && allowedClasses.has(c),
     );
     const { missing } = await missingClasses(supabaseAdmin, address, wanted);
+
 
     // Everything we need is already cached — finish without spending anything.
     if (!missing.length) {
