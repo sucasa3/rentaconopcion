@@ -9,6 +9,7 @@ import {
   getLenderRecordsBudget,
 } from "@/lib/lender.functions";
 import { useAutoEnrich } from "@/hooks/use-auto-enrich";
+import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
 
 import {
   Upload,
