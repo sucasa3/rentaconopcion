@@ -181,7 +181,7 @@ function Dashboard() {
     if (appliedFocus || userId === undefined) return;
     const saved = readOnboarding("homeowner", userId);
     if (saved && ["home", "care", "documents"].includes(saved.focus)) {
-      setTab(saved.focus as typeof tab);
+      setTab(saved.focus as "home" | "care" | "documents");
     }
     setAppliedFocus(true);
   }, [appliedFocus, userId]);
@@ -221,7 +221,7 @@ function Dashboard() {
                   documentCount: (docs ?? []).length,
                   completeness: completeness.pct,
                 }}
-                onFocusChange={(f) => setTab(f as typeof tab)}
+                onFocusChange={(f) => setTab(f as "home" | "care" | "documents")}
               />
               <OnboardingWalkthrough triggerLabel="Take the tour" />
               <Link to="/request" className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft">
@@ -252,7 +252,7 @@ function Dashboard() {
           />
 
           <div id="dash-tabs" className="scroll-mt-20">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "home" | "care" | "documents")}>
               <TabsList className="w-full justify-start overflow-x-auto">
                 <TabsTrigger value="home">Home</TabsTrigger>
                 <TabsTrigger value="care">Care</TabsTrigger>
