@@ -246,6 +246,7 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
 
       {open && (
         <div className="border-t border-border px-4 py-3">
+          <EnrichmentQueueStrip portfolioId={portfolioId} />
           {isLoading ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" /> Checking coverage…
