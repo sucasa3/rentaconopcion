@@ -198,10 +198,10 @@ function Dashboard() {
 
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <HomeownerShell>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-6xl space-y-6">
+
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">Welcome back</p>
