@@ -1372,3 +1372,42 @@ export const setAgentFeedReviewed = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// Add a single homeowner to an agent's sphere (manual, one-by-one entry).
+export const addAgentPortfolioClient = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        portfolioId: z.string().uuid(),
+        fullName: z.string().trim().min(1).max(160),
+        address: z.string().trim().min(1).max(240),
+        city: z.string().trim().max(120).optional().nullable(),
+        state: z.string().trim().max(40).optional().nullable(),
+        zip: z.string().trim().max(20).optional().nullable(),
+        email: z.string().trim().email().optional().or(z.literal("")).nullable(),
+        phone: z.string().trim().max(40).optional().nullable(),
+        notes: z.string().trim().max(2000).optional().nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await agentOrgIds(context.supabase, context.userId);
+    const { data: row, error } = await context.supabase
+      .from("lender_portfolio_clients")
+      .insert({
+        portfolio_id: data.portfolioId,
+        client_name: data.fullName,
+        client_email: data.email || null,
+        client_phone: data.phone || null,
+        address_line1: data.address,
+        city: data.city || null,
+        state: data.state || null,
+        zip: data.zip || null,
+        notes: data.notes || null,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { ok: true, id: row.id as string };
+  });
