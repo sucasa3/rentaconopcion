@@ -252,8 +252,9 @@ function Dashboard() {
           />
 
           <div id="dash-tabs" className="scroll-mt-20">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as "home" | "care" | "documents")}>
-              <TabsList className="w-full justify-start overflow-x-auto">
+            <Tabs value={tab ?? "home"} onValueChange={(v) => setTab(v as "home" | "care" | "documents")}>
+              <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-secondary p-1">
+
                 <TabsTrigger value="home">Home</TabsTrigger>
                 <TabsTrigger value="care">Care</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
