@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { BusinessShell } from "@/components/business-shell";
 import { listAgentPortfolios } from "@/lib/agent.functions";
 import { CampaignsWorkspace } from "@/components/campaigns-workspace";
 import { ArrowLeft } from "lucide-react";
@@ -22,9 +22,8 @@ function AgentCampaigns() {
   const { data: mine } = useQuery({ queryKey: ["agent-portfolios"], queryFn: () => portfoliosFn() });
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <BusinessShell kind="agent">
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-4xl space-y-6">
           <div>
             <Link
@@ -44,7 +43,6 @@ function AgentCampaigns() {
           />
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </BusinessShell>
   );
 }

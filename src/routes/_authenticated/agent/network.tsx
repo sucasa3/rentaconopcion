@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { SiteHeader, SiteFooter } from "@/components/site-header";
+import { BusinessShell } from "@/components/business-shell";
 import {
   endSponsorship,
   getAgentNetwork,
@@ -61,9 +61,8 @@ function AgentNetwork() {
   const [tab, setTab] = useState<Tab>("intros");
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-8">
+    <BusinessShell kind="agent">
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <div>
             <Link
@@ -133,8 +132,7 @@ function AgentNetwork() {
           )}
         </div>
       </main>
-      <SiteFooter />
-    </div>
+    </BusinessShell>
   );
 }
 
