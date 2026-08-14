@@ -198,3 +198,159 @@ export function EmptyState({
     </div>
   );
 }
+
+/** Compact label/value pair used inside the mobile metric grids. */
+function Metric({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+      <p className="truncate text-base font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+/**
+ * Full-width mobile opportunity card: status pill, name, one hero number and a
+ * two-column metric grid. Replaces wide desktop tables below `md`.
+ */
+export function OpportunityCard({
+  pill,
+  name,
+  subtitle,
+  heroLabel,
+  heroValue,
+  metrics = [],
+  signal,
+  extra,
+  actionLabel = "View opportunity",
+  onAction,
+  to,
+  params,
+}: {
+  pill?: ReactNode;
+  name: string;
+  subtitle?: string;
+  heroLabel: string;
+  heroValue: ReactNode;
+  metrics?: { label: string; value: ReactNode }[];
+  signal?: ReactNode;
+  extra?: ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
+  to?: string;
+  params?: Record<string, string>;
+}) {
+  return (
+    <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
+      {pill && <div className="mb-2">{pill}</div>}
+      <p className="truncate text-lg font-semibold tracking-tight">{name}</p>
+      {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
+
+      <div className="mt-3 rounded-2xl bg-surface p-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {heroLabel}
+        </p>
+        <p className="text-2xl font-semibold tabular-nums text-growth">{heroValue}</p>
+      </div>
+
+      {metrics.length > 0 && (
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {metrics.map((m) => (
+            <Metric key={m.label} label={m.label} value={m.value} />
+          ))}
+        </div>
+      )}
+
+      {extra && <div className="mt-3">{extra}</div>}
+      {signal && <p className="mt-3 line-clamp-2 text-sm text-primary">{signal}</p>}
+
+      {(to || onAction) && (
+        <div className="mt-4">
+          {to ? (
+            <Link
+              to={to}
+              params={params as never}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              {actionLabel}
+            </Link>
+          ) : (
+            <button
+              onClick={onAction}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+            >
+              {actionLabel}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Mobile replacement for a spreadsheet row: name, metric grid, status pills. */
+export function PersonCard({
+  name,
+  subtitle,
+  metrics = [],
+  pills,
+  extra,
+  actionLabel = "View profile",
+  onAction,
+  to,
+  params,
+}: {
+  name: string;
+  subtitle?: string;
+  metrics?: { label: string; value: ReactNode }[];
+  pills?: ReactNode;
+  extra?: ReactNode;
+  actionLabel?: string;
+  onAction?: () => void;
+  to?: string;
+  params?: Record<string, string>;
+}) {
+  return (
+    <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
+      <div className="min-w-0">
+        <p className="truncate font-semibold">{name}</p>
+        {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
+      </div>
+
+      {pills && <div className="mt-2 flex flex-wrap items-center gap-1.5">{pills}</div>}
+
+      {metrics.length > 0 && (
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {metrics.map((m) => (
+            <Metric key={m.label} label={m.label} value={m.value} />
+          ))}
+        </div>
+      )}
+
+      {extra && <div className="mt-3">{extra}</div>}
+
+      {(to || onAction) && (
+        <div className="mt-4">
+          {to ? (
+            <Link
+              to={to}
+              params={params as never}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
+            >
+              {actionLabel}
+            </Link>
+          ) : (
+            <button
+              onClick={onAction}
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
+            >
+              {actionLabel}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
