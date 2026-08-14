@@ -764,11 +764,11 @@ function AgentPortfolio() {
                   </p>
                 </div>
 
-                <div className="rounded-3xl border border-border bg-card p-6 shadow-soft lg:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wrench className="h-4 w-4 text-primary" />
-                      <h3 className="text-sm font-semibold">Client activity</h3>
+                <div className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6 lg:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Wrench className="h-4 w-4 shrink-0 text-primary" />
+                      <h3 className="truncate text-sm font-semibold">Client activity</h3>
                     </div>
                     <span className="text-xs text-muted-foreground">
                       {data.summary.active_referrals} open ·{" "}
@@ -783,15 +783,15 @@ function AgentPortfolio() {
                   <Tabs
                     value={activityTab}
                     onValueChange={setActivityTab}
-                    className="mt-4"
+                    className="mt-4 min-w-0"
                   >
-                    <TabsList>
+                    <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:inline-flex sm:h-9 sm:w-auto sm:grid-cols-none">
                       <TabsTrigger value="high_intent" className="gap-1.5">
                         High intent
                         {highIntentFeed.length > 0 && <NewPill count={highIntentFeed.length} />}
                       </TabsTrigger>
                       <TabsTrigger value="recommendations" className="gap-1.5">
-                        Recommendations due
+                        <span className="truncate">Recommendations</span>
                         {newRecCount > 0 && <NewPill count={newRecCount} />}
                       </TabsTrigger>
                       <TabsTrigger value="communicated">Communicated</TabsTrigger>
@@ -800,6 +800,7 @@ function AgentPortfolio() {
                         {newRefCount > 0 && <NewPill count={newRefCount} />}
                       </TabsTrigger>
                     </TabsList>
+
 
                     <TabsContent value="high_intent" className="mt-4 space-y-2">
                       {highIntentFeed.length === 0 ? (
