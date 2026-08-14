@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { addPortfolioClient, ingestPortfolioCsv } from "@/lib/lender.functions";
-import { Upload, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
+import { BulkClientUpload } from "@/components/bulk-client-upload";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   component: PortfolioImport,
@@ -27,7 +28,6 @@ function PortfolioImport() {
   const { id } = Route.useParams();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const fileRef = useRef<HTMLInputElement>(null);
   const ingestFn = useServerFn(ingestPortfolioCsv);
   const addFn = useServerFn(addPortfolioClient);
   const [form, setForm] = useState({ ...EMPTY });
@@ -67,12 +67,6 @@ function PortfolioImport() {
     },
     onError: (e: any) => toast.error(e.message),
   });
-
-  async function handleFile(f: File) {
-    const text = await f.text();
-    ingest.mutate(text);
-    if (fileRef.current) fileRef.current.value = "";
-  }
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
