@@ -116,11 +116,12 @@ export async function getPropertyIntel(
 
     const cachedData = existing?.[cls] as unknown;
     const cachedAt = existing?.[`${cls}_fetched_at`] as string | null;
-    const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls);
+    const cachedOnly = opts.cachedOnlyClasses?.includes(cls) ?? false;
+    const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls, opts.ttlOverrides?.[cls]);
 
     // Cache hit path
-    if (fresh && cachedData) {
-      result.classes[cls] = { data: cachedData, fetchedAt: cachedAt!, stale: false };
+    if ((fresh || cachedOnly) && cachedData) {
+      result.classes[cls] = { data: cachedData, fetchedAt: cachedAt!, stale: !fresh };
       await supabaseAdmin.from("attom_call_log").insert({
         endpoint: cls,
         address_normalized: normalized,
@@ -132,9 +133,12 @@ export async function getPropertyIntel(
       });
       continue;
     }
+    // Caller asked for this class only if free — never spend on it.
+    if (cachedOnly) continue;
 
     // Cache-only mode: return stale if we have it, else record the miss.
     if (cacheOnly) {
+
       if (cachedData) {
         result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
       } else {
