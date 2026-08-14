@@ -91,16 +91,16 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
               </Link>
             ))}
           </nav>
-          <button
-            onClick={signOut}
-            className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-          >
-            <LogOut className="h-5 w-5" />
-            Sign out
-          </button>
+          <div className="mt-1 border-t border-border/60 pt-2">
+            <AccountMenu role="homeowner" showName className="w-full" />
+          </div>
         </aside>
 
-        <main className="min-w-0 flex-1 pb-24 md:pb-10">{children}</main>
+        <main className="min-w-0 flex-1 pb-24 md:pb-10">
+          <MobileTopBar role="homeowner" />
+          {children}
+        </main>
+
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/95 backdrop-blur-xl md:hidden">
