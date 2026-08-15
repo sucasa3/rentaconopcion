@@ -66,7 +66,7 @@ export function SlideLayout({
   const muted = tone === "light" ? "text-muted-foreground" : "text-white/70";
 
   return (
-    <div className={`slide-content flex flex-col px-[110px] py-[64px] ${shell}`}>
+    <div className={`slide-content flex flex-col px-[110px] py-[56px] ${shell}`}>
       <div className="flex items-start justify-between">
         <div className="max-w-[1400px]">
           {kicker && (
