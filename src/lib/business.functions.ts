@@ -93,7 +93,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
     const { data: opps } = rows.length
       ? await supabase
           .from("homeowner_opportunities")
-          .select("id, portfolio_client_id, category, strength, score, reasons, state")
+          .select("id, portfolio_client_id, category, strength, score, reasons, state, network, confidence, signal_key")
           .in(
             "portfolio_client_id",
             rows.map((r: any) => r.id),
@@ -111,12 +111,17 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
         strength: o.strength,
         score: o.score,
         reason: (o.reasons ?? [])[0] ?? null,
+        detail: (o.reasons ?? [])[1] ?? null,
+        network: o.network ?? null,
+        confidence: o.confidence ?? null,
+        signalKey: o.signal_key ?? null,
         clientId: o.portfolio_client_id,
         clientName: c?.client_name ?? "Homeowner",
         activated: Boolean(c?.homeowner_id),
         portfolioId: c?.portfolio_id ?? null,
       };
     });
+
 
     // Campaigns: what is switched on for these orgs, plus delivery counts.
     const { data: activations } = await supabase

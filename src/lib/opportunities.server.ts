@@ -297,7 +297,10 @@ export async function listPortfolioOpportunityRows(supabase: any, portfolioId: s
 
   const { data: opps, error } = await supabase
     .from("homeowner_opportunities")
-    .select("id, portfolio_client_id, category, strength, score, reasons, signals, state, computed_at")
+    .select(
+      "id, portfolio_client_id, category, strength, score, reasons, signals, state, computed_at, signal_key, network, confidence",
+    )
+
     .in(
       "portfolio_client_id",
       rows.map((r) => r.id),
