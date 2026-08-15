@@ -16,6 +16,7 @@ import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProRouteImport } from './routes/pro'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LendersRouteImport } from './routes/lenders'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -78,6 +79,11 @@ const PartnerRoute = PartnerRouteImport.update({
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LendersRoute = LendersRouteImport.update({
+  id: '/lenders',
+  path: '/lenders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -238,6 +244,7 @@ const AuthenticatedLenderPortfolioIdCampaignsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
   '/pro': typeof ProRoute
@@ -274,6 +281,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
   '/pro': typeof ProRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
   '/pro': typeof ProRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/lenders'
     | '/onboarding'
     | '/partner'
     | '/pro'
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/lenders'
     | '/onboarding'
     | '/partner'
     | '/pro'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/lenders'
     | '/onboarding'
     | '/partner'
     | '/pro'
@@ -455,6 +467,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LendersRoute: typeof LendersRoute
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRoute
   ProRoute: typeof ProRoute
@@ -518,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lenders': {
+      id: '/lenders'
+      path: '/lenders'
+      fullPath: '/lenders'
+      preLoaderRoute: typeof LendersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -814,6 +834,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  LendersRoute: LendersRoute,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRoute,
   ProRoute: ProRoute,

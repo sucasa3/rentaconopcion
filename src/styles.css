@@ -184,3 +184,35 @@
     color: var(--color-foreground);
   }
 }
+
+/* ---- Presentation deck (1920x1080 scaled slides) ---- */
+.slide-content {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  position: relative;
+
+  --slide-title-lg: 104px;
+  --slide-title: 84px;
+  --slide-subtitle: 48px;
+  --slide-body-lg: 38px;
+  --slide-body: 30px;
+  --slide-caption: 24px;
+  --slide-kicker: 22px;
+  --slide-chrome: 20px;
+}
+
+.slide-title-lg { font-size: var(--slide-title-lg); line-height: 1.0; letter-spacing: -0.05em; }
+.slide-title    { font-size: var(--slide-title);    line-height: 1.05; letter-spacing: -0.04em; }
+.slide-subtitle { font-size: var(--slide-subtitle); line-height: 1.15; letter-spacing: -0.025em; }
+.slide-body-lg  { font-size: var(--slide-body-lg);  line-height: 1.25; }
+.slide-body     { font-size: var(--slide-body);     line-height: 1.3; }
+.slide-caption  { font-size: var(--slide-caption);  line-height: 1.3; }
+.slide-kicker   { font-size: var(--slide-kicker);   line-height: 1.1; letter-spacing: 0.14em; text-transform: uppercase; }
+.slide-chrome, .slide-badge, .slide-footer, .slide-page { font-size: var(--slide-chrome); line-height: 1.15; }
+.slide-badge, .slide-page { white-space: nowrap; }
+
+@media print {
+  @page { size: 1920px 1080px landscape; margin: 0; }
+  .print-slide { page-break-after: always; break-after: page; }
+}
