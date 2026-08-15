@@ -6,7 +6,8 @@ import { HomeownerShell } from "@/components/homeowner-shell";
 
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
-import { useHomeScore } from "@/hooks/use-home-score";
+import { useHomeRecord } from "@/hooks/use-home-record";
+import { HomeSignalsPanel } from "@/components/home-signals-panel";
 
 import { type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
