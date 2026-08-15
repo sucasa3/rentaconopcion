@@ -6,7 +6,8 @@ import { HomeownerShell } from "@/components/homeowner-shell";
 
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
-import { useHomeScore } from "@/hooks/use-home-score";
+import { useHomeRecord } from "@/hooks/use-home-record";
+import { HomeSignalsPanel } from "@/components/home-signals-panel";
 
 import { type RecentRequest } from "@/lib/mock-data";
 import { LogExternalServiceDialog } from "@/components/log-external-service-dialog";
@@ -129,12 +130,14 @@ function Dashboard() {
     (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
 
 
-  const { score: homeScore, timeline, isLoading: scoreLoading } = useHomeScore(
-    !!profileAddr || !!okIntel?.address,
-  );
+  // ONE evaluation of the home record drives the score, the next step and every
+  // signal card below — no view re-derives condition, equity or intent.
+  const { record, report, isLoading: recordLoading } = useHomeRecord(profileAddr);
+  const homeScore = report?.score ?? null;
+  const timeline = record?.physical.timeline ?? [];
+  const scoreLoading = !homeScore;
 
-  // Supporting signals for the "next step" hero (same query keys as the panels,
-  // so nothing is fetched twice).
+  // Supporting reads (same query keys as the panels, so nothing is fetched twice).
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const fetchFindings = useServerFn(listInspectionFindings);
   const fetchDocs = useServerFn(listHomeDocuments);
@@ -155,18 +158,17 @@ function Dashboard() {
   });
 
   const hasAddress = !!profileAddr || !!okIntel?.address;
-  const nextStep = pickNextStep({
+  const nextStep = report?.nextStep ?? pickNextStep({
     hasAddress,
     hasDocuments: (docs ?? []).length > 0,
     hasLogs: (serviceLog ?? []).length > 0,
     timeline,
-    openFindings: (findings ?? []).filter(
-      (f: any) => f.urgency === "high" || f.urgency === "medium",
-    ).length,
-    refiSignal: (okIntel as any)?.equity?.refiSignal ?? null,
-    monthlySavings: (okIntel as any)?.equity?.refiMonthlySavings ?? null,
+    openFindings: 0,
+    refiSignal: null,
+    monthlySavings: null,
     openRequests: requests.filter((r) => r.status !== "Completed").length,
   });
+
   const completeness = profileCompleteness({
     hasAddress,
     hasName: !!firstName,
@@ -262,6 +264,13 @@ function Dashboard() {
 
               {/* -------------------------------------------------- Home */}
               <TabsContent value="home" className="mt-4 space-y-6">
+                {!recordLoading && record && report && (
+                  <HomeSignalsPanel
+                    signals={report.signals}
+                    record={record}
+                    onGoToTab={(t) => setTab(t)}
+                  />
+                )}
                 <HomeIntelPanel />
                 <EquityMortgagePanel />
 
