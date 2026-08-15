@@ -164,7 +164,7 @@ function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, 
   return assembleHomeRecord({
     homeownerId: client.homeowner_id,
     address: client.address_line1,
-    addressNormalized: normalizeAddress(client.address_line1 ?? ""),
+    addressNormalized: row?.address_normalized ?? fullAddressKey(client),
     avm,
     detail,
     tax,
