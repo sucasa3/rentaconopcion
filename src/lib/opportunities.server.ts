@@ -241,6 +241,10 @@ export async function persistPortfolioOpportunities(
         strength: opp.strength,
         score: opp.score,
         reasons: opp.reasons,
+        signal_key: opp.signalKey,
+        network: opp.network,
+        confidence: opp.confidence,
+
         signals: {
           equity_cents: entry.signals.equityCents,
           value_cents: entry.signals.valueCents,
