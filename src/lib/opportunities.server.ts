@@ -321,8 +321,12 @@ export async function listPortfolioOpportunityRows(supabase: any, portfolioId: s
       score: o.score,
       reasons: o.reasons ?? [],
       signals: o.signals ?? {},
+      signal_key: o.signal_key ?? null,
+      network: o.network ?? null,
+      confidence: o.confidence ?? null,
       state: o.state,
       computed_at: o.computed_at,
+
       client_id: o.portfolio_client_id,
       client_name: c?.client_name ?? null,
       client_email: c?.client_email ?? null,
