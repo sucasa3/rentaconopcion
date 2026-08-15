@@ -216,7 +216,7 @@ export async function computeForPortfolio(
   const now = new Date();
 
   return rows.map((c) => {
-    const intel = records.get(normalizeAddress(c.address_line1 ?? ""));
+    const intel = records.get(c.id);
     const signals = deriveSignals({
       loanAtCloseCents: c.loan_amount_at_close_cents,
       ratePct: c.rate_at_close,
