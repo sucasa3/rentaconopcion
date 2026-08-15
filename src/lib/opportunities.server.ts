@@ -14,8 +14,23 @@ import {
   deriveOpportunities,
   deriveSignals,
   type ClientSignals,
-  type DerivedOpportunity,
 } from "./opportunities";
+import {
+  mergeOpportunities,
+  opportunitiesFromRecord,
+  type SignalBackedOpportunity,
+} from "./portfolio-signals";
+import { assembleHomeRecord } from "./home-record";
+import {
+  computeEquityRibbon,
+  extractAvm,
+  extractDetail,
+  extractMortgage,
+  extractPermits,
+  extractSales,
+  extractTax,
+} from "./valuation.server";
+
 
 export interface PortfolioClientRow {
   id: string;
