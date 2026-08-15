@@ -264,6 +264,13 @@ function Dashboard() {
 
               {/* -------------------------------------------------- Home */}
               <TabsContent value="home" className="mt-4 space-y-6">
+                {record && report && (
+                  <HomeSignalsPanel
+                    signals={report.signals}
+                    record={record}
+                    onGoToTab={(t) => setTab(t)}
+                  />
+                )}
                 <HomeIntelPanel />
                 <EquityMortgagePanel />
 
