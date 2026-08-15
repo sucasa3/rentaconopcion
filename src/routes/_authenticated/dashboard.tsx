@@ -132,7 +132,7 @@ function Dashboard() {
 
   // ONE evaluation of the home record drives the score, the next step and every
   // signal card below — no view re-derives condition, equity or intent.
-  const { record, report } = useHomeRecord(profileAddr);
+  const { record, report, isLoading: recordLoading } = useHomeRecord(profileAddr);
   const homeScore = report?.score ?? null;
   const timeline = record?.physical.timeline ?? [];
   const scoreLoading = !homeScore;
