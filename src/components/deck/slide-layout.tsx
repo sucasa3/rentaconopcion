@@ -131,9 +131,11 @@ export function NumberedPoint({
       </span>
       <div>
         <p className="slide-body-lg font-semibold">{title}</p>
-        <p className={`slide-body mt-3 ${tone === "light" ? "text-muted-foreground" : "text-white/75"}`}>
-          {body}
-        </p>
+        {body && (
+          <p className={`slide-body mt-3 ${tone === "light" ? "text-muted-foreground" : "text-white/75"}`}>
+            {body}
+          </p>
+        )}
       </div>
     </DeckCard>
   );
