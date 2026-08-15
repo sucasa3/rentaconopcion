@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Sparkles } from "lucide-react";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { categoryLabel } from "@/lib/opportunities";
+import { NETWORK_LABEL, type SignalNetwork } from "@/lib/signals";
+
 import { SignalCard, StatusPill, EmptyState, SectionHeader } from "@/components/ui-kit";
 import { categoryIcon } from "@/components/business-dashboard";
 import { cn } from "@/lib/utils";
@@ -27,8 +29,9 @@ export function OpportunitiesBoard({ kind }: { kind: "agent" | "lender" }) {
     <div className="space-y-5 px-4 py-6 sm:px-6">
       <SectionHeader title="Opportunities" />
       <p className="-mt-3 text-sm text-muted-foreground">
-        Every homeowner worth a conversation right now.
+        Every homeowner worth a conversation right now — read straight off each home's record.
       </p>
+
 
       {categories.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -67,7 +70,7 @@ export function OpportunitiesBoard({ kind }: { kind: "agent" | "lender" }) {
               signal={o.reason ?? categoryLabel(o.category)}
               pill={
                 <StatusPill tone={o.strength === "strong" ? "attention" : "muted"}>
-                  {categoryLabel(o.category)}
+                  {o.network ? NETWORK_LABEL[o.network as SignalNetwork] : categoryLabel(o.category)}
                 </StatusPill>
               }
               actionLabel="View homeowner"
@@ -80,6 +83,7 @@ export function OpportunitiesBoard({ kind }: { kind: "agent" | "lender" }) {
               }
             />
           ))}
+
         </div>
       )}
     </div>

@@ -946,12 +946,15 @@ export type Database = {
         Row: {
           category: string
           computed_at: string
+          confidence: number | null
           created_at: string
           id: string
+          network: string | null
           org_id: string
           portfolio_client_id: string
           reasons: string[]
           score: number
+          signal_key: string | null
           signals: Json
           state: string
           strength: string
@@ -960,12 +963,15 @@ export type Database = {
         Insert: {
           category: string
           computed_at?: string
+          confidence?: number | null
           created_at?: string
           id?: string
+          network?: string | null
           org_id: string
           portfolio_client_id: string
           reasons?: string[]
           score?: number
+          signal_key?: string | null
           signals?: Json
           state?: string
           strength?: string
@@ -974,12 +980,15 @@ export type Database = {
         Update: {
           category?: string
           computed_at?: string
+          confidence?: number | null
           created_at?: string
           id?: string
+          network?: string | null
           org_id?: string
           portfolio_client_id?: string
           reasons?: string[]
           score?: number
+          signal_key?: string | null
           signals?: Json
           state?: string
           strength?: string

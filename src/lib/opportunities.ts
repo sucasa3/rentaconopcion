@@ -16,7 +16,10 @@ export const OPPORTUNITY_CATEGORIES = [
   "move_up",
   "investment",
   "mortgage_review",
+  "home_condition",
+  "market_timing",
 ] as const;
+
 
 export type OpportunityCategory = (typeof OPPORTUNITY_CATEGORIES)[number];
 export type OpportunityStrength = "strong" | "moderate" | "emerging";
@@ -68,6 +71,18 @@ export const CATEGORY_META: Record<OpportunityCategory, CategoryMeta> = {
     blurb: "A broader look at this homeowner's financing may be useful.",
     lenderBlurb: "Homeowner may benefit from a general financing review.",
   },
+  home_condition: {
+    key: "home_condition",
+    label: "Home condition",
+    blurb: "The home record shows work coming due on a major system.",
+    lenderBlurb: "Upcoming work on the home may prompt a financing conversation.",
+  },
+  market_timing: {
+    key: "market_timing",
+    label: "Market timing",
+    blurb: "Recent behavior suggests this homeowner is weighing a move.",
+    lenderBlurb: "Activity suggests a move may be under consideration.",
+  },
 };
 
 export const CATEGORY_ORDER: OpportunityCategory[] = [
@@ -75,9 +90,12 @@ export const CATEGORY_ORDER: OpportunityCategory[] = [
   "equity",
   "heloc",
   "move_up",
+  "market_timing",
+  "home_condition",
   "investment",
   "mortgage_review",
 ];
+
 
 export function categoryLabel(key: string): string {
   return CATEGORY_META[key as OpportunityCategory]?.label ?? key;

@@ -14,8 +14,23 @@ import {
   deriveOpportunities,
   deriveSignals,
   type ClientSignals,
-  type DerivedOpportunity,
 } from "./opportunities";
+import {
+  mergeOpportunities,
+  opportunitiesFromRecord,
+  type SignalBackedOpportunity,
+} from "./portfolio-signals";
+import { assembleHomeRecord } from "./home-record";
+import {
+  computeEquityRibbon,
+  extractAvm,
+  extractDetail,
+  extractMortgage,
+  extractPermits,
+  extractSales,
+  extractTax,
+} from "./valuation.server";
+
 
 export interface PortfolioClientRow {
   id: string;
@@ -56,55 +71,135 @@ export async function assertPortfolioOrg(
   };
 }
 
+type IntelRow = {
+  address_normalized: string;
+  address_line1: string;
+  avm: unknown;
+  detail: unknown;
+  tax: unknown;
+  sales: unknown;
+  mortgage: unknown;
+  permits: unknown;
+  owner: any;
+};
+
+const INTEL_COLUMNS =
+  "address_normalized, address_line1, avm, detail, tax, sales, mortgage, permits, owner";
+
+/** The stored record key for a client: street plus city/state/zip when known. */
+function fullAddressKey(c: PortfolioClientRow): string {
+  const tail = [c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  return normalizeAddress([c.address_line1, tail].filter(Boolean).join(", "));
+}
+
 /**
- * Property-records context keyed by normalized address: recent permit activity
- * and an owner-occupancy hint. Missing records simply yield no extra signal.
+ * The cached property record for every client in a book, keyed by client id.
+ * Reads only — no external provider call is ever made from here, so a book of
+ * any size costs nothing to evaluate. Records are stored under the full
+ * normalized address, so we match on that first and fall back to the street
+ * line for rows imported without a city.
  */
-async function propertyContext(
+async function propertyRecords(
   supabase: any,
   clients: PortfolioClientRow[],
-): Promise<Map<string, { permitCount: number; likelyNonOwnerOccupied: boolean }>> {
-  const out = new Map<string, { permitCount: number; likelyNonOwnerOccupied: boolean }>();
-  const keys = [...new Set(clients.map((c) => normalizeAddress(c.address_line1 ?? "")))].filter(
-    Boolean,
-  );
-  if (!keys.length) return out;
+): Promise<Map<string, IntelRow>> {
+  const byFull = new Map<string, IntelRow>();
+  const byLine1 = new Map<string, IntelRow>();
 
-  for (let i = 0; i < keys.length; i += 200) {
-    const slice = keys.slice(i, i + 200);
+  const fullKeys = [...new Set(clients.map(fullAddressKey))].filter(Boolean);
+  const lineKeys = [...new Set(clients.map((c) => (c.address_line1 ?? "").trim()))].filter(Boolean);
+
+  for (let i = 0; i < fullKeys.length; i += 200) {
     const { data } = await supabase
       .from("property_intel")
-      .select("address_normalized, permits, owner")
-      .in("address_normalized", slice);
+      .select(INTEL_COLUMNS)
+      .in("address_normalized", fullKeys.slice(i, i + 200));
+    for (const row of data ?? []) byFull.set(row.address_normalized, row as IntelRow);
+  }
+
+  for (let i = 0; i < lineKeys.length; i += 200) {
+    const { data } = await supabase
+      .from("property_intel")
+      .select(INTEL_COLUMNS)
+      .in("address_line1", lineKeys.slice(i, i + 200));
     for (const row of data ?? []) {
-      const permits = Array.isArray(row.permits)
-        ? row.permits
-        : Array.isArray(row.permits?.permits)
-          ? row.permits.permits
-          : [];
-      const owner = row.owner ?? {};
-      const mailing =
-        owner?.mailingAddressOneLine ?? owner?.mailing?.oneLine ?? owner?.mailingAddress ?? null;
-      const likelyNonOwnerOccupied =
-        typeof mailing === "string" && mailing.length > 5
-          ? normalizeAddress(mailing) !== row.address_normalized
-          : false;
-      out.set(row.address_normalized, {
-        permitCount: permits.length,
-        likelyNonOwnerOccupied,
-      });
+      const k = normalizeAddress(row.address_line1 ?? "");
+      if (k && !byLine1.has(k)) byLine1.set(k, row as IntelRow);
     }
   }
+
+  const out = new Map<string, IntelRow>();
+  for (const c of clients) {
+    const hit =
+      byFull.get(fullAddressKey(c)) ?? byLine1.get(normalizeAddress(c.address_line1 ?? ""));
+    if (hit) out.set(c.id, hit);
+  }
   return out;
+}
+
+function nonOwnerOccupied(row: IntelRow | undefined): boolean {
+  if (!row) return false;
+  const owner = row.owner ?? {};
+  const mailing =
+    owner?.mailingAddressOneLine ?? owner?.mailing?.oneLine ?? owner?.mailingAddress ?? null;
+  return typeof mailing === "string" && mailing.length > 5
+    ? normalizeAddress(mailing) !== row.address_normalized
+    : false;
+}
+
+
+/**
+ * Assemble the shared Home Record for one client of a book from the cached
+ * property record. Same shape, same assembler the homeowner dashboard uses.
+ */
+function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, now: Date) {
+  const avm = row ? extractAvm(row.avm) : null;
+  const detail = row ? extractDetail(row.detail) : null;
+  const tax = row ? extractTax(row.tax) : null;
+  const sales = row ? extractSales(row.sales) : null;
+  const mortgage = row ? extractMortgage(row.mortgage) : null;
+  const permits = row ? extractPermits(row.permits) : null;
+  const equity = computeEquityRibbon(avm, mortgage, sales, tax);
+
+  return assembleHomeRecord({
+    homeownerId: client.homeowner_id,
+    address: client.address_line1,
+    addressNormalized: row?.address_normalized ?? fullAddressKey(client),
+    avm,
+    detail,
+    tax,
+    sales: {
+      lastSalePrice: sales?.lastSale?.amount ?? null,
+      lastSaleDate: sales?.lastSale?.date ?? null,
+    },
+    mortgage: { rate: mortgage?.interestRate ?? null },
+    equity: {
+      estimatedValue: equity.estimatedValue,
+      loanBalance: equity.loanBalanceEstimate,
+      equityDollars: equity.equityDollars,
+      equityPct: equity.equityPct,
+      cashOutHeadroom: equity.cashOutHeadroom80,
+      refiSignal: equity.refiSignal,
+      rate: mortgage?.interestRate ?? null,
+    },
+    permits: permits?.events ?? [],
+    now,
+  });
 }
 
 export interface ComputedClientOpportunities {
   client: PortfolioClientRow;
   signals: ClientSignals;
-  opportunities: DerivedOpportunity[];
+  opportunities: SignalBackedOpportunity[];
 }
 
-/** Derive (without persisting) opportunities for every client in a book. */
+/**
+ * Derive (without persisting) opportunities for every client in a book.
+ *
+ * Primary source is the shared Home Record + signal engine, so the business
+ * surfaces read exactly what the homeowner sees. The loan-fact heuristic is
+ * kept as a floor for clients whose property record hasn't been enriched yet.
+ */
 export async function computeForPortfolio(
   supabase: any,
   portfolioId: string,
@@ -117,27 +212,31 @@ export async function computeForPortfolio(
   if (error) throw new Error(error.message);
 
   const rows = (clients ?? []) as PortfolioClientRow[];
-  const ctx = await propertyContext(supabase, rows);
+  const records = await propertyRecords(supabase, rows);
   const now = new Date();
 
   return rows.map((c) => {
-    const extra = ctx.get(normalizeAddress(c.address_line1 ?? "")) ?? {
-      permitCount: 0,
-      likelyNonOwnerOccupied: false,
-    };
+    const intel = records.get(c.id);
     const signals = deriveSignals({
       loanAtCloseCents: c.loan_amount_at_close_cents,
       ratePct: c.rate_at_close,
       termMonths: c.term_months,
       closeDate: c.close_date,
       benchmarkRate,
-      permitCount: extra.permitCount,
-      likelyNonOwnerOccupied: extra.likelyNonOwnerOccupied,
+      permitCount: intel ? extractPermits(intel.permits).events.length : 0,
+      likelyNonOwnerOccupied: nonOwnerOccupied(intel),
       now,
     });
-    return { client: c, signals, opportunities: deriveOpportunities(signals) };
+
+    const fromRecord = intel ? opportunitiesFromRecord(recordForClient(c, intel, now)) : [];
+    return {
+      client: c,
+      signals,
+      opportunities: mergeOpportunities(fromRecord, deriveOpportunities(signals)),
+    };
   });
 }
+
 
 /**
  * Recompute and persist opportunities for a book.
@@ -173,6 +272,10 @@ export async function persistPortfolioOpportunities(
         strength: opp.strength,
         score: opp.score,
         reasons: opp.reasons,
+        signal_key: opp.signalKey,
+        network: opp.network,
+        confidence: opp.confidence,
+
         signals: {
           equity_cents: entry.signals.equityCents,
           value_cents: entry.signals.valueCents,
@@ -225,7 +328,10 @@ export async function listPortfolioOpportunityRows(supabase: any, portfolioId: s
 
   const { data: opps, error } = await supabase
     .from("homeowner_opportunities")
-    .select("id, portfolio_client_id, category, strength, score, reasons, signals, state, computed_at")
+    .select(
+      "id, portfolio_client_id, category, strength, score, reasons, signals, state, computed_at, signal_key, network, confidence",
+    )
+
     .in(
       "portfolio_client_id",
       rows.map((r) => r.id),
@@ -246,8 +352,12 @@ export async function listPortfolioOpportunityRows(supabase: any, portfolioId: s
       score: o.score,
       reasons: o.reasons ?? [],
       signals: o.signals ?? {},
+      signal_key: o.signal_key ?? null,
+      network: o.network ?? null,
+      confidence: o.confidence ?? null,
       state: o.state,
       computed_at: o.computed_at,
+
       client_id: o.portfolio_client_id,
       client_name: c?.client_name ?? null,
       client_email: c?.client_email ?? null,

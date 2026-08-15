@@ -12,6 +12,8 @@ import {
   Home,
   CalendarClock,
   Plus,
+  Wrench,
+
   ArrowRight,
 } from "lucide-react";
 import { getBusinessOverview } from "@/lib/business.functions";
@@ -26,7 +28,10 @@ export function categoryIcon(category: string) {
     case "heloc":
       return <TrendingUp className="h-5 w-5" />;
     case "move_up":
+    case "market_timing":
       return <Home className="h-5 w-5" />;
+    case "home_condition":
+      return <Wrench className="h-5 w-5" />;
     default:
       return <Flame className="h-5 w-5" />;
   }
@@ -39,7 +44,10 @@ const ACTION_BY_CATEGORY: Record<string, string> = {
   move_up: "Share what their home could sell for.",
   investment: "Start an investment conversation.",
   mortgage_review: "Offer an annual financing review.",
+  home_condition: "Offer help lining up the work.",
+  market_timing: "Reach out while they're weighing a move.",
 };
+
 
 export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
   const overviewFn = useServerFn(getBusinessOverview);
