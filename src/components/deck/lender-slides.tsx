@@ -136,7 +136,7 @@ export const LENDER_SLIDES: Slide[] = [
               </p>
             </DeckCard>
           </div>
-          <AppFrame label="Homeowner app — the same record, their view" scale={0.95} height={700}>
+          <AppFrame label="Homeowner app — the same record, their view" scale={0.86} height={640}>
             <HomeRecordScreen />
           </AppFrame>
         </div>
@@ -149,11 +149,11 @@ export const LENDER_SLIDES: Slide[] = [
     render: () => (
       <SlideLayout
         kicker="The agent experience"
-        title="Maria doesn't get a database. She gets a weekly assistant."
+        title="Maria gets a weekly assistant, not a database."
         lead="Three to five homeowners worth a conversation, each with the reason and the opening line."
       >
         <div className="grid grid-cols-[auto_1fr] items-center gap-16">
-          <AppFrame label="Live product — agent dashboard" scale={0.95} height={700}>
+          <AppFrame label="Live product — agent dashboard" scale={0.86} height={640}>
             <AgentWeekScreen />
           </AppFrame>
           <div className="space-y-8">
@@ -176,7 +176,7 @@ export const LENDER_SLIDES: Slide[] = [
     render: () => (
       <SlideLayout
         kicker="The lender view"
-        title="Your loan officers see the financing signals as they appear."
+        title="Your LOs see financing signals as they appear."
         lead="Refinance reviews, equity and cash-out headroom, move-up activity — inside the books your agents opted in."
       >
         <div className="grid grid-cols-[1fr_auto] items-center gap-16">
@@ -190,7 +190,7 @@ export const LENDER_SLIDES: Slide[] = [
               ]}
             />
           </div>
-          <AppFrame label="Live product — MLO book" scale={0.95} height={700}>
+          <AppFrame label="Live product — MLO book" scale={0.86} height={640}>
             <LenderBookScreen />
           </AppFrame>
         </div>
