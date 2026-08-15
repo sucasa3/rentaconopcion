@@ -136,7 +136,7 @@ export const LENDER_SLIDES: Slide[] = [
               </p>
             </DeckCard>
           </div>
-          <AppFrame label="Homeowner app — the same record, their view" scale={0.86} height={640}>
+          <AppFrame label="Homeowner app — the same record, their view" scale={0.8} height={600}>
             <HomeRecordScreen />
           </AppFrame>
         </div>
@@ -153,7 +153,7 @@ export const LENDER_SLIDES: Slide[] = [
         lead="Three to five homeowners worth a conversation, each with the reason and the opening line."
       >
         <div className="grid grid-cols-[auto_1fr] items-center gap-16">
-          <AppFrame label="Live product — agent dashboard" scale={0.86} height={640}>
+          <AppFrame label="Live product — agent dashboard" scale={0.8} height={600}>
             <AgentWeekScreen />
           </AppFrame>
           <div className="space-y-8">
@@ -190,7 +190,7 @@ export const LENDER_SLIDES: Slide[] = [
               ]}
             />
           </div>
-          <AppFrame label="Live product — MLO book" scale={0.86} height={640}>
+          <AppFrame label="Live product — MLO book" scale={0.8} height={600}>
             <LenderBookScreen />
           </AppFrame>
         </div>

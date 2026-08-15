@@ -66,7 +66,7 @@ export function SlideLayout({
   const muted = tone === "light" ? "text-muted-foreground" : "text-white/70";
 
   return (
-    <div className={`slide-content flex flex-col px-[110px] py-[86px] ${shell}`}>
+    <div className={`slide-content flex flex-col px-[110px] py-[64px] ${shell}`}>
       <div className="flex items-start justify-between">
         <div className="max-w-[1400px]">
           {kicker && (
@@ -80,7 +80,7 @@ export function SlideLayout({
         <img src={logoAsset.url} alt="SuCasa" className="h-[56px] w-auto opacity-90" />
       </div>
 
-      <div className="mt-[54px] flex-1">{children}</div>
+      <div className="mt-[36px] flex-1">{children}</div>
 
       <div className={`slide-footer mt-[30px] flex items-center justify-between ${muted}`}>
         <span>{footer}</span>
