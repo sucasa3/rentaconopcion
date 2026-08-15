@@ -53,14 +53,29 @@ export function useHomeRecord(profileAddress?: string | null): {
   const address = intel?.address ?? profileAddress ?? null;
   const reqs = (requests ?? []) as { status?: string | null }[];
 
+  const equity = intel?.equity ?? null;
+
   const record = assembleHomeRecord({
     address,
     avm: intel?.avm ?? null,
     detail: intel?.detail ?? null,
     tax: intel?.tax ?? null,
-    sales: (intel?.sales ?? null) as never,
-    mortgage: (intel?.mortgage ?? null) as never,
-    equity: (intel?.equity ?? null) as never,
+    sales: {
+      lastSalePrice: intel?.sales?.lastSale?.amount ?? null,
+      lastSaleDate: intel?.sales?.lastSale?.date ?? null,
+    },
+    mortgage: { rate: intel?.mortgage?.interestRate ?? null },
+    equity: equity
+      ? {
+          estimatedValue: equity.estimatedValue,
+          loanBalance: equity.loanBalanceEstimate,
+          equityDollars: equity.equityDollars,
+          equityPct: equity.equityPct,
+          cashOutHeadroom: equity.cashOutHeadroom80,
+          refiSignal: equity.refiSignal,
+          rate: intel?.mortgage?.interestRate ?? null,
+        }
+      : null,
     permits: intel?.permits?.events ?? [],
     valueStatus: intel?.valueStatus,
     staleClasses: intel?.staleClasses ?? [],
