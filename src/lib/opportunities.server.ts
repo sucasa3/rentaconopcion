@@ -73,6 +73,7 @@ export async function assertPortfolioOrg(
 
 type IntelRow = {
   address_normalized: string;
+  address_line1: string;
   avm: unknown;
   detail: unknown;
   tax: unknown;
@@ -82,27 +83,56 @@ type IntelRow = {
   owner: any;
 };
 
+const INTEL_COLUMNS =
+  "address_normalized, address_line1, avm, detail, tax, sales, mortgage, permits, owner";
+
+/** The stored record key for a client: street plus city/state/zip when known. */
+function fullAddressKey(c: PortfolioClientRow): string {
+  const tail = [c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  return normalizeAddress([c.address_line1, tail].filter(Boolean).join(", "));
+}
+
 /**
- * The cached property record for every address in a book, keyed by normalized
- * address. Reads only — no external provider call is ever made from here, so a
- * book of any size costs nothing to evaluate.
+ * The cached property record for every client in a book, keyed by client id.
+ * Reads only — no external provider call is ever made from here, so a book of
+ * any size costs nothing to evaluate. Records are stored under the full
+ * normalized address, so we match on that first and fall back to the street
+ * line for rows imported without a city.
  */
 async function propertyRecords(
   supabase: any,
   clients: PortfolioClientRow[],
 ): Promise<Map<string, IntelRow>> {
-  const out = new Map<string, IntelRow>();
-  const keys = [...new Set(clients.map((c) => normalizeAddress(c.address_line1 ?? "")))].filter(
-    Boolean,
-  );
-  if (!keys.length) return out;
+  const byFull = new Map<string, IntelRow>();
+  const byLine1 = new Map<string, IntelRow>();
 
-  for (let i = 0; i < keys.length; i += 200) {
+  const fullKeys = [...new Set(clients.map(fullAddressKey))].filter(Boolean);
+  const lineKeys = [...new Set(clients.map((c) => (c.address_line1 ?? "").trim()))].filter(Boolean);
+
+  for (let i = 0; i < fullKeys.length; i += 200) {
     const { data } = await supabase
       .from("property_intel")
-      .select("address_normalized, avm, detail, tax, sales, mortgage, permits, owner")
-      .in("address_normalized", keys.slice(i, i + 200));
-    for (const row of data ?? []) out.set(row.address_normalized, row as IntelRow);
+      .select(INTEL_COLUMNS)
+      .in("address_normalized", fullKeys.slice(i, i + 200));
+    for (const row of data ?? []) byFull.set(row.address_normalized, row as IntelRow);
+  }
+
+  for (let i = 0; i < lineKeys.length; i += 200) {
+    const { data } = await supabase
+      .from("property_intel")
+      .select(INTEL_COLUMNS)
+      .in("address_line1", lineKeys.slice(i, i + 200));
+    for (const row of data ?? []) {
+      const k = normalizeAddress(row.address_line1 ?? "");
+      if (k && !byLine1.has(k)) byLine1.set(k, row as IntelRow);
+    }
+  }
+
+  const out = new Map<string, IntelRow>();
+  for (const c of clients) {
+    const hit =
+      byFull.get(fullAddressKey(c)) ?? byLine1.get(normalizeAddress(c.address_line1 ?? ""));
+    if (hit) out.set(c.id, hit);
   }
   return out;
 }
@@ -116,6 +146,7 @@ function nonOwnerOccupied(row: IntelRow | undefined): boolean {
     ? normalizeAddress(mailing) !== row.address_normalized
     : false;
 }
+
 
 /**
  * Assemble the shared Home Record for one client of a book from the cached
