@@ -212,6 +212,51 @@
 .slide-chrome, .slide-badge, .slide-footer, .slide-page { font-size: var(--slide-chrome); line-height: 1.15; }
 .slide-badge, .slide-page { white-space: nowrap; }
 
+/* ---- Deck motion (premium, subtle) ---- */
+@keyframes deck-rise {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes deck-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes deck-dim {
+  from { opacity: 0.9; }
+  to   { opacity: 0.16; }
+}
+@keyframes deck-lift {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes deck-glow {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+@keyframes deck-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes deck-flow {
+  0%   { opacity: 0; transform: translateX(-24px); }
+  20%  { opacity: 1; transform: translateX(0); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.deck-rise { animation: deck-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.deck-fade { animation: deck-fade 0.9s ease-out both; }
+.deck-dim  { animation: deck-dim 1.1s ease-out 1.1s both; }
+.deck-lift { animation: deck-lift 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.deck-glow { animation: deck-glow 3.2s ease-in-out infinite; }
+.deck-flow { animation: deck-flow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.deck-orbit { animation: deck-spin 26s linear infinite; }
+.deck-orbit-fast { animation: deck-spin 9s linear infinite; }
+
+@media print {
+  .deck-rise, .deck-fade, .deck-dim, .deck-lift, .deck-glow, .deck-flow,
+  .deck-orbit, .deck-orbit-fast { animation: none !important; opacity: 1 !important; }
+}
+
+
 @media print {
   @page { size: 1920px 1080px landscape; margin: 0; }
   .print-slide { page-break-after: always; break-after: page; }
