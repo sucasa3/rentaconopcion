@@ -14,11 +14,13 @@ export function DarkSlide({
   footer = "SuCasa · Agent Partnership",
   page,
   className = "",
+  center = false,
 }: {
   children: ReactNode;
   footer?: string | null;
   page?: string;
   className?: string;
+  center?: boolean;
 }) {
   return (
     <div className={`slide-content ${INK} text-[oklch(0.98_0.005_250)]`}>
@@ -39,7 +41,7 @@ export function DarkSlide({
         }}
       />
       <div className={`relative flex h-full flex-col px-[120px] py-[64px] ${className}`}>
-        <div className="min-h-0 flex-1">{children}</div>
+        <div className={`flex min-h-0 flex-1 flex-col ${center ? "justify-center" : ""}`}>{children}</div>
         {footer !== null && (
           <div className="slide-footer mt-8 flex items-center justify-between text-white/45">
             <span>{footer}</span>
