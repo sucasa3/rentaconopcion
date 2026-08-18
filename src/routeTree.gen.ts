@@ -34,6 +34,8 @@ import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_auth
 import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
@@ -179,6 +181,16 @@ const AuthenticatedAgentCampaignsRoute =
     path: '/campaigns',
     getParentRoute: () => AuthenticatedAgentRouteRoute,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -280,6 +292,8 @@ export interface FileRoutesByFullPath {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/lender/portfolio/$id/import': typeof AuthenticatedLenderPortfolioIdImportRoute
   '/lender/portfolio/$id/network': typeof AuthenticatedLenderPortfolioIdNetworkRoute
@@ -315,6 +329,8 @@ export interface FileRoutesByTo {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/lender/portfolio/$id/import': typeof AuthenticatedLenderPortfolioIdImportRoute
   '/lender/portfolio/$id/network': typeof AuthenticatedLenderPortfolioIdNetworkRoute
@@ -355,6 +371,8 @@ export interface FileRoutesById {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/_authenticated/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/_authenticated/lender/portfolio/$id/import': typeof AuthenticatedLenderPortfolioIdImportRoute
   '/_authenticated/lender/portfolio/$id/network': typeof AuthenticatedLenderPortfolioIdNetworkRoute
@@ -395,6 +413,8 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lender/portfolio/$id/campaigns'
     | '/lender/portfolio/$id/import'
     | '/lender/portfolio/$id/network'
@@ -430,6 +450,8 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lender/portfolio/$id/campaigns'
     | '/lender/portfolio/$id/import'
     | '/lender/portfolio/$id/network'
@@ -469,6 +491,8 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/_authenticated/lender/portfolio/$id/campaigns'
     | '/_authenticated/lender/portfolio/$id/import'
     | '/_authenticated/lender/portfolio/$id/network'
@@ -493,6 +517,8 @@ export interface RootRouteChildren {
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -671,6 +697,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/agent/campaigns'
       preLoaderRoute: typeof AuthenticatedAgentCampaignsRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
@@ -868,6 +908,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
