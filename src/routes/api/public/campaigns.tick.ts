@@ -12,14 +12,16 @@ export const Route = createFileRoute("/api/public/campaigns/tick")({
           return new Response("Unauthorized", { status: 401 });
         }
         let limit = 100;
+        let dryRun = false;
         try {
-          const body = (await request.json()) as { limit?: number };
+          const body = (await request.json()) as { limit?: number; dryRun?: boolean };
           if (typeof body?.limit === "number") limit = Math.min(500, Math.max(1, body.limit));
+          if (body?.dryRun === true) dryRun = true;
         } catch {
           /* empty body is fine */
         }
         const { runCampaignTick } = await import("@/lib/campaigns-run.server");
-        const result = await runCampaignTick({ limit });
+        const result = await runCampaignTick({ limit, dryRun });
         return Response.json(result);
       },
     },
