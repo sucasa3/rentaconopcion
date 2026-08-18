@@ -59,6 +59,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  beforeLoad: ({ location }) => {
+    if (location.pathname.startsWith("/lovable/")) return;
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
