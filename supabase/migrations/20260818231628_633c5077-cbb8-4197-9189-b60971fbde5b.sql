@@ -1,0 +1,1 @@
+DELETE FROM public.ghl_sync_state;
