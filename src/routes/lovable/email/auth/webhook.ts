@@ -9,7 +9,7 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "rentaconopcion"
+const SITE_NAME = "SuCasa"
 const SENDER_DOMAIN = "notify.sucasa.com"
 const ROOT_DOMAIN = "sucasa.com"
 const FROM_DOMAIN = "notify.sucasa.com"
