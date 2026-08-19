@@ -24,8 +24,11 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/")({
+  validateSearch: (s: Record<string, unknown>): { status?: "activated" } =>
+    s.status === "activated" ? { status: "activated" as const } : {},
   component: PortfolioDetail,
 });
+
 
 
 function money(cents: number | null | undefined) {
