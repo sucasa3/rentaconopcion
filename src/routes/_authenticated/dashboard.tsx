@@ -26,7 +26,7 @@ import { SellerIntentCard } from "@/components/seller-intent-card";
 import { useLogOnMount } from "@/hooks/use-activity-log";
 import { NextStepHero } from "@/components/next-step-hero";
 import { pickNextStep, profileCompleteness } from "@/lib/next-step";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
