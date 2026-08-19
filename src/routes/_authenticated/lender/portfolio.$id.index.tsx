@@ -139,7 +139,7 @@ function PortfolioDetail() {
       if (eb !== ea) return eb - ea;
       return (a.full_name ?? "").localeCompare(b.full_name ?? "");
     });
-  }, [data, segment, search]);
+  }, [data, segment, search, statusParam]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
