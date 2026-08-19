@@ -404,7 +404,23 @@ export const previewCampaignForClient = createServerFn({ method: "POST" })
     };
 
     const facts = await mod.loadCachedFacts(target);
-    const branding = mod.brandingFromOrg(org);
+    // Use the identity of whoever owns this client's portfolio (the MLO/agent),
+    // falling back to the org defaults field-by-field.
+    const { data: portfolio } = await context.supabase
+      .from("lender_portfolios")
+      .select("assigned_user_id")
+      .eq("id", client.portfolio_id)
+      .maybeSingle();
+    const ownerId = portfolio?.assigned_user_id ?? context.userId;
+    const { data: memberBrand } = await context.supabase
+      .from("lender_member_profiles")
+      .select(
+        "sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff",
+      )
+      .eq("lender_org_id", data.orgId)
+      .eq("user_id", ownerId)
+      .maybeSingle();
+    const branding = mod.mergeBranding(mod.brandingFromOrg(org), memberBrand ?? null);
     const copy = await mod.generateCopy(
       campaign as never,
       facts,
