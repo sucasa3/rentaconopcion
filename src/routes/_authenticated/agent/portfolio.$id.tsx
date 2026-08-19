@@ -288,7 +288,7 @@ const PAGE_SIZE = 25;
 
 function AgentPortfolio() {
   const { id } = Route.useParams();
-  const { client: clientParam } = Route.useSearch();
+  const { client: clientParam, status: statusParam } = Route.useSearch();
   const getFn = useServerFn(getAgentPortfolio);
   const enrichFn = useServerFn(enrichAgentPortfolio);
   const listingFn = useServerFn(setListingStatus);
