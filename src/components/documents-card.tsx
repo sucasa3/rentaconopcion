@@ -11,7 +11,7 @@ import {
 } from "@/lib/home-documents.functions";
 import { extractInspectionReport } from "@/lib/inspection.functions";
 import { DocumentViewerDialog } from "@/components/document-viewer-dialog";
-import { SectionHero, type HeroChip, type HeroTone } from "@/components/section-hero";
+import { SectionHero, type HeroTone } from "@/components/section-hero";
 
 type Kind = "inspection" | "insurance" | "warranty" | "deed" | "other";
 

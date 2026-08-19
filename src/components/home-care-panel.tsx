@@ -20,7 +20,7 @@ import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
-import { SectionHero, type HeroChip, type HeroTone } from "@/components/section-hero";
+import { SectionHero, type HeroTone } from "@/components/section-hero";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
