@@ -212,7 +212,11 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       if (!due.due && !opts.dryRun) { skip(due.reason); continue; }
 
       const override = overrideByPair.get(`${org.id}:${campaign.id}`) ?? null;
-      const branding = brandingFromOrg(org);
+      const ownerId = ownerByPortfolio.get(c.portfolio_id) ?? null;
+      const branding = mergeBranding(
+        brandingFromOrg(org),
+        ownerId ? memberBrandByKey.get(`${org.id}:${ownerId}`) ?? null : null,
+      );
       const copy = await generateCopy(campaign, facts, target, "en", override);
       const payload = buildPayload(campaign, facts, target, copy, branding, override);
       result.generated++;
