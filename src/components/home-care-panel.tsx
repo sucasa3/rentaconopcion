@@ -160,160 +160,116 @@ export function HomeCarePanel({
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
         {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}
 
-        <div className="inline-flex rounded-full border border-border p-1 text-xs">
-          <button
-            onClick={() => setTab("systems")}
-            className={`rounded-full px-3 py-1.5 font-medium transition ${
-              tab === "systems" ? "bg-secondary text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            Big systems{items.length > 0 ? ` (${items.length})` : ""}
-          </button>
-          <button
-            onClick={() => setTab("seasonal")}
-            className={`rounded-full px-3 py-1.5 font-medium transition ${
-              tab === "seasonal" ? "bg-secondary text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            Routine upkeep{seasonalDue > 0 ? ` (${seasonalDue})` : ""}
-          </button>
-        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          One list, most urgent first. Big systems are estimated from your home's age
+          {permitEvents.length > 0 ? " and the permits on file" : ""} — not from an inspection.
+          Marking something done replaces the estimate with the real date and lifts your Home Score.
+        </p>
 
-        {tab === "systems" ? (
-          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Estimated from your home's age
-            {permitEvents.length > 0 ? " and the permits on file" : ""} — not from an inspection.
-            Marking something done replaces the estimate with the real date.
+        {rows.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-border p-4 text-sm text-muted-foreground">
+            Add your home details so we can project when your roof, HVAC, water heater and other
+            systems are due — and suggest your next step.
           </p>
         ) : (
-          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Small, recurring jobs every home needs. Logging them keeps your Home Score climbing.
-          </p>
-        )}
-
-
-      {tab === "systems" ? (
-        hasSystems ? (
           <>
             <ul className="mt-3 divide-y divide-border rounded-2xl border border-border">
-              {items.map((item) => (
-                <li key={item.key} className="p-3 sm:p-4">
+              {visibleRows.map((row) => (
+                <li key={row.key} className="p-3 sm:p-4">
                   <div className="flex items-start gap-3">
                     <span
                       className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
-                        item.status === "overdue"
+                        row.status === "overdue"
                           ? "bg-destructive/10 text-destructive"
-                          : item.status === "due_soon"
+                          : row.status === "due_soon"
                             ? "bg-accent text-accent-foreground"
                             : "bg-growth/10 text-growth"
                       }`}
                     >
-                      {item.status === "overdue" ? (
+                      {row.status === "overdue" ? (
                         <AlertTriangle className="h-4 w-4" />
-                      ) : item.status === "due_soon" ? (
-                        <Wrench className="h-4 w-4" />
+                      ) : row.status === "due_soon" ? (
+                        row.kind === "system" ? (
+                          <Wrench className="h-4 w-4" />
+                        ) : (
+                          <RotateCw className="h-4 w-4" />
+                        )
                       ) : (
                         <CheckCircle2 className="h-4 w-4" />
                       )}
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2">
-                        <p className="truncate text-sm font-medium">{item.label}</p>
+                        <p className="truncate text-sm font-medium">{row.label}</p>
                         <p
                           className={`shrink-0 text-xs font-medium ${
-                            item.status === "overdue" ? "text-destructive" : "text-muted-foreground"
+                            row.status === "overdue" ? "text-destructive" : "text-muted-foreground"
                           }`}
                         >
-                          {item.status === "overdue"
-                            ? `${Math.abs(item.yearsLeft)} yr overdue`
-                            : `~${item.yearsLeft} yr left`}
+                          {row.timing}
                         </p>
                       </div>
-                      <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-                        {item.source === "logged"
-                          ? `You logged ${item.installedYear}${item.loggedDetail ? ` · ${item.loggedDetail}` : ""}`
-                          : item.source === "permit"
-                            ? `Installed ${item.installedYear} (permit)`
-                            : `Est. from year built ${item.installedYear}`}
-                        <span className="hidden sm:inline">
-                          {" "}
-                          · Expected end of life {item.expectedYear}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                          {row.kind === "system" ? "System" : "Routine"}
                         </span>
-                      </p>
+                        <p className="text-xs leading-snug text-muted-foreground">{row.detail}</p>
+                      </div>
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-12">
-                    <button
-                      onClick={() => setMarkItem(item)}
-                      className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
-                    >
-                      <CheckSquare className="h-3 w-3" />
-                      {item.source === "logged" ? "Update" : "Mark done"}
-                    </button>
-                    {(item.status === "overdue" || item.status === "due_soon") && (
-                      <Link
-                        to="/request"
-                        search={{ category: toCategorySlug(item.category ?? item.label) }}
-                        className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                    {row.kind === "system" ? (
+                      <>
+                        <button
+                          onClick={() => setMarkItem(row.item)}
+                          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                        >
+                          <CheckSquare className="h-3 w-3" />
+                          {row.item.source === "logged" ? "Update" : "Mark done"}
+                        </button>
+                        {(row.status === "overdue" || row.status === "due_soon") && (
+                          <Link
+                            to="/request"
+                            search={{
+                              category: toCategorySlug(row.item.category ?? row.item.label),
+                            }}
+                            className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                          >
+                            Get quotes
+                          </Link>
+                        )}
+                      </>
+                    ) : (
+                      <button
+                        disabled={savingKey === row.taskKey}
+                        onClick={() => completeSeasonal(row.taskKey!)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary disabled:opacity-50"
                       >
-                        Get quotes
-                      </Link>
+                        <CheckSquare className="h-3 w-3" />
+                        {savingKey === row.taskKey
+                          ? "Saving…"
+                          : row.status === "ok"
+                            ? "Log again"
+                            : "Mark done"}
+                      </button>
                     )}
                   </div>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Estimates use standard component lifespans. Marked something done? Add the year and
-              we'll reset the clock — permits aren't always pulled.
-            </p>
+
+            {hiddenCount > 0 && (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="mt-3 w-full rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-secondary"
+              >
+                {showAll ? "Show less" : `Show all (${rows.length})`}
+              </button>
+            )}
           </>
-        ) : (
-          <p className="mt-3 rounded-2xl border border-border p-4 text-sm text-muted-foreground">
-            Add your home details so we can project when your roof, HVAC, water heater and other
-            systems are due — and suggest your next step.
-          </p>
-        )
-      ) : (
-        <>
-          <ul className="mt-3 divide-y divide-border rounded-2xl border border-border">
-            {seasonal.map((t) => (
-              <li key={t.key} className="flex items-start justify-between gap-3 p-3 sm:p-4">
-                <div className="flex min-w-0 items-start gap-3">
-                  <span
-                    className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
-                      t.due ? "bg-accent text-accent-foreground" : "bg-growth/10 text-growth"
-                    }`}
-                  >
-                    {t.due ? <RotateCw className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{t.label}</p>
-                    <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-                      {t.hint}{" "}
-                      <span className="whitespace-nowrap">
-                        · Every {t.everyMonths} mo
-                        {t.lastDone ? ` · last done ${t.lastDone}` : " · never logged"}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-                <button
-                  disabled={savingKey === t.key}
-                  onClick={() => completeSeasonal(t.key)}
-                  className="shrink-0 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary disabled:opacity-50"
-                >
-                  {savingKey === t.key ? "Saving…" : t.due ? "Mark done" : "Log again"}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-[11px] text-muted-foreground">
-            Routine upkeep counts toward the record-completeness part of your Home Score.
-          </p>
-        </>
-      )}
+        )}
       </div>
+
 
       {markItem && (
         <MarkComponentDoneDialog
