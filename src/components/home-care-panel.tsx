@@ -120,15 +120,17 @@ export function HomeCarePanel({
     kind: "system",
     label: item.label,
     detail:
-      item.source === "logged"
-        ? `You logged ${item.installedYear}${item.loggedDetail ? ` · ${item.loggedDetail}` : ""}`
-        : item.source === "permit"
-          ? `Installed ${item.installedYear} (permit)`
-          : `Est. from year built ${item.installedYear}`,
+      item.status === "overdue"
+        ? `Put in around ${item.installedYear}. That's older than most last, so plan for it.`
+        : item.status === "due_soon"
+          ? `Put in around ${item.installedYear}. It's getting close to the end of its life.`
+          : `Put in around ${item.installedYear}. Looking fine for now.`,
     timing:
       item.status === "overdue"
-        ? `${Math.abs(item.yearsLeft)} yr overdue`
-        : `~${item.yearsLeft} yr left`,
+        ? "Late"
+        : item.status === "due_soon"
+          ? "Coming up"
+          : `About ${item.yearsLeft} years left`,
     status: item.status === "overdue" ? "overdue" : item.status === "due_soon" ? "due_soon" : "ok",
     item,
   }));
@@ -137,8 +139,10 @@ export function HomeCarePanel({
     key: `seasonal-${t.key}`,
     kind: "routine",
     label: t.label,
-    detail: `${t.hint} · Every ${t.everyMonths} mo${t.lastDone ? ` · last done ${t.lastDone}` : " · never logged"}`,
-    timing: t.due ? "Due now" : "Up to date",
+    detail: t.due
+      ? `${t.hint} Do this about every ${t.everyMonths} months.`
+      : `${t.hint} You did this${t.lastDone ? ` on ${t.lastDone}` : " recently"} — nothing to do yet.`,
+    timing: t.due ? "Coming up" : "All good",
     status: t.due ? "due_soon" : "ok",
     taskKey: t.key,
   }));
@@ -152,7 +156,9 @@ export function HomeCarePanel({
   });
 
   const attentionCount = rows.filter((r) => r.status !== "ok").length;
-  const defaultVisible = Math.max(attentionCount + 3, 4);
+  // Keep the screen calm: what needs you, plus one healthy item for reassurance.
+  const defaultVisible = Math.max(attentionCount + 1, 4);
+
   const visibleRows = showAll ? rows : rows.slice(0, defaultVisible);
   const hiddenCount = rows.length - visibleRows.length;
 
