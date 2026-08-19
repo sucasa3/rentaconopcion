@@ -90,10 +90,10 @@ export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-      <h2 className="text-base font-semibold">Your brand &amp; sender</h2>
+      <h2 className="text-base font-semibold">Team defaults</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Every campaign email goes out under your name with replies landing in your inbox. SuCasa handles the
-        sending, so there is nothing to set up with your email provider.
+        Used for clients that aren&rsquo;t assigned to a specific loan officer, and to fill in any field a
+        teammate leaves blank in their own email identity.
       </p>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
