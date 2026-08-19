@@ -11,6 +11,8 @@ import {
   generateCopy,
   buildPayload,
   brandingFromOrg,
+  mergeBranding,
+  type MemberBrandFields,
   type CampaignRow,
   type CampaignTarget,
 } from "@/lib/campaigns.server";
@@ -81,10 +83,29 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
 
   const { data: portfolios } = await supabaseAdmin
     .from("lender_portfolios")
-    .select("id, lender_org_id")
+    .select("id, lender_org_id, assigned_user_id")
     .in("lender_org_id", orgIds);
   const portfolioIds = (portfolios ?? []).map((p) => p.id);
   const orgByPortfolio = new Map((portfolios ?? []).map((p) => [p.id, p.lender_org_id]));
+  const ownerByPortfolio = new Map(
+    (portfolios ?? []).map((p) => [p.id, p.assigned_user_id as string | null]),
+  );
+
+  // Per-MLO / per-agent sender identities (fall back to org defaults field-by-field)
+  const ownerIds = [...new Set((portfolios ?? []).map((p) => p.assigned_user_id).filter(Boolean))] as string[];
+  const memberBrandByKey = new Map<string, MemberBrandFields>();
+  if (ownerIds.length) {
+    const { data: memberProfiles } = await supabaseAdmin
+      .from("lender_member_profiles")
+      .select(
+        "lender_org_id, user_id, sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff",
+      )
+      .in("lender_org_id", orgIds)
+      .in("user_id", ownerIds);
+    for (const m of memberProfiles ?? []) {
+      memberBrandByKey.set(`${m.lender_org_id}:${m.user_id}`, m as MemberBrandFields);
+    }
+  }
 
   if (!portfolioIds.length) return result;
 
@@ -191,7 +212,11 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       if (!due.due && !opts.dryRun) { skip(due.reason); continue; }
 
       const override = overrideByPair.get(`${org.id}:${campaign.id}`) ?? null;
-      const branding = brandingFromOrg(org);
+      const ownerId = ownerByPortfolio.get(c.portfolio_id) ?? null;
+      const branding = mergeBranding(
+        brandingFromOrg(org),
+        ownerId ? memberBrandByKey.get(`${org.id}:${ownerId}`) ?? null : null,
+      );
       const copy = await generateCopy(campaign, facts, target, "en", override);
       const payload = buildPayload(campaign, facts, target, copy, branding, override);
       result.generated++;

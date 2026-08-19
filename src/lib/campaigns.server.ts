@@ -96,6 +96,42 @@ export function brandingFromOrg(o: {
   };
 }
 
+/** Per-member (MLO/agent) sender identity fields, all optional. */
+export type MemberBrandFields = {
+  sender_name?: string | null;
+  reply_to_email?: string | null;
+  contact_name?: string | null;
+  contact_title?: string | null;
+  contact_phone?: string | null;
+  license_number?: string | null;
+  logo_url?: string | null;
+  signoff?: string | null;
+};
+
+/**
+ * Resolve the identity a homeowner actually sees: the portfolio owner's
+ * personal sender profile, falling back field-by-field to the org defaults.
+ */
+export function mergeBranding(
+  org: OrgBranding,
+  member?: MemberBrandFields | null,
+): OrgBranding {
+  if (!member) return org;
+  const pick = (a: string | null | undefined, b: string | null) =>
+    a != null && a !== "" ? a : b;
+  return {
+    orgName: org.orgName,
+    senderName: pick(member.sender_name, org.senderName),
+    replyToEmail: pick(member.reply_to_email, org.replyToEmail),
+    contactName: pick(member.contact_name, org.contactName),
+    contactTitle: pick(member.contact_title, org.contactTitle),
+    contactPhone: pick(member.contact_phone, org.contactPhone),
+    licenseNumber: pick(member.license_number, org.licenseNumber),
+    logoUrl: pick(member.logo_url, org.logoUrl),
+    signoff: pick(member.signoff, org.signoff),
+  };
+}
+
 export type CampaignFacts = {
   value: number | null;
   valueChange: number | null;
