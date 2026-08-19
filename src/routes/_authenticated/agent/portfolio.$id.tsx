@@ -431,6 +431,7 @@ function AgentPortfolio() {
     if (!data) return [];
     const q = search.trim().toLowerCase();
     return data.clients.filter((c: any) => {
+      if (statusParam === "activated" && !c.linked) return false;
       if (band !== "all" && c.band !== band) return false;
       if (!q) return true;
       return (
@@ -440,7 +441,8 @@ function AgentPortfolio() {
         (c.zip ?? "").toLowerCase().includes(q)
       );
     });
-  }, [data, band, search]);
+  }, [data, band, search, statusParam]);
+
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
