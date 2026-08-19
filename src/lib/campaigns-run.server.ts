@@ -11,6 +11,8 @@ import {
   generateCopy,
   buildPayload,
   brandingFromOrg,
+  mergeBranding,
+  type MemberBrandFields,
   type CampaignRow,
   type CampaignTarget,
 } from "@/lib/campaigns.server";
