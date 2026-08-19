@@ -8,8 +8,10 @@ import {
   getOrgCampaignState,
   setCampaignActivation,
   getOrgBranding,
+  getMyMemberBranding,
 } from "@/lib/campaigns.functions";
 import { CampaignBrandCard, type OrgBrandRow } from "@/components/campaign-brand-card";
+import { MemberBrandCard, type MemberBrandRow } from "@/components/member-brand-card";
 import { CampaignPreviewDialog } from "@/components/campaign-preview-dialog";
 import { CampaignOverrideDialog, type OverrideRow } from "@/components/campaign-override-dialog";
 
@@ -19,6 +21,7 @@ export function CampaignsWorkspace({ orgs }: { orgs: Array<{ id: string; name: s
   const stateFn = useServerFn(getOrgCampaignState);
   const toggleFn = useServerFn(setCampaignActivation);
   const brandFn = useServerFn(getOrgBranding);
+  const memberBrandFn = useServerFn(getMyMemberBranding);
 
   const [orgId, setOrgId] = useState("");
   const [previewId, setPreviewId] = useState<string | null>(null);
@@ -37,6 +40,12 @@ export function CampaignsWorkspace({ orgs }: { orgs: Array<{ id: string; name: s
   const { data: brand } = useQuery({
     queryKey: ["org-branding", orgId],
     queryFn: () => brandFn({ data: { orgId } }),
+    enabled: !!orgId,
+  });
+
+  const { data: mine } = useQuery({
+    queryKey: ["member-branding", orgId],
+    queryFn: () => memberBrandFn({ data: { orgId } }),
     enabled: !!orgId,
   });
 
@@ -72,7 +81,16 @@ export function CampaignsWorkspace({ orgs }: { orgs: Array<{ id: string; name: s
         </select>
       )}
 
-      {brand?.org && <CampaignBrandCard org={brand.org as OrgBrandRow} />}
+      {brand?.org && mine?.profile && (
+        <MemberBrandCard
+          orgId={orgId}
+          orgName={(brand.org as OrgBrandRow).name}
+          profile={mine.profile as MemberBrandRow}
+          fallback={brand.org as Partial<MemberBrandRow>}
+        />
+      )}
+
+      {brand?.org && mine?.canEditOrg && <CampaignBrandCard org={brand.org as OrgBrandRow} />}
 
       <div className="grid gap-3">
         {(campaigns ?? []).map((c) => {
