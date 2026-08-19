@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_credit_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          event_key: string
+          id: string
+          kind: string
+          org_id: string
+          portfolio_client_id: string | null
+          reason: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          event_key: string
+          id?: string
+          kind: string
+          org_id: string
+          portfolio_client_id?: string | null
+          reason: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          event_key?: string
+          id?: string
+          kind?: string
+          org_id?: string
+          portfolio_client_id?: string | null
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_credit_ledger_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_credit_ledger_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_feed_seen: {
         Row: {
           created_at: string
@@ -108,6 +156,50 @@ export type Database = {
             foreignKeyName: "agent_lender_connections_lender_org_id_fkey"
             columns: ["lender_org_id"]
             isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_plans: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          plan_key: string
+          requested_at: string | null
+          requested_by: string | null
+          requested_plan_key: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          plan_key?: string
+          requested_at?: string | null
+          requested_by?: string | null
+          requested_plan_key?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          plan_key?: string
+          requested_at?: string | null
+          requested_by?: string | null
+          requested_plan_key?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_plans_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "lender_orgs"
             referencedColumns: ["id"]
           },
@@ -1711,6 +1803,7 @@ export type Database = {
           active: boolean
           audience: string
           created_at: string
+          credits_included: number | null
           key: string
           name: string
           positioning: string | null
@@ -1718,12 +1811,14 @@ export type Database = {
           seat_limit: number | null
           sort_order: number
           sponsored_allocation: number | null
+          sponsored_seats: number | null
           updated_at: string
         }
         Insert: {
           active?: boolean
           audience: string
           created_at?: string
+          credits_included?: number | null
           key: string
           name: string
           positioning?: string | null
@@ -1731,12 +1826,14 @@ export type Database = {
           seat_limit?: number | null
           sort_order?: number
           sponsored_allocation?: number | null
+          sponsored_seats?: number | null
           updated_at?: string
         }
         Update: {
           active?: boolean
           audience?: string
           created_at?: string
+          credits_included?: number | null
           key?: string
           name?: string
           positioning?: string | null
@@ -1744,6 +1841,7 @@ export type Database = {
           seat_limit?: number | null
           sort_order?: number
           sponsored_allocation?: number | null
+          sponsored_seats?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -2332,6 +2430,60 @@ export type Database = {
         }
         Relationships: []
       }
+      sponsored_agent_seats: {
+        Row: {
+          agent_org_id: string
+          created_at: string
+          created_by: string | null
+          credits_granted: number
+          ended_at: string | null
+          id: string
+          sponsor_org_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_org_id: string
+          created_at?: string
+          created_by?: string | null
+          credits_granted?: number
+          ended_at?: string | null
+          id?: string
+          sponsor_org_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_org_id?: string
+          created_at?: string
+          created_by?: string | null
+          credits_granted?: number
+          ended_at?: string | null
+          id?: string
+          sponsor_org_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsored_agent_seats_agent_org_id_fkey"
+            columns: ["agent_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsored_agent_seats_sponsor_org_id_fkey"
+            columns: ["sponsor_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsored_profiles: {
         Row: {
           agent_org_id: string
@@ -2466,6 +2618,26 @@ export type Database = {
       }
     }
     Functions: {
+      agent_credit_summary: {
+        Args: { _org_id: string }
+        Returns: {
+          earned: number
+          granted: number
+          purchased: number
+          remaining: number
+          spent: number
+        }[]
+      }
+      award_agent_credit: {
+        Args: {
+          _client_id: string
+          _delta: number
+          _event_key: string
+          _org_id: string
+          _reason: string
+        }
+        Returns: undefined
+      }
       compute_lifecycle_stage: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["lifecycle_stage"]
