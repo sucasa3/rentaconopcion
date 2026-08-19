@@ -65,7 +65,8 @@ const PAGE_SIZE = 25;
 
 function PortfolioDetail() {
   const { id } = Route.useParams();
-  const getFn = useServerFn(getPortfolio);
+  const { status: statusParam } = Route.useSearch();
+
   const enrichFn = useServerFn(enrichPortfolioFromAttom);
   const qc = useQueryClient();
 
