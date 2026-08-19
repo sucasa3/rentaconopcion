@@ -66,8 +66,19 @@ function Dashboard() {
   useLogOnMount("value_viewed");
   const navigate = useNavigate();
   const { tab } = Route.useSearch();
-  const setTab = (t: "home" | "care" | "documents") =>
-    navigate({ to: "/dashboard", search: { tab: t } });
+  /** Sections live on one scrolling page — "tabs" are now scroll targets. */
+  const setTab = (t: "home" | "care" | "documents") => {
+    navigate({ to: "/dashboard", search: { tab: t }, replace: true, resetScroll: false });
+    document.getElementById(`sec-${t}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  useEffect(() => {
+    if (!tab) return;
+    const id = window.setTimeout(() => {
+      document.getElementById(`sec-${tab}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+    return () => window.clearTimeout(id);
+  }, [tab]);
+
   const [logOpen, setLogOpen] = useState(false);
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [requests, setRequests] = useState<RecentRequest[]>([]);
