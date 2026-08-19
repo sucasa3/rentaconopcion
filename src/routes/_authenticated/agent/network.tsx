@@ -122,12 +122,22 @@ function AgentNetwork() {
                   onClick={() => setTab("sponsorships")}
                   label="Sponsorships"
                 />
+                <TabButton
+                  active={tab === "credits"}
+                  onClick={() => setTab("credits")}
+                  label="Credits"
+                />
               </nav>
 
               {tab === "intros" && <Introductions orgId={activeOrgId} rows={intros?.requests ?? []} />}
               {tab === "campaigns" && <CampaignApprovals orgId={activeOrgId} />}
               {tab === "connections" && <Connections agentOrgId={activeOrgId} />}
               {tab === "sponsorships" && <Sponsorships orgId={activeOrgId} />}
+              {tab === "credits" && (
+                <div className="py-4">
+                  <AgentCreditsCard orgId={activeOrgId} />
+                </div>
+              )}
             </>
           )}
         </div>
