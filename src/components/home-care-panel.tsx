@@ -106,7 +106,59 @@ export function HomeCarePanel({
     (f: any) => f.urgency === "immediate" || f.urgency === "12_months",
   ).length;
 
-  const chips: HeroChip[] = [];
+  type CareRow = {
+    key: string;
+    kind: "system" | "routine";
+    label: string;
+    detail: string;
+    timing: string;
+    status: "overdue" | "due_soon" | "ok";
+    item?: TimelineItem;
+    taskKey?: string;
+  };
+
+  const systemRows: CareRow[] = items.map((item) => ({
+    key: `sys-${item.key}`,
+    kind: "system",
+    label: item.label,
+    detail:
+      item.source === "logged"
+        ? `You logged ${item.installedYear}${item.loggedDetail ? ` · ${item.loggedDetail}` : ""}`
+        : item.source === "permit"
+          ? `Installed ${item.installedYear} (permit)`
+          : `Est. from year built ${item.installedYear}`,
+    timing:
+      item.status === "overdue"
+        ? `${Math.abs(item.yearsLeft)} yr overdue`
+        : `~${item.yearsLeft} yr left`,
+    status: item.status === "overdue" ? "overdue" : item.status === "due_soon" ? "due_soon" : "ok",
+    item,
+  }));
+
+  const routineRows: CareRow[] = seasonal.map((t) => ({
+    key: `seasonal-${t.key}`,
+    kind: "routine",
+    label: t.label,
+    detail: `${t.hint} · Every ${t.everyMonths} mo${t.lastDone ? ` · last done ${t.lastDone}` : " · never logged"}`,
+    timing: t.due ? "Due now" : "Up to date",
+    status: t.due ? "due_soon" : "ok",
+    taskKey: t.key,
+  }));
+
+  const RANK: Record<string, number> = { overdue: 0, due_soon: 1, ok: 2 };
+  const rows: CareRow[] = [...systemRows, ...routineRows].sort((a, b) => {
+    const r = RANK[a.status] - RANK[b.status];
+    if (r !== 0) return r;
+    // Within the same urgency, big systems come before routine upkeep.
+    return (a.kind === "system" ? 0 : 1) - (b.kind === "system" ? 0 : 1);
+  });
+
+  const attentionCount = rows.filter((r) => r.status !== "ok").length;
+  const defaultVisible = Math.max(attentionCount + 3, 4);
+  const visibleRows = showAll ? rows : rows.slice(0, defaultVisible);
+  const hiddenCount = rows.length - visibleRows.length;
+
+
   if (overdue.length > 0) chips.push({ label: `${overdue.length} overdue`, tone: "urgent" });
   if (dueSoon.length > 0) chips.push({ label: `${dueSoon.length} due soon`, tone: "warn" });
   if (seasonalDue > 0) chips.push({ label: `${seasonalDue} routine task${seasonalDue === 1 ? "" : "s"} due`, tone: "warn" });
