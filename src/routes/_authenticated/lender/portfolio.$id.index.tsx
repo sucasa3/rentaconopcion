@@ -107,7 +107,9 @@ function PortfolioDetail() {
     if (!data) return [];
     const q = search.trim().toLowerCase();
     const rows = data.clients.filter((c: any) => {
+      if (statusParam === "activated" && c.consent_state === "cold-lead") return false;
       if (segment !== "all" && c.segment !== segment) return false;
+
       if (!q) return true;
       return (
         (c.full_name ?? "").toLowerCase().includes(q) ||
