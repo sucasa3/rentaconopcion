@@ -313,6 +313,7 @@ export function HomeCarePanel({
           </p>
         </>
       )}
+      </div>
 
       {markItem && (
         <MarkComponentDoneDialog
@@ -323,4 +324,5 @@ export function HomeCarePanel({
       )}
     </div>
   );
+
 }
