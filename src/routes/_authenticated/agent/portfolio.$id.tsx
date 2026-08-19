@@ -741,9 +741,10 @@ function AgentPortfolio() {
                     })}
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    Readiness scores equity vs. selling costs, records on file, condition story,
-                    the 2-year basis window, representation, and reachability.
+                    Readiness scores equity vs. selling costs, records on file, the home care
+                    record, the 2-year basis window, representation, and reachability.
                   </p>
+
                 </div>
 
                 <div className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6 lg:col-span-2">
