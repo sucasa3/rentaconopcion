@@ -21,6 +21,9 @@ Nothing can send until this verifies. At the registrar for sucasa.com add:
 - TXT `_lovable-email.sucasa.com` → the verification value shown in Project Settings → Email
 - NS `notify.sucasa.com` → `ns3.lovable.cloud` and `ns4.lovable.cloud`
 
+**Approving this plan will not trigger any sends.** The plan is only a readout and a safe set of data/identity updates. Any live email send will require a separate explicit dry-run or batch command after DNS is active.
+
+
 ### 2. Replace demo sender identity with the real one
 The only lender org is still "SuCasa Demo Lender" with a demo reply-to. Before a live send:
 - Rename the org and set real team defaults (sender name, reply-to, contact, phone, license, sign-off, logo)
