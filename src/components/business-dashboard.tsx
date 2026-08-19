@@ -106,26 +106,34 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
           label="Homeowners"
           value={data.counts.people}
           icon={<Users className="h-4 w-4" />}
+          to={book ? `${base}/portfolio/$id` : undefined}
+          params={book ? { id: book.id } : undefined}
         />
         <StatCard
           label="Activated"
           value={data.counts.activated}
           tone="growth"
           icon={<UserCheck className="h-4 w-4" />}
+          to={book ? `${base}/portfolio/$id` : undefined}
+          params={book ? { id: book.id } : undefined}
+          search={book ? { status: "activated" } : undefined}
         />
         <StatCard
           label="Opportunities"
           value={data.counts.opportunities}
           tone="attention"
           icon={<Sparkles className="h-4 w-4" />}
+          to={`${base}/opportunities`}
         />
         <StatCard
           label="Campaigns"
           value={data.counts.campaigns}
           tone="info"
           icon={<Megaphone className="h-4 w-4" />}
+          to={`${base}/campaigns`}
         />
       </div>
+
 
       <section className="space-y-3">
         <SectionHeader title="Today" />
