@@ -11,7 +11,7 @@ import {
 } from "@/lib/home-documents.functions";
 import { extractInspectionReport } from "@/lib/inspection.functions";
 import { DocumentViewerDialog } from "@/components/document-viewer-dialog";
-import { SectionHero, type HeroChip, type HeroTone } from "@/components/section-hero";
+import { SectionHero, type HeroTone } from "@/components/section-hero";
 
 type Kind = "inspection" | "insurance" | "warranty" | "deed" | "other";
 
@@ -105,39 +105,35 @@ export function DocumentsCard({ onGoToCare }: { onGoToCare?: () => void }) {
   );
   const ready = docs.some((d: any) => d.kind === "inspection" && d.extraction_status === "ready");
 
-  const chips: HeroChip[] = [];
-  if (total > 0) chips.push({ label: `${total} on file`, tone: "muted" });
-  if (analyzing) chips.push({ label: "Reading your report…", tone: "warn" });
-  if (ready) chips.push({ label: "Report analyzed", tone: "good" });
-
   const tone: HeroTone = total === 0 ? "setup" : hasInspection ? "calm" : "opportunity";
 
   const status = uploading
     ? "Uploading…"
     : total === 0
-      ? "Nothing here yet — start with your inspection report."
+      ? "Nothing saved yet. Start with your inspection report — we'll read it for you."
       : analyzing
-        ? "We're reading your inspection report right now. This takes a minute."
+        ? "We're reading your inspection report right now. Give it a minute."
         : !hasInspection
-          ? "Add your inspection report next — it's the one that unlocks recommendations."
-          : "Your paperwork is on file and working for you.";
+          ? `We're keeping ${total} file${total === 1 ? "" : "s"} for you. Add your inspection report next — it's the useful one.`
+          : `We're keeping ${total} file${total === 1 ? "" : "s"} safe for you, and using them to build your to-do list.`;
 
   return (
     <div className="space-y-4">
       <SectionHero
+        plain
         icon={FolderOpen}
         eyebrow="Documents"
-        title="Your home's paperwork, in one place"
-        subtitle="Upload an inspection report and we read it for you, turning it into a condition list and service recommendations."
+        title="Documents"
+        subtitle="Papers about your home, saved in one place."
         status={status}
-        chips={chips}
         tone={tone}
-        actionLabel={hasInspection ? "Upload a document" : "Upload inspection report"}
+        actionLabel={hasInspection ? "Add a document" : "Add your inspection report"}
         onAction={() => pickFile(hasInspection ? undefined : "inspection")}
-        connectNote="What you upload here shows up in Home care as real condition notes instead of age-based estimates."
-        connectLabel={onGoToCare ? "Go to Home care" : undefined}
+        connectNote="Whatever you add here helps us tell you what your home really needs."
+        connectLabel={onGoToCare ? "See what needs doing" : undefined}
         onConnect={onGoToCare}
       />
+
 
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
         <p className="text-sm font-medium">What are you uploading?</p>

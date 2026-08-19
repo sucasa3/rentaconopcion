@@ -20,7 +20,7 @@ import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
-import { SectionHero, type HeroChip, type HeroTone } from "@/components/section-hero";
+import { SectionHero, type HeroTone } from "@/components/section-hero";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -120,15 +120,17 @@ export function HomeCarePanel({
     kind: "system",
     label: item.label,
     detail:
-      item.source === "logged"
-        ? `You logged ${item.installedYear}${item.loggedDetail ? ` · ${item.loggedDetail}` : ""}`
-        : item.source === "permit"
-          ? `Installed ${item.installedYear} (permit)`
-          : `Est. from year built ${item.installedYear}`,
+      item.status === "overdue"
+        ? `Put in around ${item.installedYear}. That's older than most last, so plan for it.`
+        : item.status === "due_soon"
+          ? `Put in around ${item.installedYear}. It's getting close to the end of its life.`
+          : `Put in around ${item.installedYear}. Looking fine for now.`,
     timing:
       item.status === "overdue"
-        ? `${Math.abs(item.yearsLeft)} yr overdue`
-        : `~${item.yearsLeft} yr left`,
+        ? "Late"
+        : item.status === "due_soon"
+          ? "Coming up"
+          : `About ${item.yearsLeft} years left`,
     status: item.status === "overdue" ? "overdue" : item.status === "due_soon" ? "due_soon" : "ok",
     item,
   }));
@@ -137,8 +139,10 @@ export function HomeCarePanel({
     key: `seasonal-${t.key}`,
     kind: "routine",
     label: t.label,
-    detail: `${t.hint} · Every ${t.everyMonths} mo${t.lastDone ? ` · last done ${t.lastDone}` : " · never logged"}`,
-    timing: t.due ? "Due now" : "Up to date",
+    detail: t.due
+      ? `${t.hint} Do this about every ${t.everyMonths} months.`
+      : `${t.hint} You did this${t.lastDone ? ` on ${t.lastDone}` : " recently"} — nothing to do yet.`,
+    timing: t.due ? "Coming up" : "All good",
     status: t.due ? "due_soon" : "ok",
     taskKey: t.key,
   }));
@@ -152,44 +156,42 @@ export function HomeCarePanel({
   });
 
   const attentionCount = rows.filter((r) => r.status !== "ok").length;
-  const defaultVisible = Math.max(attentionCount + 3, 4);
+  // Keep the screen calm: what needs you, plus one healthy item for reassurance.
+  const defaultVisible = Math.max(attentionCount + 1, 4);
+
   const visibleRows = showAll ? rows : rows.slice(0, defaultVisible);
   const hiddenCount = rows.length - visibleRows.length;
 
-  const chips: HeroChip[] = [];
-
-  if (overdue.length > 0) chips.push({ label: `${overdue.length} overdue`, tone: "urgent" });
-  if (dueSoon.length > 0) chips.push({ label: `${dueSoon.length} due soon`, tone: "warn" });
-  if (seasonalDue > 0) chips.push({ label: `${seasonalDue} routine task${seasonalDue === 1 ? "" : "s"} due`, tone: "warn" });
-  if (chips.length === 0 && hasSystems) chips.push({ label: "Nothing needs attention", tone: "good" });
+  const lateCount = rows.filter((r) => r.status === "overdue").length;
+  const soonCount = rows.filter((r) => r.status === "due_soon").length;
 
   const tone: HeroTone = !hasSystems
     ? "setup"
-    : overdue.length > 0
+    : lateCount > 0
       ? "urgent"
-      : dueSoon.length > 0 || seasonalDue > 0
+      : soonCount > 0
         ? "opportunity"
         : "calm";
 
   const status = !hasSystems
-    ? "We don't know enough about your home yet to project anything."
-    : nextStep
-      ? `Start with your ${nextStep.label.toLowerCase()} — that's the one we'd handle first.`
-      : seasonalDue > 0
-        ? "Your big systems look fine. A couple of routine tasks are due."
-        : "You're up to date. We'll tell you the moment something changes.";
+    ? "Tell us a little about your home and we'll build your to-do list."
+    : lateCount > 0
+      ? `${lateCount} thing${lateCount === 1 ? " is" : "s are"} late${soonCount > 0 ? `, and ${soonCount} ${soonCount === 1 ? "is" : "are"} coming up` : ""}.`
+      : soonCount > 0
+        ? `Nothing is late. ${soonCount} thing${soonCount === 1 ? " is" : "s are"} coming up.`
+        : "Everything looks good today. We'll tell you when that changes.";
 
   return (
     <div className="space-y-4">
       <SectionHero
+        plain
         icon={HeartPulse}
         eyebrow="Home care"
-        title="Keep your home healthy"
-        subtitle="We estimate when your roof, HVAC, water heater and other systems need attention — and remind you before they fail."
+        title="Take care of this"
+        subtitle="The things your home needs, biggest first."
         status={status}
-        chips={chips}
         tone={tone}
-        actionLabel={!hasSystems ? "Add home details" : nextStep ? "Handle this now" : undefined}
+        actionLabel={!hasSystems ? "Add home details" : nextStep ? "Start with this one" : undefined}
         onAction={
           !hasSystems
             ? () => navigate({ to: "/onboarding" })
@@ -199,10 +201,10 @@ export function HomeCarePanel({
         }
         connectNote={
           findingCount > 0
-            ? `Your inspection report added ${findingCount} condition note${findingCount === 1 ? "" : "s"}${
+            ? `Your inspection report added ${findingCount} note${findingCount === 1 ? "" : "s"} to this list${
                 urgentFindings > 0 ? ` — ${urgentFindings} need attention soon` : ""
-              }. Every document you upload makes this plan sharper.`
-            : "Documents feed this plan: upload an inspection report and we turn it into real condition notes instead of estimates."
+              }.`
+            : "Upload an inspection report and this list gets a lot smarter."
         }
         connectLabel={onGoToDocuments ? "Go to Documents" : undefined}
         onConnect={onGoToDocuments}
@@ -211,72 +213,90 @@ export function HomeCarePanel({
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
         {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}
 
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          One list, most urgent first. Big systems are estimated from your home's age
-          {permitEvents.length > 0 ? " and the permits on file" : ""} — not from an inspection.
-          Marking something done replaces the estimate with the real date and lifts your Home Score.
-        </p>
-
         {rows.length === 0 ? (
-          <p className="mt-3 rounded-2xl border border-border p-4 text-sm text-muted-foreground">
-            Add your home details so we can project when your roof, HVAC, water heater and other
-            systems are due — and suggest your next step.
+          <p className="rounded-2xl border border-border p-4 text-sm text-muted-foreground">
+            Add your home details and we'll tell you what needs doing — and when.
           </p>
         ) : (
           <>
-            <ul className="mt-3 divide-y divide-border rounded-2xl border border-border">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-destructive" /> Late
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-accent-foreground/70" /> Coming up
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-growth" /> All good
+              </span>
+            </div>
+
+            <ul className="mt-3 space-y-2.5">
               {visibleRows.map((row) => (
-                <li key={row.key} className="p-3 sm:p-4">
+                <li
+                  key={row.key}
+                  className={`rounded-2xl border p-4 ${
+                    row.status === "overdue"
+                      ? "border-destructive/30 bg-destructive/5"
+                      : row.status === "due_soon"
+                        ? "border-border bg-accent/40"
+                        : "border-border bg-card"
+                  }`}
+                >
                   <div className="flex items-start gap-3">
                     <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${
+                      className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${
                         row.status === "overdue"
                           ? "bg-destructive/10 text-destructive"
                           : row.status === "due_soon"
-                            ? "bg-accent text-accent-foreground"
+                            ? "bg-background text-foreground"
                             : "bg-growth/10 text-growth"
                       }`}
                     >
                       {row.status === "overdue" ? (
-                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTriangle className="h-6 w-6" />
                       ) : row.status === "due_soon" ? (
                         row.kind === "system" ? (
-                          <Wrench className="h-4 w-4" />
+                          <Wrench className="h-6 w-6" />
                         ) : (
-                          <RotateCw className="h-4 w-4" />
+                          <RotateCw className="h-6 w-6" />
                         )
                       ) : (
-                        <CheckCircle2 className="h-4 w-4" />
+                        <CheckCircle2 className="h-6 w-6" />
                       )}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-2">
-                        <p className="truncate text-sm font-medium">{row.label}</p>
-                        <p
-                          className={`shrink-0 text-xs font-medium ${
-                            row.status === "overdue" ? "text-destructive" : "text-muted-foreground"
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                            row.status === "overdue"
+                              ? "bg-destructive"
+                              : row.status === "due_soon"
+                                ? "bg-accent-foreground/70"
+                                : "bg-growth"
                           }`}
-                        >
-                          {row.timing}
-                        </p>
+                          aria-hidden
+                        />
+                        <p className="truncate text-base font-semibold">{row.label}</p>
                       </div>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
-                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          {row.kind === "system" ? "System" : "Routine"}
-                        </span>
-                        <p className="text-xs leading-snug text-muted-foreground">{row.detail}</p>
-                      </div>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        {row.detail}
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-muted-foreground">
+                        {row.kind === "system" ? "Big stuff" : "Quick job"} · {row.timing}
+                      </p>
                     </div>
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-12">
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {row.kind === "system" && row.item ? (
                       <>
                         <button
                           onClick={() => setMarkItem(row.item!)}
-                          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary"
                         >
-                          <CheckSquare className="h-3 w-3" />
-                          {row.item.source === "logged" ? "Update" : "Mark done"}
+                          <CheckSquare className="h-4 w-4" />
+                          {row.item.source === "logged" ? "Update this" : "I did this"}
                         </button>
                         {(row.status === "overdue" || row.status === "due_soon") && (
                           <Link
@@ -284,10 +304,9 @@ export function HomeCarePanel({
                             search={{
                               category: toCategorySlug(row.item.category ?? row.item.label),
                             }}
-
-                            className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
+                            className="inline-flex min-h-[44px] items-center rounded-full gradient-brand px-4 text-sm font-semibold text-white"
                           >
-                            Get quotes
+                            Get help
                           </Link>
                         )}
                       </>
@@ -295,14 +314,14 @@ export function HomeCarePanel({
                       <button
                         disabled={savingKey === row.taskKey}
                         onClick={() => completeSeasonal(row.taskKey!)}
-                        className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary disabled:opacity-50"
+                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary disabled:opacity-50"
                       >
-                        <CheckSquare className="h-3 w-3" />
+                        <CheckSquare className="h-4 w-4" />
                         {savingKey === row.taskKey
                           ? "Saving…"
                           : row.status === "ok"
-                            ? "Log again"
-                            : "Mark done"}
+                            ? "Did it again"
+                            : "I did this"}
                       </button>
                     )}
                   </div>
@@ -313,14 +332,15 @@ export function HomeCarePanel({
             {hiddenCount > 0 && (
               <button
                 onClick={() => setShowAll((v) => !v)}
-                className="mt-3 w-full rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-secondary"
+                className="mt-3 min-h-[48px] w-full rounded-2xl border border-border text-sm font-semibold hover:bg-secondary"
               >
-                {showAll ? "Show less" : `Show all (${rows.length})`}
+                {showAll ? "Show less" : `See everything (${rows.length})`}
               </button>
             )}
           </>
         )}
       </div>
+
 
 
       {markItem && (

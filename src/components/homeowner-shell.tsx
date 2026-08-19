@@ -23,7 +23,7 @@ const ITEMS: Item[] = [
     match: (p, t) => p === "/dashboard" && (!t || t === "home"),
   },
   {
-    label: "Care",
+    label: "To do",
     to: "/dashboard",
     search: { tab: "care" },
     icon: <HeartPulse className="h-5 w-5" />,

@@ -56,6 +56,7 @@ export function SectionHero({
   connectNote,
   connectLabel,
   onConnect,
+  plain = false,
 }: {
   icon: LucideIcon;
   eyebrow?: string;
@@ -69,10 +70,54 @@ export function SectionHero({
   connectNote?: string;
   connectLabel?: string;
   onConnect?: () => void;
+  /** Big, friendly, one-idea-at-a-time layout: no chips, one full-width action. */
+  plain?: boolean;
 }) {
   const t = TONE[tone];
 
+  if (plain) {
+    return (
+      <section className={`rounded-3xl border p-5 shadow-soft sm:p-6 ${t.ring}`} aria-label={title}>
+        <span className={`grid h-14 w-14 place-items-center rounded-2xl ${t.badge}`}>
+          <Icon className="h-7 w-7" />
+        </span>
+        <h2 className="mt-3 text-2xl font-semibold leading-tight tracking-tight">{title}</h2>
+        {status ? (
+          <p className="mt-2 text-base leading-relaxed text-muted-foreground">{status}</p>
+        ) : (
+          <p className="mt-2 text-base leading-relaxed text-muted-foreground">{subtitle}</p>
+        )}
+
+        {actionLabel && onAction ? (
+          <button
+            type="button"
+            onClick={onAction}
+            className={`mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-2xl px-5 py-3.5 text-base font-semibold transition sm:w-auto ${t.btn}`}
+          >
+            {actionLabel} <ArrowRight className="h-4 w-4" />
+          </button>
+        ) : null}
+
+        {connectNote ? (
+          <p className="mt-4 border-t border-border/60 pt-3 text-sm leading-relaxed text-muted-foreground">
+            {connectNote}{" "}
+            {connectLabel && onConnect ? (
+              <button
+                type="button"
+                onClick={onConnect}
+                className="font-semibold text-primary underline-offset-2 hover:underline"
+              >
+                {connectLabel}
+              </button>
+            ) : null}
+          </p>
+        ) : null}
+      </section>
+    );
+  }
+
   return (
+
     <section className={`rounded-3xl border p-5 shadow-soft sm:p-6 ${t.ring}`} aria-label={title}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3">
