@@ -158,6 +158,102 @@ export const getOrgBranding = createServerFn({ method: "POST" })
     return { org: org ?? null, overrides: overrides ?? [] };
   });
 
+const MEMBER_BRAND_FIELDS =
+  "user_id, sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff";
+
+/**
+ * The signed-in member's own sender identity for this org. If they have never
+ * saved one, we return a seeded draft from their account profile so nothing is
+ * blank on day one. Also reports whether they can edit the org-wide defaults.
+ */
+export const getMyMemberBranding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ orgId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+
+    const [{ data: existing }, { data: member }, { data: profile }] = await Promise.all([
+      context.supabase
+        .from("lender_member_profiles")
+        .select(MEMBER_BRAND_FIELDS)
+        .eq("lender_org_id", data.orgId)
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      context.supabase
+        .from("lender_members")
+        .select("role")
+        .eq("lender_org_id", data.orgId)
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+      context.supabase
+        .from("profiles")
+        .select("full_name, email, phone")
+        .eq("id", context.userId)
+        .maybeSingle(),
+    ]);
+
+    const role = member?.role ?? null;
+    const canEditOrg = !role || ["owner", "admin", "manager"].includes(role);
+
+    const seeded = {
+      user_id: context.userId,
+      sender_name: null as string | null,
+      reply_to_email: profile?.email ?? null,
+      contact_name: profile?.full_name ?? null,
+      contact_title: null as string | null,
+      contact_phone: profile?.phone ?? null,
+      license_number: null as string | null,
+      logo_url: null as string | null,
+      signoff: null as string | null,
+    };
+
+    return {
+      profile: existing ?? seeded,
+      saved: !!existing,
+      role,
+      canEditOrg,
+    };
+  });
+
+const MemberBrandSchema = z.object({
+  orgId: z.string().uuid(),
+  sender_name: z.string().trim().max(120).nullable().optional(),
+  reply_to_email: z.string().trim().email().max(180).nullable().or(z.literal("")).optional(),
+  contact_name: z.string().trim().max(120).nullable().optional(),
+  contact_title: z.string().trim().max(120).nullable().optional(),
+  contact_phone: z.string().trim().max(40).nullable().optional(),
+  license_number: z.string().trim().max(60).nullable().optional(),
+  logo_url: z.string().trim().max(2000).nullable().optional(),
+  signoff: z.string().trim().max(200).nullable().optional(),
+});
+
+/** Save the signed-in member's own sender identity. */
+export const saveMemberBranding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => MemberBrandSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertOrgMember(context.supabase, context.userId, data.orgId);
+    const norm = (v: string | null | undefined) => (v == null || v === "" ? null : v);
+    const row = {
+      lender_org_id: data.orgId,
+      user_id: context.userId,
+      sender_name: norm(data.sender_name),
+      reply_to_email: norm(data.reply_to_email),
+      contact_name: norm(data.contact_name),
+      contact_title: norm(data.contact_title),
+      contact_phone: norm(data.contact_phone),
+      license_number: norm(data.license_number),
+      logo_url: norm(data.logo_url),
+      signoff: norm(data.signoff),
+    };
+    const { error } = await context.supabase
+      .from("lender_member_profiles")
+      .upsert(row, { onConflict: "lender_org_id,user_id" });
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+
 const BrandSchema = z.object({
   orgId: z.string().uuid(),
   sender_name: z.string().trim().max(120).nullable().optional(),
