@@ -258,7 +258,7 @@ function Dashboard() {
               <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-secondary p-1">
 
                 <TabsTrigger value="home">Home</TabsTrigger>
-                <TabsTrigger value="care">Care</TabsTrigger>
+                <TabsTrigger value="care">Home care</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
               </TabsList>
 
@@ -343,13 +343,14 @@ function Dashboard() {
 
               {/* -------------------------------------------------- Care */}
               <TabsContent value="care" className="mt-4 space-y-6">
-                <HomeCarePanel />
+                <HomeCarePanel onGoToDocuments={() => setTab("documents")} />
                 <RecommendedProsCard />
               </TabsContent>
 
               {/* --------------------------------------------- Documents */}
               <TabsContent value="documents" className="mt-4 space-y-6">
-                <DocumentsCard />
+                <DocumentsCard onGoToCare={() => setTab("care")} />
+
                 <InspectionFindingsPanel />
               </TabsContent>
             </Tabs>

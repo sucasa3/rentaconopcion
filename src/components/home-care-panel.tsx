@@ -12,29 +12,45 @@ import {
   CheckCircle2,
   Clock,
   CheckSquare,
-  TrendingUp,
   RotateCw,
+  HeartPulse,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { buildMaintenanceTimeline, type TimelineItem } from "@/lib/maintenance-rules";
 import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
+import { SectionHero, type HeroChip, type HeroTone } from "@/components/section-hero";
+import { listInspectionFindings } from "@/lib/inspection.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 type Tab = "systems" | "seasonal";
 
-export function HomeCarePanel() {
+export function HomeCarePanel({
+  onGoToDocuments,
+}: {
+  onGoToDocuments?: () => void;
+}) {
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const logService = useServerFn(logComponentService);
+  const fetchFindings = useServerFn(listInspectionFindings);
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [markItem, setMarkItem] = useState<TimelineItem | null>(null);
   const [tab, setTab] = useState<Tab>("systems");
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const { intel: okIntel, isLoading } = useHomeIntel();
+
+  const { data: findings } = useQuery({
+    queryKey: ["inspection-findings"],
+    queryFn: () => fetchFindings({ data: {} }),
+    staleTime: 5 * 60_000,
+  });
+
+
 
 
   const { data: serviceLog } = useQuery({
@@ -85,60 +101,96 @@ export function HomeCarePanel() {
   const nextStep = overdue[0] ?? dueSoon[0] ?? null;
   const seasonalDue = seasonal.filter((s) => s.due).length;
 
+  const findingCount = (findings ?? []).length;
+  const urgentFindings = (findings ?? []).filter(
+    (f: any) => f.urgency === "immediate" || f.urgency === "12_months",
+  ).length;
+
+  const chips: HeroChip[] = [];
+  if (overdue.length > 0) chips.push({ label: `${overdue.length} overdue`, tone: "urgent" });
+  if (dueSoon.length > 0) chips.push({ label: `${dueSoon.length} due soon`, tone: "warn" });
+  if (seasonalDue > 0) chips.push({ label: `${seasonalDue} routine task${seasonalDue === 1 ? "" : "s"} due`, tone: "warn" });
+  if (chips.length === 0 && hasSystems) chips.push({ label: "Nothing needs attention", tone: "good" });
+
+  const tone: HeroTone = !hasSystems
+    ? "setup"
+    : overdue.length > 0
+      ? "urgent"
+      : dueSoon.length > 0 || seasonalDue > 0
+        ? "opportunity"
+        : "calm";
+
+  const status = !hasSystems
+    ? "We don't know enough about your home yet to project anything."
+    : nextStep
+      ? `Start with your ${nextStep.label.toLowerCase()} — that's the one we'd handle first.`
+      : seasonalDue > 0
+        ? "Your big systems look fine. A couple of routine tasks are due."
+        : "You're up to date. We'll tell you the moment something changes.";
+
   return (
-    <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold">Home care</h2>
-          <p className="text-xs text-muted-foreground">
-            Everything your home needs — systems projected from home age
-            {permitEvents.length > 0 ? " and permits on file" : ""}, plus routine upkeep.
+    <div className="space-y-4">
+      <SectionHero
+        icon={HeartPulse}
+        eyebrow="Home care"
+        title="Keep your home healthy"
+        subtitle="We estimate when your roof, HVAC, water heater and other systems need attention — and remind you before they fail."
+        status={status}
+        chips={chips}
+        tone={tone}
+        actionLabel={!hasSystems ? "Add home details" : nextStep ? "Handle this now" : undefined}
+        onAction={
+          !hasSystems
+            ? () => navigate({ to: "/onboarding" })
+            : nextStep
+              ? () => setMarkItem(nextStep)
+              : undefined
+        }
+        connectNote={
+          findingCount > 0
+            ? `Your inspection report added ${findingCount} condition note${findingCount === 1 ? "" : "s"}${
+                urgentFindings > 0 ? ` — ${urgentFindings} need attention soon` : ""
+              }. Every document you upload makes this plan sharper.`
+            : "Documents feed this plan: upload an inspection report and we turn it into real condition notes instead of estimates."
+        }
+        connectLabel={onGoToDocuments ? "Go to Documents" : undefined}
+        onConnect={onGoToDocuments}
+      />
+
+      <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
+        {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}
+
+        <div className="inline-flex rounded-full border border-border p-1 text-xs">
+          <button
+            onClick={() => setTab("systems")}
+            className={`rounded-full px-3 py-1.5 font-medium transition ${
+              tab === "systems" ? "bg-secondary text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            Big systems{items.length > 0 ? ` (${items.length})` : ""}
+          </button>
+          <button
+            onClick={() => setTab("seasonal")}
+            className={`rounded-full px-3 py-1.5 font-medium transition ${
+              tab === "seasonal" ? "bg-secondary text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            Routine upkeep{seasonalDue > 0 ? ` (${seasonalDue})` : ""}
+          </button>
+        </div>
+
+        {tab === "systems" ? (
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            Estimated from your home's age
+            {permitEvents.length > 0 ? " and the permits on file" : ""} — not from an inspection.
+            Marking something done replaces the estimate with the real date.
           </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 text-[11px]">
-          {overdue.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 font-semibold text-destructive">
-              <AlertTriangle className="h-3 w-3" /> {overdue.length} overdue
-            </span>
-          )}
-          {dueSoon.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-semibold text-accent-foreground">
-              <Clock className="h-3 w-3" /> {dueSoon.length} due soon
-            </span>
-          )}
-        </div>
-      </div>
+        ) : (
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            Small, recurring jobs every home needs. Logging them keeps your Home Score climbing.
+          </p>
+        )}
 
-      <div className="mt-3 flex items-start gap-2 rounded-2xl border border-border bg-secondary/50 p-3">
-        <TrendingUp className="mt-0.5 h-4 w-4 shrink-0 text-growth" />
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          <span className="font-medium text-foreground">
-            Update your home. Improve your Home Score.
-          </span>{" "}
-          The more we know, the smarter your recommendations.
-        </p>
-      </div>
-
-      {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}
-
-      <div className="mt-4 inline-flex rounded-full border border-border p-1 text-xs">
-        <button
-          onClick={() => setTab("systems")}
-          className={`rounded-full px-3 py-1.5 font-medium transition ${
-            tab === "systems" ? "bg-secondary text-foreground" : "text-muted-foreground"
-          }`}
-        >
-          Systems{items.length > 0 ? ` (${items.length})` : ""}
-        </button>
-        <button
-          onClick={() => setTab("seasonal")}
-          className={`rounded-full px-3 py-1.5 font-medium transition ${
-            tab === "seasonal" ? "bg-secondary text-foreground" : "text-muted-foreground"
-          }`}
-        >
-          Routine upkeep{seasonalDue > 0 ? ` (${seasonalDue})` : ""}
-        </button>
-      </div>
 
       {tab === "systems" ? (
         hasSystems ? (
@@ -261,6 +313,7 @@ export function HomeCarePanel() {
           </p>
         </>
       )}
+      </div>
 
       {markItem && (
         <MarkComponentDoneDialog
@@ -271,4 +324,5 @@ export function HomeCarePanel() {
       )}
     </div>
   );
+
 }
