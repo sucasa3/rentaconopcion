@@ -12,29 +12,45 @@ import {
   CheckCircle2,
   Clock,
   CheckSquare,
-  TrendingUp,
   RotateCw,
+  HeartPulse,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { buildMaintenanceTimeline, type TimelineItem } from "@/lib/maintenance-rules";
 import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
+import { SectionHero, type HeroChip, type HeroTone } from "@/components/section-hero";
+import { listInspectionFindings } from "@/lib/inspection.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 type Tab = "systems" | "seasonal";
 
-export function HomeCarePanel() {
+export function HomeCarePanel({
+  onGoToDocuments,
+}: {
+  onGoToDocuments?: () => void;
+}) {
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const logService = useServerFn(logComponentService);
+  const fetchFindings = useServerFn(listInspectionFindings);
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [markItem, setMarkItem] = useState<TimelineItem | null>(null);
   const [tab, setTab] = useState<Tab>("systems");
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const { intel: okIntel, isLoading } = useHomeIntel();
+
+  const { data: findings } = useQuery({
+    queryKey: ["inspection-findings"],
+    queryFn: () => fetchFindings({ data: {} }),
+    staleTime: 5 * 60_000,
+  });
+
+
 
 
   const { data: serviceLog } = useQuery({
