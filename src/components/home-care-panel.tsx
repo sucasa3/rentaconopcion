@@ -10,7 +10,6 @@ import {
   Wrench,
   AlertTriangle,
   CheckCircle2,
-  Clock,
   CheckSquare,
   RotateCw,
   HeartPulse,
@@ -26,7 +25,6 @@ import { listInspectionFindings } from "@/lib/inspection.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-type Tab = "systems" | "seasonal";
 
 export function HomeCarePanel({
   onGoToDocuments,
