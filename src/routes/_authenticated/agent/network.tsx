@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { BusinessShell } from "@/components/business-shell";
+import { AgentCreditsCard } from "@/components/agent-credits-card";
 import {
   endSponsorship,
   getAgentNetwork,
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/agent/network")({
   component: AgentNetwork,
 });
 
-type Tab = "intros" | "campaigns" | "connections" | "sponsorships";
+type Tab = "intros" | "campaigns" | "connections" | "sponsorships" | "credits";
 
 function AgentNetwork() {
   const orgsFn = useServerFn(listMyOrgs);
