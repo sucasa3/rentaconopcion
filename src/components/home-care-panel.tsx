@@ -271,10 +271,10 @@ export function HomeCarePanel({
                     </div>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-12">
-                    {row.kind === "system" ? (
+                    {row.kind === "system" && row.item ? (
                       <>
                         <button
-                          onClick={() => setMarkItem(row.item)}
+                          onClick={() => setMarkItem(row.item!)}
                           className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
                         >
                           <CheckSquare className="h-3 w-3" />
@@ -286,6 +286,7 @@ export function HomeCarePanel({
                             search={{
                               category: toCategorySlug(row.item.category ?? row.item.label),
                             }}
+
                             className="rounded-full border border-border px-3 py-1.5 text-[11px] font-medium hover:bg-secondary"
                           >
                             Get quotes
