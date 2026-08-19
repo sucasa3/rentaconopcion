@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LenderIntroductionsPanel } from "@/components/lender-introductions-panel";
 import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
+import { LenderAgentSponsorDialog } from "@/components/lender-agent-sponsor-dialog";
 import { LenderCampaignProposalsPanel } from "@/components/lender-campaign-proposals-panel";
 import {
   getLenderNetwork,
@@ -13,7 +14,7 @@ import {
   requestIntroduction,
 } from "@/lib/network.functions";
 import { categoryLabel, strengthLabel } from "@/lib/opportunities";
-import { ChevronRight, Handshake, Lock, Mail, MapPin, Users } from "lucide-react";
+import { ChevronRight, Gift, Handshake, Lock, Mail, MapPin, Users } from "lucide-react";
 
 /**
  * The full agent-network workspace (agents, introductions, co-branded campaigns,
@@ -185,6 +186,7 @@ function AgentCard({
 }) {
   const connected = agent.status === "connected" && agent.agent_org_id;
   const categories = Object.entries(agent.by_category ?? {}) as [string, number][];
+  const [sponsorOpen, setSponsorOpen] = useState(false);
 
   return (
     <div className="rounded-3xl border border-border bg-card shadow-soft">
@@ -222,6 +224,25 @@ function AgentCard({
           />
         )}
       </button>
+
+      {connected && (
+        <div className="px-5 pb-4">
+          <button
+            type="button"
+            onClick={() => setSponsorOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold"
+          >
+            <Gift className="h-3.5 w-3.5" /> Sponsor homeowner profiles
+          </button>
+          <LenderAgentSponsorDialog
+            lenderOrgId={lenderOrgId}
+            agentOrgId={agent.agent_org_id}
+            agentName={agent.agent_org_name}
+            open={sponsorOpen}
+            onOpenChange={setSponsorOpen}
+          />
+        </div>
+      )}
 
       {open && connected && (
         <OpportunityList lenderOrgId={lenderOrgId} agentOrgId={agent.agent_org_id} />

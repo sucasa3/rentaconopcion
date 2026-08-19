@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { BusinessShell } from "@/components/business-shell";
+import { AgentCreditsCard } from "@/components/agent-credits-card";
 import {
   endSponsorship,
   getAgentNetwork,
@@ -41,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/agent/network")({
   component: AgentNetwork,
 });
 
-type Tab = "intros" | "campaigns" | "connections" | "sponsorships";
+type Tab = "intros" | "campaigns" | "connections" | "sponsorships" | "credits";
 
 function AgentNetwork() {
   const orgsFn = useServerFn(listMyOrgs);
@@ -122,12 +123,22 @@ function AgentNetwork() {
                   onClick={() => setTab("sponsorships")}
                   label="Sponsorships"
                 />
+                <TabButton
+                  active={tab === "credits"}
+                  onClick={() => setTab("credits")}
+                  label="Credits"
+                />
               </nav>
 
               {tab === "intros" && <Introductions orgId={activeOrgId} rows={intros?.requests ?? []} />}
               {tab === "campaigns" && <CampaignApprovals orgId={activeOrgId} />}
               {tab === "connections" && <Connections agentOrgId={activeOrgId} />}
               {tab === "sponsorships" && <Sponsorships orgId={activeOrgId} />}
+              {tab === "credits" && (
+                <div className="py-4">
+                  <AgentCreditsCard orgId={activeOrgId} />
+                </div>
+              )}
             </>
           )}
         </div>

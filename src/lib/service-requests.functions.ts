@@ -33,6 +33,11 @@ export const logExternalService = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+
+    // A service request on a home an agent tracks earns that agent credits.
+    const { awardForHomeowner } = await import("./credits.server");
+    await awardForHomeowner(userId, "service_request", row.id as string);
+
     return row;
   });
 

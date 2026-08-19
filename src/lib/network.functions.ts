@@ -163,7 +163,7 @@ export const respondToIntroduction = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: req, error: readErr } = await context.supabase
       .from("introduction_requests")
-      .select("id, agent_org_id, status")
+      .select("id, agent_org_id, portfolio_client_id, status")
       .eq("id", data.requestId)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
@@ -179,6 +179,16 @@ export const respondToIntroduction = createServerFn({ method: "POST" })
       })
       .eq("id", data.requestId);
     if (error) throw new Error(error.message);
+
+    if (data.approve && req.portfolio_client_id) {
+      const { awardAgentCredit } = await import("./credits.server");
+      await awardAgentCredit(
+        req.agent_org_id,
+        req.portfolio_client_id,
+        "lender_engaged",
+        data.requestId,
+      );
+    }
     return { id: data.requestId, status: data.approve ? "approved" : "declined" };
   });
 

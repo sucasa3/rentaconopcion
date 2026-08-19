@@ -63,8 +63,14 @@ function AddAgentClient() {
   const ingest = useMutation({
     mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
     onSuccess: (r: any) => {
-      toast.success(`Imported ${r.inserted} homeowner${r.inserted === 1 ? "" : "s"}`);
+      toast.success(`Imported ${r.inserted} homeowner${r.inserted === 1 ? "" : "s"}`, {
+        description:
+          r.skipped > 0
+            ? `${r.skipped} held back — you're out of homeowner credits. Earn more or unlock extra capacity.`
+            : undefined,
+      });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
+      qc.invalidateQueries({ queryKey: ["agent-credits"] });
     },
     onError: (e: any) => toast.error(e.message),
   });

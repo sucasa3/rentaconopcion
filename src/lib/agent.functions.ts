@@ -1393,6 +1393,13 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await agentOrgIds(context.supabase, context.userId);
+    const { remainingCreditsForPortfolio } = await import("./credits-stats.server");
+    const remaining = await remainingCreditsForPortfolio(context.supabase, data.portfolioId);
+    if (remaining != null && remaining <= 0) {
+      throw new Error(
+        "You're out of homeowner credits. Earn more by activating clients, or unlock 100 more homeowners.",
+      );
+    }
     const { data: row, error } = await context.supabase
       .from("lender_portfolio_clients")
       .insert({
@@ -1426,8 +1433,19 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await agentOrgIds(context.supabase, context.userId);
     const { parseClientCsv } = await import("./lender.server");
-    const rows = parseClientCsv(data.csv);
-    if (rows.length === 0) return { inserted: 0 };
+    const parsed = parseClientCsv(data.csv);
+    if (parsed.length === 0) return { inserted: 0, skipped: 0, remaining: null };
+
+    // Import up to the remaining balance and say plainly what was held back.
+    const { remainingCreditsForPortfolio } = await import("./credits-stats.server");
+    const remaining = await remainingCreditsForPortfolio(context.supabase, data.portfolioId);
+    const rows = remaining == null ? parsed : parsed.slice(0, Math.max(0, remaining));
+    const skipped = parsed.length - rows.length;
+    if (rows.length === 0) {
+      throw new Error(
+        `You're out of homeowner credits, so none of these ${parsed.length} rows were imported. Unlock more homeowner connections to continue.`,
+      );
+    }
 
     const payload = rows.map((r) => ({
       portfolio_id: data.portfolioId,
@@ -1441,5 +1459,10 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     }));
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
-    return { inserted: rows.length };
+    return {
+      inserted: rows.length,
+      skipped,
+      remaining: remaining == null ? null : Math.max(0, remaining - rows.length),
+    };
   });
+

@@ -299,7 +299,26 @@ export async function persistPortfolioOpportunities(
         .upsert(rows.slice(i, i + 200), { onConflict: "portfolio_client_id,category" });
       if (error) throw new Error(error.message);
     }
+
+    // Finding an opportunity on an agent's homeowner earns that agent credits,
+    // once per client per category. Never blocks the compute.
+    try {
+      const { data: org } = await supabase
+        .from("lender_orgs")
+        .select("org_type")
+        .eq("id", orgId)
+        .maybeSingle();
+      if ((org as any)?.org_type === "agent") {
+        const { awardAgentCredit } = await import("./credits.server");
+        for (const r of rows) {
+          await awardAgentCredit(orgId, r.portfolio_client_id, "opportunity", r.category);
+        }
+      }
+    } catch {
+      /* credits are never allowed to break enrichment */
+    }
   }
+
 
   // Retire opportunities that no longer hold, but never delete history where
   // an introduction was already made.
