@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Big number tile used across the business dashboards. */
@@ -35,8 +36,9 @@ export function StatCard({
   const body = (
     <div
       className={cn(
-        "rounded-3xl border border-border/70 p-4 shadow-soft transition active:scale-[0.99]",
+        "h-full rounded-3xl border border-border/70 p-4 shadow-soft transition active:scale-[0.99]",
         toneRing[tone],
+        to && "cursor-pointer hover:-translate-y-0.5 hover:shadow-lg",
       )}
     >
       <div className="flex items-center justify-between">
@@ -45,18 +47,28 @@ export function StatCard({
         </span>
         {icon && <span className="text-muted-foreground">{icon}</span>}
       </div>
-      <p className={cn("mt-2 text-3xl font-semibold tracking-tight tabular-nums", toneText[tone])}>
-        {value}
-      </p>
+      <div className="mt-2 flex items-end justify-between gap-2">
+        <p className={cn("text-3xl font-semibold tracking-tight tabular-nums", toneText[tone])}>
+          {value}
+        </p>
+        {to && <ChevronRight className="mb-1 h-4 w-4 shrink-0 text-muted-foreground" />}
+      </div>
     </div>
   );
   if (!to) return body;
   return (
-    <Link to={to} params={params as never} search={search as never} className="block">
+    <Link
+      to={to}
+      params={params as never}
+      search={search as never}
+      aria-label={`${label}: ${typeof value === "number" || typeof value === "string" ? value : ""}`}
+      className="block rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+    >
       {body}
     </Link>
   );
 }
+
 
 export function StatusPill({
   children,

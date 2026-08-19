@@ -69,8 +69,11 @@ function SourceBadge({ source }: { source?: string }) {
 }
 
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
-  validateSearch: (s: Record<string, unknown>): { client?: string } =>
-    typeof s.client === "string" ? { client: s.client } : {},
+  validateSearch: (s: Record<string, unknown>): { client?: string; status?: "activated" } => ({
+    ...(typeof s.client === "string" ? { client: s.client } : {}),
+    ...(s.status === "activated" ? { status: "activated" as const } : {}),
+  }),
+
   head: () => ({
     meta: [
       { title: "Sphere intelligence — SuCasa Agent" },
@@ -285,7 +288,7 @@ const PAGE_SIZE = 25;
 
 function AgentPortfolio() {
   const { id } = Route.useParams();
-  const { client: clientParam } = Route.useSearch();
+  const { client: clientParam, status: statusParam } = Route.useSearch();
   const getFn = useServerFn(getAgentPortfolio);
   const enrichFn = useServerFn(enrichAgentPortfolio);
   const listingFn = useServerFn(setListingStatus);
@@ -428,6 +431,7 @@ function AgentPortfolio() {
     if (!data) return [];
     const q = search.trim().toLowerCase();
     return data.clients.filter((c: any) => {
+      if (statusParam === "activated" && !c.linked) return false;
       if (band !== "all" && c.band !== band) return false;
       if (!q) return true;
       return (
@@ -437,7 +441,8 @@ function AgentPortfolio() {
         (c.zip ?? "").toLowerCase().includes(q)
       );
     });
-  }, [data, band, search]);
+  }, [data, band, search, statusParam]);
+
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);

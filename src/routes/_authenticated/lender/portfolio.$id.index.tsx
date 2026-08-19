@@ -24,8 +24,11 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/")({
+  validateSearch: (s: Record<string, unknown>): { status?: "activated" } =>
+    s.status === "activated" ? { status: "activated" as const } : {},
   component: PortfolioDetail,
 });
+
 
 
 function money(cents: number | null | undefined) {
@@ -62,8 +65,10 @@ const PAGE_SIZE = 25;
 
 function PortfolioDetail() {
   const { id } = Route.useParams();
+  const { status: statusParam } = Route.useSearch();
   const getFn = useServerFn(getPortfolio);
   const enrichFn = useServerFn(enrichPortfolioFromAttom);
+
   const qc = useQueryClient();
 
   const [benchmark, setBenchmark] = useState<number>(6.25);
@@ -102,7 +107,9 @@ function PortfolioDetail() {
     if (!data) return [];
     const q = search.trim().toLowerCase();
     const rows = data.clients.filter((c: any) => {
+      if (statusParam === "activated" && c.consent_state === "cold-lead") return false;
       if (segment !== "all" && c.segment !== segment) return false;
+
       if (!q) return true;
       return (
         (c.full_name ?? "").toLowerCase().includes(q) ||
@@ -132,7 +139,7 @@ function PortfolioDetail() {
       if (eb !== ea) return eb - ea;
       return (a.full_name ?? "").localeCompare(b.full_name ?? "");
     });
-  }, [data, segment, search]);
+  }, [data, segment, search, statusParam]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
