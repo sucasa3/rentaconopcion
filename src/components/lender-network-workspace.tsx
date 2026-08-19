@@ -14,7 +14,7 @@ import {
   requestIntroduction,
 } from "@/lib/network.functions";
 import { categoryLabel, strengthLabel } from "@/lib/opportunities";
-import { ChevronRight, Handshake, Lock, Mail, MapPin, Users } from "lucide-react";
+import { ChevronRight, Gift, Handshake, Lock, Mail, MapPin, Users } from "lucide-react";
 
 /**
  * The full agent-network workspace (agents, introductions, co-branded campaigns,
