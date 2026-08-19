@@ -158,6 +158,7 @@ export function HomeCarePanel({
   const visibleRows = showAll ? rows : rows.slice(0, defaultVisible);
   const hiddenCount = rows.length - visibleRows.length;
 
+  const chips: HeroChip[] = [];
 
   if (overdue.length > 0) chips.push({ label: `${overdue.length} overdue`, tone: "urgent" });
   if (dueSoon.length > 0) chips.push({ label: `${dueSoon.length} due soon`, tone: "warn" });
