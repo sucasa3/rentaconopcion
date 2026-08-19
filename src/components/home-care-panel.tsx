@@ -39,7 +39,7 @@ export function HomeCarePanel({
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [markItem, setMarkItem] = useState<TimelineItem | null>(null);
-  const [tab, setTab] = useState<Tab>("systems");
+  const [showAll, setShowAll] = useState(false);
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const { intel: okIntel, isLoading } = useHomeIntel();
