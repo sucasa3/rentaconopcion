@@ -56,3 +56,19 @@ export async function agentBookStats(supabase: any, orgId: string): Promise<Book
     engagedLast30d: engaged ?? 0,
   };
 }
+
+/** Remaining homeowner credits for the org that owns this book (null = not an agent org). */
+export async function remainingCreditsForPortfolio(
+  supabase: any,
+  portfolioId: string,
+): Promise<number | null> {
+  const { data: portfolio } = await supabase
+    .from("lender_portfolios")
+    .select("lender_org_id, lender_orgs(org_type)")
+    .eq("id", portfolioId)
+    .maybeSingle();
+  if ((portfolio as any)?.lender_orgs?.org_type !== "agent") return null;
+  const { creditBalance } = await import("./credits.server");
+  const balance = await creditBalance(supabase, (portfolio as any).lender_org_id);
+  return balance.remaining;
+}
