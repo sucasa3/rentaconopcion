@@ -1438,6 +1438,62 @@ export type Database = {
           },
         ]
       }
+      lender_member_profiles: {
+        Row: {
+          contact_name: string | null
+          contact_phone: string | null
+          contact_title: string | null
+          created_at: string
+          id: string
+          lender_org_id: string
+          license_number: string | null
+          logo_url: string | null
+          reply_to_email: string | null
+          sender_name: string | null
+          signoff: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_title?: string | null
+          created_at?: string
+          id?: string
+          lender_org_id: string
+          license_number?: string | null
+          logo_url?: string | null
+          reply_to_email?: string | null
+          sender_name?: string | null
+          signoff?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_title?: string | null
+          created_at?: string
+          id?: string
+          lender_org_id?: string
+          license_number?: string | null
+          logo_url?: string | null
+          reply_to_email?: string | null
+          sender_name?: string | null
+          signoff?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_member_profiles_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lender_members: {
         Row: {
           created_at: string
@@ -2423,6 +2479,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_lender_manager: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_lender_member: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       is_request_assigned_pro: {
