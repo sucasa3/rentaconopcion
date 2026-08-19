@@ -69,8 +69,11 @@ function SourceBadge({ source }: { source?: string }) {
 }
 
 export const Route = createFileRoute("/_authenticated/agent/portfolio/$id")({
-  validateSearch: (s: Record<string, unknown>): { client?: string } =>
-    typeof s.client === "string" ? { client: s.client } : {},
+  validateSearch: (s: Record<string, unknown>): { client?: string; status?: "activated" } => ({
+    ...(typeof s.client === "string" ? { client: s.client } : {}),
+    ...(s.status === "activated" ? { status: "activated" as const } : {}),
+  }),
+
   head: () => ({
     meta: [
       { title: "Sphere intelligence — SuCasa Agent" },
