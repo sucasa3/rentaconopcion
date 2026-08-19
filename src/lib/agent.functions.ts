@@ -1393,6 +1393,12 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await agentOrgIds(context.supabase, context.userId);
+    const remaining = await remainingCreditsForPortfolio(context.supabase, data.portfolioId);
+    if (remaining != null && remaining <= 0) {
+      throw new Error(
+        "You're out of homeowner credits. Earn more by activating clients, or unlock 100 more homeowners.",
+      );
+    }
     const { data: row, error } = await context.supabase
       .from("lender_portfolio_clients")
       .insert({
@@ -1412,6 +1418,22 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
     return { ok: true, id: row.id as string };
   });
 
+/** Remaining homeowner credits for the org that owns this book (null = not an agent org). */
+async function remainingCreditsForPortfolio(
+  supabase: any,
+  portfolioId: string,
+): Promise<number | null> {
+  const { data: portfolio } = await supabase
+    .from("lender_portfolios")
+    .select("lender_org_id, lender_orgs(org_type)")
+    .eq("id", portfolioId)
+    .maybeSingle();
+  if ((portfolio as any)?.lender_orgs?.org_type !== "agent") return null;
+  const { creditBalance } = await import("./credits.server");
+  const balance = await creditBalance(supabase, (portfolio as any).lender_org_id);
+  return balance.remaining;
+}
+
 // Bulk-add homeowners to an agent's sphere from a CSV/Excel upload.
 export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1426,8 +1448,18 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await agentOrgIds(context.supabase, context.userId);
     const { parseClientCsv } = await import("./lender.server");
-    const rows = parseClientCsv(data.csv);
-    if (rows.length === 0) return { inserted: 0 };
+    const parsed = parseClientCsv(data.csv);
+    if (parsed.length === 0) return { inserted: 0, skipped: 0, remaining: null };
+
+    // Import up to the remaining balance and say plainly what was held back.
+    const remaining = await remainingCreditsForPortfolio(context.supabase, data.portfolioId);
+    const rows = remaining == null ? parsed : parsed.slice(0, Math.max(0, remaining));
+    const skipped = parsed.length - rows.length;
+    if (rows.length === 0) {
+      throw new Error(
+        `You're out of homeowner credits, so none of these ${parsed.length} rows were imported. Unlock more homeowner connections to continue.`,
+      );
+    }
 
     const payload = rows.map((r) => ({
       portfolio_id: data.portfolioId,
@@ -1441,5 +1473,10 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     }));
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
-    return { inserted: rows.length };
+    return {
+      inserted: rows.length,
+      skipped,
+      remaining: remaining == null ? null : Math.max(0, remaining - rows.length),
+    };
   });
+
