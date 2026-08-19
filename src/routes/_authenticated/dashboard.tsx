@@ -256,116 +256,100 @@ function Dashboard() {
           <NextStepHero
             step={nextStep}
             completeness={completeness}
-            onGoToTab={(t) => {
-              setTab(t);
-              document
-                .getElementById("dash-tabs")
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
+            onGoToTab={(t) => setTab(t)}
           />
 
-          <div id="dash-tabs" className="scroll-mt-20">
-            <Tabs value={tab ?? "home"} onValueChange={(v) => setTab(v as "home" | "care" | "documents")}>
-              <TabsList className="grid w-full grid-cols-3 rounded-2xl bg-secondary p-1">
+          {/* ------------------------------------------- What your home needs */}
+          <section id="sec-care" className="scroll-mt-20 space-y-6">
+            <HomeCarePanel onGoToDocuments={() => setTab("documents")} />
+            <RecommendedProsCard />
+          </section>
 
-                <TabsTrigger value="home">Home</TabsTrigger>
-                <TabsTrigger value="care">Home care</TabsTrigger>
-                <TabsTrigger value="documents">Documents</TabsTrigger>
-              </TabsList>
+          {/* ------------------------------------------------- Your paperwork */}
+          <section id="sec-documents" className="scroll-mt-20 space-y-6">
+            <DocumentsCard onGoToCare={() => setTab("care")} />
+            <InspectionFindingsPanel />
+          </section>
 
-              {/* -------------------------------------------------- Home */}
-              <TabsContent value="home" className="mt-4 space-y-6">
-                {!recordLoading && record && report && (
-                  <HomeSignalsPanel
-                    signals={report.signals}
-                    record={record}
-                    onGoToTab={(t) => setTab(t)}
-                  />
-                )}
-                <HomeIntelPanel />
-                <EquityMortgagePanel />
+          {/* ---------------------------------------------- Your home's numbers */}
+          <section id="sec-home" className="scroll-mt-20 space-y-6">
+            {!recordLoading && record && report && (
+              <HomeSignalsPanel
+                signals={report.signals}
+                record={record}
+                onGoToTab={(t) => setTab(t)}
+              />
+            )}
+            <HomeIntelPanel />
+            <EquityMortgagePanel />
 
-                <div className="grid gap-4 lg:grid-cols-3">
-                  <HomeAssistantCard />
+            <div className="grid gap-4 lg:grid-cols-3">
+              <HomeAssistantCard />
 
-                  <Card className="lg:col-span-2">
-                    <CardHeader
-                      title="Recent service requests"
-                      action={
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => setLogOpen(true)}
-                            className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
-                          >
-                            <PenLine className="h-3 w-3" /> Log outside service
-                          </button>
-                          <Link to="/request" className="text-xs font-medium text-primary">New request</Link>
-                        </div>
-                      }
-                    />
-                    <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
-                      {requests.length === 0 ? (
-                        <p className="p-4 text-xs text-muted-foreground">
-                          No requests yet. Start one from your next step above, or log work you had done elsewhere.
-                        </p>
-                      ) : (
-                        requests.map(r => (
-                          <Link
-                            key={r.id}
-                            to="/requests/$id"
-                            params={{ id: r.id }}
-                            className="flex items-center justify-between gap-3 p-4 transition hover:bg-secondary/60"
-                          >
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium">
-                                {r.category} <span className="text-muted-foreground">· {r.id.slice(0, 8)}</span>
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {r.vendorName ? `${r.vendorName} · ` : ""}{r.when}
-                                {typeof r.amountCents === "number" ? ` · $${(r.amountCents / 100).toLocaleString()}` : ""}
-                              </p>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-1.5">
-                              {r.source === "external" && (
-                                <span className="rounded-full border border-border bg-secondary px-2 py-1 text-[10px] font-medium text-muted-foreground">External</span>
-                              )}
-                              <StatusPill status={r.status} />
-                            </div>
-                          </Link>
-                        ))
-                      )}
+              <Card className="lg:col-span-2">
+                <CardHeader
+                  title="Recent service requests"
+                  action={
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setLogOpen(true)}
+                        className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-secondary"
+                      >
+                        <PenLine className="h-3 w-3" /> Log outside service
+                      </button>
+                      <Link to="/request" className="text-xs font-medium text-primary">New request</Link>
                     </div>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      Track work done outside SuCasa to build your full home history.
+                  }
+                />
+                <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
+                  {requests.length === 0 ? (
+                    <p className="p-4 text-xs text-muted-foreground">
+                      No requests yet. Start one from your next step above, or log work you had done elsewhere.
                     </p>
-                  </Card>
-
-                  <Card className="lg:col-span-3">
-                    <CardHeader title="Home Intelligence Report" />
-                    <p className="mt-2 text-sm text-muted-foreground">Your monthly deep-dive on value, equity, and improvement ROI.</p>
-                    <Link to="/report" className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full gradient-growth px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">
-                      View report <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Card>
+                  ) : (
+                    requests.map(r => (
+                      <Link
+                        key={r.id}
+                        to="/requests/$id"
+                        params={{ id: r.id }}
+                        className="flex items-center justify-between gap-3 p-4 transition hover:bg-secondary/60"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {r.category} <span className="text-muted-foreground">· {r.id.slice(0, 8)}</span>
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {r.vendorName ? `${r.vendorName} · ` : ""}{r.when}
+                            {typeof r.amountCents === "number" ? ` · $${(r.amountCents / 100).toLocaleString()}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {r.source === "external" && (
+                            <span className="rounded-full border border-border bg-secondary px-2 py-1 text-[10px] font-medium text-muted-foreground">External</span>
+                          )}
+                          <StatusPill status={r.status} />
+                        </div>
+                      </Link>
+                    ))
+                  )}
                 </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Track work done outside SuCasa to build your full home history.
+                </p>
+              </Card>
 
-                <SellerIntentCard />
-              </TabsContent>
+              <Card className="lg:col-span-3">
+                <CardHeader title="Home Intelligence Report" />
+                <p className="mt-2 text-sm text-muted-foreground">Your monthly deep-dive on value, equity, and improvement ROI.</p>
+                <Link to="/report" className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-full gradient-growth px-4 py-2.5 text-sm font-semibold text-white sm:w-auto">
+                  View report <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Card>
+            </div>
 
-              {/* -------------------------------------------------- Care */}
-              <TabsContent value="care" className="mt-4 space-y-6">
-                <HomeCarePanel onGoToDocuments={() => setTab("documents")} />
-                <RecommendedProsCard />
-              </TabsContent>
+            <SellerIntentCard />
+          </section>
 
-              {/* --------------------------------------------- Documents */}
-              <TabsContent value="documents" className="mt-4 space-y-6">
-                <DocumentsCard onGoToCare={() => setTab("care")} />
-
-                <InspectionFindingsPanel />
-              </TabsContent>
-            </Tabs>
-          </div>
 
           <LogExternalServiceDialog
             open={logOpen}
