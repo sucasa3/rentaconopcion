@@ -22,7 +22,7 @@ import {
 
 } from "@/lib/agent.functions";
 import { useAutoEnrich } from "@/hooks/use-auto-enrich";
-import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
+import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import {
   ArrowLeft,
   Search,
