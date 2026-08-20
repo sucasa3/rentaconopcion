@@ -3,11 +3,15 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, HeartPulse, FileText, Wrench, BarChart3 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
+import { useT, type TranslationKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 
 interface Item {
-  label: string;
+  key: string;
+  labelKey: TranslationKey;
+  /** Wider desktop label when the tab bar abbreviates. */
+  longLabelKey?: TranslationKey;
   to: string;
   search?: Record<string, string>;
   icon: ReactNode;
@@ -16,31 +20,37 @@ interface Item {
 
 const ITEMS: Item[] = [
   {
-    label: "Home",
+    key: "home",
+    labelKey: "nav.home",
     to: "/dashboard",
     icon: <Home className="h-5 w-5" />,
     match: (p) => p === "/dashboard",
   },
   {
-    label: "To do",
+    key: "todo",
+    labelKey: "nav.todo",
     to: "/home-care",
     icon: <HeartPulse className="h-5 w-5" />,
     match: (p) => p.startsWith("/home-care"),
   },
   {
-    label: "Docs",
+    key: "docs",
+    labelKey: "nav.docs",
+    longLabelKey: "nav.documents",
     to: "/documents",
     icon: <FileText className="h-5 w-5" />,
     match: (p) => p.startsWith("/documents"),
   },
   {
-    label: "Services",
+    key: "services",
+    labelKey: "nav.services",
     to: "/request",
     icon: <Wrench className="h-5 w-5" />,
     match: (p) => p.startsWith("/request") || p.startsWith("/services"),
   },
   {
-    label: "Report",
+    key: "report",
+    labelKey: "nav.report",
     to: "/report",
     icon: <BarChart3 className="h-5 w-5" />,
     match: (p) => p.startsWith("/report"),
@@ -57,6 +67,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
   const tab = useRouterState({
     select: (s) => (s.location.search as { tab?: string } | undefined)?.tab,
   });
+  const t = useT();
 
 
 
@@ -70,7 +81,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
           <nav className="flex flex-1 flex-col gap-1">
             {ITEMS.map((i) => (
               <Link
-                key={i.label}
+                key={i.key}
                 to={i.to as never}
                 search={i.search as never}
                 className={cn(
@@ -81,7 +92,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
                 )}
               >
                 {i.icon}
-                {i.label === "Docs" ? "Documents" : i.label}
+                {t(i.longLabelKey ?? i.labelKey)}
               </Link>
             ))}
           </nav>
@@ -101,7 +112,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
         <div className="flex items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
           {ITEMS.map((i) => (
             <Link
-              key={i.label}
+              key={i.key}
               to={i.to as never}
               search={i.search as never}
               className={cn(
@@ -110,7 +121,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
               )}
             >
               {i.icon}
-              {i.label}
+              {t(i.labelKey)}
             </Link>
           ))}
         </div>

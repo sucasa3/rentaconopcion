@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeCarePanel } from "@/components/home-care-panel";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/home-care")({
 });
 
 function HomeCarePage() {
+  const t = useT();
   const navigate = useNavigate();
   return (
     <HomeownerShell>
@@ -38,7 +40,7 @@ function HomeCarePage() {
             to="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to your home
+            <ArrowLeft className="h-4 w-4" /> {t("common.back_home")}
           </Link>
 
           <HomeCarePanel onGoToDocuments={() => navigate({ to: "/documents" })} />

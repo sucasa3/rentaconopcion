@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { DocumentsCard } from "@/components/documents-card";
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
 });
 
 function DocumentsPage() {
+  const t = useT();
   const navigate = useNavigate();
   return (
     <HomeownerShell>
@@ -37,7 +39,7 @@ function DocumentsPage() {
             to="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to your home
+            <ArrowLeft className="h-4 w-4" /> {t("common.back_home")}
           </Link>
 
           <DocumentsCard onGoToCare={() => navigate({ to: "/home-care" })} />

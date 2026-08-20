@@ -14,21 +14,23 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 export type AccountRole = "homeowner" | "agent" | "lender";
 
-const ROLE_LABEL: Record<AccountRole, string> = {
-  homeowner: "Homeowner",
-  agent: "Agent",
-  lender: "Lender",
+const ROLE_LABEL_KEY: Record<AccountRole, TranslationKey> = {
+  homeowner: "account.role.homeowner",
+  agent: "account.role.agent",
+  lender: "account.role.lender",
 };
 
-function displayName(user: User | null) {
+function displayName(user: User | null, fallback: string) {
   const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
   const full = (meta.full_name ?? meta.name) as string | undefined;
   if (full) return full;
   const email = user?.email ?? "";
-  return email ? email.split("@")[0] : "Your account";
+  return email ? email.split("@")[0] : fallback;
 }
 
 function initials(name: string) {
@@ -65,7 +67,8 @@ export function AccountMenu({
     };
   }, []);
 
-  const name = displayName(user);
+  const t = useT();
+  const name = displayName(user, t("account.fallback_name"));
 
   // Some homeowners are also agents/lenders — offer a way back to their business area.
   const { data: workspace } = useQuery({
@@ -77,10 +80,10 @@ export function AccountMenu({
   const businessHome =
     workspace && workspace.home !== "/dashboard" ? workspace.home : null;
   const businessLabel = workspace?.isAgent
-    ? "Agent dashboard"
+    ? t("account.agent_dashboard")
     : workspace?.isLender
-      ? "Lender dashboard"
-      : "Admin dashboard";
+      ? t("account.lender_dashboard")
+      : t("account.admin_dashboard");
 
   async function signOut() {
     setOpen(false);
@@ -92,7 +95,7 @@ export function AccountMenu({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
-          aria-label="Account"
+          aria-label={t("account.aria")}
           className={cn(
             "flex min-h-11 items-center gap-2 rounded-2xl px-1.5 py-1.5 text-left transition active:scale-95 hover:bg-secondary",
             className,
@@ -105,7 +108,7 @@ export function AccountMenu({
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium text-foreground">{name}</span>
               <span className="block truncate text-xs text-muted-foreground">
-                {ROLE_LABEL[role]}
+                {t(ROLE_LABEL_KEY[role])}
               </span>
             </span>
           )}
@@ -114,7 +117,7 @@ export function AccountMenu({
 
       <SheetContent side="bottom" className="rounded-t-3xl border-border/70 pb-[env(safe-area-inset-bottom)]">
         <SheetHeader className="text-left">
-          <SheetTitle className="sr-only">Account</SheetTitle>
+          <SheetTitle className="sr-only">{t("account.title")}</SheetTitle>
         </SheetHeader>
         <div className="flex items-center gap-3 px-4 pb-2">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
@@ -123,15 +126,15 @@ export function AccountMenu({
           <div className="min-w-0">
             <p className="truncate text-base font-semibold text-foreground">{name}</p>
             <p className="truncate text-sm text-muted-foreground">{user?.email ?? ""}</p>
-            <p className="mt-0.5 text-xs font-medium text-primary">{ROLE_LABEL[role]}</p>
+            <p className="mt-0.5 text-xs font-medium text-primary">{t(ROLE_LABEL_KEY[role])}</p>
           </div>
         </div>
 
         <div className="mt-3 overflow-hidden rounded-2xl border border-border/70 bg-card">
           {role === "homeowner" ? (
-            <Row to="/request" icon={<Wrench className="h-4 w-4" />} label="Request a service" onNavigate={() => setOpen(false)} />
+            <Row to="/request" icon={<Wrench className="h-4 w-4" />} label={t("account.request_service")} onNavigate={() => setOpen(false)} />
           ) : (
-            <Row to="/dashboard" icon={<Home className="h-4 w-4" />} label="My home" onNavigate={() => setOpen(false)} />
+            <Row to="/dashboard" icon={<Home className="h-4 w-4" />} label={t("account.my_home")} onNavigate={() => setOpen(false)} />
           )}
           {role === "homeowner" && businessHome && (
             <Row
@@ -141,7 +144,12 @@ export function AccountMenu({
               onNavigate={() => setOpen(false)}
             />
           )}
-          <Row to="/services" icon={<UserIcon className="h-4 w-4" />} label="Browse services" onNavigate={() => setOpen(false)} />
+          <Row to="/services" icon={<UserIcon className="h-4 w-4" />} label={t("account.browse_services")} onNavigate={() => setOpen(false)} />
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-border/70 bg-card p-3">
+          <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">{t("common.language")}</p>
+          <LanguageSwitcher showIcon={false} />
         </div>
 
         <button
@@ -149,7 +157,7 @@ export function AccountMenu({
           className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm font-medium text-destructive transition active:scale-[0.99]"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t("account.sign_out")}
         </button>
       </SheetContent>
     </Sheet>

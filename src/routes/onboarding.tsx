@@ -6,8 +6,7 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Home } from "lucide-react";
 import { getMyHomeIntel } from "@/lib/property-intel.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { AddressAutocomplete, type AddressValue } from "@/components/address-autocomplete";
-
-
+import { useLanguage, type Language, type TranslationKey } from "@/lib/i18n";
 
 export const Route = createFileRoute("/onboarding")({
   head: () => ({
@@ -20,20 +19,33 @@ export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
 });
 
-const GOALS = [
-  { id: "save", label: "Save money" },
-  { id: "maintenance", label: "Stay on top of maintenance" },
-  { id: "value", label: "Grow home value" },
-  { id: "remodel", label: "Remodel or renovate" },
+const GOALS: { id: string; labelKey: TranslationKey }[] = [
+  { id: "save", labelKey: "ob.goal.save" },
+  { id: "maintenance", labelKey: "ob.goal.maintenance" },
+  { id: "value", labelKey: "ob.goal.value" },
+  { id: "remodel", labelKey: "ob.goal.remodel" },
 ];
 
-const HOME_TYPES = ["Single-family", "Townhouse", "Condo", "Multi-family"];
+const HOME_TYPES: { value: string; labelKey: TranslationKey }[] = [
+  { value: "Single-family", labelKey: "ob.home_type.single" },
+  { value: "Townhouse", labelKey: "ob.home_type.town" },
+  { value: "Condo", labelKey: "ob.home_type.condo" },
+  { value: "Multi-family", labelKey: "ob.home_type.multi" },
+];
+
+const STEP_KEYS: TranslationKey[] = [
+  "ob.step.about",
+  "ob.step.home",
+  "ob.step.goals",
+  "ob.step.review",
+];
 
 function Onboarding() {
   const navigate = useNavigate();
+  const { language, setLanguage, t } = useLanguage();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: "", email: "", phone: "", address: "", city: "", state: "", zip: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[], language: "en" as "en" | "es",
+    name: "", email: "", phone: "", address: "", city: "", state: "", zip: "", homeType: "Single-family", yearBuilt: "", goals: [] as string[],
   });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -60,8 +72,7 @@ function Onboarding() {
 
   const needsAccount = signedIn === false;
 
-  const steps = ["About you", "Your home", "Your goals", "Review"];
-  const total = steps.length;
+  const total = STEP_KEYS.length;
 
   const toggleGoal = (id: string) => setForm(f => ({ ...f, goals: f.goals.includes(id) ? f.goals.filter(g => g !== id) : [...f.goals, id] }));
 
@@ -72,9 +83,9 @@ function Onboarding() {
     setEmailTaken(false);
 
     if (needsAccount) {
-      if (!form.email.trim()) { setError("Enter your email on the first step."); setStep(0); return; }
-      if (password.length < 6) { setError("Choose a password with at least 6 characters."); setStep(0); return; }
-      if (password !== confirmPassword) { setError("Passwords don't match."); setStep(0); return; }
+      if (!form.email.trim()) { setError(t("ob.err.email")); setStep(0); return; }
+      if (password.length < 6) { setError(t("ob.err.password")); setStep(0); return; }
+      if (password !== confirmPassword) { setError(t("ob.err.password_match")); setStep(0); return; }
     }
 
     // Accept a pasted "123 Main St, Roswell, GA 30075" in the street field, but
@@ -86,7 +97,7 @@ function Onboarding() {
     const zip = (m ? (m[4] ?? form.zip.trim()) : form.zip.trim()) || null;
 
     if (street && !((city && state) || zip)) {
-      setError("Add the city and state (or ZIP) for your home so we can pull its property records.");
+      setError(t("ob.err.city_state"));
       setStep(1);
       return;
     }
@@ -107,9 +118,9 @@ function Onboarding() {
           const msg = signUpError.message || "";
           if (/already|registered|exists/i.test(msg)) {
             setEmailTaken(true);
-            setError("An account with this email already exists.");
+            setError(t("ob.err.email_taken"));
           } else {
-            setError(msg || "We couldn't create your account. Please try again.");
+            setError(msg || t("ob.err.generic"));
           }
           setSubmitting(false);
           setStep(0);
@@ -123,7 +134,7 @@ function Onboarding() {
       if (!uid) {
         // Account created but no session yet (email confirmation required).
         setSubmitting(false);
-        setError("Check your email to confirm your account, then sign in to finish your profile.");
+        setError(t("ob.err.confirm_email"));
         return;
       }
 
@@ -134,7 +145,7 @@ function Onboarding() {
         phone: form.phone || null,
         address: street || null,
         city, state, zip,
-        language: form.language,
+        language,
         last_activity_at: new Date().toISOString(),
       }, { onConflict: "id" });
       if (upRes.error) console.log("[onboarding] profile save error", upRes.error.message);
@@ -157,7 +168,7 @@ function Onboarding() {
       }
     } catch (e) {
       console.log("[onboarding] submit error", e);
-      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+      setError(e instanceof Error ? e.message : t("ob.err.unknown"));
       setSubmitting(false);
       return;
     }
@@ -175,8 +186,8 @@ function Onboarding() {
         <div className="mx-auto max-w-xl">
           <div className="mb-6">
             <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
-              <span>Step {step + 1} of {total}</span>
-              <span>{steps[step]}</span>
+              <span>{t("ob.step_of", { current: step + 1, total })}</span>
+              <span>{t(STEP_KEYS[step])}</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div className="h-full gradient-brand transition-all" style={{ width: `${((step + 1) / total) * 100}%` }} />
@@ -186,22 +197,22 @@ function Onboarding() {
           <div className="rounded-3xl border border-border bg-card p-6 shadow-soft sm:p-8">
             {step === 0 && (
               <div className="space-y-4">
-                <Header title="Let’s get to know you" desc="We’ll use this to personalize your Home Profile." />
-                <Field label="Full name"><input className={inputCls} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Jane Doe" /></Field>
-                <Field label="Email"><input type="email" className={inputCls} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="jane@example.com" /></Field>
-                <Field label="Phone"><input type="tel" className={inputCls} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="(555) 123-4567" /></Field>
+                <Header title={t("ob.about.title")} desc={t("ob.about.desc")} />
+                <Field label={t("ob.field.full_name")}><input className={inputCls} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t("ob.ph.name")} /></Field>
+                <Field label={t("ob.field.email")}><input type="email" className={inputCls} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder={t("ob.ph.email")} /></Field>
+                <Field label={t("ob.field.phone")}><input type="tel" className={inputCls} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder={t("ob.ph.phone")} /></Field>
                 {needsAccount && (
                   <>
-                    <Field label="Create a password"><input type="password" autoComplete="new-password" className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" /></Field>
-                    <Field label="Confirm password"><input type="password" autoComplete="new-password" className={inputCls} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" /></Field>
+                    <Field label={t("ob.field.password")}><input type="password" autoComplete="new-password" className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder={t("ob.ph.password")} /></Field>
+                    <Field label={t("ob.field.confirm_password")}><input type="password" autoComplete="new-password" className={inputCls} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder={t("ob.ph.confirm")} /></Field>
                   </>
                 )}
 
-                <Field label="Desired language">
+                <Field label={t("ob.field.language")}>
                   <div className="grid grid-cols-2 gap-2">
-                    {(["en", "es"] as const).map(l => (
-                      <button key={l} type="button" onClick={() => setForm({ ...form, language: l })} className={`rounded-2xl border px-4 py-3 text-sm transition ${form.language === l ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-secondary"}`}>
-                        {l === "en" ? "English" : "Español"}
+                    {(["en", "es"] as Language[]).map(l => (
+                      <button key={l} type="button" onClick={() => { void setLanguage(l); }} className={`rounded-2xl border px-4 py-3 text-sm transition ${language === l ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-secondary"}`}>
+                        {l === "en" ? t("common.english") : t("common.spanish")}
                       </button>
                     ))}
                   </div>
@@ -211,8 +222,8 @@ function Onboarding() {
 
             {step === 1 && (
               <div className="space-y-4">
-                <Header title="About your home" desc="This helps us tailor value and maintenance insights." />
-                <Field label="Home address">
+                <Header title={t("ob.home.title")} desc={t("ob.home.desc")} />
+                <Field label={t("ob.field.address")}>
                   <AddressAutocomplete
                     value={{ street: form.address, city: form.city, state: form.state, zip: form.zip }}
                     onChange={(v: AddressValue) =>
@@ -221,25 +232,25 @@ function Onboarding() {
                   />
                 </Field>
 
-                <Field label="Home type">
+                <Field label={t("ob.field.home_type")}>
                   <div className="grid grid-cols-2 gap-2">
-                    {HOME_TYPES.map(t => (
-                      <button key={t} type="button" onClick={() => setForm({ ...form, homeType: t })} className={`rounded-2xl border px-4 py-3 text-sm transition ${form.homeType === t ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-secondary"}`}>{t}</button>
+                    {HOME_TYPES.map(ht => (
+                      <button key={ht.value} type="button" onClick={() => setForm({ ...form, homeType: ht.value })} className={`rounded-2xl border px-4 py-3 text-sm transition ${form.homeType === ht.value ? "border-primary bg-primary/5 text-primary" : "border-border text-foreground hover:bg-secondary"}`}>{t(ht.labelKey)}</button>
                     ))}
                   </div>
                 </Field>
-                <Field label="Year built"><input inputMode="numeric" className={inputCls} value={form.yearBuilt} onChange={e => setForm({ ...form, yearBuilt: e.target.value })} placeholder="1998" /></Field>
+                <Field label={t("ob.field.year_built")}><input inputMode="numeric" className={inputCls} value={form.yearBuilt} onChange={e => setForm({ ...form, yearBuilt: e.target.value })} placeholder="1998" /></Field>
               </div>
             )}
             {step === 2 && (
               <div className="space-y-4">
-                <Header title="What are your goals?" desc="Pick all that apply." />
+                <Header title={t("ob.goals.title")} desc={t("ob.goals.desc")} />
                 <div className="grid gap-2">
                   {GOALS.map(g => {
                     const active = form.goals.includes(g.id);
                     return (
                       <button key={g.id} type="button" onClick={() => toggleGoal(g.id)} className={`flex items-center justify-between rounded-2xl border px-4 py-4 text-left text-sm transition ${active ? "border-primary bg-primary/5" : "border-border hover:bg-secondary"}`}>
-                        <span className="font-medium">{g.label}</span>
+                        <span className="font-medium">{t(g.labelKey)}</span>
                         {active && <CheckCircle2 className="h-5 w-5 text-primary" />}
                       </button>
                     );
@@ -249,20 +260,20 @@ function Onboarding() {
             )}
             {step === 3 && (
               <div className="space-y-4">
-                <Header title="Review & create profile" desc="Confirm your details to unlock your dashboard." />
+                <Header title={t("ob.review.title")} desc={t("ob.review.desc")} />
                 <div className="rounded-2xl border border-border p-4 text-sm">
-                  <ReviewRow k="Name" v={form.name || "—"} />
-                  <ReviewRow k="Email" v={form.email || "—"} />
-                  <ReviewRow k="Phone" v={form.phone || "—"} />
-                  <ReviewRow k="Address" v={[form.address, form.city, [form.state, form.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "—"} />
-                  <ReviewRow k="Home type" v={form.homeType} />
-                  <ReviewRow k="Year built" v={form.yearBuilt || "—"} />
-                  <ReviewRow k="Goals" v={form.goals.length ? form.goals.map(id => GOALS.find(g => g.id === id)!.label).join(", ") : "—"} />
-                  <ReviewRow k="Language" v={form.language === "es" ? "Español" : "English"} />
+                  <ReviewRow k={t("ob.review.name")} v={form.name || "—"} />
+                  <ReviewRow k={t("ob.review.email")} v={form.email || "—"} />
+                  <ReviewRow k={t("ob.review.phone")} v={form.phone || "—"} />
+                  <ReviewRow k={t("ob.review.address")} v={[form.address, form.city, [form.state, form.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") || "—"} />
+                  <ReviewRow k={t("ob.review.home_type")} v={t(HOME_TYPES.find(h => h.value === form.homeType)?.labelKey ?? "ob.home_type.single")} />
+                  <ReviewRow k={t("ob.review.year_built")} v={form.yearBuilt || "—"} />
+                  <ReviewRow k={t("ob.review.goals")} v={form.goals.length ? form.goals.map(id => t(GOALS.find(g => g.id === id)!.labelKey)).join(", ") : "—"} />
+                  <ReviewRow k={t("ob.review.language")} v={language === "es" ? t("common.spanish") : t("common.english")} />
 
                 </div>
                 <div className="rounded-2xl bg-accent p-4 text-sm text-accent-foreground">
-                  <span className="inline-flex items-center gap-2 font-medium"><Home className="h-4 w-4" /> You're all set—your dashboard is ready.</span>
+                  <span className="inline-flex items-center gap-2 font-medium"><Home className="h-4 w-4" /> {t("ob.review.ready")}</span>
                 </div>
               </div>
             )}
@@ -273,7 +284,7 @@ function Onboarding() {
                 {emailTaken && (
                   <>
                     {" "}
-                    <Link to="/auth" className="font-semibold underline">Sign in instead</Link>
+                    <Link to="/auth" className="font-semibold underline">{t("ob.sign_in_instead")}</Link>
                   </>
                 )}
               </div>
@@ -283,20 +294,20 @@ function Onboarding() {
 
               {step > 0 ? (
                 <button onClick={back} className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium">
-                  <ArrowLeft className="h-4 w-4" /> Back
+                  <ArrowLeft className="h-4 w-4" /> {t("common.back")}
                 </button>
               ) : (
                 <Link to="/" className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium">
-                  <ArrowLeft className="h-4 w-4" /> Home
+                  <ArrowLeft className="h-4 w-4" /> {t("common.home")}
                 </Link>
               )}
               {step < total - 1 ? (
                 <button onClick={next} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft">
-                  Continue <ArrowRight className="h-4 w-4" />
+                  {t("common.continue")} <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button onClick={submit} disabled={submitting} className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-6 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-60">
-                  {submitting ? "Creating…" : "Create Profile"} <ArrowRight className="h-4 w-4" />
+                  {submitting ? t("ob.creating") : t("ob.create_profile")} <ArrowRight className="h-4 w-4" />
                 </button>
               )}
             </div>

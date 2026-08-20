@@ -20,6 +20,7 @@ import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
 import { useHomeIntel } from "@/hooks/use-home-intel";
+import { useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -54,6 +55,7 @@ function money(n: number | null | undefined): string {
 function Dashboard() {
   useLogOnMount("value_viewed");
   const navigate = useNavigate();
+  const t = useT();
 
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
@@ -135,45 +137,50 @@ function Dashboard() {
   };
 
   // ---------------------------------------------------------------- summaries
-  const lateCount = timeline.filter((t) => t.status === "overdue").length;
-  const soonCount = timeline.filter((t) => t.status === "due_soon").length;
-  const topItem = timeline.find((t) => t.status === "overdue") ??
-    timeline.find((t) => t.status === "due_soon") ??
+  const lateCount = timeline.filter((item) => item.status === "overdue").length;
+  const soonCount = timeline.filter((item) => item.status === "due_soon").length;
+  const topItem = timeline.find((item) => item.status === "overdue") ??
+    timeline.find((item) => item.status === "due_soon") ??
     null;
 
   const careHeadline =
     timeline.length === 0
-      ? "Let's start"
+      ? t("dash.care.start")
       : lateCount > 0
-        ? `${lateCount} late`
+        ? t("dash.care.late", { count: lateCount })
         : soonCount > 0
-          ? `${soonCount} coming up`
-          : "All good";
+          ? t("dash.care.coming_up", { count: soonCount })
+          : t("dash.care.all_good");
   const careSentence =
     timeline.length === 0
-      ? "Tell us a little about your home and we'll build your to-do list."
+      ? t("dash.care.empty")
       : topItem
-        ? `Start with your ${topItem.label.toLowerCase()}.`
-        : "Nothing needs you today. We'll tell you when that changes.";
+        ? t("dash.care.start_with", { item: topItem.label.toLowerCase() })
+        : t("dash.care.nothing");
   const careTone = lateCount > 0 ? "urgent" : soonCount > 0 ? "opportunity" : "calm";
 
   const docCount = (docs ?? []).length;
   const findingCount = (findings ?? []).length;
   const hasInspection = (docs ?? []).some((d: any) => d.kind === "inspection");
   const docsSentence = !hasInspection
-    ? "Add your inspection report and we'll turn it into a to-do list."
+    ? t("dash.docs.add_inspection")
     : findingCount > 0
-      ? `We read your inspection report and found ${findingCount} thing${findingCount === 1 ? "" : "s"} to watch.`
-      : "Your paperwork is saved and searchable.";
+      ? findingCount === 1
+        ? t("dash.docs.findings_one")
+        : t("dash.docs.findings_many", { count: findingCount })
+      : t("dash.docs.saved_searchable");
 
   const equityPct = okIntel?.equity?.equityPct ?? null;
   const moneySentence = okIntel?.equity
-    ? `You hold ${money(okIntel.equity.equityDollars)} in equity${
-        equityPct != null ? ` — ${Math.round(equityPct * 100)}% of your home` : ""
-      }.`
+    ? equityPct != null
+      ? t("dash.money.equity_line_pct", {
+          amount: money(okIntel.equity.equityDollars),
+          pct: Math.round(equityPct * 100),
+        })
+      : t("dash.money.equity_line", { amount: money(okIntel.equity.equityDollars) })
     : hasAddress
-      ? "We're still matching your home to public records."
-      : "Add your address and we'll pull your value and equity.";
+      ? t("dash.money.matching")
+      : t("dash.money.add_address");
 
   const needsAddress =
     rawIntel &&
@@ -187,10 +194,10 @@ function Dashboard() {
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                Welcome back
+                {t("dash.welcome_back")}
               </p>
               <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">
-                {firstName ?? "Your home"}
+                {firstName ?? t("dash.your_home")}
               </h1>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -211,7 +218,7 @@ function Dashboard() {
                 to="/request"
                 className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft"
               >
-                <Plus className="h-4 w-4" /> Request
+                <Plus className="h-4 w-4" /> {t("dash.request")}
               </Link>
             </div>
           </div>
@@ -222,46 +229,46 @@ function Dashboard() {
 
           <SummaryCard
             icon={<HeartPulse className="h-5 w-5" />}
-            label="Home care"
+            label={t("dash.care.label")}
             headline={careHeadline}
             sentence={careSentence}
             tone={careTone}
             emphasis
             to="/home-care"
-            actionLabel="Open home care"
+            actionLabel={t("dash.care.action")}
           />
 
           <SummaryCard
             icon={<TrendingUp className="h-5 w-5" />}
-            label="Value & equity"
+            label={t("dash.money.label")}
             headline={money(okIntel?.value.value ?? null)}
             sentence={moneySentence}
             tone={okIntel?.equity?.refiSignal ? "opportunity" : "calm"}
             to="/money"
-            actionLabel="See the numbers"
+            actionLabel={t("dash.money.action")}
           />
 
           <SummaryCard
             icon={<Sparkles className="h-5 w-5" />}
-            label="Home Assistant"
-            sentence="Ask anything about your home — we answer using your own records."
+            label={t("dash.assistant.label")}
+            sentence={t("dash.assistant.sentence")}
             tone="brand"
             to="/assistant"
-            actionLabel="Ask a question"
+            actionLabel={t("dash.assistant.action")}
           />
 
           <SummaryCard
             icon={<FileText className="h-5 w-5" />}
-            label="Documents"
-            headline={docCount > 0 ? `${docCount} saved` : "None yet"}
+            label={t("dash.docs.label")}
+            headline={docCount > 0 ? t("dash.docs.saved", { count: docCount }) : t("common.none_yet")}
             sentence={docsSentence}
             tone={hasInspection ? "calm" : "brand"}
             to="/documents"
-            actionLabel={hasInspection ? "Open documents" : "Add a document"}
+            actionLabel={hasInspection ? t("dash.docs.action_open") : t("dash.docs.action_add")}
           />
 
           <div className="pt-1 text-center">
-            <OnboardingWalkthrough triggerLabel="Take the tour" />
+            <OnboardingWalkthrough triggerLabel={t("dash.take_tour")} />
           </div>
         </div>
       </main>

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeAssistantCard } from "@/components/home-assistant-card";
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/assistant")({
 });
 
 function AssistantPage() {
+  const t = useT();
   return (
     <HomeownerShell>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
@@ -35,7 +37,7 @@ function AssistantPage() {
             to="/dashboard"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" /> Back to your home
+            <ArrowLeft className="h-4 w-4" /> {t("common.back_home")}
           </Link>
 
           <HomeAssistantCard />
