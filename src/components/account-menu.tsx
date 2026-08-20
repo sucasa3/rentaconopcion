@@ -108,7 +108,7 @@ export function AccountMenu({
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium text-foreground">{name}</span>
               <span className="block truncate text-xs text-muted-foreground">
-                {ROLE_LABEL[role]}
+                {t(ROLE_LABEL_KEY[role])}
               </span>
             </span>
           )}
