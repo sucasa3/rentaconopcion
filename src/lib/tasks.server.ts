@@ -275,5 +275,11 @@ export async function buildBusinessTasks(
       : t;
   });
 
+  // Setup tasks (sender branding) always lead the list.
+  withState.sort(
+    (a, b) => Number(b.key.startsWith("branding:")) - Number(a.key.startsWith("branding:")),
+  );
+
   return { tasks: withState, openCount: withState.filter((t) => !t.done).length };
+
 }
