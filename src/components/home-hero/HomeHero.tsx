@@ -136,20 +136,22 @@ export function HomeHero({
 
 
         {/* Zone chips */}
-        <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 sm:left-auto sm:right-7 sm:top-auto sm:bottom-[280px] sm:translate-y-0">
-          <div className="flex flex-wrap gap-1.5 sm:justify-end">
-            {(Object.keys(data.zones) as Array<keyof typeof data.zones>).map((k) => (
-              <span
-                key={k}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium capitalize text-white backdrop-blur-md ring-1 ring-white/20"
-                title={ZONE_LABEL[data.zones[k]]}
-              >
-                <PulseDot color={ZONE_COLOR[data.zones[k]]} />
-                {k} · {ZONE_LABEL[data.zones[k]]}
-              </span>
-            ))}
+        {data.zones && (
+          <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 sm:left-auto sm:right-7 sm:top-auto sm:bottom-[280px] sm:translate-y-0">
+            <div className="flex flex-wrap gap-1.5 sm:justify-end">
+              {(Object.entries(data.zones) as Array<[string, ZoneStatus]>).map(([k, status]) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium capitalize text-white backdrop-blur-md ring-1 ring-white/20"
+                  title={ZONE_LABEL[status]}
+                >
+                  <PulseDot color={ZONE_COLOR[status]} />
+                  {k} · {ZONE_LABEL[status]}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Bottom glass stat bar */}
         <div className="absolute inset-x-4 bottom-4 sm:inset-x-6 sm:bottom-6">
