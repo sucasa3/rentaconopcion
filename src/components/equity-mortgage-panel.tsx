@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useHomeIntel } from "@/hooks/use-home-intel";
-import { valueStatusMessage } from "@/lib/home-value";
+import type { ValueStatus } from "@/lib/home-value";
 import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
 import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
 import { useActivityLog, useLogOnMount } from "@/hooks/use-activity-log";
-
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null) return "—";
@@ -16,7 +16,19 @@ function fmtPct(n: number | null | undefined): string {
   return `${Math.round(n * 100)}%`;
 }
 
+/** Value-status copy lives in the dictionary so this panel reads in one language. */
+function valueStatusKey(status: ValueStatus): TranslationKey {
+  return `value.status.${status}` as TranslationKey;
+}
+
+function refiSignalKey(signal: string): TranslationKey | null {
+  return signal === "strong" || signal === "moderate" || signal === "watch"
+    ? (`money.refi.${signal}` as TranslationKey)
+    : null;
+}
+
 export function EquityMortgagePanel() {
+  const { t, language } = useLanguage();
   const [lenderOpen, setLenderOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const logActivity = useActivityLog();
@@ -26,7 +38,7 @@ export function EquityMortgagePanel() {
   if (isLoading) {
     return (
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-        <p className="text-sm text-muted-foreground">Loading equity & mortgage…</p>
+        <p className="text-sm text-muted-foreground">{t("money.loading")}</p>
       </div>
     );
   }
@@ -35,9 +47,9 @@ export function EquityMortgagePanel() {
     const status = raw && !raw.ok ? raw.valueStatus : "no_coverage";
     return (
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-        <h2 className="text-base font-semibold">Equity & mortgage</h2>
+        <h2 className="text-base font-semibold">{t("money.title")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {valueStatusMessage(status ?? "no_coverage")}
+          {t(valueStatusKey((status ?? "no_coverage") as ValueStatus))}
         </p>
       </div>
     );
@@ -45,35 +57,29 @@ export function EquityMortgagePanel() {
 
   const { equity, mortgage, sales, permits, value, valueStatus } = data;
 
-
   const refiTone =
-    equity?.refiSignal === "watch"
-      ? "bg-secondary text-muted-foreground"
-      : "hidden";
+    equity?.refiSignal === "watch" ? "bg-secondary text-muted-foreground" : "hidden";
 
-  const savings = estimateRefiSavings(
-    equity?.loanBalanceEstimate,
-    mortgage?.interestRate,
-  );
-  const isHotRefi =
-    equity?.refiSignal === "strong" || equity?.refiSignal === "moderate";
+  const savings = estimateRefiSavings(equity?.loanBalanceEstimate, mortgage?.interestRate);
+  const isHotRefi = equity?.refiSignal === "strong" || equity?.refiSignal === "moderate";
+  const signalKey = equity?.refiSignal ? refiSignalKey(equity.refiSignal) : null;
+  const signalWord = signalKey ? t(signalKey) : (equity?.refiSignal ?? "");
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold">Equity & mortgage</h2>
+          <h2 className="text-base font-semibold">{t("money.title")}</h2>
           <p className="text-xs text-muted-foreground">
             {value?.value == null
-              ? "Waiting on a value for your home."
+              ? t("money.basis.waiting")
               : value.source === "assessed"
-                ? `Based on assessor market value (${fmtMoney(value.value)}) — no automated estimate on record for this address.`
-                : `Based on an automated estimate of ${fmtMoney(value.value)}.`}
+                ? t("money.basis.assessed", { amount: fmtMoney(value.value) })
+                : t("money.basis.avm", { amount: fmtMoney(value.value) })}
           </p>
-
         </div>
-        {equity?.refiSignal && (
-          isHotRefi ? (
+        {equity?.refiSignal &&
+          (isHotRefi ? (
             <button
               onClick={() => {
                 logActivity("refi_opened");
@@ -87,29 +93,26 @@ export function EquityMortgagePanel() {
               </span>
               <Sparkles className="h-4 w-4" />
               <span className="text-left leading-tight">
-                Refi signal · {equity.refiSignal}
+                {t("money.refi.signal")} · {signalWord}
                 <span className="block text-[11px] font-medium opacity-90">
                   {savings?.monthlySavings
-                    ? `Could save ~${fmtMoney(savings.monthlySavings)}/mo · See options`
-                    : "See your lending options"}
+                    ? t("money.refi.savings", { amount: fmtMoney(savings.monthlySavings) })
+                    : t("money.refi.see_options")}
                 </span>
               </span>
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </button>
           ) : (
             <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${refiTone}`}>
-              Refi signal · {equity.refiSignal}
+              {t("money.refi.signal")} · {signalWord}
             </span>
-          )
-        )}
+          ))}
       </div>
-
 
       {value?.value == null && (
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-secondary/40 px-4 py-3">
           <p className="text-xs text-muted-foreground">
-            {valueStatusMessage(valueStatus)} Equity and cash-out headroom need a
-            value to calculate.
+            {t(valueStatusKey(valueStatus))} {t("money.needs_value")}
           </p>
           <button
             onClick={async () => {
@@ -121,74 +124,81 @@ export function EquityMortgagePanel() {
             className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium hover:bg-secondary disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
-            Retry
+            {t("money.retry")}
           </button>
         </div>
       )}
 
-
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat
           icon={TrendingUp}
-          label="Estimated equity"
+          label={t("money.stat.equity")}
           primary={fmtMoney(equity?.equityDollars)}
           secondary={
             equity?.equityPct != null
-              ? `${fmtPct(equity.equityPct)} of ${equity.valueSource === "assessed" ? "assessed value" : "value"}`
-              : "No valuation on record"
+              ? equity.valueSource === "assessed"
+                ? t("money.stat.equity_pct_assessed", { pct: fmtPct(equity.equityPct) })
+                : t("money.stat.equity_pct", { pct: fmtPct(equity.equityPct) })
+              : t("money.stat.no_valuation")
           }
         />
 
         <Stat
           icon={Wallet}
-          label="Cash-out headroom"
+          label={t("money.stat.cash_out")}
           primary={fmtMoney(equity?.cashOutHeadroom80)}
           secondary={
             equity?.cashOutHeadroom80 == null
-              ? "Needs a valuation"
+              ? t("money.stat.needs_valuation")
               : equity.valueSource === "assessed"
-                ? "At 80% LTV · assessed value"
-                : "At 80% LTV"
+                ? t("money.stat.ltv_assessed")
+                : t("money.stat.ltv")
           }
         />
 
         <Stat
           icon={Landmark}
-          label="Loan balance (est.)"
-          primary={equity?.noMortgageOnRecord ? "None on record" : fmtMoney(equity?.loanBalanceEstimate)}
+          label={t("money.stat.loan")}
+          primary={
+            equity?.noMortgageOnRecord
+              ? t("money.stat.no_mortgage")
+              : fmtMoney(equity?.loanBalanceEstimate)
+          }
           secondary={
             equity?.noMortgageOnRecord
-              ? "No open mortgage in public records"
+              ? t("money.stat.no_mortgage_detail")
               : mortgage?.interestRate != null
-                ? `${mortgage.interestRate}% · ${mortgage.lender ?? "lender"}`
-                : mortgage?.lender ?? "—"
+                ? t("money.stat.rate_lender", {
+                    rate: mortgage.interestRate,
+                    lender: mortgage.lender ?? t("money.stat.lender_word"),
+                  })
+                : (mortgage?.lender ?? "—")
           }
         />
 
         <Stat
           icon={Hammer}
-          label="Permits on file"
+          label={t("money.stat.permits")}
           primary={String(permits?.events.length ?? 0)}
           secondary={
             permits && permits.events.length > 0
               ? permits.lastPermitDate
-                ? `Last ${new Date(permits.lastPermitDate).toLocaleDateString()}`
-                : "Recorded"
+                ? t("money.stat.permit_last", {
+                    date: new Date(permits.lastPermitDate).toLocaleDateString(
+                      language === "es" ? "es-US" : "en-US",
+                    ),
+                  })
+                : t("money.stat.permit_recorded")
               : sales?.tenureYears != null
-                ? `Owned ~${sales.tenureYears} yr · none on record`
-                : "None on record"
+                ? t("money.stat.owned_no_permits", { years: sales.tenureYears })
+                : t("money.stat.none_on_record")
           }
         />
       </div>
 
       {permits && permits.events.length === 0 && (
-        <p className="mt-3 text-[11px] text-muted-foreground">
-          No permits found on public record for this address. Permit coverage
-          varies by jurisdiction, so local permits may exist without appearing
-          here.
-        </p>
+        <p className="mt-3 text-[11px] text-muted-foreground">{t("money.permits.note")}</p>
       )}
-
 
       <ConnectLenderDialog
         open={lenderOpen}
@@ -200,7 +210,6 @@ export function EquityMortgagePanel() {
         benchmarkRate={BENCHMARK_REFI_RATE}
         estSavingsMonthly={savings?.monthlySavings ?? null}
       />
-
     </div>
   );
 }

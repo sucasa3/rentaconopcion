@@ -24,13 +24,36 @@ import { SectionHero, type HeroTone } from "@/components/section-hero";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
+/** Component/task labels live in the dictionary so the list reads in one language. */
+const SYSTEM_KEYS = ["roof", "hvac", "water_heater", "windows", "electrical", "siding"] as const;
+const SEASONAL_KEYS = [
+  "hvac_filter",
+  "gutters",
+  "water_heater_flush",
+  "dryer_vent",
+  "smoke_detectors",
+  "exterior_caulk",
+] as const;
+
+function systemLabelKey(key: string): TranslationKey | null {
+  return (SYSTEM_KEYS as readonly string[]).includes(key)
+    ? (`care.system.${key}` as TranslationKey)
+    : null;
+}
+function seasonalKey(key: string, part: "label" | "hint"): TranslationKey | null {
+  return (SEASONAL_KEYS as readonly string[]).includes(key)
+    ? (`care.seasonal.${key}.${part}` as TranslationKey)
+    : null;
+}
 
 export function HomeCarePanel({
   onGoToDocuments,
 }: {
   onGoToDocuments?: () => void;
 }) {
+  const t = useT();
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const logService = useServerFn(logComponentService);
   const fetchFindings = useServerFn(listInspectionFindings);
@@ -47,9 +70,6 @@ export function HomeCarePanel({
     queryFn: () => fetchFindings({ data: {} }),
     staleTime: 5 * 60_000,
   });
-
-
-
 
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
@@ -70,17 +90,17 @@ export function HomeCarePanel({
     });
     setSavingKey(null);
     if (res.ok) {
-      toast.success("Logged — that lifts your Home Score");
+      toast.success(t("care.toast.logged"));
       qc.invalidateQueries({ queryKey: ["component-service-log"] });
     } else {
-      toast.error(res.error ?? "Could not save that");
+      toast.error(res.error ?? t("care.toast.error"));
     }
   }
 
   if (isLoading) {
     return (
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-        <p className="text-sm text-muted-foreground">Loading your home care plan…</p>
+        <p className="text-sm text-muted-foreground">{t("care.loading")}</p>
       </div>
     );
   }
@@ -97,7 +117,6 @@ export function HomeCarePanel({
   const overdue = items.filter((i) => i.status === "overdue");
   const dueSoon = items.filter((i) => i.status === "due_soon");
   const nextStep = overdue[0] ?? dueSoon[0] ?? null;
-  const seasonalDue = seasonal.filter((s) => s.due).length;
 
   const findingCount = (findings ?? []).length;
   const urgentFindings = (findings ?? []).filter(
@@ -115,37 +134,48 @@ export function HomeCarePanel({
     taskKey?: string;
   };
 
-  const systemRows: CareRow[] = items.map((item) => ({
-    key: `sys-${item.key}`,
-    kind: "system",
-    label: item.label,
-    detail:
-      item.status === "overdue"
-        ? `Put in around ${item.installedYear}. That's older than most last, so plan for it.`
-        : item.status === "due_soon"
-          ? `Put in around ${item.installedYear}. It's getting close to the end of its life.`
-          : `Put in around ${item.installedYear}. Looking fine for now.`,
-    timing:
-      item.status === "overdue"
-        ? "Late"
-        : item.status === "due_soon"
-          ? "Coming up"
-          : `About ${item.yearsLeft} years left`,
-    status: item.status === "overdue" ? "overdue" : item.status === "due_soon" ? "due_soon" : "ok",
-    item,
-  }));
+  const systemRows: CareRow[] = items.map((item) => {
+    const labelKey = systemLabelKey(item.key);
+    return {
+      key: `sys-${item.key}`,
+      kind: "system",
+      label: labelKey ? t(labelKey) : item.label,
+      detail:
+        item.status === "overdue"
+          ? t("care.detail.overdue", { year: item.installedYear })
+          : item.status === "due_soon"
+            ? t("care.detail.due_soon", { year: item.installedYear })
+            : t("care.detail.ok", { year: item.installedYear }),
+      timing:
+        item.status === "overdue"
+          ? t("care.timing.late")
+          : item.status === "due_soon"
+            ? t("care.timing.soon")
+            : t("care.timing.years_left", { years: item.yearsLeft }),
+      status:
+        item.status === "overdue" ? "overdue" : item.status === "due_soon" ? "due_soon" : "ok",
+      item,
+    };
+  });
 
-  const routineRows: CareRow[] = seasonal.map((t) => ({
-    key: `seasonal-${t.key}`,
-    kind: "routine",
-    label: t.label,
-    detail: t.due
-      ? `${t.hint} Do this about every ${t.everyMonths} months.`
-      : `${t.hint} You did this${t.lastDone ? ` on ${t.lastDone}` : " recently"} — nothing to do yet.`,
-    timing: t.due ? "Coming up" : "All good",
-    status: t.due ? "due_soon" : "ok",
-    taskKey: t.key,
-  }));
+  const routineRows: CareRow[] = seasonal.map((task) => {
+    const lk = seasonalKey(task.key, "label");
+    const hk = seasonalKey(task.key, "hint");
+    const hint = hk ? t(hk) : task.hint;
+    return {
+      key: `seasonal-${task.key}`,
+      kind: "routine",
+      label: lk ? t(lk) : task.label,
+      detail: task.due
+        ? t("care.routine.due", { hint, months: task.everyMonths })
+        : task.lastDone
+          ? t("care.routine.done_on", { hint, date: task.lastDone })
+          : t("care.routine.done_recently", { hint }),
+      timing: task.due ? t("care.timing.soon") : t("care.legend.ok"),
+      status: task.due ? "due_soon" : "ok",
+      taskKey: task.key,
+    };
+  });
 
   const RANK: Record<string, number> = { overdue: 0, due_soon: 1, ok: 2 };
   const rows: CareRow[] = [...systemRows, ...routineRows].sort((a, b) => {
@@ -174,24 +204,53 @@ export function HomeCarePanel({
         : "calm";
 
   const status = !hasSystems
-    ? "Tell us a little about your home and we'll build your to-do list."
+    ? t("care.status.setup")
     : lateCount > 0
-      ? `${lateCount} thing${lateCount === 1 ? " is" : "s are"} late${soonCount > 0 ? `, and ${soonCount} ${soonCount === 1 ? "is" : "are"} coming up` : ""}.`
+      ? soonCount > 0
+        ? t(lateCount === 1 ? "care.status.late_one_soon" : "care.status.late_many_soon", {
+            count: lateCount,
+            soon: soonCount,
+          })
+        : t(lateCount === 1 ? "care.status.late_one" : "care.status.late_many", {
+            count: lateCount,
+          })
       : soonCount > 0
-        ? `Nothing is late. ${soonCount} thing${soonCount === 1 ? " is" : "s are"} coming up.`
-        : "Everything looks good today. We'll tell you when that changes.";
+        ? t(soonCount === 1 ? "care.status.soon_one" : "care.status.soon_many", {
+            count: soonCount,
+          })
+        : t("care.status.all_good");
+
+  const connectNote =
+    findingCount > 0
+      ? urgentFindings > 0
+        ? t(
+            findingCount === 1
+              ? "care.connect.findings_one_urgent"
+              : "care.connect.findings_many_urgent",
+            { count: findingCount, urgent: urgentFindings },
+          )
+        : t(findingCount === 1 ? "care.connect.findings_one" : "care.connect.findings_many", {
+            count: findingCount,
+          })
+      : t("care.connect.none");
 
   return (
     <div className="space-y-4">
       <SectionHero
         plain
         icon={HeartPulse}
-        eyebrow="Home care"
-        title="Take care of this"
-        subtitle="The things your home needs, biggest first."
+        eyebrow={t("care.hero.eyebrow")}
+        title={t("care.hero.title")}
+        subtitle={t("care.hero.subtitle")}
         status={status}
         tone={tone}
-        actionLabel={!hasSystems ? "Add home details" : nextStep ? "Start with this one" : undefined}
+        actionLabel={
+          !hasSystems
+            ? t("care.action.add_details")
+            : nextStep
+              ? t("care.action.start")
+              : undefined
+        }
         onAction={
           !hasSystems
             ? () => navigate({ to: "/onboarding" })
@@ -199,14 +258,8 @@ export function HomeCarePanel({
               ? () => setMarkItem(nextStep)
               : undefined
         }
-        connectNote={
-          findingCount > 0
-            ? `Your inspection report added ${findingCount} note${findingCount === 1 ? "" : "s"} to this list${
-                urgentFindings > 0 ? ` — ${urgentFindings} need attention soon` : ""
-              }.`
-            : "Upload an inspection report and this list gets a lot smarter."
-        }
-        connectLabel={onGoToDocuments ? "Go to Documents" : undefined}
+        connectNote={connectNote}
+        connectLabel={onGoToDocuments ? t("care.connect.label") : undefined}
         onConnect={onGoToDocuments}
       />
 
@@ -215,19 +268,20 @@ export function HomeCarePanel({
 
         {rows.length === 0 ? (
           <p className="rounded-2xl border border-border p-4 text-sm text-muted-foreground">
-            Add your home details and we'll tell you what needs doing — and when.
+            {t("care.empty")}
           </p>
         ) : (
           <>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-destructive" /> Late
+                <span className="h-2.5 w-2.5 rounded-full bg-destructive" /> {t("care.legend.late")}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-accent-foreground/70" /> Coming up
+                <span className="h-2.5 w-2.5 rounded-full bg-accent-foreground/70" />{" "}
+                {t("care.legend.soon")}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-growth" /> All good
+                <span className="h-2.5 w-2.5 rounded-full bg-growth" /> {t("care.legend.ok")}
               </span>
             </div>
 
@@ -283,7 +337,8 @@ export function HomeCarePanel({
                         {row.detail}
                       </p>
                       <p className="mt-1 text-xs font-medium text-muted-foreground">
-                        {row.kind === "system" ? "Big stuff" : "Quick job"} · {row.timing}
+                        {row.kind === "system" ? t("care.kind.system") : t("care.kind.routine")} ·{" "}
+                        {row.timing}
                       </p>
                     </div>
                   </div>
@@ -296,7 +351,9 @@ export function HomeCarePanel({
                           className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary"
                         >
                           <CheckSquare className="h-4 w-4" />
-                          {row.item.source === "logged" ? "Update this" : "I did this"}
+                          {row.item.source === "logged"
+                            ? t("care.btn.update")
+                            : t("care.btn.did_it")}
                         </button>
                         {(row.status === "overdue" || row.status === "due_soon") && (
                           <Link
@@ -306,7 +363,7 @@ export function HomeCarePanel({
                             }}
                             className="inline-flex min-h-[44px] items-center rounded-full gradient-brand px-4 text-sm font-semibold text-white"
                           >
-                            Get help
+                            {t("care.btn.get_help")}
                           </Link>
                         )}
                       </>
@@ -318,10 +375,10 @@ export function HomeCarePanel({
                       >
                         <CheckSquare className="h-4 w-4" />
                         {savingKey === row.taskKey
-                          ? "Saving…"
+                          ? t("common.saving")
                           : row.status === "ok"
-                            ? "Did it again"
-                            : "I did this"}
+                            ? t("care.btn.did_again")
+                            : t("care.btn.did_it")}
                       </button>
                     )}
                   </div>
@@ -334,14 +391,12 @@ export function HomeCarePanel({
                 onClick={() => setShowAll((v) => !v)}
                 className="mt-3 min-h-[48px] w-full rounded-2xl border border-border text-sm font-semibold hover:bg-secondary"
               >
-                {showAll ? "Show less" : `See everything (${rows.length})`}
+                {showAll ? t("care.btn.show_less") : t("care.btn.see_all", { count: rows.length })}
               </button>
             )}
           </>
         )}
       </div>
-
-
 
       {markItem && (
         <MarkComponentDoneDialog
@@ -352,5 +407,4 @@ export function HomeCarePanel({
       )}
     </div>
   );
-
 }
