@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Home, TrendingUp, Sparkles, Activity, MapPin, Info } from "lucide-react";
-import { projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroView } from "@/lib/home-hero-data";
+import { projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroView, type ZoneStatus } from "@/lib/home-hero-data";
 import type { HomeScoreResult } from "@/lib/home-score";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCountUp } from "./useCountUp";
@@ -160,24 +160,36 @@ export function HomeHero({
               <Stat
                 icon={<Home className="h-3.5 w-3.5" />}
                 label="Estimated value"
-                value={fmtUsd(value)}
-                trend={years === 0 ? "▲ +$8,400 · 30d" : `Projected +${years}y`}
+                value={hasValue ? fmtUsd(value) : "—"}
+                trend={
+                  !hasValue
+                    ? "No records yet"
+                    : years === 0
+                      ? "Latest estimate"
+                      : `Projected +${years}y`
+                }
                 trendColor="text-emerald-300"
               />
               <Stat
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
                 label="Equity"
-                value={fmtUsd(equity, true)}
-                trend={`${Math.round(projected.equityPct * 100)}% of value`}
-                bar={projected.equityPct}
+                value={data.equity != null ? fmtUsd(equity, true) : "—"}
+                trend={
+                  projected.equityPct != null
+                    ? `${Math.round(projected.equityPct * 100)}% of value`
+                    : "Not enough info yet"
+                }
+                bar={projected.equityPct ?? undefined}
               />
               <Stat
                 icon={<Sparkles className="h-3.5 w-3.5" />}
                 label="Upgrade ROI"
-                value={fmtUsd(roi, true)}
-                trend="3 smart picks"
+                value={data.roi != null ? fmtUsd(roi, true) : "—"}
+                trend={data.roi != null ? "3 smart picks" : "Add your home details"}
               />
-              <div className="col-span-2 flex flex-col justify-between sm:col-span-1">
+              <div
+                className={`col-span-2 flex flex-col justify-between sm:col-span-1 ${hasValue ? "" : "hidden"}`}
+              >
                 <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-white/70">
                   <span>Project</span>
                   <span className="tabular-nums text-white/90">
