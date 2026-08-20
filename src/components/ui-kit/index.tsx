@@ -96,6 +96,118 @@ export function StatusPill({
   );
 }
 
+/**
+ * Homeowner dashboard summary card: one icon, one headline, one plain
+ * sentence, one button. Everything else lives behind the button.
+ */
+export function SummaryCard({
+  icon,
+  label,
+  headline,
+  sentence,
+  tone = "calm",
+  to,
+  search,
+  actionLabel,
+  onAction,
+  emphasis = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  headline?: ReactNode;
+  sentence: string;
+  tone?: "calm" | "urgent" | "opportunity" | "brand";
+  to?: string;
+  search?: Record<string, string>;
+  actionLabel: string;
+  onAction?: () => void;
+  emphasis?: boolean;
+}) {
+  const tones: Record<string, { edge: string; badge: string; text: string; btn: string }> = {
+    calm: {
+      edge: "border-border",
+      badge: "bg-secondary text-secondary-foreground",
+      text: "text-foreground",
+      btn: "border border-border bg-background hover:bg-secondary",
+    },
+    urgent: {
+      edge: "border-destructive/40 bg-destructive/5",
+      badge: "bg-destructive/10 text-destructive",
+      text: "text-destructive",
+      btn: "bg-destructive text-destructive-foreground hover:opacity-90",
+    },
+    opportunity: {
+      edge: "border-growth/40 bg-growth/5",
+      badge: "bg-growth/15 text-growth",
+      text: "text-growth",
+      btn: "gradient-growth text-white hover:opacity-90",
+    },
+    brand: {
+      edge: "border-primary/30 bg-primary/5",
+      badge: "bg-primary/10 text-primary",
+      text: "text-primary",
+      btn: "gradient-brand text-white hover:opacity-90",
+    },
+  };
+  const t = tones[tone];
+
+  const button = (
+    <span
+      className={cn(
+        "mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition active:scale-[0.99]",
+        t.btn,
+      )}
+    >
+      {actionLabel}
+      <ChevronRight className="h-4 w-4" />
+    </span>
+  );
+
+  return (
+    <section
+      className={cn(
+        "rounded-3xl border p-5 shadow-soft sm:p-6",
+        t.edge,
+        emphasis ? "bg-card" : "bg-card",
+      )}
+      aria-label={label}
+    >
+      <div className="flex items-start gap-3">
+        <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", t.badge)}>
+          {icon}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+          {headline != null && (
+            <p
+              className={cn(
+                "mt-0.5 font-semibold tracking-tight tabular-nums",
+                emphasis ? "text-3xl" : "text-2xl",
+                t.text,
+              )}
+            >
+              {headline}
+            </p>
+          )}
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{sentence}</p>
+        </div>
+      </div>
+
+      {to ? (
+        <Link to={to} search={search as never} className="block focus:outline-none">
+          {button}
+        </Link>
+      ) : (
+        <button type="button" onClick={onAction} className="block w-full text-left">
+          {button}
+        </button>
+      )}
+    </section>
+  );
+}
+
 /** One person, one signal, one action. */
 export function SignalCard({
   icon,
