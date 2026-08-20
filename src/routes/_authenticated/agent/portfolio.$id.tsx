@@ -540,7 +540,50 @@ function AgentPortfolio() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <Link
+                  to="/agent/network"
+                  className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Lender network &amp; approvals
+                </Link>
+              </div>
+
+              {/* 1. What to do now */}
+              {priority && (
+                <PriorityCard
+                  title={priority.title}
+                  subtitle={priority.subtitle}
+                  primaryAction={() => {
+                    if (priority.client) {
+                      setSelected(priority.client);
+                      setBrief("");
+                    } else if (priority.kind === "enrich") {
+                      enrich.mutate();
+                    }
+                  }}
+                  primaryActionLabel={
+                    priority.kind === "enrich" ? "Pull property records" : "View homeowner"
+                  }
+                  tone={priority.kind === "high_intent" ? "attention" : "opportunity"}
+                  secondaryActions={priority.next?.map((n: any) => ({
+                    label: n.label,
+                    onClick: () => {
+                      setSelected(n.client);
+                      setBrief("");
+                    },
+                  }))}
+                />
+              )}
+
+              {/* 2. Opportunities */}
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Home className="h-4 w-4 text-primary" />
+                    <h2 className="text-base font-semibold">
+                      Top listing opportunities @ {sellCost}% cost to sell
+                    </h2>
+                  </div>
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
                     Cost to sell
                     <input
@@ -557,84 +600,10 @@ function AgentPortfolio() {
                     />
                     %
                   </label>
-                  <span
-                    className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
-                    title="Value, equity and net proceeds only appear once property records have been pulled for that home."
-                  >
-                    Valued {data.summary.with_value ?? 0}/{data.summary.total}
-                    {data.summary.unmappable
-                      ? ` · ${data.summary.unmappable} no address`
-                      : ""}
-                  </span>
-                  <button
-                    onClick={() => enrich.mutate()}
-                    disabled={enrich.isPending}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary disabled:opacity-50"
-                  >
-                    {enrich.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3 text-growth" />
-                    )}
-                    Pull records
-                  </button>
-
-
                 </div>
-
-
-              </div>
-
-              {/* Summary strip */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <SummaryTile label="Households" value={data.summary.total.toLocaleString()} />
-                <SummaryTile label="List-ready" value={String(data.summary.readiness["list-ready"])} />
-                <SummaryTile label="Hot signals" value={String(data.summary.bands.hot)} />
-                <SummaryTile label="Sphere equity" value={moneyCompact(data.summary.total_equity)} />
-                <SummaryTile
-                  label="Potential GCI"
-                  value={moneyCompact(data.summary.total_gci_potential)}
-                />
-              </div>
-
-              <AgentCoveragePanel portfolioId={id} />
-
-
-
-              {/* Band chips */}
-              <div className="flex flex-wrap gap-2">
-                <SegChip
-                  label={`All ${data.summary.total}`}
-                  active={band === "all"}
-                  tone="bg-foreground text-background border-foreground"
-                  onClick={() => {
-                    setBand("all");
-                    setPage(0);
-                  }}
-                />
-                {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
-                  <SegChip
-                    key={b}
-                    label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
-                    active={band === b}
-                    tone={BAND_META[b].tone}
-                    onClick={() => {
-                      setBand(b);
-                      setPage(0);
-                    }}
-                  />
-                ))}
-                <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
-                  <span className="inline-flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3 text-growth" />
-                    {data.summary.expired} expired / withdrawn
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Link2 className="h-3 w-3" />
-                    {data.summary.linked} linked to SuCasa
-                  </span>
-                </span>
-              </div>
+                <p className="text-xs text-muted-foreground">
+                  Ranked on move intent × listing readiness. Modeled, not an appraisal.
+                </p>
 
               {/* Listing readiness board */}
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
