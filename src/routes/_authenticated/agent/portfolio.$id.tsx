@@ -705,7 +705,6 @@ function AgentPortfolio() {
                     </tbody>
                   </table>
                 </div>
-              </div>
               </section>
 
               {/* Agent widgets: readiness mix + referral visibility */}
