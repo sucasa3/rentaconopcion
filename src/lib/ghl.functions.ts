@@ -276,3 +276,108 @@ export const getGhlSyncStatus = createServerFn({ method: "GET" })
       failed: failed.data ?? [],
     };
   });
+
+// Admin: run the read-only GHL connection checklist.
+export const runGhlConnectionDoctor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { runGhlDoctor } = await import("./ghl-doctor.server");
+    try {
+      return await runGhlDoctor();
+    } catch (e) {
+      return {
+        ranAt: new Date().toISOString(),
+        ok: false,
+        checks: [
+          {
+            key: "env",
+            label: "Credentials configured",
+            status: "fail" as const,
+            detail: e instanceof Error ? e.message : String(e),
+          },
+        ],
+        missingCustomFields: [] as string[],
+        missingTags: [] as string[],
+      };
+    }
+  });
+
+// Admin: campaign sends whose only failure was the CRM push.
+export const getCampaignCrmFailures = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { data, count } = await supabaseAdmin
+      .from("campaign_sends")
+      .select("id, recipient_email, recipient_name, crm_error, created_at", { count: "exact" })
+      .eq("crm_status", "failed")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    return { total: count ?? 0, rows: data ?? [] };
+  });
+
+// Admin: retry the CRM push for sends that failed only on GHL.
+export const retryCampaignCrmPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { limit?: number } | undefined) =>
+    z.object({ limit: z.number().int().min(1).max(200).optional() }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { data: rows } = await supabaseAdmin
+      .from("campaign_sends")
+      .select("id, recipient_email, recipient_name, payload, campaign_id")
+      .eq("crm_status", "failed")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 25);
+    if (!rows?.length) return { retried: 0, pushed: 0, failed: 0, lastError: null as string | null };
+
+    const { data: campaignRows } = await supabaseAdmin.from("campaigns").select("id, ghl_tag");
+    const tagById = new Map((campaignRows ?? []).map((c) => [c.id, c.ghl_tag]));
+    const { pushCampaignContact } = await import("./ghl.server");
+
+    let pushed = 0;
+    let failed = 0;
+    let lastError: string | null = null;
+
+    for (const row of rows) {
+      if (!row.recipient_email) continue;
+      try {
+        const contactId = await pushCampaignContact({
+          email: row.recipient_email,
+          fullName: row.recipient_name,
+          tag: tagById.get(row.campaign_id) ?? "sucasa_campaign",
+          payload: (row.payload ?? {}) as Record<string, string>,
+        });
+        await supabaseAdmin
+          .from("campaign_sends")
+          .update({ crm_status: "synced", crm_error: null, ghl_contact_id: contactId })
+          .eq("id", row.id);
+        pushed++;
+      } catch (e) {
+        failed++;
+        lastError = (e instanceof Error ? e.message : String(e)).slice(0, 300);
+        await supabaseAdmin
+          .from("campaign_sends")
+          .update({ crm_error: lastError })
+          .eq("id", row.id);
+      }
+    }
+    return { retried: rows.length, pushed, failed, lastError };
+  });
