@@ -8,7 +8,56 @@ function env(name: string): string {
   return v;
 }
 
-async function ghlFetch(path: string, init: RequestInit = {}) {
+export type GhlErrorKind =
+  | "auth_scope"
+  | "auth_invalid"
+  | "not_found"
+  | "rate_limited"
+  | "bad_request"
+  | "server_error"
+  | "unknown";
+
+export class GhlError extends Error {
+  kind: GhlErrorKind;
+  status: number;
+  detail: string;
+  constructor(kind: GhlErrorKind, status: number, message: string, detail: string) {
+    super(message);
+    this.name = "GhlError";
+    this.kind = kind;
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+function classify(status: number, path: string, text: string): GhlError {
+  let detail = text;
+  try {
+    const j = JSON.parse(text);
+    detail = String(j?.message ?? j?.error ?? text);
+  } catch {
+    /* keep raw text */
+  }
+  const lower = detail.toLowerCase();
+  if (status === 401 && lower.includes("scope")) {
+    return new GhlError(
+      "auth_scope",
+      status,
+      `GHL token is missing the scope required for ${path} (${detail})`,
+      detail,
+    );
+  }
+  if (status === 401 || status === 403) {
+    return new GhlError("auth_invalid", status, `GHL rejected the token for ${path}: ${detail}`, detail);
+  }
+  if (status === 404) return new GhlError("not_found", status, `GHL ${path} not found: ${detail}`, detail);
+  if (status === 429) return new GhlError("rate_limited", status, `GHL rate limit hit on ${path}`, detail);
+  if (status >= 500) return new GhlError("server_error", status, `GHL server error on ${path}: ${detail}`, detail);
+  if (status >= 400) return new GhlError("bad_request", status, `GHL rejected ${path}: ${detail}`, detail);
+  return new GhlError("unknown", status, `GHL ${path} failed: ${detail}`, detail);
+}
+
+export async function ghlFetch(path: string, init: RequestInit = {}) {
   const res = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
@@ -21,10 +70,15 @@ async function ghlFetch(path: string, init: RequestInit = {}) {
   });
   const text = await res.text();
   if (!res.ok) {
-    throw new Error(`GHL ${init.method ?? "GET"} ${path} [${res.status}]: ${text}`);
+    throw classify(res.status, `${init.method ?? "GET"} ${path}`, text);
   }
   return text ? JSON.parse(text) : {};
 }
+
+export function locationId(): string {
+  return env("GHL_LOCATION_ID");
+}
+
 
 export type Homeowner = {
   userId: string;
