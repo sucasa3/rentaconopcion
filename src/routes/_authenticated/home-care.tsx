@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeCarePanel } from "@/components/home-care-panel";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/home-care")({
 });
 
 function HomeCarePage() {
+  const t = useT();
   const navigate = useNavigate();
   return (
     <HomeownerShell>

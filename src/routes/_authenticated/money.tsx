@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/money")({
 });
 
 function MoneyPage() {
+  const t = useT();
   return (
     <HomeownerShell>
       <main className="px-4 py-6 sm:px-5 sm:py-8">

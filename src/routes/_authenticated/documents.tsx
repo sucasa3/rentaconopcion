@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { DocumentsCard } from "@/components/documents-card";
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
 });
 
 function DocumentsPage() {
+  const t = useT();
   const navigate = useNavigate();
   return (
     <HomeownerShell>
