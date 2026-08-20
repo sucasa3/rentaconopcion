@@ -92,7 +92,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
                 )}
               >
                 {i.icon}
-                {i.label === "Docs" ? "Documents" : i.label}
+                {t(i.longLabelKey ?? i.labelKey)}
               </Link>
             ))}
           </nav>
