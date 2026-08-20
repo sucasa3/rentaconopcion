@@ -471,11 +471,9 @@ function PortfolioDetail() {
                         }
                         metrics={[
                           { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
-                          { label: "Equity", value: moneyCompact(c.equity_cents) },
-                          { label: "Rate", value: c.rate_at_close ? `${c.rate_at_close}%` : "—" },
                           {
-                            label: "Tenure",
-                            value: `${Math.round(c.months_since_close / 12)}y`,
+                            label: "Rate / LTV",
+                            value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}`,
                           },
                         ]}
                         onAction={() => setContact(c)}
