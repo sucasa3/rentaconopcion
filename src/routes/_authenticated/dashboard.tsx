@@ -10,7 +10,7 @@ import { type HomeHeroView } from "@/lib/home-hero-data";
 import { useHomeRecord } from "@/hooks/use-home-record";
 import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
-import { readOnboarding } from "@/lib/onboarding";
+
 import { CompleteAddressCard } from "@/components/complete-address-card";
 import { SummaryCard } from "@/components/ui-kit";
 import { useLogOnMount } from "@/hooks/use-activity-log";
@@ -119,18 +119,10 @@ function Dashboard() {
   });
 
   // The onboarding "focus" answer now picks a destination, not a tab.
-  const [appliedFocus, setAppliedFocus] = useState(false);
   const goToFocus = (focus: string) => {
     if (focus === "care") navigate({ to: "/home-care" });
     else if (focus === "documents") navigate({ to: "/documents" });
   };
-  useEffect(() => {
-    if (appliedFocus || userId === undefined) return;
-    setAppliedFocus(true);
-  }, [appliedFocus, userId]);
-  useEffect(() => {
-    if (!appliedFocus || !userId) return;
-  }, [appliedFocus, userId]);
 
   const heroData: HomeHeroView = {
     address: okIntel?.address || profileAddr || null,
