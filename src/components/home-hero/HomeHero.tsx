@@ -15,27 +15,35 @@ const fmtUsd = (n: number, compact = false) =>
   }).format(n);
 
 export function HomeHero({
-  data = HOME_HERO,
+  data,
   refiChip,
   scoreDetail,
   scorePending,
 }: {
-  data?: HomeHeroData;
+  data: HomeHeroView;
   refiChip?: React.ReactNode;
   scoreDetail?: HomeScoreResult | null;
   scorePending?: boolean;
 }) {
   const [years, setYears] = useState(0);
+  const hasValue = data.value != null;
+  const basePct = data.equityPct ?? 0;
   const projected = useMemo(
-    () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
-    [data, years],
+    () =>
+      data.value == null
+        ? { value: null, equity: data.equity, equityPct: data.equityPct }
+        : years === 0
+          ? { value: data.value, equity: data.equity, equityPct: data.equityPct }
+          : projectHome({ value: data.value, equityPct: basePct }, years),
+    [data, years, basePct],
   );
 
-  const value = useCountUp(projected.value);
-  const equity = useCountUp(projected.equity);
-  const roi = useCountUp(data.roi);
-  const score = useCountUp(data.homeScore);
-  const scoreText = scorePending ? "—" : String(Math.round(score));
+  const value = useCountUp(projected.value ?? 0);
+  const equity = useCountUp(projected.equity ?? 0);
+  const roi = useCountUp(data.roi ?? 0);
+  const score = useCountUp(data.homeScore ?? 0);
+  const noScore = scorePending || data.homeScore == null;
+  const scoreText = noScore ? "—" : String(Math.round(score));
 
 
   return (
