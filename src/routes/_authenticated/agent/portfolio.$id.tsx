@@ -605,17 +605,6 @@ function AgentPortfolio() {
                   Ranked on move intent × listing readiness. Modeled, not an appraisal.
                 </p>
 
-              {/* Listing readiness board */}
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-primary" />
-                  <h2 className="text-base font-semibold">
-                    Top listing opportunities @ {sellCost}% cost to sell
-                  </h2>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Ranked on move intent × listing readiness. Modeled, not an appraisal.
-                </p>
                 <div className="mt-4 space-y-3 md:hidden">
                   {data.top_listing_opportunities.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">
