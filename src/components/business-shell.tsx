@@ -37,6 +37,7 @@ function navItems(kind: BusinessKind, bookId: string | null): NavItem[] {
     });
   }
   items.push(
+    { label: "Tasks", to: `${base}/tasks`, icon: <CheckCircle2 className="h-5 w-5" /> },
     { label: "Opportunities", to: `${base}/opportunities`, icon: <Sparkles className="h-5 w-5" /> },
     { label: "Marketing", to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
     { label: "Network", to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
