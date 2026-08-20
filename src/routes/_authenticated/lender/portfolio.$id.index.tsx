@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
 import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
 import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 
 import {
