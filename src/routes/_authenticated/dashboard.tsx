@@ -232,16 +232,6 @@ function Dashboard() {
           />
 
           <SummaryCard
-            icon={<FileText className="h-5 w-5" />}
-            label="Documents"
-            headline={docCount > 0 ? `${docCount} saved` : "None yet"}
-            sentence={docsSentence}
-            tone={hasInspection ? "calm" : "brand"}
-            to="/documents"
-            actionLabel={hasInspection ? "Open documents" : "Add a document"}
-          />
-
-          <SummaryCard
             icon={<TrendingUp className="h-5 w-5" />}
             label="Value & equity"
             headline={money(okIntel?.value.value ?? null)}
@@ -258,6 +248,16 @@ function Dashboard() {
             tone="brand"
             to="/assistant"
             actionLabel="Ask a question"
+          />
+
+          <SummaryCard
+            icon={<FileText className="h-5 w-5" />}
+            label="Documents"
+            headline={docCount > 0 ? `${docCount} saved` : "None yet"}
+            sentence={docsSentence}
+            tone={hasInspection ? "calm" : "brand"}
+            to="/documents"
+            actionLabel={hasInspection ? "Open documents" : "Add a document"}
           />
 
           <div className="pt-1 text-center">
