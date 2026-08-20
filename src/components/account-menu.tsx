@@ -126,15 +126,15 @@ export function AccountMenu({
           <div className="min-w-0">
             <p className="truncate text-base font-semibold text-foreground">{name}</p>
             <p className="truncate text-sm text-muted-foreground">{user?.email ?? ""}</p>
-            <p className="mt-0.5 text-xs font-medium text-primary">{ROLE_LABEL[role]}</p>
+            <p className="mt-0.5 text-xs font-medium text-primary">{t(ROLE_LABEL_KEY[role])}</p>
           </div>
         </div>
 
         <div className="mt-3 overflow-hidden rounded-2xl border border-border/70 bg-card">
           {role === "homeowner" ? (
-            <Row to="/request" icon={<Wrench className="h-4 w-4" />} label="Request a service" onNavigate={() => setOpen(false)} />
+            <Row to="/request" icon={<Wrench className="h-4 w-4" />} label={t("account.request_service")} onNavigate={() => setOpen(false)} />
           ) : (
-            <Row to="/dashboard" icon={<Home className="h-4 w-4" />} label="My home" onNavigate={() => setOpen(false)} />
+            <Row to="/dashboard" icon={<Home className="h-4 w-4" />} label={t("account.my_home")} onNavigate={() => setOpen(false)} />
           )}
           {role === "homeowner" && businessHome && (
             <Row
