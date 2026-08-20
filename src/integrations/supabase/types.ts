@@ -526,6 +526,8 @@ export type Database = {
           body: string | null
           campaign_id: string
           created_at: string
+          crm_error: string | null
+          crm_status: string
           error_message: string | null
           ghl_contact_id: string | null
           homeowner_id: string | null
@@ -545,6 +547,8 @@ export type Database = {
           body?: string | null
           campaign_id: string
           created_at?: string
+          crm_error?: string | null
+          crm_status?: string
           error_message?: string | null
           ghl_contact_id?: string | null
           homeowner_id?: string | null
@@ -564,6 +568,8 @@ export type Database = {
           body?: string | null
           campaign_id?: string
           created_at?: string
+          crm_error?: string | null
+          crm_status?: string
           error_message?: string | null
           ghl_contact_id?: string | null
           homeowner_id?: string | null
