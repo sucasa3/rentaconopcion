@@ -157,6 +157,36 @@ function PortfolioDetail() {
     });
   }, [data, segment, search, statusParam]);
 
+  // Surface the single most actionable item at the top of the view.
+  const priority = useMemo(() => {
+    if (!data) return null;
+    const topRefi = data.top_refi_opportunities?.[0];
+    if (topRefi) {
+      return {
+        kind: "refi" as const,
+        client: topRefi,
+        title: `${topRefi.full_name} could save $${topRefi.savings_per_month_dollars.toLocaleString()}/mo`,
+        subtitle: `Current rate ${topRefi.rate_at_close ?? "—"}% · Balance ${moneyCompact(
+          topRefi.loan_balance_cents,
+        )} · Refi at ${benchmark.toFixed(2)}%`,
+        next: data.top_refi_opportunities.slice(1, 4).map((c: any) => ({
+          client: c,
+          label: `${c.full_name} — $${c.savings_per_month_dollars.toLocaleString()}/mo savings`,
+        })),
+      };
+    }
+    const missing = data.clients?.filter((c: any) => c.missing_loan_data);
+    if (missing?.length > 0) {
+      return {
+        kind: "enrich" as const,
+        title: `${missing.length} client${missing.length === 1 ? "" : "s"} need property records`,
+        subtitle: "Loan and equity details unlock refi opportunities and monthly savings estimates.",
+        next: [],
+      };
+    }
+    return null;
+  }, [data, benchmark]);
+
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
