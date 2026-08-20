@@ -1,31 +1,53 @@
-# Go-live readiness: not yet — 4 blockers
+# Simplify the portfolio/client detail view around action
 
-Verified just now against the live backend.
+## Problem
 
-| Check | State |
-|---|---|
-| Campaigns active | 12 — ready |
-| Homeowners in books | 1,063 |
-| Property records enriched | 479; enrichment queue empty (nothing stuck) |
-| Opportunities detected | 2,217 — engine working |
-| Emails actually sent | 0 (18 sends still `queued`) |
-| Email sender domain | `sucasa.com` status **initiated** — not verified |
-| GHL CRM push | **Failing** — all 18 sends: `401 token is not authorized for this scope` |
-| MLO sender identities | **0 saved** |
-| Lender org branding | Still "SuCasa Demo Lender" / `lender-demo@sucasa.com` |
+The portfolio pages (agent and lender) currently present several dense sections at once — summary tiles, segment filters, refi opportunities, a full client table, and (for agents) recommendation/referral/high-intent feeds. The most important information — who needs attention right now — is visible, but it does not dominate the view. On mobile the page becomes a long scroll of similarly-weighted cards, so users have to hunt for the next action.
 
-## Blocker 1 — Email domain not verified (external, yours)
-Nothing can send until DNS completes. Add at the registrar the TXT verification record and the `ns3.lovable.cloud` / `ns4.lovable.cloud` NS records shown in the email setup dialog, then re-check status.
+## Goal
 
-## Blocker 2 — GHL token still missing scopes (external, yours)
-The only recorded CRM failure is the same 401 on `/contacts/upsert`. Regenerate the private integration token in the new location with at least `contacts.readonly`, `contacts.write`, `opportunities.readonly`, `opportunities.write`, `locations.readonly`. Paste it and I'll swap it in and re-run the GHL Connection Doctor until every probe passes.
+Make the portfolio open with a clear, prioritized action queue. Everything else supports that queue rather than competing with it. The same layout must work on mobile and desktop without horizontal scrolling.
 
-## Blocker 3 — Real sender identity (small work on my side)
-- Rename the lender org and set real sender name, reply-to, phone, license, sign-off, logo.
-- Each MLO fills in their "My email identity" card (0 exist today), so mail comes from the officer, not the demo brand.
+## Changes
 
-## Blocker 4 — Dry-run before the first batch
-Once 1–3 are green: send one campaign to an address you control, confirm from-name, reply-to, unsubscribe, and that the GHL contact + opportunity appear. Then requeue the 18 stuck sends and open the batch to the enriched book.
+### 1. Lead with "What to do now"
+Add a full-width priority card at the top of both portfolio views. It shows:
+- The single most actionable homeowner (highest intent / biggest refi savings / longest overdue item).
+- A one-line reason in plain language.
+- A primary button that opens the client detail or starts the recommended action.
+- A secondary "Next 3" list for the queue.
 
-## What I'd do next in the app
-Only Blocker 3 is code/data work I can do now (org branding fields + prompting MLOs for identity, plus a "retry CRM push" action for the 18 stuck sends). Blockers 1 and 2 are DNS and GHL actions on your side; approving this plan sends no email.
+If there is nothing actionable, the card collapses into a calm empty state: "All caught up — we'll alert you when something changes."
+
+### 2. Reorder and group the page into three zones
+```text
+1. What to do now        (priority queue)
+2. Opportunities         (pre-qualified signals worth acting on)
+3. Your book             (searchable, filterable client list)
+```
+
+Move the summary tiles and segment chips into a compact sticky header above the client list so they remain available without taking prime screen real estate. For agents, the recommendation/referral/high-intent feeds merge into the Opportunities zone as filtered SignalCards instead of separate tabbed sections.
+
+### 3. Simplify the client list card
+Each PersonCard currently shows up to six metrics. Reduce to the two numbers that matter for the role:
+- Lender: estimated balance + rate/LTV.
+- Agent: estimated value + move-intent band.
+
+Add a single, consistent status pill per row. Remove duplicated address/location text that already appears in the subtitle.
+
+### 4. Make actions reachable on mobile
+Convert the client-detail dialog into a bottom sheet on viewports below `md` so the primary action button sits in the thumb zone. Add a sticky floating action button on mobile to quickly add a homeowner or start an enrichment pass, replacing the scattered top-bar buttons.
+
+### 5. Reduce visual noise
+- Replace the current mix of `rounded-3xl` cards, inline tables, and ad-hoc borders with the existing `SignalCard` / `OpportunityCard` / `PersonCard` primitives only.
+- Use color intentionally: growth green for positive/opportunity signals, attention amber for things needing action, neutral for background status. No new colors.
+- Increase whitespace between zones and reduce the number of uppercase labels.
+
+## Verification
+- Screenshot the lender and agent portfolio pages at 320/375/390/430px and 1280/1440px.
+- Confirm the top of each view leads with a clear action and that no horizontal scrolling occurs.
+- Confirm the bottom-sheet detail view opens and closes cleanly on mobile widths.
+
+## Technical notes
+- Files touched: `src/routes/_authenticated/lender/portfolio.$id.index.tsx`, `src/routes/_authenticated/agent/portfolio.$id.tsx`, `src/components/ui-kit/index.tsx` (add `BottomSheet` or use existing sheet/dialog), and `src/components/business-shell.tsx` (mobile FAB placement if needed).
+- Presentation only: no schema, query, or server-function changes.
