@@ -1323,6 +1323,7 @@ function ClientDrawer({
   onSaveListing: (v: any) => void;
   saving: boolean;
 }) {
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState<string>(client.listing?.status ?? "off_market");
   const [otherAgent, setOtherAgent] = useState<boolean>(
     client.listing?.listed_with_other_agent ?? false,
@@ -1330,9 +1331,20 @@ function ClientDrawer({
   const [agentName, setAgentName] = useState<string>(client.listing?.listing_agent_name ?? "");
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-foreground/40" onClick={onClose}>
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex bg-foreground/40",
+        isMobile ? "items-end justify-center" : "justify-end",
+      )}
+      onClick={onClose}
+    >
       <aside
-        className="h-full w-full max-w-md overflow-y-auto bg-background p-6 shadow-soft"
+        className={cn(
+          "w-full overflow-y-auto bg-background p-6 shadow-soft",
+          isMobile
+            ? "max-h-[85vh] rounded-t-3xl sm:max-w-2xl"
+            : "h-full max-w-md",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
