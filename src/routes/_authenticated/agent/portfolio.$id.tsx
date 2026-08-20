@@ -450,6 +450,48 @@ function AgentPortfolio() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
+  // Surface the single most actionable homeowner at the top of the view.
+  const priority = useMemo(() => {
+    if (!data) return null;
+    const topHigh = (data.high_intent_feed ?? [])[0];
+    if (topHigh) {
+      return {
+        kind: "high_intent" as const,
+        client: data.clients?.find((c: any) => c.id === topHigh.client_id),
+        title: `${topHigh.client_name ?? "A homeowner"} is showing high intent`,
+        subtitle: topHigh.reason,
+        next: (data.high_intent_feed ?? []).slice(1, 4).map((h: any) => ({
+          client: data.clients?.find((c: any) => c.id === h.client_id),
+          label: `${h.client_name ?? "Household"} — ${h.reason}`,
+        })),
+      };
+    }
+    const topListing = data.top_listing_opportunities?.[0];
+    if (topListing) {
+      return {
+        kind: "listing" as const,
+        client: topListing,
+        title: `${topListing.name} could be list-ready`,
+        subtitle: `Readiness ${topListing.readiness_score} · Net proceeds ${moneyCompact(topListing.net_proceeds)}`,
+        next: data.top_listing_opportunities.slice(1, 4).map((c: any) => ({
+          client: c,
+          label: `${c.name} — readiness ${c.readiness_score}`,
+        })),
+      };
+    }
+    const missing = data.clients?.filter((c: any) => !c.has_intel);
+    if (missing?.length > 0) {
+      return {
+        kind: "enrich" as const,
+        client: null,
+        title: `${missing.length} household${missing.length === 1 ? "" : "s"} need property records`,
+        subtitle: "Value, equity and readiness scores unlock after records are pulled.",
+        next: [],
+      };
+    }
+    return null;
+  }, [data]);
+
   return (
     <BusinessShell kind="agent" bookId={id}>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
