@@ -55,6 +55,9 @@ export function GuidedOnboarding({
   }
 
   function dismiss() {
+    // Closing counts as "seen" so the guide never auto-opens again — it can
+    // still be reopened on demand from the trigger button.
+    if (userId !== undefined) writeOnboarding(role, userId ?? null, focus);
     setOpen(false);
     setTimeout(() => setStep(0), 250);
   }
