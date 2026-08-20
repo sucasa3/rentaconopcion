@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Home, LogOut, User as UserIcon, Wrench } from "lucide-react";
+import { Briefcase, Home, LogOut, User as UserIcon, Wrench } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { getMyWorkspace } from "@/lib/business.functions";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -65,6 +67,21 @@ export function AccountMenu({
 
   const name = displayName(user);
 
+  // Some homeowners are also agents/lenders — offer a way back to their business area.
+  const { data: workspace } = useQuery({
+    queryKey: ["my-workspace", user?.id ?? "anon"],
+    queryFn: () => getMyWorkspace(),
+    enabled: Boolean(user?.id),
+    staleTime: 5 * 60 * 1000,
+  });
+  const businessHome =
+    workspace && workspace.home !== "/dashboard" ? workspace.home : null;
+  const businessLabel = workspace?.isAgent
+    ? "Agent dashboard"
+    : workspace?.isLender
+      ? "Lender dashboard"
+      : "Admin dashboard";
+
   async function signOut() {
     setOpen(false);
     await supabase.auth.signOut();
@@ -115,6 +132,14 @@ export function AccountMenu({
             <Row to="/request" icon={<Wrench className="h-4 w-4" />} label="Request a service" onNavigate={() => setOpen(false)} />
           ) : (
             <Row to="/dashboard" icon={<Home className="h-4 w-4" />} label="My home" onNavigate={() => setOpen(false)} />
+          )}
+          {role === "homeowner" && businessHome && (
+            <Row
+              to={businessHome}
+              icon={<Briefcase className="h-4 w-4" />}
+              label={businessLabel}
+              onNavigate={() => setOpen(false)}
+            />
           )}
           <Row to="/services" icon={<UserIcon className="h-4 w-4" />} label="Browse services" onNavigate={() => setOpen(false)} />
         </div>
