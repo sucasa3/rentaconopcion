@@ -137,45 +137,50 @@ function Dashboard() {
   };
 
   // ---------------------------------------------------------------- summaries
-  const lateCount = timeline.filter((t) => t.status === "overdue").length;
-  const soonCount = timeline.filter((t) => t.status === "due_soon").length;
-  const topItem = timeline.find((t) => t.status === "overdue") ??
-    timeline.find((t) => t.status === "due_soon") ??
+  const lateCount = timeline.filter((item) => item.status === "overdue").length;
+  const soonCount = timeline.filter((item) => item.status === "due_soon").length;
+  const topItem = timeline.find((item) => item.status === "overdue") ??
+    timeline.find((item) => item.status === "due_soon") ??
     null;
 
   const careHeadline =
     timeline.length === 0
-      ? "Let's start"
+      ? t("dash.care.start")
       : lateCount > 0
-        ? `${lateCount} late`
+        ? t("dash.care.late", { count: lateCount })
         : soonCount > 0
-          ? `${soonCount} coming up`
-          : "All good";
+          ? t("dash.care.coming_up", { count: soonCount })
+          : t("dash.care.all_good");
   const careSentence =
     timeline.length === 0
-      ? "Tell us a little about your home and we'll build your to-do list."
+      ? t("dash.care.empty")
       : topItem
-        ? `Start with your ${topItem.label.toLowerCase()}.`
-        : "Nothing needs you today. We'll tell you when that changes.";
+        ? t("dash.care.start_with", { item: topItem.label.toLowerCase() })
+        : t("dash.care.nothing");
   const careTone = lateCount > 0 ? "urgent" : soonCount > 0 ? "opportunity" : "calm";
 
   const docCount = (docs ?? []).length;
   const findingCount = (findings ?? []).length;
   const hasInspection = (docs ?? []).some((d: any) => d.kind === "inspection");
   const docsSentence = !hasInspection
-    ? "Add your inspection report and we'll turn it into a to-do list."
+    ? t("dash.docs.add_inspection")
     : findingCount > 0
-      ? `We read your inspection report and found ${findingCount} thing${findingCount === 1 ? "" : "s"} to watch.`
-      : "Your paperwork is saved and searchable.";
+      ? findingCount === 1
+        ? t("dash.docs.findings_one")
+        : t("dash.docs.findings_many", { count: findingCount })
+      : t("dash.docs.saved_searchable");
 
   const equityPct = okIntel?.equity?.equityPct ?? null;
   const moneySentence = okIntel?.equity
-    ? `You hold ${money(okIntel.equity.equityDollars)} in equity${
-        equityPct != null ? ` — ${Math.round(equityPct * 100)}% of your home` : ""
-      }.`
+    ? equityPct != null
+      ? t("dash.money.equity_line_pct", {
+          amount: money(okIntel.equity.equityDollars),
+          pct: Math.round(equityPct * 100),
+        })
+      : t("dash.money.equity_line", { amount: money(okIntel.equity.equityDollars) })
     : hasAddress
-      ? "We're still matching your home to public records."
-      : "Add your address and we'll pull your value and equity.";
+      ? t("dash.money.matching")
+      : t("dash.money.add_address");
 
   const needsAddress =
     rawIntel &&
