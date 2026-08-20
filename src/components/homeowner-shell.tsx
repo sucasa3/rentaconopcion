@@ -67,6 +67,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
   const tab = useRouterState({
     select: (s) => (s.location.search as { tab?: string } | undefined)?.tab,
   });
+  const t = useT();
 
 
 
