@@ -1083,12 +1083,10 @@ function AgentPortfolio() {
                           </>
                         }
                         metrics={[
-                          { label: "Value", value: moneyCompact(c.estimated_value) },
-                          { label: "Equity", value: moneyCompact(c.equity_dollars) },
-                          { label: "Net proceeds", value: moneyCompact(c.net_proceeds) },
+                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
                           {
-                            label: "Tenure",
-                            value: c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—",
+                            label: "Intent",
+                            value: c.move_score ? `${c.move_score} · ${BAND_META[c.band]?.label ?? c.band}` : "—",
                           },
                         ]}
                         extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
