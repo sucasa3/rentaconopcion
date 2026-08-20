@@ -4,7 +4,6 @@ import { askAssistant } from "@/lib/assistant.functions";
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent, MessageResponse } from "@/components/ai-elements/message";
@@ -17,16 +16,18 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { Home } from "lucide-react";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 type Msg = { id: string; role: "user" | "assistant"; content: string };
 
-const SUGGESTIONS = [
-  "When should I service my HVAC?",
-  "What do my inspection findings mean?",
-  "Am I a good refi candidate?",
+const SUGGESTION_KEYS: TranslationKey[] = [
+  "assistant.suggestion.hvac",
+  "assistant.suggestion.findings",
+  "assistant.suggestion.refi",
 ];
 
 export function HomeAssistantCard() {
+  const t = useT();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState<"ready" | "submitted" | "error">("ready");
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export function HomeAssistantCard() {
       ]);
       setStatus("ready");
     } catch (e) {
-      const msg = (e as Error).message || "Something went wrong.";
+      const msg = (e as Error).message || t("assistant.error");
       setError(msg);
       setStatus("error");
     } finally {
@@ -67,9 +68,9 @@ export function HomeAssistantCard() {
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">Home Assistant</h2>
+        <h2 className="text-base font-semibold">{t("assistant.title")}</h2>
         <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-accent-foreground">
-          Beta
+          {t("assistant.beta")}
         </span>
       </div>
 
@@ -77,18 +78,18 @@ export function HomeAssistantCard() {
         <>
           <div className="mt-4 rounded-2xl gradient-brand p-5 text-white">
             <div className="flex items-center gap-2 text-xs opacity-80">
-              <Home className="h-3.5 w-3.5" /> Ask anything about your home
+              <Home className="h-3.5 w-3.5" /> {t("assistant.ask_anything")}
             </div>
-            <p className="mt-2 text-sm">"When should I service my HVAC?"</p>
+            <p className="mt-2 text-sm">{t("assistant.example")}</p>
           </div>
           <div className="mt-3 space-y-2">
-            {SUGGESTIONS.map((s) => (
+            {SUGGESTION_KEYS.map((key) => (
               <button
-                key={s}
-                onClick={() => send(s)}
+                key={key}
+                onClick={() => send(t(key))}
                 className="w-full rounded-2xl border border-border p-3 text-left text-sm hover:bg-secondary"
               >
-                {s}
+                {t(key)}
               </button>
             ))}
           </div>
@@ -114,7 +115,7 @@ export function HomeAssistantCard() {
               {status === "submitted" ? (
                 <Message from="assistant">
                   <MessageContent className="!bg-transparent !p-0">
-                    <Shimmer>Thinking…</Shimmer>
+                    <Shimmer>{t("assistant.thinking")}</Shimmer>
                   </MessageContent>
                 </Message>
               ) : null}
@@ -123,7 +124,6 @@ export function HomeAssistantCard() {
           </Conversation>
         </div>
       )}
-
 
       {error ? (
         <p className="mt-2 rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
@@ -135,7 +135,7 @@ export function HomeAssistantCard() {
         <PromptInput onSubmit={onSubmit}>
           <PromptInputTextarea
             ref={textareaRef}
-            placeholder="Ask about your home…"
+            placeholder={t("assistant.placeholder")}
             disabled={status === "submitted"}
           />
           <PromptInputFooter className="justify-end">

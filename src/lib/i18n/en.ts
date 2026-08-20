@@ -143,6 +143,272 @@ export const en = {
   "ob.err.generic": "We couldn't create your account. Please try again.",
   "ob.err.confirm_email": "Check your email to confirm your account, then sign in to finish your profile.",
   "ob.err.unknown": "Something went wrong. Please try again.",
+  // -------------------------------------------------------------- home care
+  "care.loading": "Loading your home care plan…",
+  "care.hero.eyebrow": "Home care",
+  "care.hero.title": "Take care of this",
+  "care.hero.subtitle": "The things your home needs, biggest first.",
+  "care.status.setup": "Tell us a little about your home and we'll build your to-do list.",
+  "care.status.late_one": "1 thing is late.",
+  "care.status.late_many": "{count} things are late.",
+  "care.status.late_one_soon": "1 thing is late, and {soon} coming up.",
+  "care.status.late_many_soon": "{count} things are late, and {soon} coming up.",
+  "care.status.soon_one": "Nothing is late. 1 thing is coming up.",
+  "care.status.soon_many": "Nothing is late. {count} things are coming up.",
+  "care.status.all_good": "Everything looks good today. We'll tell you when that changes.",
+  "care.action.add_details": "Add home details",
+  "care.action.start": "Start with this one",
+  "care.connect.none": "Upload an inspection report and this list gets a lot smarter.",
+  "care.connect.findings_one": "Your inspection report added 1 note to this list.",
+  "care.connect.findings_many": "Your inspection report added {count} notes to this list.",
+  "care.connect.findings_one_urgent":
+    "Your inspection report added 1 note to this list — {urgent} need attention soon.",
+  "care.connect.findings_many_urgent":
+    "Your inspection report added {count} notes to this list — {urgent} need attention soon.",
+  "care.connect.label": "Go to Documents",
+  "care.empty": "Add your home details and we'll tell you what needs doing — and when.",
+  "care.legend.late": "Late",
+  "care.legend.soon": "Coming up",
+  "care.legend.ok": "All good",
+  "care.kind.system": "Big stuff",
+  "care.kind.routine": "Quick job",
+  "care.timing.late": "Late",
+  "care.timing.soon": "Coming up",
+  "care.timing.years_left": "About {years} years left",
+  "care.detail.overdue": "Put in around {year}. That's older than most last, so plan for it.",
+  "care.detail.due_soon": "Put in around {year}. It's getting close to the end of its life.",
+  "care.detail.ok": "Put in around {year}. Looking fine for now.",
+  "care.routine.due": "{hint} Do this about every {months} months.",
+  "care.routine.done_on": "{hint} You did this on {date} — nothing to do yet.",
+  "care.routine.done_recently": "{hint} You did this recently — nothing to do yet.",
+  "care.btn.update": "Update this",
+  "care.btn.did_it": "I did this",
+  "care.btn.did_again": "Did it again",
+  "care.btn.get_help": "Get help",
+  "care.btn.show_less": "Show less",
+  "care.btn.see_all": "See everything ({count})",
+  "care.toast.logged": "Logged — that lifts your Home Score",
+  "care.toast.error": "Could not save that",
+
+  "care.system.roof": "Roof",
+  "care.system.hvac": "HVAC system",
+  "care.system.water_heater": "Water heater",
+  "care.system.windows": "Windows",
+  "care.system.electrical": "Electrical panel",
+  "care.system.siding": "Exterior siding/paint",
+
+  "care.seasonal.hvac_filter.label": "Replace HVAC filter",
+  "care.seasonal.hvac_filter.hint": "Keeps airflow strong and cuts strain on the system.",
+  "care.seasonal.gutters.label": "Clean gutters & downspouts",
+  "care.seasonal.gutters.hint": "Prevents overflow that damages roof edges and foundations.",
+  "care.seasonal.water_heater_flush.label": "Flush the water heater",
+  "care.seasonal.water_heater_flush.hint":
+    "Clears sediment so the tank lasts closer to its full life.",
+  "care.seasonal.dryer_vent.label": "Clear the dryer vent",
+  "care.seasonal.dryer_vent.hint": "A blocked vent is a common and preventable fire risk.",
+  "care.seasonal.smoke_detectors.label": "Test smoke & CO detectors",
+  "care.seasonal.smoke_detectors.hint": "Swap batteries and confirm every alarm sounds.",
+  "care.seasonal.exterior_caulk.label": "Check exterior caulk & seals",
+  "care.seasonal.exterior_caulk.hint":
+    "Sealing gaps around windows and doors lowers energy loss.",
+
+  // --------------------------------------------------------- next step card
+  "next.eyebrow": "Your next suggested step",
+  "next.overdue": "{label} is {years} yr past its expected life",
+  "next.soon": "{label} is nearing end of life (~{years} yr left)",
+  "next.btn.how": "How to handle this",
+  "next.btn.quotes": "Get quotes",
+  "next.btn.done": "Already done — add details",
+  "next.pro.founding": "Founding partner",
+  "next.pro.reviews": "{count} reviews",
+  "next.pro.request": "Request this pro",
+  "next.dialog.title": "{label} — what to do",
+  "next.dialog.steps": "Steps",
+  "next.dialog.diy": "DIY vs. pro:",
+  "next.dialog.cost": "Typical cost:",
+  "next.dialog.cta": "Get quotes from a SuCasa pro",
+  "next.dialog.disclaimer":
+    "Estimates are general guidance from standard component lifespans — your pro's inspection is the final word.",
+
+  "guide.fallback.what":
+    "{label} is projected to reach the end of its expected life around {year}.",
+  "guide.fallback.step1": "Confirm the install date on the equipment label or your records.",
+  "guide.fallback.step2": "Look for visible wear, leaks or performance changes.",
+  "guide.fallback.step3": "Get two written quotes so you can compare scope and price.",
+  "guide.fallback.diy": "Inspect visually; leave repairs to a licensed pro.",
+  "guide.fallback.cost": "Ask each pro for a line-item estimate.",
+
+  "guide.roof.what":
+    "A roof at or past its expected life can let water in long before you see a stain on the ceiling.",
+  "guide.roof.step1": "Walk the perimeter and look for curling, cracked or missing shingles.",
+  "guide.roof.step2": "Check gutters for shingle granules — a sign the surface is wearing out.",
+  "guide.roof.step3": "Look in the attic after rain for damp sheathing or daylight through the deck.",
+  "guide.roof.step4":
+    "Book a licensed roofer for a written inspection with photos before deciding repair vs. replace.",
+  "guide.roof.diy": "Visual checks from the ground are fine. Never walk the roof yourself.",
+  "guide.roof.cost":
+    "Inspections are often free or $150–$400; repairs vary widely by pitch and material.",
+
+  "guide.hvac.what":
+    "Systems past 15 years lose efficiency, run longer and are more likely to fail in peak season.",
+  "guide.hvac.step1": "Replace the air filter and note the model year on the outdoor unit's label.",
+  "guide.hvac.step2": "Listen for short cycling, hard starts or new noises.",
+  "guide.hvac.step3":
+    "Compare summer/winter bills year over year — a jump usually means lost efficiency.",
+  "guide.hvac.step4":
+    "Schedule a tune-up and ask for a repair-vs-replace estimate with efficiency numbers.",
+  "guide.hvac.diy": "Filter changes and clearing debris around the outdoor unit are homeowner tasks.",
+  "guide.hvac.cost":
+    "Tune-ups typically $90–$200; replacement quotes should always be compared across pros.",
+
+  "guide.water_heater.what":
+    "Tank heaters average 10 years. Most fail by leaking, which can flood a finished space.",
+  "guide.water_heater.step1": "Find the serial number on the tank label to confirm its age.",
+  "guide.water_heater.step2":
+    "Look for rust at the base, moisture on the pan or discolored hot water.",
+  "guide.water_heater.step3": "Flush sediment once a year if the manufacturer allows it.",
+  "guide.water_heater.step4":
+    "Get a quote for a like-for-like tank and a tankless option so you can compare.",
+  "guide.water_heater.diy":
+    "Flushing is doable; any gas or venting work should go to a licensed plumber.",
+  "guide.water_heater.cost":
+    "Flush service $100–$200; replacement typically $1,200–$3,500 installed.",
+
+  "guide.windows.what":
+    "Failing seals and old frames drive up energy bills and let moisture into the wall.",
+  "guide.windows.step1": "Check for fogging between panes — that means the seal has failed.",
+  "guide.windows.step2": "Feel for drafts around frames on a cold or windy day.",
+  "guide.windows.step3": "Note which rooms are hardest to keep comfortable.",
+  "guide.windows.step4":
+    "Ask a pro to price full replacement vs. sash/seal repair for the worst windows only.",
+  "guide.windows.diy": "Re-caulking and weather-stripping are easy wins before any replacement.",
+  "guide.windows.cost": "Caulk and weather-strip under $60; replacements $450–$1,200 per window.",
+
+  "guide.electrical.what":
+    "Older panels can be undersized for today's loads, and some brands are known fire risks.",
+  "guide.electrical.step1": "Photograph the panel label — brand, amperage and year.",
+  "guide.electrical.step2":
+    "Note any breakers that trip repeatedly, warm covers or burning smell (call immediately).",
+  "guide.electrical.step3": "List planned additions: EV charger, heat pump, hot tub, ADU.",
+  "guide.electrical.step4":
+    "Book a licensed electrician for a panel evaluation and load calculation.",
+  "guide.electrical.diy": "None. Never open or work inside a panel yourself.",
+  "guide.electrical.cost": "Evaluations $100–$250; panel upgrades commonly $1,800–$4,500.",
+
+  "guide.siding.what":
+    "Paint and siding are the home's weather barrier — once it fails, repairs get structural.",
+  "guide.siding.step1":
+    "Look for peeling paint, soft trim, gaps at joints and caulk that has pulled away.",
+  "guide.siding.step2": "Probe suspect trim with a screwdriver; softness means rot.",
+  "guide.siding.step3": "Prioritize the sun- and rain-facing elevations first.",
+  "guide.siding.step4":
+    "Get quotes that separate carpentry repair from paint so you can phase the work.",
+  "guide.siding.diy": "Washing and spot-caulking are homeowner-friendly; ladder work is not.",
+  "guide.siding.cost": "Spot repairs a few hundred dollars; full exterior paint $4,000–$12,000.",
+
+  // -------------------------------------------------------------- documents
+  "docs.hero.eyebrow": "Documents",
+  "docs.hero.title": "Documents",
+  "docs.hero.subtitle": "Papers about your home, saved in one place.",
+  "docs.status.uploading": "Uploading…",
+  "docs.status.empty": "Nothing saved yet. Start with your inspection report — we'll read it for you.",
+  "docs.status.analyzing": "We're reading your inspection report right now. Give it a minute.",
+  "docs.status.no_inspection_one":
+    "We're keeping 1 file for you. Add your inspection report next — it's the useful one.",
+  "docs.status.no_inspection_many":
+    "We're keeping {count} files for you. Add your inspection report next — it's the useful one.",
+  "docs.status.ok_one": "We're keeping 1 file safe for you, and using it to build your to-do list.",
+  "docs.status.ok_many":
+    "We're keeping {count} files safe for you, and using them to build your to-do list.",
+  "docs.action.add": "Add a document",
+  "docs.action.add_inspection": "Add your inspection report",
+  "docs.connect.note": "Whatever you add here helps us tell you what your home really needs.",
+  "docs.connect.label": "See what needs doing",
+  "docs.uploading_what": "What are you uploading?",
+  "docs.type_aria": "Document type",
+  "docs.choose_file": "Choose file",
+  "docs.kind.inspection": "Inspection report",
+  "docs.kind.insurance": "Insurance policy",
+  "docs.kind.warranty": "Warranty",
+  "docs.kind.deed": "Deed",
+  "docs.kind.other": "Other",
+  "docs.kind.other_label": "Document",
+  "docs.help.inspection":
+    "Best first upload — we read it and turn it into a condition list and service recommendations.",
+  "docs.help.insurance": "Lets us flag coverage gaps and remind you before renewal.",
+  "docs.help.warranty": "So you never pay for a repair that's still covered.",
+  "docs.help.deed": "Confirms ownership details behind your value and equity numbers.",
+  "docs.help.other": "Anything else worth keeping with your home's record.",
+  "docs.empty.title": "No documents yet",
+  "docs.empty.body":
+    "Your inspection report is the fastest win — we read it and tell you what your home needs, in order.",
+  "docs.empty.cta": "Upload inspection report",
+  "docs.badge.reading": "Reading…",
+  "docs.badge.analyzed": "Analyzed",
+  "docs.badge.failed": "Couldn't read",
+  "docs.aria.view": "View",
+  "docs.aria.delete": "Delete",
+  "docs.toast.removed": "Document removed",
+  "docs.toast.uploaded": "Document uploaded",
+  "docs.toast.reading": "Reading your inspection report…",
+  "docs.toast.found_one": "Found 1 thing worth knowing about your home",
+  "docs.toast.found_many": "Found {count} things worth knowing about your home",
+  "docs.toast.read_failed": "We couldn't read that report: {message}",
+  "docs.err.not_signed_in": "Not signed in",
+
+  // ------------------------------------------------------------------ money
+  "money.loading": "Loading equity & mortgage…",
+  "money.title": "Equity & mortgage",
+  "money.basis.waiting": "Waiting on a value for your home.",
+  "money.basis.assessed":
+    "Based on assessor market value ({amount}) — no automated estimate on record for this address.",
+  "money.basis.avm": "Based on an automated estimate of {amount}.",
+  "money.refi.signal": "Refi signal",
+  "money.refi.strong": "strong",
+  "money.refi.moderate": "moderate",
+  "money.refi.watch": "watch",
+  "money.refi.savings": "Could save ~{amount}/mo · See options",
+  "money.refi.see_options": "See your lending options",
+  "money.needs_value": "Equity and cash-out headroom need a value to calculate.",
+  "money.retry": "Retry",
+  "money.stat.equity": "Estimated equity",
+  "money.stat.equity_pct_assessed": "{pct} of assessed value",
+  "money.stat.equity_pct": "{pct} of value",
+  "money.stat.no_valuation": "No valuation on record",
+  "money.stat.cash_out": "Cash-out headroom",
+  "money.stat.needs_valuation": "Needs a valuation",
+  "money.stat.ltv_assessed": "At 80% LTV · assessed value",
+  "money.stat.ltv": "At 80% LTV",
+  "money.stat.loan": "Loan balance (est.)",
+  "money.stat.no_mortgage": "None on record",
+  "money.stat.no_mortgage_detail": "No open mortgage in public records",
+  "money.stat.rate_lender": "{rate}% · {lender}",
+  "money.stat.lender_word": "lender",
+  "money.stat.permits": "Permits on file",
+  "money.stat.permit_last": "Last {date}",
+  "money.stat.permit_recorded": "Recorded",
+  "money.stat.owned_no_permits": "Owned ~{years} yr · none on record",
+  "money.stat.none_on_record": "None on record",
+  "money.permits.note":
+    "No permits found on public record for this address. Permit coverage varies by jurisdiction, so local permits may exist without appearing here.",
+  "value.status.no_coverage": "No valuation on public record for this address yet.",
+  "value.status.incomplete_address":
+    "Finish your address (city, state and ZIP) so we can match your property records.",
+  "value.status.no_address": "Add your home address to see value and equity.",
+  "value.status.budget_capped": "Waiting on property records — showing cached data for now.",
+  "value.status.resolved": "",
+
+  // -------------------------------------------------------------- assistant
+  "assistant.title": "Home Assistant",
+  "assistant.beta": "Beta",
+  "assistant.ask_anything": "Ask anything about your home",
+  "assistant.example": "\"When should I service my HVAC?\"",
+  "assistant.suggestion.hvac": "When should I service my HVAC?",
+  "assistant.suggestion.findings": "What do my inspection findings mean?",
+  "assistant.suggestion.refi": "Am I a good refi candidate?",
+  "assistant.thinking": "Thinking…",
+  "assistant.placeholder": "Ask about your home…",
+  "assistant.error": "Something went wrong.",
 } as const;
 
 export type TranslationKey = keyof typeof en;
