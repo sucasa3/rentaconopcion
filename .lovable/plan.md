@@ -1,47 +1,27 @@
-# Homeowner dashboard: the "5th grader" version
+# Fix: Neil's homeowner account shows the example home
 
-Goal: someone should understand this screen in 5 seconds without reading anything twice. Same deep blue + green look, same data — much plainer words, bigger visuals, fewer things on screen at once.
+## What's actually happening
 
-## The big idea
+Two separate things, and only one of them is a data problem.
 
-Three plain-language blocks stacked on one scrolling page, each with a big friendly headline and a picture-first summary:
+1. The homeowner profile for `neilterc@hotmail.com` (Neil Terc) has **no address at all** — street, city, state and ZIP are all empty. The account signed in this morning, so this is the live account he's looking at.
+2. The dashboard doesn't handle "no address" gracefully. When there's no address and no property intel, it falls back to the built-in demo home used on the marketing page — `123 Main St, Austin`, $482,300 value, 39% equity, home score 82. So instead of an empty state, Neil sees a fake home that looks real.
 
-```text
-1. YOUR HOME            "Here's what your home is worth"
-   Big number + a simple up/down line. One tap for details.
+The Gunstock address does exist in the system: `2138 Gunstock Dr, Stone Mountain, GA 30087` is saved on two other test homeowner profiles (Johnny Garcia, Sandra Davis), and property records for it are already cached (valuation and property detail pulled Aug 6). It was simply never attached to Neil's own account.
 
-2. TAKE CARE OF THIS    "3 things need you"
-   Red / yellow / green dots. One item per row, plain sentence.
+## Fix
 
-3. YOUR PAPERS          "We're holding 6 papers for you"
-   Big drop zone. Says what a paper does for them.
-```
-
-## What changes
-
-**Plain words everywhere.** "Home care" becomes "Take care of this". "Documents" becomes "Your papers". "Systems / Routine" tags become "Big stuff" and "Quick job". "Overdue" becomes "Late". "Due soon" becomes "Coming up". No jargon like equity, readiness, signals, record — those move into the detail views with a one-line explanation.
-
-**Traffic lights instead of numbers.** Every care item gets a colored dot: red = late, yellow = coming up, green = all good. The section headline just counts the red and yellow ones ("2 things are late, 1 is coming up"). No scores, badges, or percentages in the main list.
-
-**One sentence per item.** Each row: what it is, why it matters in kid-plain language ("Your water heater is 14 years old. Most last about 12."), and one green button ("Mark it done" or "Get help").
-
-**Show at most 4 things.** The list opens with the items that need attention plus one green one, then a big "See everything" button. Nothing else competes for attention.
-
-**Bigger touch targets.** Rows become full-width tappable cards with a large icon tile, min 56px tall, generous spacing — thumb-friendly on the 393px screen.
-
-**A friendly empty/greeting line.** Top of the page: "Hi Neil — your home looks okay today" or "Hi Neil — 2 things need you this week", set by the same urgency logic.
-
-**Illustrated section headers.** Each of the three blocks gets a simple icon badge and one-line explainer instead of the current dense hero with chips and status text.
-
-## What stays the same
-
-Data, queries, routing, credits, scoring logic, and the existing scroll-anchor navigation all stay untouched. This is presentation only.
+1. **Attach the real home to his account** — set address `2138 Gunstock Dr`, city `Stone Mountain`, state `GA`, ZIP `30087` on Neil's profile, then let the dashboard pull records. Since that address is already cached, value/equity/details should fill in immediately with no new lookup spend.
+2. **Never show the demo home to a signed-in homeowner.** Remove the marketing fallback from the homeowner dashboard: when there's no address, or no value on record, show the "Finish your address" card and blank/placeholder figures instead of Austin numbers, a fake score and fake system statuses.
+3. **Same for the score and system dots** — the roof/HVAC/plumbing/electrical statuses and the home score currently fall back to the demo values too. With no real record they should read as "not enough info yet" rather than green/amber lights for someone else's house.
 
 ## Technical notes
 
-- `src/components/section-hero.tsx`: add a simpler `plain` variant — big icon badge, headline, one explainer line, one primary action. Drop chips/status clutter for homeowner use.
-- `src/components/home-care-panel.tsx`: keep the merged priority list built last turn; restyle rows as large tappable cards with a status dot, plain-language copy map for labels/reasons, and collapse to 4 items by default.
-- `src/components/documents-card.tsx`: reword to "Your papers", lead with a large upload target and a one-line "why this helps" note.
-- `src/routes/_authenticated/dashboard.tsx`: add the greeting line, reorder so "Take care of this" sits directly under the greeting (most actionable first), then papers, then home numbers.
-- `src/components/homeowner-shell.tsx`: rename nav labels to match ("Home", "To do", "Papers").
-- All colors via existing semantic tokens (destructive / accent / growth); no new hardcoded colors.
+- `src/routes/_authenticated/dashboard.tsx` builds `heroData` by spreading `HOME_HERO` from `src/lib/home-hero-data.ts` and only overriding fields when real data exists. Replace with an explicit "no data" hero state: `value`, `equity`, `equityPct`, `homeScore`, `zones` become nullable and the hero renders dashes/skeleton.
+- `src/components/home-hero/HomeHero.tsx` needs to accept those nullable fields and hide the projection slider / ROI line when there's no value.
+- `HOME_HERO` stays as the marketing-page sample only; it should no longer be imported by any authenticated route.
+- The address correction for Neil's profile is a one-row data update, not a schema change.
+
+## Please confirm
+
+Is `2138 Gunstock Dr, Stone Mountain, GA 30087` the exact address for his home? That's the Gunstock property already in the system — if his is a different house number on that street, tell me and I'll use that instead.
