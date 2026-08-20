@@ -14,21 +14,23 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 export type AccountRole = "homeowner" | "agent" | "lender";
 
-const ROLE_LABEL: Record<AccountRole, string> = {
-  homeowner: "Homeowner",
-  agent: "Agent",
-  lender: "Lender",
+const ROLE_LABEL_KEY: Record<AccountRole, TranslationKey> = {
+  homeowner: "account.role.homeowner",
+  agent: "account.role.agent",
+  lender: "account.role.lender",
 };
 
-function displayName(user: User | null) {
+function displayName(user: User | null, fallback: string) {
   const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
   const full = (meta.full_name ?? meta.name) as string | undefined;
   if (full) return full;
   const email = user?.email ?? "";
-  return email ? email.split("@")[0] : "Your account";
+  return email ? email.split("@")[0] : fallback;
 }
 
 function initials(name: string) {
