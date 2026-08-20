@@ -121,7 +121,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
               )}
             >
               {i.icon}
-              {i.label}
+              {t(i.labelKey)}
             </Link>
           ))}
         </div>
