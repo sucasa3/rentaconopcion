@@ -242,7 +242,9 @@ function Dashboard() {
             </div>
           </div>
 
-          {rawIntel && !rawIntel.ok && rawIntel.error === "incomplete_address" ? (
+          {rawIntel &&
+          !rawIntel.ok &&
+          (rawIntel.error === "incomplete_address" || rawIntel.error === "No address on profile") ? (
             <CompleteAddressCard />
           ) : null}
 
