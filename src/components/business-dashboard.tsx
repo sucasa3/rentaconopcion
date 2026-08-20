@@ -13,10 +13,11 @@ import {
   CalendarClock,
   Plus,
   Wrench,
-
+  CheckCircle2,
   ArrowRight,
 } from "lucide-react";
 import { getBusinessOverview } from "@/lib/business.functions";
+import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { categoryLabel } from "@/lib/opportunities";
 import { StatCard, SignalCard, SectionHeader, StatusPill, EmptyState } from "@/components/ui-kit";
 
@@ -56,6 +57,14 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
     queryFn: () => overviewFn({ data: { orgType: kind } }),
     staleTime: 60_000,
   });
+
+  const tasksFn = useServerFn(getMyBusinessTasks);
+  const { data: tasks } = useQuery({
+    queryKey: ["business-tasks", kind],
+    queryFn: () => tasksFn({ data: { orgType: kind } }),
+    staleTime: 30_000,
+  });
+  const tasksDue = tasks?.openCount ?? 0;
 
   const base = kind === "agent" ? "/agent" : "/lender";
   const book = data?.books?.[0] ?? null;
@@ -101,7 +110,7 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
         )}
       </header>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard
           label="Homeowners"
           value={data.counts.people}
@@ -131,6 +140,13 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
           tone="info"
           icon={<Megaphone className="h-4 w-4" />}
           to={`${base}/campaigns`}
+        />
+        <StatCard
+          label="Tasks due"
+          value={tasksDue ?? 0}
+          tone={tasksDue ? "attention" : "growth"}
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          to={`${base}/tasks`}
         />
       </div>
 

@@ -32,9 +32,11 @@ import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
+import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenticated/lender/tasks'
 import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
 import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
+import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authenticated/agent/tasks'
 import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
@@ -169,6 +171,12 @@ const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
   path: '/requests/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLenderTasksRoute =
+  AuthenticatedLenderTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
 const AuthenticatedLenderOpportunitiesRoute =
   AuthenticatedLenderOpportunitiesRouteImport.update({
     id: '/opportunities',
@@ -187,6 +195,11 @@ const AuthenticatedLenderCampaignsRoute =
     path: '/campaigns',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedAgentTasksRoute = AuthenticatedAgentTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedAgentRouteRoute,
+} as any)
 const AuthenticatedAgentOpportunitiesRoute =
   AuthenticatedAgentOpportunitiesRouteImport.update({
     id: '/opportunities',
@@ -306,9 +319,11 @@ export interface FileRoutesByFullPath {
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
+  '/agent/tasks': typeof AuthenticatedAgentTasksRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
+  '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
@@ -348,9 +363,11 @@ export interface FileRoutesByTo {
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
+  '/agent/tasks': typeof AuthenticatedAgentTasksRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
+  '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
@@ -393,9 +410,11 @@ export interface FileRoutesById {
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/_authenticated/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/_authenticated/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
+  '/_authenticated/agent/tasks': typeof AuthenticatedAgentTasksRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/_authenticated/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/_authenticated/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
+  '/_authenticated/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
@@ -439,9 +458,11 @@ export interface FileRouteTypes {
     | '/agent/campaigns'
     | '/agent/network'
     | '/agent/opportunities'
+    | '/agent/tasks'
     | '/lender/campaigns'
     | '/lender/network'
     | '/lender/opportunities'
+    | '/lender/tasks'
     | '/requests/$id'
     | '/agent/'
     | '/lender/'
@@ -481,9 +502,11 @@ export interface FileRouteTypes {
     | '/agent/campaigns'
     | '/agent/network'
     | '/agent/opportunities'
+    | '/agent/tasks'
     | '/lender/campaigns'
     | '/lender/network'
     | '/lender/opportunities'
+    | '/lender/tasks'
     | '/requests/$id'
     | '/agent'
     | '/lender'
@@ -525,9 +548,11 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/campaigns'
     | '/_authenticated/agent/network'
     | '/_authenticated/agent/opportunities'
+    | '/_authenticated/agent/tasks'
     | '/_authenticated/lender/campaigns'
     | '/_authenticated/lender/network'
     | '/_authenticated/lender/opportunities'
+    | '/_authenticated/lender/tasks'
     | '/_authenticated/requests/$id'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
@@ -732,6 +757,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRequestsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lender/tasks': {
+      id: '/_authenticated/lender/tasks'
+      path: '/tasks'
+      fullPath: '/lender/tasks'
+      preLoaderRoute: typeof AuthenticatedLenderTasksRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
     '/_authenticated/lender/opportunities': {
       id: '/_authenticated/lender/opportunities'
       path: '/opportunities'
@@ -752,6 +784,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/lender/campaigns'
       preLoaderRoute: typeof AuthenticatedLenderCampaignsRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
+    '/_authenticated/agent/tasks': {
+      id: '/_authenticated/agent/tasks'
+      path: '/tasks'
+      fullPath: '/agent/tasks'
+      preLoaderRoute: typeof AuthenticatedAgentTasksRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
     '/_authenticated/agent/opportunities': {
       id: '/_authenticated/agent/opportunities'
@@ -879,6 +918,7 @@ interface AuthenticatedAgentRouteRouteChildren {
   AuthenticatedAgentCampaignsRoute: typeof AuthenticatedAgentCampaignsRoute
   AuthenticatedAgentNetworkRoute: typeof AuthenticatedAgentNetworkRoute
   AuthenticatedAgentOpportunitiesRoute: typeof AuthenticatedAgentOpportunitiesRoute
+  AuthenticatedAgentTasksRoute: typeof AuthenticatedAgentTasksRoute
   AuthenticatedAgentIndexRoute: typeof AuthenticatedAgentIndexRoute
   AuthenticatedAgentAddClientIdRoute: typeof AuthenticatedAgentAddClientIdRoute
   AuthenticatedAgentPortfolioIdRoute: typeof AuthenticatedAgentPortfolioIdRoute
@@ -889,6 +929,7 @@ const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren
     AuthenticatedAgentCampaignsRoute: AuthenticatedAgentCampaignsRoute,
     AuthenticatedAgentNetworkRoute: AuthenticatedAgentNetworkRoute,
     AuthenticatedAgentOpportunitiesRoute: AuthenticatedAgentOpportunitiesRoute,
+    AuthenticatedAgentTasksRoute: AuthenticatedAgentTasksRoute,
     AuthenticatedAgentIndexRoute: AuthenticatedAgentIndexRoute,
     AuthenticatedAgentAddClientIdRoute: AuthenticatedAgentAddClientIdRoute,
     AuthenticatedAgentPortfolioIdRoute: AuthenticatedAgentPortfolioIdRoute,
@@ -927,6 +968,7 @@ interface AuthenticatedLenderRouteRouteChildren {
   AuthenticatedLenderCampaignsRoute: typeof AuthenticatedLenderCampaignsRoute
   AuthenticatedLenderNetworkRoute: typeof AuthenticatedLenderNetworkRoute
   AuthenticatedLenderOpportunitiesRoute: typeof AuthenticatedLenderOpportunitiesRoute
+  AuthenticatedLenderTasksRoute: typeof AuthenticatedLenderTasksRoute
   AuthenticatedLenderIndexRoute: typeof AuthenticatedLenderIndexRoute
   AuthenticatedLenderPortfolioIdRoute: typeof AuthenticatedLenderPortfolioIdRouteWithChildren
 }
@@ -937,6 +979,7 @@ const AuthenticatedLenderRouteRouteChildren: AuthenticatedLenderRouteRouteChildr
     AuthenticatedLenderNetworkRoute: AuthenticatedLenderNetworkRoute,
     AuthenticatedLenderOpportunitiesRoute:
       AuthenticatedLenderOpportunitiesRoute,
+    AuthenticatedLenderTasksRoute: AuthenticatedLenderTasksRoute,
     AuthenticatedLenderIndexRoute: AuthenticatedLenderIndexRoute,
     AuthenticatedLenderPortfolioIdRoute:
       AuthenticatedLenderPortfolioIdRouteWithChildren,

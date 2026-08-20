@@ -316,6 +316,47 @@ export type Database = {
         }
         Relationships: []
       }
+      business_task_state: {
+        Row: {
+          completed_at: string
+          created_at: string
+          id: string
+          org_id: string
+          status: string
+          task_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          org_id: string
+          status?: string
+          task_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          org_id?: string
+          status?: string
+          task_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_task_state_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_activations: {
         Row: {
           active: boolean
