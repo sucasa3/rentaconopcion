@@ -49,7 +49,7 @@ export const HOME_HERO: HomeHeroData = {
 };
 
 // Simple compounding forecast
-export function projectHome(data: HomeHeroData, years: number) {
+export function projectHome(data: { value: number; equityPct: number }, years: number) {
   const growth = 0.035; // 3.5%/yr
   const value = data.value * Math.pow(1 + growth, years);
   // principal paydown accelerates equity a bit
