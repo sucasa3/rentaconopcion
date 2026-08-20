@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /** Big number tile used across the business dashboards. */
@@ -203,6 +203,108 @@ export function SummaryCard({
         <button type="button" onClick={onAction} className="block w-full text-left">
           {button}
         </button>
+      )}
+    </section>
+  );
+}
+
+/**
+ * "What to do now" — a single prioritized action card with a short queue of
+ * next items. Used at the top of dense list views to surface the most
+ * actionable homeowner before the full grid or table.
+ */
+export function PriorityCard({
+  title,
+  subtitle,
+  primaryAction,
+  primaryActionLabel,
+  secondaryActions = [],
+  tone = "attention",
+}: {
+  title: string;
+  subtitle: string;
+  primaryAction: () => void;
+  primaryActionLabel: string;
+  secondaryActions?: { label: string; onClick: () => void }[];
+  tone?: "attention" | "opportunity" | "brand";
+}) {
+  const tones: Record<string, { edge: string; badge: string; text: string; btn: string }> = {
+    attention: {
+      edge: "border-attention/40 bg-attention/5",
+      badge: "bg-attention/15 text-attention-foreground",
+      text: "text-attention-foreground",
+      btn: "bg-attention text-attention-foreground hover:opacity-90",
+    },
+    opportunity: {
+      edge: "border-growth/40 bg-growth/5",
+      badge: "bg-growth/15 text-growth",
+      text: "text-growth",
+      btn: "gradient-growth text-white hover:opacity-90",
+    },
+    brand: {
+      edge: "border-primary/30 bg-primary/5",
+      badge: "bg-primary/10 text-primary",
+      text: "text-primary",
+      btn: "gradient-brand text-white hover:opacity-90",
+    },
+  };
+  const t = tones[tone];
+
+  return (
+    <section
+      className={cn(
+        "rounded-3xl border p-5 shadow-soft sm:p-6",
+        t.edge,
+      )}
+      aria-label="What to do now"
+    >
+      <div className="flex items-start gap-3">
+        <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", t.badge)}>
+          <Zap className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            What to do now
+          </p>
+          <p className={cn("mt-0.5 text-2xl font-semibold tracking-tight", t.text)}>{title}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={primaryAction}
+        className={cn(
+          "mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition active:scale-[0.99]",
+          t.btn,
+        )}
+      >
+        {primaryActionLabel}
+        <ChevronRight className="h-4 w-4" />
+      </button>
+
+      {secondaryActions.length > 0 && (
+        <div className="mt-4 border-t border-border/60 pt-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Next up
+          </p>
+          <ul className="mt-2 space-y-1">
+            {secondaryActions.map((a, i) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  onClick={a.onClick}
+                  className="w-full text-left text-sm text-foreground transition hover:text-primary"
+                >
+                  <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold text-muted-foreground">
+                    {i + 1}
+                  </span>
+                  {a.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );

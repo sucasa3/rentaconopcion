@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
 import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
-import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
+import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 
 
 import {
@@ -157,6 +157,36 @@ function PortfolioDetail() {
     });
   }, [data, segment, search, statusParam]);
 
+  // Surface the single most actionable item at the top of the view.
+  const priority = useMemo(() => {
+    if (!data) return null;
+    const topRefi = data.top_refi_opportunities?.[0];
+    if (topRefi) {
+      return {
+        kind: "refi" as const,
+        client: topRefi,
+        title: `${topRefi.full_name} could save $${topRefi.savings_per_month_dollars.toLocaleString()}/mo`,
+        subtitle: `Current rate ${topRefi.rate_at_close ?? "—"}% · Balance ${moneyCompact(
+          topRefi.loan_balance_cents,
+        )} · Refi at ${benchmark.toFixed(2)}%`,
+        next: data.top_refi_opportunities.slice(1, 4).map((c: any) => ({
+          client: c,
+          label: `${c.full_name} — $${c.savings_per_month_dollars.toLocaleString()}/mo savings`,
+        })),
+      };
+    }
+    const missing = data.clients?.filter((c: any) => c.missing_loan_data);
+    if (missing?.length > 0) {
+      return {
+        kind: "enrich" as const,
+        title: `${missing.length} client${missing.length === 1 ? "" : "s"} need property records`,
+        subtitle: "Loan and equity details unlock refi opportunities and monthly savings estimates.",
+        next: [],
+      };
+    }
+    return null;
+  }, [data, benchmark]);
+
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
@@ -179,94 +209,38 @@ function PortfolioDetail() {
         <p className="text-sm text-destructive">{(error as Error).message}</p>
       ) : data ? (
         <>
-              <div className="flex flex-wrap items-end justify-end gap-3">
-
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  Assumed rate
-                  <input
-                    type="number"
-                    step="0.125"
-                    min={1}
-                    max={20}
-                    value={benchmark}
-                    onChange={(e) => {
-                      setBenchmark(Number(e.target.value) || 6.25);
-                      setPage(0);
-                    }}
-                    className="w-20 rounded-full border border-border bg-background px-3 py-1 text-right text-sm text-foreground"
-                  />
-                  %
-                </label>
-              </div>
-
-              {/* Summary strip */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <SummaryTile label="Clients" value={data.summary.total.toLocaleString()} />
-                <SummaryTile
-                  label="Originated"
-                  value={moneyCompact(data.summary.total_loan_cents)}
-                />
-                <SummaryTile
-                  label="Est. balance"
-                  value={moneyCompact(data.summary.total_balance_cents)}
-                />
-                <SummaryTile
-                  label="Est. equity"
-                  value={moneyCompact(data.summary.total_equity_cents)}
-                />
-                <SummaryTile
-                  label="Avg rate"
-                  value={`${data.summary.avg_rate.toFixed(2)}%`}
-                />
-              </div>
-
-              {/* Segment chips */}
-              <div className="flex flex-wrap gap-2">
-                <SegChip
-                  label={`All ${data.summary.total}`}
-                  active={segment === "all"}
-                  tone="bg-foreground text-background border-foreground"
-                  onClick={() => {
-                    setSegment("all");
-                    setPage(0);
+              {/* 1. What to do now */}
+              {priority && (
+                <PriorityCard
+                  title={priority.title}
+                  subtitle={priority.subtitle}
+                  primaryAction={() => {
+                    if (priority.kind === "refi" && priority.client) setContact(priority.client);
+                    else if (priority.kind === "enrich") enrich.mutate();
                   }}
+                  primaryActionLabel={
+                    priority.kind === "refi" ? "View homeowner" : "Enrich property records"
+                  }
+                  tone={priority.kind === "refi" ? "opportunity" : "attention"}
+                  secondaryActions={priority.next?.map((n: any) => ({
+                    label: n.label,
+                    onClick: () => setContact(n.client),
+                  }))}
                 />
-                {(Object.keys(SEGMENT_META) as Array<keyof typeof SEGMENT_META>).map((s) => (
-                  <SegChip
-                    key={s}
-                    label={`${SEGMENT_META[s].label} ${data.segments[s] ?? 0}`}
-                    active={segment === s}
-                    tone={SEGMENT_META[s].tone}
-                    onClick={() => {
-                      setSegment(s);
-                      setPage(0);
-                    }}
-                  />
-                ))}
-                <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
-                  <span className="inline-flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-growth" />
-                    {data.consent_counts.granted ?? 0} consented
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Lock className="h-3 w-3" />
-                    {data.consent_counts.pending ?? 0} pending
-                  </span>
-                </span>
-              </div>
+              )}
 
-              {/* Refi opportunities */}
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+              {/* 2. Opportunities */}
+              <section className="space-y-3">
                 <div className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-primary" />
                   <h2 className="text-base font-semibold">
                     Top refi opportunities @ {benchmark.toFixed(2)}%
                   </h2>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Ranked by estimated monthly savings. Model only.
                 </p>
-                <div className="mt-4 space-y-3 md:hidden">
+                <div className="space-y-3 md:hidden">
                   {data.top_refi_opportunities.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">
                       No savings above assumed rate.
@@ -282,63 +256,138 @@ function PortfolioDetail() {
                         heroValue={`$${c.savings_per_month_dollars.toLocaleString()}`}
                         metrics={[
                           { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
-                          { label: "Rate", value: c.rate_at_close ? `${c.rate_at_close}%` : "—" },
-                          { label: "LTV", value: c.ltv_pct != null ? `${c.ltv_pct}%` : "—" },
+                          { label: "Rate / LTV", value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}` },
                         ]}
                         onAction={() => setContact(c)}
                       />
                     ))
                   )}
                 </div>
-                <div className="mt-4 hidden overflow-x-auto md:block">
-                  <table className="w-full min-w-[640px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Client</th>
-                        <th className="py-2 pr-3 font-medium">Rate</th>
-                        <th className="py-2 pr-3 font-medium">Balance</th>
-                        <th className="py-2 pr-3 font-medium">LTV</th>
-                        <th className="py-2 pr-3 font-medium">Est. savings / mo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.top_refi_opportunities.length === 0 ? (
-                        <tr>
-                          <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                            No savings above assumed rate.
-                          </td>
+                <div className="hidden overflow-x-auto md:block">
+                  <div className="rounded-3xl border border-border bg-card p-4 shadow-soft">
+                    <table className="w-full min-w-[640px] text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+                          <th className="py-2 pr-3 font-medium">Client</th>
+                          <th className="py-2 pr-3 font-medium">Rate</th>
+                          <th className="py-2 pr-3 font-medium">Balance</th>
+                          <th className="py-2 pr-3 font-medium">LTV</th>
+                          <th className="py-2 pr-3 font-medium">Est. savings / mo</th>
                         </tr>
-                      ) : (
-                        data.top_refi_opportunities.map((c: any) => (
-                          <tr key={c.id} className="border-b border-border/60">
-                            <td className="py-2.5 pr-3">
-                              <button
-                                onClick={() => setContact(c)}
-                                className="text-left font-medium text-primary hover:underline"
-                              >
-                                {c.full_name}
-                              </button>
-                              <div className="text-xs text-muted-foreground">
-                                {[c.city, c.state].filter(Boolean).join(", ")}
-                              </div>
-                            </td>
-                            <td className="py-2.5 pr-3">
-                              {c.rate_at_close ? `${c.rate_at_close}%` : "—"}
-                            </td>
-                            <td className="py-2.5 pr-3">{moneyCompact(c.loan_balance_cents)}</td>
-                            <td className="py-2.5 pr-3">
-                              {c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}
-                            </td>
-                            <td className="py-2.5 pr-3 font-semibold text-growth">
-                              ${c.savings_per_month_dollars.toLocaleString()}
+                      </thead>
+                      <tbody>
+                        {data.top_refi_opportunities.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-muted-foreground">
+                              No savings above assumed rate.
                             </td>
                           </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                        ) : (
+                          data.top_refi_opportunities.map((c: any) => (
+                            <tr key={c.id} className="border-b border-border/60">
+                              <td className="py-2.5 pr-3">
+                                <button
+                                  onClick={() => setContact(c)}
+                                  className="text-left font-medium text-primary hover:underline"
+                                >
+                                  {c.full_name}
+                                </button>
+                                <div className="text-xs text-muted-foreground">
+                                  {[c.city, c.state].filter(Boolean).join(", ")}
+                                </div>
+                              </td>
+                              <td className="py-2.5 pr-3">
+                                {c.rate_at_close ? `${c.rate_at_close}%` : "—"}
+                              </td>
+                              <td className="py-2.5 pr-3">{moneyCompact(c.loan_balance_cents)}</td>
+                              <td className="py-2.5 pr-3">
+                                {c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}
+                              </td>
+                              <td className="py-2.5 pr-3 font-semibold text-growth">
+                                ${c.savings_per_month_dollars.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              </section>
+
+              {/* 3. Book header: rate, summary, filters */}
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <h2 className="text-base font-semibold">Your book</h2>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    Assumed rate
+                    <input
+                      type="number"
+                      step="0.125"
+                      min={1}
+                      max={20}
+                      value={benchmark}
+                      onChange={(e) => {
+                        setBenchmark(Number(e.target.value) || 6.25);
+                        setPage(0);
+                      }}
+                      className="w-20 rounded-full border border-border bg-background px-3 py-1 text-right text-sm text-foreground"
+                    />
+                    %
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  <SummaryTile label="Clients" value={data.summary.total.toLocaleString()} />
+                  <SummaryTile
+                    label="Originated"
+                    value={moneyCompact(data.summary.total_loan_cents)}
+                  />
+                  <SummaryTile
+                    label="Est. balance"
+                    value={moneyCompact(data.summary.total_balance_cents)}
+                  />
+                  <SummaryTile
+                    label="Est. equity"
+                    value={moneyCompact(data.summary.total_equity_cents)}
+                  />
+                  <SummaryTile label="Avg rate" value={`${data.summary.avg_rate.toFixed(2)}%`} />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <SegChip
+                    label={`All ${data.summary.total}`}
+                    active={segment === "all"}
+                    tone="bg-foreground text-background border-foreground"
+                    onClick={() => {
+                      setSegment("all");
+                      setPage(0);
+                    }}
+                  />
+                  {(Object.keys(SEGMENT_META) as Array<keyof typeof SEGMENT_META>).map((s) => (
+                    <SegChip
+                      key={s}
+                      label={`${SEGMENT_META[s].label} ${data.segments[s] ?? 0}`}
+                      active={segment === s}
+                      tone={SEGMENT_META[s].tone}
+                      onClick={() => {
+                        setSegment(s);
+                        setPage(0);
+                      }}
+                    />
+                  ))}
+                  <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
+                    <span className="inline-flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-growth" />
+                      {data.consent_counts.granted ?? 0} consented
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      {data.consent_counts.pending ?? 0} pending
+                    </span>
+                  </span>
+                </div>
+              </section>
 
               {/* Client table with search + pagination */}
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
@@ -422,11 +471,9 @@ function PortfolioDetail() {
                         }
                         metrics={[
                           { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
-                          { label: "Equity", value: moneyCompact(c.equity_cents) },
-                          { label: "Rate", value: c.rate_at_close ? `${c.rate_at_close}%` : "—" },
                           {
-                            label: "Tenure",
-                            value: `${Math.round(c.months_since_close / 12)}y`,
+                            label: "Rate / LTV",
+                            value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}`,
                           },
                         ]}
                         onAction={() => setContact(c)}

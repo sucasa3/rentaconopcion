@@ -7,7 +7,9 @@ import { BusinessShell } from "@/components/business-shell";
 import { AgentCoveragePanel } from "@/components/agent-coverage-panel";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 import { useUserId } from "@/hooks/use-user-id";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { readOnboarding } from "@/lib/onboarding";
+import { cn } from "@/lib/utils";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,7 +24,7 @@ import {
 
 } from "@/lib/agent.functions";
 import { useAutoEnrich } from "@/hooks/use-auto-enrich";
-import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
+import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import {
   ArrowLeft,
   Search,
@@ -449,6 +451,48 @@ function AgentPortfolio() {
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
 
+  // Surface the single most actionable homeowner at the top of the view.
+  const priority = useMemo(() => {
+    if (!data) return null;
+    const topHigh = (data.high_intent_feed ?? [])[0];
+    if (topHigh) {
+      return {
+        kind: "high_intent" as const,
+        client: data.clients?.find((c: any) => c.id === topHigh.client_id),
+        title: `${topHigh.client_name ?? "A homeowner"} is showing high intent`,
+        subtitle: topHigh.reason,
+        next: (data.high_intent_feed ?? []).slice(1, 4).map((h: any) => ({
+          client: data.clients?.find((c: any) => c.id === h.client_id),
+          label: `${h.client_name ?? "Household"} — ${h.reason}`,
+        })),
+      };
+    }
+    const topListing = data.top_listing_opportunities?.[0];
+    if (topListing) {
+      return {
+        kind: "listing" as const,
+        client: topListing,
+        title: `${topListing.name} could be list-ready`,
+        subtitle: `Readiness ${topListing.readiness_score} · Net proceeds ${moneyCompact(topListing.net_proceeds)}`,
+        next: data.top_listing_opportunities.slice(1, 4).map((c: any) => ({
+          client: c,
+          label: `${c.name} — readiness ${c.readiness_score}`,
+        })),
+      };
+    }
+    const missing = data.clients?.filter((c: any) => !c.has_intel);
+    if (missing?.length > 0) {
+      return {
+        kind: "enrich" as const,
+        client: null,
+        title: `${missing.length} household${missing.length === 1 ? "" : "s"} need property records`,
+        subtitle: "Value, equity and readiness scores unlock after records are pulled.",
+        next: [],
+      };
+    }
+    return null;
+  }, [data]);
+
   return (
     <BusinessShell kind="agent" bookId={id}>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
@@ -497,7 +541,50 @@ function AgentPortfolio() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <Link
+                  to="/agent/network"
+                  className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Lender network &amp; approvals
+                </Link>
+              </div>
+
+              {/* 1. What to do now */}
+              {priority && (
+                <PriorityCard
+                  title={priority.title}
+                  subtitle={priority.subtitle}
+                  primaryAction={() => {
+                    if (priority.client) {
+                      setSelected(priority.client);
+                      setBrief("");
+                    } else if (priority.kind === "enrich") {
+                      enrich.mutate();
+                    }
+                  }}
+                  primaryActionLabel={
+                    priority.kind === "enrich" ? "Pull property records" : "View homeowner"
+                  }
+                  tone={priority.kind === "high_intent" ? "attention" : "opportunity"}
+                  secondaryActions={priority.next?.map((n: any) => ({
+                    label: n.label,
+                    onClick: () => {
+                      setSelected(n.client);
+                      setBrief("");
+                    },
+                  }))}
+                />
+              )}
+
+              {/* 2. Opportunities */}
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Home className="h-4 w-4 text-primary" />
+                    <h2 className="text-base font-semibold">
+                      Top listing opportunities @ {sellCost}% cost to sell
+                    </h2>
+                  </div>
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
                     Cost to sell
                     <input
@@ -514,96 +601,11 @@ function AgentPortfolio() {
                     />
                     %
                   </label>
-                  <span
-                    className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
-                    title="Value, equity and net proceeds only appear once property records have been pulled for that home."
-                  >
-                    Valued {data.summary.with_value ?? 0}/{data.summary.total}
-                    {data.summary.unmappable
-                      ? ` · ${data.summary.unmappable} no address`
-                      : ""}
-                  </span>
-                  <button
-                    onClick={() => enrich.mutate()}
-                    disabled={enrich.isPending}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary disabled:opacity-50"
-                  >
-                    {enrich.isPending ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3 text-growth" />
-                    )}
-                    Pull records
-                  </button>
-
-
                 </div>
-
-
-              </div>
-
-              {/* Summary strip */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <SummaryTile label="Households" value={data.summary.total.toLocaleString()} />
-                <SummaryTile label="List-ready" value={String(data.summary.readiness["list-ready"])} />
-                <SummaryTile label="Hot signals" value={String(data.summary.bands.hot)} />
-                <SummaryTile label="Sphere equity" value={moneyCompact(data.summary.total_equity)} />
-                <SummaryTile
-                  label="Potential GCI"
-                  value={moneyCompact(data.summary.total_gci_potential)}
-                />
-              </div>
-
-              <AgentCoveragePanel portfolioId={id} />
-
-
-
-              {/* Band chips */}
-              <div className="flex flex-wrap gap-2">
-                <SegChip
-                  label={`All ${data.summary.total}`}
-                  active={band === "all"}
-                  tone="bg-foreground text-background border-foreground"
-                  onClick={() => {
-                    setBand("all");
-                    setPage(0);
-                  }}
-                />
-                {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
-                  <SegChip
-                    key={b}
-                    label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
-                    active={band === b}
-                    tone={BAND_META[b].tone}
-                    onClick={() => {
-                      setBand(b);
-                      setPage(0);
-                    }}
-                  />
-                ))}
-                <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
-                  <span className="inline-flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3 text-growth" />
-                    {data.summary.expired} expired / withdrawn
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <Link2 className="h-3 w-3" />
-                    {data.summary.linked} linked to SuCasa
-                  </span>
-                </span>
-              </div>
-
-              {/* Listing readiness board */}
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                <div className="flex items-center gap-2">
-                  <Home className="h-4 w-4 text-primary" />
-                  <h2 className="text-base font-semibold">
-                    Top listing opportunities @ {sellCost}% cost to sell
-                  </h2>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   Ranked on move intent × listing readiness. Modeled, not an appraisal.
                 </p>
+
                 <div className="mt-4 space-y-3 md:hidden">
                   {data.top_listing_opportunities.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">
@@ -704,7 +706,7 @@ function AgentPortfolio() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </section>
 
               {/* Agent widgets: readiness mix + referral visibility */}
               <div className="grid gap-4 lg:grid-cols-3">
@@ -968,6 +970,78 @@ function AgentPortfolio() {
 
               </div>
 
+              {/* 3. Your book */}
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <h2 className="text-base font-semibold">Your book</h2>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
+                      title="Value, equity and net proceeds only appear once property records have been pulled for that home."
+                    >
+                      Valued {data.summary.with_value ?? 0}/{data.summary.total}
+                      {data.summary.unmappable ? ` · ${data.summary.unmappable} no address` : ""}
+                    </span>
+                    <button
+                      onClick={() => enrich.mutate()}
+                      disabled={enrich.isPending}
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium hover:border-primary disabled:opacity-50"
+                    >
+                      {enrich.isPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3 text-growth" />
+                      )}
+                      Pull records
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  <SummaryTile label="Households" value={data.summary.total.toLocaleString()} />
+                  <SummaryTile label="List-ready" value={String(data.summary.readiness["list-ready"])} />
+                  <SummaryTile label="Hot signals" value={String(data.summary.bands.hot)} />
+                  <SummaryTile label="Sphere equity" value={moneyCompact(data.summary.total_equity)} />
+                  <SummaryTile label="Potential GCI" value={moneyCompact(data.summary.total_gci_potential)} />
+                </div>
+
+                <AgentCoveragePanel portfolioId={id} />
+
+                <div className="flex flex-wrap gap-2">
+                  <SegChip
+                    label={`All ${data.summary.total}`}
+                    active={band === "all"}
+                    tone="bg-foreground text-background border-foreground"
+                    onClick={() => {
+                      setBand("all");
+                      setPage(0);
+                    }}
+                  />
+                  {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
+                    <SegChip
+                      key={b}
+                      label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
+                      active={band === b}
+                      tone={BAND_META[b].tone}
+                      onClick={() => {
+                        setBand(b);
+                        setPage(0);
+                      }}
+                    />
+                  ))}
+                  <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
+                    <span className="inline-flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 text-growth" />
+                      {data.summary.expired} expired / withdrawn
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Link2 className="h-3 w-3" />
+                      {data.summary.linked} linked to SuCasa
+                    </span>
+                  </span>
+                </div>
+              </section>
+
               {/* Client table */}
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1010,12 +1084,10 @@ function AgentPortfolio() {
                           </>
                         }
                         metrics={[
-                          { label: "Value", value: moneyCompact(c.estimated_value) },
-                          { label: "Equity", value: moneyCompact(c.equity_dollars) },
-                          { label: "Net proceeds", value: moneyCompact(c.net_proceeds) },
+                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
                           {
-                            label: "Tenure",
-                            value: c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—",
+                            label: "Intent",
+                            value: c.move_score ? `${c.move_score} · ${BAND_META[c.band]?.label ?? c.band}` : "—",
                           },
                         ]}
                         extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
@@ -1252,6 +1324,7 @@ function ClientDrawer({
   onSaveListing: (v: any) => void;
   saving: boolean;
 }) {
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState<string>(client.listing?.status ?? "off_market");
   const [otherAgent, setOtherAgent] = useState<boolean>(
     client.listing?.listed_with_other_agent ?? false,
@@ -1259,9 +1332,20 @@ function ClientDrawer({
   const [agentName, setAgentName] = useState<string>(client.listing?.listing_agent_name ?? "");
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-foreground/40" onClick={onClose}>
+    <div
+      className={cn(
+        "fixed inset-0 z-50 flex bg-foreground/40",
+        isMobile ? "items-end justify-center" : "justify-end",
+      )}
+      onClick={onClose}
+    >
       <aside
-        className="h-full w-full max-w-md overflow-y-auto bg-background p-6 shadow-soft"
+        className={cn(
+          "w-full overflow-y-auto bg-background p-6 shadow-soft",
+          isMobile
+            ? "max-h-[85vh] rounded-t-3xl sm:max-w-2xl"
+            : "h-full max-w-md",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
