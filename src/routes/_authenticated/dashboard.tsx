@@ -54,6 +54,7 @@ function money(n: number | null | undefined): string {
 function Dashboard() {
   useLogOnMount("value_viewed");
   const navigate = useNavigate();
+  const t = useT();
 
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
