@@ -132,6 +132,13 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
           icon={<Megaphone className="h-4 w-4" />}
           to={`${base}/campaigns`}
         />
+        <StatCard
+          label="Tasks due"
+          value={tasksDue ?? 0}
+          tone={tasksDue ? "attention" : "growth"}
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          to={`${base}/tasks`}
+        />
       </div>
 
 
