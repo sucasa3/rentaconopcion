@@ -42,6 +42,7 @@ function HomeCarePage() {
 
           <HomeCarePanel />
           <RecommendedProsCard />
+          <RecentRequestsCard />
         </div>
       </main>
     </HomeownerShell>
