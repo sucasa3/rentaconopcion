@@ -144,7 +144,12 @@ export function AccountMenu({
               onNavigate={() => setOpen(false)}
             />
           )}
-          <Row to="/services" icon={<UserIcon className="h-4 w-4" />} label="Browse services" onNavigate={() => setOpen(false)} />
+          <Row to="/services" icon={<UserIcon className="h-4 w-4" />} label={t("account.browse_services")} onNavigate={() => setOpen(false)} />
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-border/70 bg-card p-3">
+          <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">{t("common.language")}</p>
+          <LanguageSwitcher showIcon={false} />
         </div>
 
         <button
@@ -152,7 +157,7 @@ export function AccountMenu({
           className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card px-4 py-3 text-sm font-medium text-destructive transition active:scale-[0.99]"
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t("account.sign_out")}
         </button>
       </SheetContent>
     </Sheet>
