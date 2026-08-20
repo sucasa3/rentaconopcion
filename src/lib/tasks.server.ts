@@ -102,14 +102,15 @@ export async function buildBusinessTasks(
         who: c?.client_name ?? "Homeowner",
         why: (o.reasons ?? [])[0] ?? "A new opportunity was detected for this homeowner.",
         urgency: strong ? "now" : "later",
-        actionLabel: "View opportunity",
-        to: `${base}/opportunities`,
-        params: null,
-        search: null,
+        actionLabel: c?.portfolio_id ? "View homeowner" : "View opportunity",
+        to: c?.portfolio_id ? `${base}/portfolio/$id` : `${base}/opportunities`,
+        params: c?.portfolio_id ? { id: c.portfolio_id } : null,
+        search: c?.portfolio_id ? { client: o.portfolio_client_id } : null,
         done: false,
         completedAt: null,
       });
     }
+
   }
 
   // --- 2 & 4. Introductions ------------------------------------------------
@@ -274,5 +275,11 @@ export async function buildBusinessTasks(
       : t;
   });
 
+  // Setup tasks (sender branding) always lead the list.
+  withState.sort(
+    (a, b) => Number(b.key.startsWith("branding:")) - Number(a.key.startsWith("branding:")),
+  );
+
   return { tasks: withState, openCount: withState.filter((t) => !t.done).length };
+
 }

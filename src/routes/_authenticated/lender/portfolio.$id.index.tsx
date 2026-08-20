@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -24,10 +24,13 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/")({
-  validateSearch: (s: Record<string, unknown>): { status?: "activated" } =>
-    s.status === "activated" ? { status: "activated" as const } : {},
+  validateSearch: (s: Record<string, unknown>): { status?: "activated"; client?: string } => ({
+    ...(s.status === "activated" ? { status: "activated" as const } : {}),
+    ...(typeof s.client === "string" ? { client: s.client } : {}),
+  }),
   component: PortfolioDetail,
 });
+
 
 
 
@@ -65,9 +68,10 @@ const PAGE_SIZE = 25;
 
 function PortfolioDetail() {
   const { id } = Route.useParams();
-  const { status: statusParam } = Route.useSearch();
+  const { status: statusParam, client: clientParam } = Route.useSearch();
   const getFn = useServerFn(getPortfolio);
   const enrichFn = useServerFn(enrichPortfolioFromAttom);
+
 
   const qc = useQueryClient();
 
@@ -81,6 +85,18 @@ function PortfolioDetail() {
     queryKey: ["lender-portfolio", id, benchmark],
     queryFn: () => getFn({ data: { id, benchmarkRate: benchmark } }),
   });
+
+  // Deep link: /lender/portfolio/$id?client=<clientId> opens that homeowner directly.
+  const openedParam = useRef<string | null>(null);
+  useEffect(() => {
+    if (!clientParam || !data || openedParam.current === clientParam) return;
+    const match = (data as any).clients?.find((c: any) => c.id === clientParam);
+    if (match) {
+      openedParam.current = clientParam;
+      setContact(match);
+    }
+  }, [clientParam, data]);
+
 
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id } }),
