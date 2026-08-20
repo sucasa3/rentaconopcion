@@ -246,6 +246,7 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
           body: copy.body,
           payload,
           status: "pending",
+          crm_status: "pending",
         })
         .select("id")
         .maybeSingle();
@@ -264,7 +265,13 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
         if (sendRow?.id) {
           await supabaseAdmin
             .from("campaign_sends")
-            .update({ status: "sent", ghl_contact_id: contactId, sent_at: new Date().toISOString() })
+            .update({
+              status: "sent",
+              crm_status: "synced",
+              crm_error: null,
+              ghl_contact_id: contactId,
+              sent_at: new Date().toISOString(),
+            })
             .eq("id", sendRow.id);
         }
         result.sent++;
@@ -279,10 +286,12 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       } catch (e) {
         result.errors++;
         const msg = (e as Error).message.slice(0, 500);
+        // A CRM (GoHighLevel) failure must not hide or block the send itself:
+        // record it separately and leave the send queued for retry.
         if (sendRow?.id) {
           await supabaseAdmin
             .from("campaign_sends")
-            .update({ status: "failed", error_message: msg })
+            .update({ status: "queued", crm_status: "failed", crm_error: msg })
             .eq("id", sendRow.id);
         }
         if (result.samples.length < 20)
@@ -302,7 +311,7 @@ async function retryFailedSends(limit: number) {
   const { data: failed } = await supabaseAdmin
     .from("campaign_sends")
     .select("id, recipient_email, recipient_name, payload, campaign_id")
-    .eq("status", "failed")
+    .eq("crm_status", "failed")
     .gte("created_at", new Date(Date.now() - 3 * 86400000).toISOString())
     .limit(limit);
   if (!failed?.length) return;
@@ -322,7 +331,14 @@ async function retryFailedSends(limit: number) {
       });
       await supabaseAdmin
         .from("campaign_sends")
-        .update({ status: "sent", ghl_contact_id: contactId, sent_at: new Date().toISOString(), error_message: null })
+        .update({
+          status: "sent",
+          crm_status: "synced",
+          crm_error: null,
+          ghl_contact_id: contactId,
+          sent_at: new Date().toISOString(),
+          error_message: null,
+        })
         .eq("id", f.id);
     } catch {
       /* leave failed for the next tick */
