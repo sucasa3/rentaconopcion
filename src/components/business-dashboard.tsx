@@ -101,7 +101,7 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
         )}
       </header>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard
           label="Homeowners"
           value={data.counts.people}
