@@ -9,6 +9,7 @@ import { GuidedOnboarding } from "@/components/guided-onboarding";
 import { useUserId } from "@/hooks/use-user-id";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { readOnboarding } from "@/lib/onboarding";
+import { cn } from "@/lib/utils";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
