@@ -95,7 +95,7 @@ export function AccountMenu({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <button
-          aria-label="Account"
+          aria-label={t("account.aria")}
           className={cn(
             "flex min-h-11 items-center gap-2 rounded-2xl px-1.5 py-1.5 text-left transition active:scale-95 hover:bg-secondary",
             className,
