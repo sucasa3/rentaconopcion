@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { SERVICE_CATEGORIES } from "@/lib/mock-data";
 import { HomeHero } from "@/components/home-hero/HomeHero";
+import { HOME_HERO } from "@/lib/home-hero-data";
 import { ArrowRight, ShieldCheck, TrendingUp, Sparkles, CheckCircle2, Star, FileText, Wallet, Bell } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -65,7 +66,7 @@ function Hero() {
         </div>
 
         <div className="mx-auto mt-14 max-w-5xl">
-          <HomeHero />
+          <HomeHero data={HOME_HERO} />
         </div>
       </div>
     </section>

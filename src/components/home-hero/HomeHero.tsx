@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Home, TrendingUp, Sparkles, Activity, MapPin, Info } from "lucide-react";
-import { HOME_HERO, projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroData } from "@/lib/home-hero-data";
+import { projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroView, type ZoneStatus } from "@/lib/home-hero-data";
 import type { HomeScoreResult } from "@/lib/home-score";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCountUp } from "./useCountUp";
@@ -15,27 +15,35 @@ const fmtUsd = (n: number, compact = false) =>
   }).format(n);
 
 export function HomeHero({
-  data = HOME_HERO,
+  data,
   refiChip,
   scoreDetail,
   scorePending,
 }: {
-  data?: HomeHeroData;
+  data: HomeHeroView;
   refiChip?: React.ReactNode;
   scoreDetail?: HomeScoreResult | null;
   scorePending?: boolean;
 }) {
   const [years, setYears] = useState(0);
+  const hasValue = data.value != null;
+  const basePct = data.equityPct ?? 0;
   const projected = useMemo(
-    () => (years === 0 ? { value: data.value, equity: data.equity, equityPct: data.equityPct } : projectHome(data, years)),
-    [data, years],
+    () =>
+      data.value == null
+        ? { value: null, equity: data.equity, equityPct: data.equityPct }
+        : years === 0
+          ? { value: data.value, equity: data.equity, equityPct: data.equityPct }
+          : projectHome({ value: data.value, equityPct: basePct }, years),
+    [data, years, basePct],
   );
 
-  const value = useCountUp(projected.value);
-  const equity = useCountUp(projected.equity);
-  const roi = useCountUp(data.roi);
-  const score = useCountUp(data.homeScore);
-  const scoreText = scorePending ? "—" : String(Math.round(score));
+  const value = useCountUp(projected.value ?? 0);
+  const equity = useCountUp(projected.equity ?? 0);
+  const roi = useCountUp(data.roi ?? 0);
+  const score = useCountUp(data.homeScore ?? 0);
+  const noScore = scorePending || data.homeScore == null;
+  const scoreText = noScore ? "—" : String(Math.round(score));
 
 
   return (
@@ -59,11 +67,12 @@ export function HomeHero({
             <MapPin className="h-3.5 w-3.5" /> Your home
           </div>
           <h2 className="mt-3 max-w-[22ch] text-2xl font-semibold leading-tight tracking-tight text-white drop-shadow-lg sm:text-3xl lg:text-4xl">
-            {data.address}
+            {data.address ?? "Add your home address"}
           </h2>
           <p className="mt-1.5 text-sm text-white/70">
-            Home Score <span className="font-semibold text-white">{scoreText}</span>
-            {scoreDetail ? ` · ${scoreDetail.summary}` : ""}
+            {data.address
+              ? <>Home Score <span className="font-semibold text-white">{scoreText}</span>{scoreDetail ? ` · ${scoreDetail.summary}` : ""}</>
+              : "We'll fill in value, equity and condition once we know where your home is."}
           </p>
         </div>
 
@@ -127,20 +136,22 @@ export function HomeHero({
 
 
         {/* Zone chips */}
-        <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 sm:left-auto sm:right-7 sm:top-auto sm:bottom-[280px] sm:translate-y-0">
-          <div className="flex flex-wrap gap-1.5 sm:justify-end">
-            {(Object.keys(data.zones) as Array<keyof typeof data.zones>).map((k) => (
-              <span
-                key={k}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium capitalize text-white backdrop-blur-md ring-1 ring-white/20"
-                title={ZONE_LABEL[data.zones[k]]}
-              >
-                <PulseDot color={ZONE_COLOR[data.zones[k]]} />
-                {k} · {ZONE_LABEL[data.zones[k]]}
-              </span>
-            ))}
+        {data.zones && (
+          <div className="absolute left-5 right-5 top-1/2 -translate-y-1/2 sm:left-auto sm:right-7 sm:top-auto sm:bottom-[280px] sm:translate-y-0">
+            <div className="flex flex-wrap gap-1.5 sm:justify-end">
+              {(Object.entries(data.zones) as Array<[string, ZoneStatus]>).map(([k, status]) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium capitalize text-white backdrop-blur-md ring-1 ring-white/20"
+                  title={ZONE_LABEL[status]}
+                >
+                  <PulseDot color={ZONE_COLOR[status]} />
+                  {k} · {ZONE_LABEL[status]}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Bottom glass stat bar */}
         <div className="absolute inset-x-4 bottom-4 sm:inset-x-6 sm:bottom-6">
@@ -149,24 +160,36 @@ export function HomeHero({
               <Stat
                 icon={<Home className="h-3.5 w-3.5" />}
                 label="Estimated value"
-                value={fmtUsd(value)}
-                trend={years === 0 ? "▲ +$8,400 · 30d" : `Projected +${years}y`}
+                value={hasValue ? fmtUsd(value) : "—"}
+                trend={
+                  !hasValue
+                    ? "No records yet"
+                    : years === 0
+                      ? "Latest estimate"
+                      : `Projected +${years}y`
+                }
                 trendColor="text-emerald-300"
               />
               <Stat
                 icon={<TrendingUp className="h-3.5 w-3.5" />}
                 label="Equity"
-                value={fmtUsd(equity, true)}
-                trend={`${Math.round(projected.equityPct * 100)}% of value`}
-                bar={projected.equityPct}
+                value={data.equity != null ? fmtUsd(equity, true) : "—"}
+                trend={
+                  projected.equityPct != null
+                    ? `${Math.round(projected.equityPct * 100)}% of value`
+                    : "Not enough info yet"
+                }
+                bar={projected.equityPct ?? undefined}
               />
               <Stat
                 icon={<Sparkles className="h-3.5 w-3.5" />}
                 label="Upgrade ROI"
-                value={fmtUsd(roi, true)}
-                trend="3 smart picks"
+                value={data.roi != null ? fmtUsd(roi, true) : "—"}
+                trend={data.roi != null ? "3 smart picks" : "Add your home details"}
               />
-              <div className="col-span-2 flex flex-col justify-between sm:col-span-1">
+              <div
+                className={`col-span-2 flex flex-col justify-between sm:col-span-1 ${hasValue ? "" : "hidden"}`}
+              >
                 <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-white/70">
                   <span>Project</span>
                   <span className="tabular-nums text-white/90">

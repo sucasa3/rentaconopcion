@@ -16,6 +16,22 @@ export type HomeHeroData = {
   };
 };
 
+/**
+ * What a signed-in homeowner's hero actually renders. Every number is nullable
+ * because a real account may not have property records yet — we show dashes,
+ * never the marketing sample below.
+ */
+export type HomeHeroView = {
+  address: string | null;
+  value: number | null;
+  equity: number | null;
+  equityPct: number | null;
+  roi: number | null;
+  homeScore: number | null;
+  zones: HomeHeroData["zones"] | null;
+};
+
+/** Marketing sample only — never render this for a signed-in homeowner. */
 export const HOME_HERO: HomeHeroData = {
   address: "123 Main St, Austin",
   value: 482300,
@@ -33,7 +49,7 @@ export const HOME_HERO: HomeHeroData = {
 };
 
 // Simple compounding forecast
-export function projectHome(data: HomeHeroData, years: number) {
+export function projectHome(data: { value: number; equityPct: number }, years: number) {
   const growth = 0.035; // 3.5%/yr
   const value = data.value * Math.pow(1 + growth, years);
   // principal paydown accelerates equity a bit

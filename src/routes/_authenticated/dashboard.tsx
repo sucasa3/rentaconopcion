@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { HomeownerShell } from "@/components/homeowner-shell";
 
 import { HomeHero } from "@/components/home-hero/HomeHero";
-import { HOME_HERO, type HomeHeroData } from "@/lib/home-hero-data";
+import { type HomeHeroView } from "@/lib/home-hero-data";
 import { useHomeRecord } from "@/hooks/use-home-record";
 import { HomeSignalsPanel } from "@/components/home-signals-panel";
 
@@ -132,13 +132,12 @@ function Dashboard() {
 
   const { intel: okIntel, raw: rawIntel } = useHomeIntel();
   const resolvedValue = okIntel?.value.value ?? null;
-  const heroValue: number = resolvedValue || HOME_HERO.value;
-  const heroEquity: number =
-    okIntel?.equity?.equityDollars ??
-    (resolvedValue ? Math.round(resolvedValue * HOME_HERO.equityPct) : HOME_HERO.equity);
-  const heroEquityPct: number =
+  // Real records only — a signed-in homeowner never sees the marketing sample.
+  const heroValue: number | null = resolvedValue;
+  const heroEquity: number | null = okIntel?.equity?.equityDollars ?? null;
+  const heroEquityPct: number | null =
     okIntel?.equity?.equityPct ??
-    (heroValue ? heroEquity / heroValue : HOME_HERO.equityPct);
+    (heroValue && heroEquity != null ? heroEquity / heroValue : null);
 
 
   // ONE evaluation of the home record drives the score, the next step and every
@@ -199,14 +198,14 @@ function Dashboard() {
     setAppliedFocus(true);
   }, [appliedFocus, userId]);
 
-  const heroData: HomeHeroData = {
-    ...HOME_HERO,
-    address: okIntel?.address || profileAddr || HOME_HERO.address,
+  const heroData: HomeHeroView = {
+    address: okIntel?.address || profileAddr || null,
     value: heroValue,
     equity: heroEquity,
     equityPct: heroEquityPct,
-    homeScore: homeScore?.score ?? HOME_HERO.homeScore,
-    zones: homeScore?.zones ?? HOME_HERO.zones,
+    roi: null,
+    homeScore: homeScore?.score ?? null,
+    zones: homeScore?.zones ?? null,
   };
 
 
@@ -243,7 +242,9 @@ function Dashboard() {
             </div>
           </div>
 
-          {rawIntel && !rawIntel.ok && rawIntel.error === "incomplete_address" ? (
+          {rawIntel &&
+          !rawIntel.ok &&
+          (rawIntel.error === "incomplete_address" || rawIntel.error === "No address on profile") ? (
             <CompleteAddressCard />
           ) : null}
 
