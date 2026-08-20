@@ -591,6 +591,7 @@ function PortfolioDetail() {
 }
 
 function ContactDialog({ client, onClose }: { client: any; onClose: () => void }) {
+  const isMobile = useIsMobile();
   const email: string | null = client.email ?? null;
   const phone: string | null = client.phone ?? null;
   const telHref = phone ? `tel:${phone.replace(/[^0-9+]/g, "")}` : null;
@@ -603,12 +604,20 @@ function ContactDialog({ client, onClose }: { client: any; onClose: () => void }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 sm:items-center"
+      className={cn(
+        "fixed inset-0 z-50 flex bg-foreground/40",
+        isMobile ? "items-end justify-center" : "justify-end",
+      )}
       onClick={onClose}
     >
-      <div
+      <aside
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-soft"
+        className={cn(
+          "w-full overflow-y-auto bg-background p-6 shadow-soft",
+          isMobile
+            ? "max-h-[85vh] rounded-t-3xl sm:max-w-2xl"
+            : "h-full max-w-md",
+        )}
       >
         <div className="flex items-start justify-between">
           <div>
@@ -630,7 +639,7 @@ function ContactDialog({ client, onClose }: { client: any; onClose: () => void }
           {mailHref ? (
             <a
               href={mailHref}
-              className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 hover:border-primary"
+              className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 hover:border-primary"
             >
               <span className="flex items-center gap-2 text-sm">
                 <Mail className="h-4 w-4 text-primary" />
@@ -646,7 +655,7 @@ function ContactDialog({ client, onClose }: { client: any; onClose: () => void }
           {telHref ? (
             <a
               href={telHref}
-              className="flex items-center justify-between rounded-2xl border border-border bg-background px-4 py-3 hover:border-primary"
+              className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 hover:border-primary"
             >
               <span className="flex items-center gap-2 text-sm">
                 <Phone className="h-4 w-4 text-primary" />
@@ -666,7 +675,7 @@ function ContactDialog({ client, onClose }: { client: any; onClose: () => void }
             This homeowner hasn't granted contact consent yet. Contact info unlocks once they opt in.
           </p>
         )}
-      </div>
+      </aside>
     </div>
   );
 }
