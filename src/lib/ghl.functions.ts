@@ -328,10 +328,10 @@ export const getCampaignCrmFailures = createServerFn({ method: "GET" })
 
 // Admin: retry the CRM push for sends that failed only on GHL.
 export const retryCampaignCrmPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { limit?: number } | undefined) =>
     z.object({ limit: z.number().int().min(1).max(200).optional() }).parse(d ?? {}),
   )
-  .middleware([requireSupabaseAuth])
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
