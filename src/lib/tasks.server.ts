@@ -75,7 +75,7 @@ export async function buildBusinessTasks(
         .in("portfolio_id", bookIds)
     : { data: [] as any[] };
   const rows = clients ?? [];
-  const clientById = new Map(rows.map((c: any) => [c.id, c]));
+  const clientById = new Map<string, any>(rows.map((c: any) => [c.id, c]));
   const clientIds = rows.map((c: any) => c.id);
   const orgForClient = (id: string) =>
     (orgByBook.get(clientById.get(id)?.portfolio_id) as string) ?? primaryOrgId;
