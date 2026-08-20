@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { SiteHeader } from "@/components/site-header";
+import { HomeownerShell } from "@/components/homeowner-shell";
 import { SERVICE_CATEGORIES, toCategorySlug } from "@/lib/mock-data";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Camera, CheckCircle2, Clock, Loader2 } from "lucide-react";
