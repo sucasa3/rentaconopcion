@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Home, TrendingUp, Sparkles, Activity, MapPin, Info } from "lucide-react";
-import { HOME_HERO, projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroData } from "@/lib/home-hero-data";
+import { projectHome, ZONE_COLOR, ZONE_LABEL, type HomeHeroView } from "@/lib/home-hero-data";
 import type { HomeScoreResult } from "@/lib/home-score";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCountUp } from "./useCountUp";
