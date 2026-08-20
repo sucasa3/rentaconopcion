@@ -67,11 +67,12 @@ export function HomeHero({
             <MapPin className="h-3.5 w-3.5" /> Your home
           </div>
           <h2 className="mt-3 max-w-[22ch] text-2xl font-semibold leading-tight tracking-tight text-white drop-shadow-lg sm:text-3xl lg:text-4xl">
-            {data.address}
+            {data.address ?? "Add your home address"}
           </h2>
           <p className="mt-1.5 text-sm text-white/70">
-            Home Score <span className="font-semibold text-white">{scoreText}</span>
-            {scoreDetail ? ` · ${scoreDetail.summary}` : ""}
+            {data.address
+              ? <>Home Score <span className="font-semibold text-white">{scoreText}</span>{scoreDetail ? ` · ${scoreDetail.summary}` : ""}</>
+              : "We'll fill in value, equity and condition once we know where your home is."}
           </p>
         </div>
 
