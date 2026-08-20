@@ -7,6 +7,7 @@ import {
   Megaphone,
   Network,
   Home,
+  CheckCircle2,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
