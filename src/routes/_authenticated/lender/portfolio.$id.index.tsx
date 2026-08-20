@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
 import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
-import { OpportunityCard, PersonCard, StatusPill } from "@/components/ui-kit";
+import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 
 
 import {
