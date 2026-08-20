@@ -80,10 +80,10 @@ export function AccountMenu({
   const businessHome =
     workspace && workspace.home !== "/dashboard" ? workspace.home : null;
   const businessLabel = workspace?.isAgent
-    ? "Agent dashboard"
+    ? t("account.agent_dashboard")
     : workspace?.isLender
-      ? "Lender dashboard"
-      : "Admin dashboard";
+      ? t("account.lender_dashboard")
+      : t("account.admin_dashboard");
 
   async function signOut() {
     setOpen(false);
