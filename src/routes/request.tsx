@@ -80,10 +80,16 @@ function RequestFlow() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <SiteHeader />
-      <main className="flex-1 px-5 py-10">
-        <div className="mx-auto max-w-xl">
+    <HomeownerShell>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
+        <div className="mx-auto max-w-2xl">
+          <Link
+            to="/dashboard"
+            className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to your home
+          </Link>
+
           <div className="mb-6">
             <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
               <span>Step {step + 1} of {total}</span>
