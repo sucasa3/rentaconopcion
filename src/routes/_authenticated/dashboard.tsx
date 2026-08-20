@@ -218,7 +218,7 @@ function Dashboard() {
                 to="/request"
                 className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft"
               >
-                <Plus className="h-4 w-4" /> Request
+                <Plus className="h-4 w-4" /> {t("dash.request")}
               </Link>
             </div>
           </div>
@@ -229,46 +229,46 @@ function Dashboard() {
 
           <SummaryCard
             icon={<HeartPulse className="h-5 w-5" />}
-            label="Home care"
+            label={t("dash.care.label")}
             headline={careHeadline}
             sentence={careSentence}
             tone={careTone}
             emphasis
             to="/home-care"
-            actionLabel="Open home care"
+            actionLabel={t("dash.care.action")}
           />
 
           <SummaryCard
             icon={<TrendingUp className="h-5 w-5" />}
-            label="Value & equity"
+            label={t("dash.money.label")}
             headline={money(okIntel?.value.value ?? null)}
             sentence={moneySentence}
             tone={okIntel?.equity?.refiSignal ? "opportunity" : "calm"}
             to="/money"
-            actionLabel="See the numbers"
+            actionLabel={t("dash.money.action")}
           />
 
           <SummaryCard
             icon={<Sparkles className="h-5 w-5" />}
-            label="Home Assistant"
-            sentence="Ask anything about your home — we answer using your own records."
+            label={t("dash.assistant.label")}
+            sentence={t("dash.assistant.sentence")}
             tone="brand"
             to="/assistant"
-            actionLabel="Ask a question"
+            actionLabel={t("dash.assistant.action")}
           />
 
           <SummaryCard
             icon={<FileText className="h-5 w-5" />}
-            label="Documents"
-            headline={docCount > 0 ? `${docCount} saved` : "None yet"}
+            label={t("dash.docs.label")}
+            headline={docCount > 0 ? t("dash.docs.saved", { count: docCount }) : t("common.none_yet")}
             sentence={docsSentence}
             tone={hasInspection ? "calm" : "brand"}
             to="/documents"
-            actionLabel={hasInspection ? "Open documents" : "Add a document"}
+            actionLabel={hasInspection ? t("dash.docs.action_open") : t("dash.docs.action_add")}
           />
 
           <div className="pt-1 text-center">
-            <OnboardingWalkthrough triggerLabel="Take the tour" />
+            <OnboardingWalkthrough triggerLabel={t("dash.take_tour")} />
           </div>
         </div>
       </main>
