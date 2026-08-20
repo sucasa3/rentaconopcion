@@ -40,7 +40,7 @@ function HomeCarePage() {
             <ArrowLeft className="h-4 w-4" /> Back to your home
           </Link>
 
-          <HomeCarePanel />
+          <HomeCarePanel onGoToDocuments={() => navigate({ to: "/documents" })} />
           <RecommendedProsCard />
           <RecentRequestsCard />
         </div>

@@ -39,7 +39,7 @@ function DocumentsPage() {
             <ArrowLeft className="h-4 w-4" /> Back to your home
           </Link>
 
-          <DocumentsCard />
+          <DocumentsCard onGoToCare={() => navigate({ to: "/home-care" })} />
           <InspectionFindingsPanel />
         </div>
       </main>
