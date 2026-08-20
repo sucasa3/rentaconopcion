@@ -81,7 +81,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
           <nav className="flex flex-1 flex-col gap-1">
             {ITEMS.map((i) => (
               <Link
-                key={i.label}
+                key={i.key}
                 to={i.to as never}
                 search={i.search as never}
                 className={cn(
