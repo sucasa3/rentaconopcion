@@ -253,7 +253,7 @@ function PortfolioDetail() {
                         name={c.full_name}
                         subtitle={[c.city, c.state].filter(Boolean).join(", ")}
                         heroLabel="Est. savings / mo"
-                        heroValue={`$${c.savings_per_month_dollaries.toLocaleString()}`}
+                        heroValue={`$${c.savings_per_month_dollars.toLocaleString()}`}
                         metrics={[
                           { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
                           { label: "Rate / LTV", value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}` },
