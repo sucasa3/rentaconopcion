@@ -117,7 +117,7 @@ export function AccountMenu({
 
       <SheetContent side="bottom" className="rounded-t-3xl border-border/70 pb-[env(safe-area-inset-bottom)]">
         <SheetHeader className="text-left">
-          <SheetTitle className="sr-only">Account</SheetTitle>
+          <SheetTitle className="sr-only">{t("account.title")}</SheetTitle>
         </SheetHeader>
         <div className="flex items-center gap-3 px-4 pb-2">
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
