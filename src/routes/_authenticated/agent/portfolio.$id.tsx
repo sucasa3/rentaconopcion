@@ -7,6 +7,7 @@ import { BusinessShell } from "@/components/business-shell";
 import { AgentCoveragePanel } from "@/components/agent-coverage-panel";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 import { useUserId } from "@/hooks/use-user-id";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { readOnboarding } from "@/lib/onboarding";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
