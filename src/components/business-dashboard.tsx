@@ -58,6 +58,14 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
     staleTime: 60_000,
   });
 
+  const tasksFn = useServerFn(getMyBusinessTasks);
+  const { data: tasks } = useQuery({
+    queryKey: ["business-tasks", kind],
+    queryFn: () => tasksFn({ data: { orgType: kind } }),
+    staleTime: 30_000,
+  });
+  const tasksDue = tasks?.openCount ?? 0;
+
   const base = kind === "agent" ? "/agent" : "/lender";
   const book = data?.books?.[0] ?? null;
   const orgName = data?.orgs?.[0]?.name ?? (kind === "agent" ? "Your agency" : "Your team");
