@@ -67,7 +67,8 @@ export function AccountMenu({
     };
   }, []);
 
-  const name = displayName(user);
+  const t = useT();
+  const name = displayName(user, t("account.fallback_name"));
 
   // Some homeowners are also agents/lenders — offer a way back to their business area.
   const { data: workspace } = useQuery({
