@@ -706,6 +706,7 @@ function AgentPortfolio() {
                   </table>
                 </div>
               </div>
+              </section>
 
               {/* Agent widgets: readiness mix + referral visibility */}
               <div className="grid gap-4 lg:grid-cols-3">
