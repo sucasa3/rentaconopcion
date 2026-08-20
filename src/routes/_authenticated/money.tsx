@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
@@ -31,6 +31,7 @@ export const Route = createFileRoute("/_authenticated/money")({
 });
 
 function MoneyPage() {
+  const navigate = useNavigate();
   const { record, report, isLoading } = useHomeRecord();
 
   return (
