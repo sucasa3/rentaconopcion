@@ -45,7 +45,15 @@ function MoneyPage() {
           </Link>
 
           {!isLoading && record && report && (
-            <HomeSignalsPanel signals={report.signals} record={record} />
+            <HomeSignalsPanel
+              signals={report.signals}
+              record={record}
+              onGoToTab={(t) => {
+                if (t === "care") navigate({ to: "/home-care" });
+                else if (t === "documents") navigate({ to: "/documents" });
+                else window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
           )}
 
           <HomeIntelPanel />
