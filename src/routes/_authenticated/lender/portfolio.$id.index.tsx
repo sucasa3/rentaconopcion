@@ -86,6 +86,18 @@ function PortfolioDetail() {
     queryFn: () => getFn({ data: { id, benchmarkRate: benchmark } }),
   });
 
+  // Deep link: /lender/portfolio/$id?client=<clientId> opens that homeowner directly.
+  const openedParam = useRef<string | null>(null);
+  useEffect(() => {
+    if (!clientParam || !data || openedParam.current === clientParam) return;
+    const match = (data as any).clients?.find((c: any) => c.id === clientParam);
+    if (match) {
+      openedParam.current = clientParam;
+      setContact(match);
+    }
+  }, [clientParam, data]);
+
+
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id } }),
     onMutate: () => {
