@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/documents")({
 });
 
 function DocumentsPage() {
+  const navigate = useNavigate();
   return (
     <HomeownerShell>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
