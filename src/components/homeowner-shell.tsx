@@ -18,23 +18,20 @@ const ITEMS: Item[] = [
   {
     label: "Home",
     to: "/dashboard",
-    search: { tab: "home" },
     icon: <Home className="h-5 w-5" />,
-    match: (p, t) => p === "/dashboard" && (!t || t === "home"),
+    match: (p) => p === "/dashboard",
   },
   {
     label: "To do",
-    to: "/dashboard",
-    search: { tab: "care" },
+    to: "/home-care",
     icon: <HeartPulse className="h-5 w-5" />,
-    match: (p, t) => p === "/dashboard" && t === "care",
+    match: (p) => p.startsWith("/home-care"),
   },
   {
     label: "Docs",
-    to: "/dashboard",
-    search: { tab: "documents" },
+    to: "/documents",
     icon: <FileText className="h-5 w-5" />,
-    match: (p, t) => p === "/dashboard" && t === "documents",
+    match: (p) => p.startsWith("/documents"),
   },
   {
     label: "Services",

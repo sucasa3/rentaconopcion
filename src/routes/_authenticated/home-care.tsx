@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeCarePanel } from "@/components/home-care-panel";
 import { RecommendedProsCard } from "@/components/recommended-pros-card";
+import { RecentRequestsCard } from "@/components/recent-requests-card";
 
 export const Route = createFileRoute("/_authenticated/home-care")({
   ssr: false,
