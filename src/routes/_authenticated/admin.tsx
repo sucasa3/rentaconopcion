@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { GhlSyncPanel } from "@/components/ghl-sync-panel";
 import { GhlDoctorPanel } from "@/components/ghl-doctor-panel";
+import { CampaignTestEmailPanel } from "@/components/campaign-test-email-panel";
+
 import { AdminLeadsPanel } from "@/components/admin-leads-panel";
 import { ProSeedPanel } from "@/components/pro-seed-panel";
 import { AttomSpendPanel } from "@/components/attom-spend-panel";
@@ -127,6 +129,9 @@ function Admin() {
           <ProSeedPanel />
 
           <GhlDoctorPanel />
+
+          <CampaignTestEmailPanel />
+
 
           <GhlSyncPanel />
 

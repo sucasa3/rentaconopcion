@@ -40,6 +40,7 @@ import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
@@ -218,6 +219,12 @@ const AuthenticatedAgentCampaignsRoute =
     path: '/campaigns',
     getParentRoute: () => AuthenticatedAgentRouteRoute,
   } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   id: '/lovable/email/auth/webhook',
   path: '/lovable/email/auth/webhook',
@@ -337,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/lender/portfolio/$id/import': typeof AuthenticatedLenderPortfolioIdImportRoute
   '/lender/portfolio/$id/network': typeof AuthenticatedLenderPortfolioIdNetworkRoute
@@ -380,6 +388,7 @@ export interface FileRoutesByTo {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/lender/portfolio/$id/import': typeof AuthenticatedLenderPortfolioIdImportRoute
   '/lender/portfolio/$id/network': typeof AuthenticatedLenderPortfolioIdNetworkRoute
@@ -428,6 +437,7 @@ export interface FileRoutesById {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/lender/portfolio/$id/campaigns': typeof AuthenticatedLenderPortfolioIdCampaignsRoute
   '/_authenticated/lender/portfolio/$id/import': typeof AuthenticatedLenderPortfolioIdImportRoute
   '/_authenticated/lender/portfolio/$id/network': typeof AuthenticatedLenderPortfolioIdNetworkRoute
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/lovable/email/transactional/preview'
     | '/lender/portfolio/$id/campaigns'
     | '/lender/portfolio/$id/import'
     | '/lender/portfolio/$id/network'
@@ -519,6 +530,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/lovable/email/transactional/preview'
     | '/lender/portfolio/$id/campaigns'
     | '/lender/portfolio/$id/import'
     | '/lender/portfolio/$id/network'
@@ -566,6 +578,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/lovable/email/transactional/preview'
     | '/_authenticated/lender/portfolio/$id/campaigns'
     | '/_authenticated/lender/portfolio/$id/import'
     | '/_authenticated/lender/portfolio/$id/network'
@@ -592,6 +605,7 @@ export interface RootRouteChildren {
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -812,6 +826,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/agent/campaigns'
       preLoaderRoute: typeof AuthenticatedAgentCampaignsRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
       id: '/lovable/email/auth/webhook'
@@ -1037,6 +1058,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -251,6 +251,41 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
         .select("id")
         .maybeSingle();
 
+      // 1) Email the homeowner. A CRM failure must never block this.
+      let emailed = false;
+      let emailError: string | null = null;
+      try {
+        const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+        const res = await sendTemplateEmail("campaign-update", c.client_email, {
+          fromName: branding.senderName || branding.orgName || org.name,
+          replyTo: branding.replyToEmail ?? undefined,
+          idempotencyKey: `campaign-update-${sendRow?.id ?? `${campaign.id}-${c.id}`}`,
+          templateData: {
+            firstName: payload.first_name,
+            subject: copy.subject,
+            body: copy.body,
+            previewText: copy.subject,
+            ctaLabel: payload.next_cta,
+            ctaUrl: payload.cta_url,
+            partnerName: payload.partner_name,
+            contactName: payload.contact_name,
+            contactTitle: payload.contact_title,
+            contactPhone: payload.contact_phone,
+            replyTo: payload.reply_to,
+            license: payload.license,
+            logoUrl: payload.logo_url,
+            signoff: payload.signoff,
+            propertyAddress: payload.property_address,
+            propertyValue: payload.property_value,
+            equity: payload.equity,
+          },
+        });
+        emailed = res.sent;
+        if (!res.sent) emailError = "recipient suppressed";
+      } catch (e) {
+        emailError = (e as Error).message.slice(0, 500);
+      }
+
       try {
         const { pushCampaignContact } = await import("@/lib/ghl.server");
         const contactId = await pushCampaignContact({
@@ -266,23 +301,27 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
           await supabaseAdmin
             .from("campaign_sends")
             .update({
-              status: "sent",
+              status: emailed ? "sent" : "queued",
               crm_status: "synced",
               crm_error: null,
+              error_message: emailError,
               ghl_contact_id: contactId,
-              sent_at: new Date().toISOString(),
+              sent_at: emailed ? new Date().toISOString() : null,
             })
             .eq("id", sendRow.id);
         }
-        result.sent++;
+        if (emailed) result.sent++;
+        else result.errors++;
         monthCount.set(c.id, (monthCount.get(c.id) ?? 0) + 1);
         if (result.samples.length < 20)
           result.samples.push({
             client: c.client_name ?? c.id,
             campaign: campaign.key,
-            status: "sent",
+            status: emailed ? "sent" : "email failed",
             subject: copy.subject,
+            reason: emailError ?? undefined,
           });
+
       } catch (e) {
         result.errors++;
         const msg = (e as Error).message.slice(0, 500);
@@ -291,9 +330,16 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
         if (sendRow?.id) {
           await supabaseAdmin
             .from("campaign_sends")
-            .update({ status: "queued", crm_status: "failed", crm_error: msg })
+            .update({
+              status: emailed ? "sent" : "queued",
+              crm_status: "failed",
+              crm_error: msg,
+              error_message: emailError,
+              sent_at: emailed ? new Date().toISOString() : null,
+            })
             .eq("id", sendRow.id);
         }
+
         if (result.samples.length < 20)
           result.samples.push({ client: c.client_name ?? c.id, campaign: campaign.key, status: "failed", reason: msg });
       }
@@ -344,4 +390,164 @@ async function retryFailedSends(limit: number) {
       /* leave failed for the next tick */
     }
   }
+}
+
+/**
+ * Admin dry-run: send one real campaign email (and CRM push) to a chosen
+ * address, using a real client's facts and the org's sender identity.
+ */
+export async function sendTestCampaignEmail(opts: {
+  email: string;
+  campaignKey?: string;
+  orgId?: string;
+  pushToCrm?: boolean;
+}) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+  const { data: campaignRows } = await supabaseAdmin
+    .from("campaigns")
+    .select("*")
+    .eq("active", true)
+    .order("sort_order");
+  const campaigns = (campaignRows ?? []) as unknown as CampaignRow[];
+  const campaign = opts.campaignKey
+    ? campaigns.find((c) => c.key === opts.campaignKey)
+    : campaigns[0];
+  if (!campaign) throw new Error("No active campaign found");
+
+  let actQ = supabaseAdmin
+    .from("campaign_activations")
+    .select("lender_org_id, portfolio_id")
+    .eq("active", true)
+    .eq("campaign_id", campaign.id);
+  if (opts.orgId) actQ = actQ.eq("lender_org_id", opts.orgId);
+  const { data: acts } = await actQ;
+  const orgId = opts.orgId ?? acts?.[0]?.lender_org_id;
+  if (!orgId) throw new Error(`No active organization for campaign ${campaign.key}`);
+
+  const { data: org } = await supabaseAdmin
+    .from("lender_orgs")
+    .select(
+      "id, name, org_type, sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff",
+    )
+    .eq("id", orgId)
+    .maybeSingle();
+  if (!org) throw new Error("Organization not found");
+
+  const { data: portfolios } = await supabaseAdmin
+    .from("lender_portfolios")
+    .select("id, assigned_user_id")
+    .eq("lender_org_id", orgId);
+  const portfolioIds = (portfolios ?? []).map((p) => p.id);
+
+  const { data: clients } = await supabaseAdmin
+    .from("lender_portfolio_clients")
+    .select(
+      "id, portfolio_id, homeowner_id, client_name, client_email, client_phone, address_line1, city, state, zip, close_date, loan_amount_at_close_cents, rate_at_close",
+    )
+    .in("portfolio_id", portfolioIds.length ? portfolioIds : ["00000000-0000-0000-0000-000000000000"])
+    .limit(1);
+  const c = clients?.[0];
+  if (!c) throw new Error("No portfolio client available to build the test facts");
+
+  const target: CampaignTarget = {
+    clientId: c.id,
+    orgId: org.id,
+    orgName: org.name,
+    orgType: org.org_type ?? "lender",
+    homeownerId: c.homeowner_id,
+    name: c.client_name,
+    email: opts.email,
+    phone: c.client_phone,
+    address: c.address_line1,
+    city: c.city,
+    state: c.state,
+    zip: c.zip,
+    closeDate: c.close_date,
+    loanAtCloseCents: c.loan_amount_at_close_cents,
+    rateAtClose: c.rate_at_close,
+  };
+
+  const facts = await loadCachedFacts(target);
+
+  const { data: override } = await supabaseAdmin
+    .from("campaign_org_overrides")
+    .select("subject, intro, closing, cta_label, cta_url")
+    .eq("lender_org_id", org.id)
+    .eq("campaign_id", campaign.id)
+    .maybeSingle();
+
+  const ownerId = (portfolios ?? []).find((p) => p.id === c.portfolio_id)?.assigned_user_id ?? null;
+  let member: MemberBrandFields | null = null;
+  if (ownerId) {
+    const { data: m } = await supabaseAdmin
+      .from("lender_member_profiles")
+      .select(
+        "sender_name, reply_to_email, contact_name, contact_title, contact_phone, license_number, logo_url, signoff",
+      )
+      .eq("lender_org_id", org.id)
+      .eq("user_id", ownerId)
+      .maybeSingle();
+    member = (m as MemberBrandFields) ?? null;
+  }
+
+  const branding = mergeBranding(brandingFromOrg(org), member);
+  const copy = await generateCopy(campaign, facts, target, "en", override ?? null);
+  const payload = buildPayload(campaign, facts, target, copy, branding, override ?? null);
+
+  const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+  const emailResult = await sendTemplateEmail("campaign-update", opts.email, {
+    fromName: branding.senderName || branding.orgName || org.name,
+    replyTo: branding.replyToEmail ?? undefined,
+    idempotencyKey: `campaign-test-${campaign.key}-${opts.email}-${Date.now()}`,
+    templateData: {
+      firstName: payload.first_name,
+      subject: copy.subject,
+      body: copy.body,
+      previewText: copy.subject,
+      ctaLabel: payload.next_cta,
+      ctaUrl: payload.cta_url,
+      partnerName: payload.partner_name,
+      contactName: payload.contact_name,
+      contactTitle: payload.contact_title,
+      contactPhone: payload.contact_phone,
+      replyTo: payload.reply_to,
+      license: payload.license,
+      logoUrl: payload.logo_url,
+      signoff: payload.signoff,
+      propertyAddress: payload.property_address,
+      propertyValue: payload.property_value,
+      equity: payload.equity,
+    },
+  });
+
+  let crm: { pushed: boolean; contactId?: string | null; error?: string } = { pushed: false };
+  if (opts.pushToCrm !== false) {
+    try {
+      const { pushCampaignContact } = await import("@/lib/ghl.server");
+      const contactId = await pushCampaignContact({
+        email: opts.email,
+        fullName: c.client_name,
+        city: c.city,
+        state: c.state,
+        tag: campaign.ghl_tag,
+        payload,
+      });
+      crm = { pushed: true, contactId };
+    } catch (e) {
+      crm = { pushed: false, error: (e as Error).message.slice(0, 300) };
+    }
+  }
+
+  return {
+    campaign: campaign.key,
+    org: org.name,
+    to: opts.email,
+    fromName: branding.senderName || branding.orgName || org.name,
+    replyTo: branding.replyToEmail,
+    subject: copy.subject,
+    emailSent: emailResult.sent,
+    emailReason: emailResult.sent ? null : emailResult.reason,
+    crm,
+  };
 }
