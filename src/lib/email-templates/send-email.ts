@@ -23,6 +23,9 @@ export interface SendTemplateEmailOptions {
   /** Dedupes retries of the same logical send; defaults to a random UUID (no dedupe). */
   idempotencyKey?: string
   replyTo?: string
+  /** Display name shown in the From: header (partner/MLO identity). */
+  fromName?: string
+
 }
 
 /**
