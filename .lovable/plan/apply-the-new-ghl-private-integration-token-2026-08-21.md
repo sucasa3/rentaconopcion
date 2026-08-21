@@ -1,15 +1,15 @@
 # Apply the new GHL Private Integration Token
 
 ## Goal
-Replace the stale GoHighLevel API token with the one you just generated, verify it has the required scopes, and retry the 18 campaign sends that failed with `contacts.write` scope errors.
+Replace the stale GoHighLevel API token with the newly rotated token, verify it has the required scopes, and retry the 18 campaign sends that failed with `contacts.write` scope errors.
 
 ## Steps
 
 ### 1. Update the project secret
-Replace `GHL_API_KEY` with the new token:
+Replace `GHL_API_KEY` with the newly rotated token:
 
 ```text
-pit-d8488d2a-0e0a-4ab0-a36b-00edaee3f79c
+pit-fa127d89-3d3a-462b-b217-b8d13723379c
 ```
 
 ### 2. Run the GHL Connection Doctor
