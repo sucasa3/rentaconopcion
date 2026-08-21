@@ -411,6 +411,8 @@ export async function sendTestCampaignEmail(opts: {
   email: string;
   campaignKey?: string;
   orgId?: string;
+  portfolioId?: string;
+  clientId?: string;
   pushToCrm?: boolean;
 }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
