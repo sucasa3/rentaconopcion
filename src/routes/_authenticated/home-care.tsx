@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeCarePanel } from "@/components/home-care-panel";
+import { PredictedActionsCard } from "@/components/predicted-actions-card";
 import { RecommendedProsCard } from "@/components/recommended-pros-card";
 import { RecentRequestsCard } from "@/components/recent-requests-card";
 
@@ -44,6 +45,7 @@ function HomeCarePage() {
           </Link>
 
           <HomeCarePanel onGoToDocuments={() => navigate({ to: "/documents" })} />
+          <PredictedActionsCard />
           <RecommendedProsCard />
           <RecentRequestsCard />
         </div>
