@@ -330,9 +330,16 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
         if (sendRow?.id) {
           await supabaseAdmin
             .from("campaign_sends")
-            .update({ status: "queued", crm_status: "failed", crm_error: msg })
+            .update({
+              status: emailed ? "sent" : "queued",
+              crm_status: "failed",
+              crm_error: msg,
+              error_message: emailError,
+              sent_at: emailed ? new Date().toISOString() : null,
+            })
             .eq("id", sendRow.id);
         }
+
         if (result.samples.length < 20)
           result.samples.push({ client: c.client_name ?? c.id, campaign: campaign.key, status: "failed", reason: msg });
       }
