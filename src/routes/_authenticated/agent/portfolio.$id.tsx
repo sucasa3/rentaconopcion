@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { BusinessShell } from "@/components/business-shell";
 import { AgentCoveragePanel } from "@/components/agent-coverage-panel";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
+import { CopilotSearch } from "@/components/copilot-search";
 import { useUserId } from "@/hooks/use-user-id";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { readOnboarding } from "@/lib/onboarding";
@@ -1073,6 +1074,15 @@ function AgentPortfolio() {
                   </span>
                 </div>
               </section>
+
+              <CopilotSearch
+                portfolioId={id}
+                detailPath={(r) => ({
+                  to: "/agent/portfolio/$id",
+                  params: { id: r.portfolio_id },
+                  search: { client: r.id },
+                })}
+              />
 
               {/* Client table */}
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
