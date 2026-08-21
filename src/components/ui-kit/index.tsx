@@ -12,6 +12,7 @@ export function StatCard({
   to,
   params,
   search,
+  hash,
 }: {
   label: string;
   value: ReactNode;
@@ -20,6 +21,7 @@ export function StatCard({
   to?: string;
   params?: Record<string, string>;
   search?: Record<string, string>;
+  hash?: string;
 }) {
   const toneRing: Record<string, string> = {
     default: "bg-card",
