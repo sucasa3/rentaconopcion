@@ -63,6 +63,7 @@ export function StatCard({
       to={to}
       params={params as never}
       search={search as never}
+      hash={hash as never}
       aria-label={`${label}: ${typeof value === "number" || typeof value === "string" ? value : ""}`}
       className="block rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
