@@ -141,6 +141,18 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
         />
       </div>
 
+      {book && (
+        <CopilotSearch
+          portfolioId={book.id}
+          detailPath={(r) => ({
+            to: kind === "agent" ? "/agent/portfolio/$id" : "/lender/portfolio/$id",
+            params: { id: r.portfolio_id },
+            search: { client: r.id },
+          })}
+        />
+      )}
+
+
       <section id="work-queue" className="scroll-mt-6 space-y-3">
         <SectionHeader title="What needs you" />
         <p className="-mt-1 text-sm text-muted-foreground">
