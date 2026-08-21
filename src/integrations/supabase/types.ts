@@ -205,6 +205,59 @@ export type Database = {
           },
         ]
       }
+      ai_usage_log: {
+        Row: {
+          completion_tokens: number
+          cost_micro_cents: number
+          created_at: string
+          detail: string | null
+          feature: string
+          id: string
+          model: string
+          ok: boolean
+          org_id: string | null
+          prompt_tokens: number
+          total_tokens: number
+          user_id: string | null
+        }
+        Insert: {
+          completion_tokens?: number
+          cost_micro_cents?: number
+          created_at?: string
+          detail?: string | null
+          feature: string
+          id?: string
+          model: string
+          ok?: boolean
+          org_id?: string | null
+          prompt_tokens?: number
+          total_tokens?: number
+          user_id?: string | null
+        }
+        Update: {
+          completion_tokens?: number
+          cost_micro_cents?: number
+          created_at?: string
+          detail?: string | null
+          feature?: string
+          id?: string
+          model?: string
+          ok?: boolean
+          org_id?: string | null
+          prompt_tokens?: number
+          total_tokens?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attom_call_log: {
         Row: {
           address_normalized: string | null
@@ -885,6 +938,59 @@ export type Database = {
         }
         Relationships: []
       }
+      home_document_facts: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          doc_kind: string
+          document_id: string
+          id: string
+          label: string
+          source_excerpt: string | null
+          system: string | null
+          user_id: string
+          value: string | null
+          value_cents: number | null
+          value_date: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          doc_kind: string
+          document_id: string
+          id?: string
+          label: string
+          source_excerpt?: string | null
+          system?: string | null
+          user_id: string
+          value?: string | null
+          value_cents?: number | null
+          value_date?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          doc_kind?: string
+          document_id?: string
+          id?: string
+          label?: string
+          source_excerpt?: string | null
+          system?: string | null
+          user_id?: string
+          value?: string | null
+          value_cents?: number | null
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_document_facts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "home_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_documents: {
         Row: {
           created_at: string
@@ -973,6 +1079,77 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "home_inspection_findings_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "home_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_predicted_actions: {
+        Row: {
+          action_key: string
+          completed_at: string | null
+          created_at: string
+          dismissed_at: string | null
+          document_id: string | null
+          due_by: string | null
+          due_from: string | null
+          est_cost_high_cents: number | null
+          est_cost_low_cents: number | null
+          id: string
+          service_category: string | null
+          status: string
+          system: string | null
+          title: string
+          updated_at: string
+          urgency: string
+          user_id: string
+          why: string | null
+        }
+        Insert: {
+          action_key: string
+          completed_at?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          document_id?: string | null
+          due_by?: string | null
+          due_from?: string | null
+          est_cost_high_cents?: number | null
+          est_cost_low_cents?: number | null
+          id?: string
+          service_category?: string | null
+          status?: string
+          system?: string | null
+          title: string
+          updated_at?: string
+          urgency?: string
+          user_id: string
+          why?: string | null
+        }
+        Update: {
+          action_key?: string
+          completed_at?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          document_id?: string | null
+          due_by?: string | null
+          due_from?: string | null
+          est_cost_high_cents?: number | null
+          est_cost_low_cents?: number | null
+          id?: string
+          service_category?: string | null
+          status?: string
+          system?: string | null
+          title?: string
+          updated_at?: string
+          urgency?: string
+          user_id?: string
+          why?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_predicted_actions_document_id_fkey"
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "home_documents"

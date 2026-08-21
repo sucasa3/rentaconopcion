@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
 import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
+import { CopilotSearch } from "@/components/copilot-search";
 import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -391,7 +392,17 @@ function PortfolioDetail() {
                 </div>
               </section>
 
+              <CopilotSearch
+                portfolioId={id}
+                detailPath={(r) => ({
+                  to: "/lender/portfolio/$id",
+                  params: { id: r.portfolio_id },
+                  search: { client: r.id },
+                })}
+              />
+
               {/* Client table with search + pagination */}
+
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-base font-semibold">
