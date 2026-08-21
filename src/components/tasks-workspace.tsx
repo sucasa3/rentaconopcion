@@ -85,8 +85,8 @@ function TaskCard({
   );
 }
 
-/** The shared "what's on my plate" list for agents and lenders. */
-export function TasksWorkspace({ kind }: { kind: "agent" | "lender" }) {
+/** The shared "what's on my plate" queue for agents and lenders. */
+export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
   const listFn = useServerFn(getMyBusinessTasks);
   const doneFn = useServerFn(setBusinessTaskDone);
   const qc = useQueryClient();
@@ -129,22 +129,11 @@ export function TasksWorkspace({ kind }: { kind: "agent" | "lender" }) {
   };
 
   if (isLoading) {
-    return <div className="p-5 text-sm text-muted-foreground">Loading…</div>;
+    return <div className="py-4 text-sm text-muted-foreground">Loading…</div>;
   }
 
   return (
-    <div className="space-y-8 px-4 py-6 sm:px-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Tasks</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          What needs you today
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          We build this list from what's happening in your book. Check something off and it moves
-          out of your way.
-        </p>
-      </header>
-
+    <div className="space-y-6">
       <section className="space-y-3">
         <SectionHeader title="Do now" />
         {now.length === 0 ? (
@@ -192,6 +181,21 @@ export function TasksWorkspace({ kind }: { kind: "agent" | "lender" }) {
           )}
         </section>
       )}
+    </div>
+  );
+}
+
+/** Full-page wrapper kept for the standalone tasks route. */
+export function TasksWorkspace({ kind }: { kind: "agent" | "lender" }) {
+  return (
+    <div className="space-y-6 px-4 py-6 sm:px-6">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Tasks</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          What needs you today
+        </h1>
+      </header>
+      <TaskQueue kind={kind} />
     </div>
   );
 }

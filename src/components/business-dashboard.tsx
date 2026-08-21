@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Wallet,
   Home,
-  CalendarClock,
   Plus,
   Wrench,
   CheckCircle2,
@@ -18,8 +17,8 @@ import {
 } from "lucide-react";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
-import { categoryLabel } from "@/lib/opportunities";
-import { StatCard, SignalCard, SectionHeader, StatusPill, EmptyState } from "@/components/ui-kit";
+import { StatCard, SectionHeader, EmptyState } from "@/components/ui-kit";
+import { TaskQueue } from "@/components/tasks-workspace";
 
 export function categoryIcon(category: string) {
   switch (category) {
@@ -37,18 +36,6 @@ export function categoryIcon(category: string) {
       return <Flame className="h-5 w-5" />;
   }
 }
-
-const ACTION_BY_CATEGORY: Record<string, string> = {
-  refinance_review: "Send a rate check.",
-  equity: "Send a home equity update.",
-  heloc: "Offer a line-of-credit conversation.",
-  move_up: "Share what their home could sell for.",
-  investment: "Start an investment conversation.",
-  mortgage_review: "Offer an annual financing review.",
-  home_condition: "Offer help lining up the work.",
-  market_timing: "Reach out while they're weighing a move.",
-};
-
 
 export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
   const overviewFn = useServerFn(getBusinessOverview);
@@ -86,14 +73,15 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
     );
   }
 
+  const totalSent = data.campaigns.reduce((n: number, c: any) => n + (c.sent ?? 0), 0);
+  const totalQueued = data.campaigns.reduce((n: number, c: any) => n + (c.queued ?? 0), 0);
+
   return (
     <div className="space-y-8 px-4 py-6 sm:px-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">{orgName}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-            {kind === "agent" ? "Your business" : "Your book"}
-          </h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Today</h1>
         </div>
         {book && (
           <Link
@@ -132,7 +120,8 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
           value={data.counts.opportunities}
           tone="attention"
           icon={<Sparkles className="h-4 w-4" />}
-          to={`${base}/opportunities`}
+          to={base}
+          hash="work-queue"
         />
         <StatCard
           label="Campaigns"
@@ -146,94 +135,18 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
           value={tasksDue ?? 0}
           tone={tasksDue ? "attention" : "growth"}
           icon={<CheckCircle2 className="h-4 w-4" />}
-          to={`${base}/tasks`}
+          to={base}
+          hash="work-queue"
         />
       </div>
 
-
-      <section className="space-y-3">
-        <SectionHeader title="Today" />
-        {data.today.length === 0 ? (
-          <EmptyState
-            icon={<CalendarClock className="mx-auto h-7 w-7" />}
-            title="Nothing needs you right now"
-            hint="We'll surface homeowners the moment something changes."
-          />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.today.map((t: any, i: number) => (
-              <SignalCard
-                key={`${t.kind}-${t.clientId}-${i}`}
-                icon={
-                  t.kind === "activated" ? (
-                    <UserCheck className="h-5 w-5" />
-                  ) : (
-                    categoryIcon(t.category)
-                  )
-                }
-                name={t.name}
-                signal={t.line}
-                pill={
-                  t.kind === "activated" ? (
-                    <StatusPill tone="growth">Activated</StatusPill>
-                  ) : (
-                    <StatusPill tone="attention">{categoryLabel(t.category)}</StatusPill>
-                  )
-                }
-                actionLabel="View homeowner"
-                to={t.portfolioId ? (`${base}/portfolio/$id` as never) : undefined}
-                params={t.portfolioId ? { id: t.portfolioId } : undefined}
-                search={
-                  t.portfolioId && t.clientId ? ({ client: t.clientId } as never) : undefined
-                }
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <SectionHeader
-          title="Opportunities"
-          action={
-            <Link
-              to={`${base}/opportunities` as never}
-              className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
-            >
-              View all <ArrowRight className="h-4 w-4" />
-            </Link>
-          }
-        />
-        {data.opportunities.length === 0 ? (
-          <EmptyState
-            icon={<Sparkles className="mx-auto h-7 w-7" />}
-            title="No open opportunities"
-            hint="Add homeowners and SuCasa will start finding them."
-          />
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.opportunities.slice(0, 6).map((o: any) => (
-              <SignalCard
-                key={o.id}
-                icon={categoryIcon(o.category)}
-                name={o.clientName}
-                signal={o.reason ?? categoryLabel(o.category)}
-                action={ACTION_BY_CATEGORY[o.category]}
-                pill={
-                  <StatusPill tone={o.strength === "strong" ? "attention" : "muted"}>
-                    {categoryLabel(o.category)}
-                  </StatusPill>
-                }
-                actionLabel="View homeowner"
-                to={o.portfolioId ? (`${base}/portfolio/$id` as never) : undefined}
-                params={o.portfolioId ? { id: o.portfolioId } : undefined}
-                search={
-                  o.portfolioId && o.clientId ? ({ client: o.clientId } as never) : undefined
-                }
-              />
-            ))}
-          </div>
-        )}
+      <section id="work-queue" className="scroll-mt-6 space-y-3">
+        <SectionHeader title="What needs you" />
+        <p className="-mt-1 text-sm text-muted-foreground">
+          Built from what's happening in your book. Check something off and it moves out of your
+          way.
+        </p>
+        <TaskQueue kind={kind} />
       </section>
 
       <section className="space-y-3">
@@ -263,32 +176,21 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
             }
           />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.campaigns.map((c: any) => (
-              <div key={c.id} className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-semibold">{c.name}</p>
-                  <StatusPill tone="growth">Live</StatusPill>
-                </div>
-                <div className="mt-3 flex gap-5 text-sm">
-                  <div>
-                    <p className="text-xl font-semibold tabular-nums">{c.sent}</p>
-                    <p className="text-xs text-muted-foreground">Sent</p>
-                  </div>
-                  <div>
-                    <p className="text-xl font-semibold tabular-nums">{c.queued}</p>
-                    <p className="text-xs text-muted-foreground">Queued</p>
-                  </div>
-                </div>
-                <Link
-                  to={`${base}/campaigns` as never}
-                  className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-secondary px-4 py-2.5 text-sm font-semibold text-secondary-foreground"
-                >
-                  View campaign
-                </Link>
-              </div>
-            ))}
-          </div>
+          <Link
+            to={`${base}/campaigns` as never}
+            className="flex items-center justify-between gap-3 rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
+          >
+            <div className="min-w-0">
+              <p className="font-semibold">
+                {data.campaigns.length} campaign{data.campaigns.length === 1 ? "" : "s"} keeping in
+                touch
+              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {totalSent.toLocaleString()} sent · {totalQueued.toLocaleString()} queued
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+          </Link>
         )}
       </section>
 
