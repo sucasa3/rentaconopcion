@@ -3,11 +3,9 @@ import { Link } from "@tanstack/react-router";
 import {
   LayoutGrid,
   Users,
-  Sparkles,
   Megaphone,
   Network,
   Home,
-  CheckCircle2,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
@@ -26,7 +24,7 @@ interface NavItem {
 function navItems(kind: BusinessKind, bookId: string | null): NavItem[] {
   const base = kind === "agent" ? "/agent" : "/lender";
   const items: NavItem[] = [
-    { label: "Dashboard", to: base, icon: <LayoutGrid className="h-5 w-5" /> },
+    { label: "Today", to: base, icon: <LayoutGrid className="h-5 w-5" /> },
   ];
   if (bookId) {
     items.push({
@@ -37,8 +35,6 @@ function navItems(kind: BusinessKind, bookId: string | null): NavItem[] {
     });
   }
   items.push(
-    { label: "Tasks", to: `${base}/tasks`, icon: <CheckCircle2 className="h-5 w-5" /> },
-    { label: "Opportunities", to: `${base}/opportunities`, icon: <Sparkles className="h-5 w-5" /> },
     { label: "Marketing", to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
     { label: "Network", to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
   );
