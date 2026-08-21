@@ -443,3 +443,27 @@ export const previewCampaignForClient = createServerFn({ method: "POST" })
       signature: payload.signature_block,
     };
   });
+
+/** Admin: send one real campaign email (dry-run) to a chosen address. */
+export const sendCampaignTestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        email: z.string().email(),
+        campaignKey: z.string().optional(),
+        orgId: z.string().uuid().optional(),
+        pushToCrm: z.boolean().default(true),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+
+    const { sendTestCampaignEmail } = await import("@/lib/campaigns-run.server");
+    return sendTestCampaignEmail(data);
+  });
