@@ -287,6 +287,38 @@ function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
   );
 }
 
+/** Tap-to-open explainer for the permit dollar value shown on a homeowner record. */
+function PermitsInfo() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="What does the permit value mean?"
+          className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={6}
+        className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
+      >
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Permitted work on record
+        </p>
+        <p className="mt-1 text-muted-foreground">
+          This is the total declared construction cost of building permits pulled at this address. It shows real investment in the home and supports the condition/readiness story.
+        </p>
+        <p className="mt-3 text-muted-foreground">
+          Values are self-reported at filing and often understated. Coverage also varies by county, so $0 or blank can mean "no permits recorded" rather than "no work done."
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const STATUSES = ["off_market", "active", "pending", "sold", "expired", "withdrawn"] as const;
 const PAGE_SIZE = 25;
 
@@ -1402,7 +1434,11 @@ function ClientDrawer({
           />
           <Field label="Sqft" value={client.sqft ? client.sqft.toLocaleString() : "—"} />
           <Field label="Year built" value={client.year_built ?? "—"} />
-          <Field label="Permits" value={money(client.permit_total_value)} />
+          <Field
+            label="Permitted work"
+            value={money(client.permit_total_value)}
+            info={<PermitsInfo />}
+          />
         </div>
 
         <h3 className="mt-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
