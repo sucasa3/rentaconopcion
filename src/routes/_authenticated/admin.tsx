@@ -128,6 +128,9 @@ function Admin() {
 
           <GhlDoctorPanel />
 
+          <CampaignTestEmailPanel />
+
+
           <GhlSyncPanel />
 
 
