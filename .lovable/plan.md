@@ -13,7 +13,7 @@ At the registrar for `sucasa.com`, add:
   - Name: `notify.sucasa.com`
   - Values: `ns3.lovable.cloud` and `ns4.lovable.cloud`
 
-Then wait for verification to turn active in **Project Settings → Email**. Nothing can send until that status is active.
+Then wait for verification to turn active in **Cloud → Emails**. Nothing can send until that status is active.
 
 ## 2. Regenerate the GHL Private Integration Token (your action)
 
