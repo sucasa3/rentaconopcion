@@ -43,6 +43,16 @@ export type TickResult = {
 
 const MONTHLY_CAP = 2;
 
+/**
+ * Imported books contain placeholder rows where the address was unknown at
+ * upload time ("Address on file"). They have no property record, so campaign
+ * copy would be empty or wrong — never send to them.
+ */
+export function isPlaceholderAddress(address: string | null | undefined): boolean {
+  if (!address) return true;
+  return /address\s+on\s+file/i.test(address.trim());
+}
+
 export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const limit = opts.limit ?? 100;
@@ -181,6 +191,7 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       };
 
       if (!c.client_email) { skip("no email"); continue; }
+      if (isPlaceholderAddress(c.address_line1)) { skip("placeholder address"); continue; }
       if (c.homeowner_id && optedOut.has(c.homeowner_id)) { skip("opted out"); continue; }
       if ((monthCount.get(c.id) ?? 0) >= MONTHLY_CAP && !opts.dryRun) { skip("monthly cap"); continue; }
 
@@ -400,6 +411,8 @@ export async function sendTestCampaignEmail(opts: {
   email: string;
   campaignKey?: string;
   orgId?: string;
+  portfolioId?: string;
+  clientId?: string;
   pushToCrm?: boolean;
 }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -438,16 +451,20 @@ export async function sendTestCampaignEmail(opts: {
     .from("lender_portfolios")
     .select("id, assigned_user_id")
     .eq("lender_org_id", orgId);
-  const portfolioIds = (portfolios ?? []).map((p) => p.id);
+  const allPortfolioIds = (portfolios ?? []).map((p) => p.id);
+  const portfolioIds = opts.portfolioId
+    ? allPortfolioIds.filter((id) => id === opts.portfolioId)
+    : allPortfolioIds;
 
-  const { data: clients } = await supabaseAdmin
+  let clientQ = supabaseAdmin
     .from("lender_portfolio_clients")
     .select(
       "id, portfolio_id, homeowner_id, client_name, client_email, client_phone, address_line1, city, state, zip, close_date, loan_amount_at_close_cents, rate_at_close",
     )
-    .in("portfolio_id", portfolioIds.length ? portfolioIds : ["00000000-0000-0000-0000-000000000000"])
-    .limit(1);
-  const c = clients?.[0];
+    .in("portfolio_id", portfolioIds.length ? portfolioIds : ["00000000-0000-0000-0000-000000000000"]);
+  if (opts.clientId) clientQ = clientQ.eq("id", opts.clientId);
+  const { data: clients } = await clientQ.limit(50);
+  const c = (clients ?? []).find((r) => !isPlaceholderAddress(r.address_line1)) ?? clients?.[0];
   if (!c) throw new Error("No portfolio client available to build the test facts");
 
   const target: CampaignTarget = {
