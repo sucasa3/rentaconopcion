@@ -5,7 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const IdSchema = z.object({ documentId: z.string().uuid() });
 
 /**
- * Runs the inspection-report AI extraction pipeline for a single home_documents row.
+ * Runs the document AI pipeline for a single home_documents row.
+ *
+ * Inspection reports get the dedicated findings extractor; every other kind
+ * (insurance, warranty, permit/invoice, deed, other) gets the general
+ * document analyst. Both produce predicted actions the homeowner sees in
+ * Home Care.
+ *
  * Caller must own the document OR be an admin.
  */
 export const extractInspectionReport = createServerFn({ method: "POST" })
@@ -14,6 +20,8 @@ export const extractInspectionReport = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { extractFindingsFromFile } = await import("./inspection.server");
+    const { analyzeDocument, actionsFromFindings, MODEL_DOC } = await import("./documents-ai.server");
+    const { logAiUsage } = await import("./ai-usage.server");
 
     const { data: doc, error: dErr } = await supabaseAdmin
       .from("home_documents")
@@ -29,14 +37,6 @@ export const extractInspectionReport = createServerFn({ method: "POST" })
         _role: "admin",
       });
       if (!isAdmin) throw new Error("Forbidden");
-    }
-
-    if (doc.kind !== "inspection") {
-      await supabaseAdmin
-        .from("home_documents")
-        .update({ extraction_status: "not_applicable" })
-        .eq("id", doc.id);
-      return { ok: true, findings: 0, status: "not_applicable" };
     }
 
     await supabaseAdmin
@@ -59,31 +59,114 @@ export const extractInspectionReport = createServerFn({ method: "POST" })
         .select("language")
         .eq("id", doc.user_id)
         .maybeSingle();
+      const language = prof?.language === "es" ? ("es" as const) : ("en" as const);
 
-      const findings = await extractFindingsFromFile(
-        buf,
-        mime,
-        doc.original_filename || "inspection.pdf",
-        prof?.language === "es" ? "es" : "en",
-      );
+      let findingCount = 0;
+      let actions: Awaited<ReturnType<typeof analyzeDocument>>["actions"] = [];
+      let facts: Awaited<ReturnType<typeof analyzeDocument>>["facts"] = [];
 
-      // Replace existing findings for this document
-      await supabaseAdmin.from("home_inspection_findings").delete().eq("document_id", doc.id);
-      if (findings.length > 0) {
-        const rows = findings.map((f) => ({
-          document_id: doc.id,
-          user_id: doc.user_id,
-          system: f.system,
-          condition: f.condition,
-          remaining_life_years: f.remaining_life_years,
-          urgency: f.urgency,
-          defects: f.defects,
-          recommended_action: f.recommended_action,
-          recommended_category: f.recommended_category,
-          source_excerpt: f.source_excerpt,
-        }));
-        const { error: iErr } = await supabaseAdmin.from("home_inspection_findings").insert(rows);
-        if (iErr) throw new Error(iErr.message);
+      if (doc.kind === "inspection") {
+        const findings = await extractFindingsFromFile(
+          buf,
+          mime,
+          doc.original_filename || "inspection.pdf",
+          language,
+        );
+        await logAiUsage({
+          userId: doc.user_id,
+          feature: "document_inspection",
+          model: MODEL_DOC,
+          usage: { total: Math.round(buf.length / 3) },
+        });
+
+        await supabaseAdmin.from("home_inspection_findings").delete().eq("document_id", doc.id);
+        if (findings.length > 0) {
+          const rows = findings.map((f) => ({
+            document_id: doc.id,
+            user_id: doc.user_id,
+            system: f.system,
+            condition: f.condition,
+            remaining_life_years: f.remaining_life_years,
+            urgency: f.urgency,
+            defects: f.defects,
+            recommended_action: f.recommended_action,
+            recommended_category: f.recommended_category,
+            source_excerpt: f.source_excerpt,
+          }));
+          const { error: iErr } = await supabaseAdmin.from("home_inspection_findings").insert(rows);
+          if (iErr) throw new Error(iErr.message);
+        }
+        findingCount = findings.length;
+        actions = actionsFromFindings(findings);
+      } else {
+        const analysis = await analyzeDocument({
+          fileBytes: buf,
+          mimeType: mime,
+          filename: doc.original_filename || "document.pdf",
+          declaredKind: doc.kind,
+          language,
+        });
+        await logAiUsage({
+          userId: doc.user_id,
+          feature: `document_${doc.kind}`,
+          model: MODEL_DOC,
+          usage: analysis.usage,
+        });
+        facts = analysis.facts;
+        actions = analysis.actions;
+
+        // If the model disagrees with the homeowner's label, trust the model.
+        if (analysis.kind !== doc.kind && analysis.kind !== "other") {
+          await supabaseAdmin
+            .from("home_documents")
+            .update({ kind: analysis.kind })
+            .eq("id", doc.id);
+        }
+      }
+
+      // Replace this document's facts.
+      await supabaseAdmin.from("home_document_facts").delete().eq("document_id", doc.id);
+      if (facts.length > 0) {
+        await supabaseAdmin.from("home_document_facts").insert(
+          facts.map((f) => ({
+            document_id: doc.id,
+            user_id: doc.user_id,
+            doc_kind: doc.kind,
+            label: f.label,
+            value: f.value,
+            value_date: f.value_date,
+            value_cents: f.value_cents,
+            system: f.system,
+            source_excerpt: f.source_excerpt,
+          })),
+        );
+      }
+
+      // Replace this document's predicted actions (keep ones the homeowner
+      // already completed or dismissed under the same key).
+      await supabaseAdmin
+        .from("home_predicted_actions")
+        .delete()
+        .eq("document_id", doc.id)
+        .eq("status", "open");
+      for (const a of actions) {
+        await supabaseAdmin.from("home_predicted_actions").upsert(
+          {
+            user_id: doc.user_id,
+            document_id: doc.id,
+            action_key: a.action_key,
+            title: a.title,
+            why: a.why,
+            system: a.system,
+            service_category: a.service_category,
+            urgency: a.urgency,
+            due_from: a.due_from,
+            due_by: a.due_by,
+            est_cost_low_cents: a.est_cost_low_cents,
+            est_cost_high_cents: a.est_cost_high_cents,
+          },
+          { onConflict: "user_id,action_key", ignoreDuplicates: false },
+        );
       }
 
       await supabaseAdmin
@@ -95,7 +178,13 @@ export const extractInspectionReport = createServerFn({ method: "POST" })
         })
         .eq("id", doc.id);
 
-      return { ok: true, findings: findings.length, status: "ready" };
+      return {
+        ok: true,
+        findings: findingCount,
+        facts: facts.length,
+        actions: actions.length,
+        status: "ready",
+      };
     } catch (e: any) {
       await supabaseAdmin
         .from("home_documents")
