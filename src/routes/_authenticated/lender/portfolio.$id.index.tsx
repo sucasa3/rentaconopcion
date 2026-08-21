@@ -319,6 +319,15 @@ function PortfolioDetail() {
               </section>
 
               {/* 3. Book header: rate, summary, filters */}
+              <CopilotSearch
+                portfolioId={id}
+                detailPath={(r) => ({
+                  to: "/lender/portfolio/$id",
+                  params: { id: r.portfolio_id },
+                  search: { client: r.id },
+                })}
+              />
+
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <h2 className="text-base font-semibold">Your book</h2>
@@ -392,14 +401,6 @@ function PortfolioDetail() {
                 </div>
               </section>
 
-              <CopilotSearch
-                portfolioId={id}
-                detailPath={(r) => ({
-                  to: "/lender/portfolio/$id",
-                  params: { id: r.portfolio_id },
-                  search: { client: r.id },
-                })}
-              />
 
               {/* Client table with search + pagination */}
 

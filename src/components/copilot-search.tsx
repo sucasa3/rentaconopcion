@@ -87,7 +87,7 @@ export function CopilotSearch({
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="e.g. high intent clients in 30907 with equity over $150k"
+            placeholder="Search a name, or ask — high intent clients with equity over $150k"
             className="pl-9"
             aria-label="Ask the assistant about your clients"
           />

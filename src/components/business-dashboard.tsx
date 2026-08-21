@@ -19,6 +19,7 @@ import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { StatCard, SectionHeader, EmptyState } from "@/components/ui-kit";
 import { TaskQueue } from "@/components/tasks-workspace";
+import { CopilotSearch } from "@/components/copilot-search";
 
 export function categoryIcon(category: string) {
   switch (category) {
@@ -139,6 +140,18 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
           hash="work-queue"
         />
       </div>
+
+      {book && (
+        <CopilotSearch
+          portfolioId={book.id}
+          detailPath={(r) => ({
+            to: kind === "agent" ? "/agent/portfolio/$id" : "/lender/portfolio/$id",
+            params: { id: r.portfolio_id },
+            search: { client: r.id },
+          })}
+        />
+      )}
+
 
       <section id="work-queue" className="scroll-mt-6 space-y-3">
         <SectionHeader title="What needs you" />

@@ -1004,6 +1004,15 @@ function AgentPortfolio() {
               </div>
 
               {/* 3. Your book */}
+              <CopilotSearch
+                portfolioId={id}
+                detailPath={(r) => ({
+                  to: "/agent/portfolio/$id",
+                  params: { id: r.portfolio_id },
+                  search: { client: r.id },
+                })}
+              />
+
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <h2 className="text-base font-semibold">Your book</h2>
@@ -1075,14 +1084,6 @@ function AgentPortfolio() {
                 </div>
               </section>
 
-              <CopilotSearch
-                portfolioId={id}
-                detailPath={(r) => ({
-                  to: "/agent/portfolio/$id",
-                  params: { id: r.portfolio_id },
-                  search: { client: r.id },
-                })}
-              />
 
               {/* Client table */}
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
