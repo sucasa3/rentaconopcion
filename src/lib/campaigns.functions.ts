@@ -453,6 +453,8 @@ export const sendCampaignTestEmail = createServerFn({ method: "POST" })
         email: z.string().email(),
         campaignKey: z.string().optional(),
         orgId: z.string().uuid().optional(),
+        portfolioId: z.string().uuid().optional(),
+        clientId: z.string().uuid().optional(),
         pushToCrm: z.boolean().default(true),
       })
       .parse(i),
