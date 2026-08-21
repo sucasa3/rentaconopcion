@@ -43,6 +43,16 @@ export type TickResult = {
 
 const MONTHLY_CAP = 2;
 
+/**
+ * Imported books contain placeholder rows where the address was unknown at
+ * upload time ("Address on file"). They have no property record, so campaign
+ * copy would be empty or wrong — never send to them.
+ */
+export function isPlaceholderAddress(address: string | null | undefined): boolean {
+  if (!address) return true;
+  return /address\s+on\s+file/i.test(address.trim());
+}
+
 export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const limit = opts.limit ?? 100;
@@ -181,6 +191,7 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       };
 
       if (!c.client_email) { skip("no email"); continue; }
+      if (isPlaceholderAddress(c.address_line1)) { skip("placeholder address"); continue; }
       if (c.homeowner_id && optedOut.has(c.homeowner_id)) { skip("opted out"); continue; }
       if ((monthCount.get(c.id) ?? 0) >= MONTHLY_CAP && !opts.dryRun) { skip("monthly cap"); continue; }
 
