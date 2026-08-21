@@ -251,6 +251,41 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
         .select("id")
         .maybeSingle();
 
+      // 1) Email the homeowner. A CRM failure must never block this.
+      let emailed = false;
+      let emailError: string | null = null;
+      try {
+        const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+        const res = await sendTemplateEmail("campaign-update", c.client_email, {
+          fromName: branding.senderName || branding.orgName || org.name,
+          replyTo: branding.replyToEmail ?? undefined,
+          idempotencyKey: `campaign-update-${sendRow?.id ?? `${campaign.id}-${c.id}`}`,
+          templateData: {
+            firstName: payload.first_name,
+            subject: copy.subject,
+            body: copy.body,
+            previewText: copy.subject,
+            ctaLabel: payload.next_cta,
+            ctaUrl: payload.cta_url,
+            partnerName: payload.partner_name,
+            contactName: payload.contact_name,
+            contactTitle: payload.contact_title,
+            contactPhone: payload.contact_phone,
+            replyTo: payload.reply_to,
+            license: payload.license,
+            logoUrl: payload.logo_url,
+            signoff: payload.signoff,
+            propertyAddress: payload.property_address,
+            propertyValue: payload.property_value,
+            equity: payload.equity,
+          },
+        });
+        emailed = res.sent;
+        if (!res.sent) emailError = "recipient suppressed";
+      } catch (e) {
+        emailError = (e as Error).message.slice(0, 500);
+      }
+
       try {
         const { pushCampaignContact } = await import("@/lib/ghl.server");
         const contactId = await pushCampaignContact({
@@ -266,23 +301,27 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
           await supabaseAdmin
             .from("campaign_sends")
             .update({
-              status: "sent",
+              status: emailed ? "sent" : "queued",
               crm_status: "synced",
               crm_error: null,
+              error_message: emailError,
               ghl_contact_id: contactId,
-              sent_at: new Date().toISOString(),
+              sent_at: emailed ? new Date().toISOString() : null,
             })
             .eq("id", sendRow.id);
         }
-        result.sent++;
+        if (emailed) result.sent++;
+        else result.errors++;
         monthCount.set(c.id, (monthCount.get(c.id) ?? 0) + 1);
         if (result.samples.length < 20)
           result.samples.push({
             client: c.client_name ?? c.id,
             campaign: campaign.key,
-            status: "sent",
+            status: emailed ? "sent" : "email failed",
             subject: copy.subject,
+            reason: emailError ?? undefined,
           });
+
       } catch (e) {
         result.errors++;
         const msg = (e as Error).message.slice(0, 500);
