@@ -25,6 +25,7 @@ export const TEMPERATURE_META: Record<
   nurture: { label: "Nurture", hint: "Stay in the relationship", emoji: "🔵", tone: "info" },
 };
 
+/** Statuses a person picks by hand after a touch. */
 export const OUTCOME_STAGES = [
   "no_answer",
   "talked",
@@ -33,10 +34,20 @@ export const OUTCOME_STAGES = [
   "closed",
   "not_interested",
 ] as const;
-export type OutcomeStage = (typeof OUTCOME_STAGES)[number];
+
+/** Statuses recorded automatically the moment a touch happens. */
+export const AUTO_OUTCOME_STAGES = ["attempted", "emailed"] as const;
+
+export const ALL_OUTCOME_STAGES = [...AUTO_OUTCOME_STAGES, ...OUTCOME_STAGES] as const;
+export type OutcomeStage = (typeof ALL_OUTCOME_STAGES)[number];
+export type ManualOutcomeStage = (typeof OUTCOME_STAGES)[number];
 
 export function outcomeLabel(stage: OutcomeStage, audience: Audience): string {
   switch (stage) {
+    case "attempted":
+      return "Reached out";
+    case "emailed":
+      return "Email sent";
     case "no_answer":
       return "No answer";
     case "talked":
@@ -51,6 +62,7 @@ export function outcomeLabel(stage: OutcomeStage, audience: Audience): string {
       return "Not interested";
   }
 }
+
 
 /** Stages that end the follow-up cadence. */
 export const TERMINAL_STAGES: OutcomeStage[] = ["closed", "not_interested"];
