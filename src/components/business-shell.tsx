@@ -6,6 +6,7 @@ import {
   Megaphone,
   Network,
   Home,
+  BarChart3,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
