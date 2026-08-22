@@ -19,6 +19,7 @@ import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { StatCard, SectionHeader, EmptyState } from "@/components/ui-kit";
 import { TaskQueue } from "@/components/tasks-workspace";
+import { ActionQueue } from "@/components/action-queue";
 import { CopilotSearch } from "@/components/copilot-search";
 
 export function categoryIcon(category: string) {
