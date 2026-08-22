@@ -14,9 +14,11 @@ import {
   Wrench,
   CheckCircle2,
   ArrowRight,
+  BarChart3,
 } from "lucide-react";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
+import { getFunnel } from "@/lib/nba.functions";
 import { StatCard, SectionHeader, EmptyState } from "@/components/ui-kit";
 import { TaskQueue } from "@/components/tasks-workspace";
 import { ActionQueue } from "@/components/action-queue";
