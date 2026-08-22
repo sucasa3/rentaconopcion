@@ -1,0 +1,2 @@
+ALTER TABLE public.opportunity_outcomes DROP CONSTRAINT IF EXISTS opportunity_outcomes_stage_check;
+ALTER TABLE public.opportunity_outcomes ADD CONSTRAINT opportunity_outcomes_stage_check CHECK (stage IN ('attempted','emailed','no_answer','talked','appointment','application','closed','not_interested'));
