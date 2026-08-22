@@ -57,13 +57,15 @@ function navItems(kind: BusinessKind, bookId: string | null, isManager: boolean)
 export function BusinessShell({
   kind,
   bookId = null,
+  isManager = false,
   children,
 }: {
   kind: BusinessKind;
   bookId?: string | null;
+  isManager?: boolean;
   children: ReactNode;
 }) {
-  const items = navItems(kind, bookId);
+  const items = navItems(kind, bookId, isManager);
 
 
 
