@@ -58,15 +58,20 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
 
   const outcomeFn = useServerFn(logOutcome);
   const outcome = useMutation({
-    mutationFn: (v: { opportunityId: string; stage: OutcomeStage }) =>
+    mutationFn: (v: { opportunityId: string; stage: OutcomeStage; note?: string }) =>
       outcomeFn({ data: { audience: kind, ...v } }),
     onSuccess: (_r, v) => {
-      toast.success(`Logged: ${outcomeLabel(v.stage, kind)}`);
+      toast.success(
+        v.stage === "attempted"
+          ? "Reached out — tell us how it went below."
+          : `Logged: ${outcomeLabel(v.stage, kind)}`,
+      );
       qc.invalidateQueries({ queryKey: ["action-queue", kind] });
       qc.invalidateQueries({ queryKey: ["business-funnel", kind] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Loading your list…</div>;
 
