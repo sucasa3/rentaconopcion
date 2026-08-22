@@ -154,11 +154,15 @@ export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
 
 
       <section id="work-queue" className="scroll-mt-6 space-y-3">
-        <SectionHeader title="What needs you" />
+        <SectionHeader title="Who to contact today" />
         <p className="-mt-1 text-sm text-muted-foreground">
-          Built from what's happening in your book. Check something off and it moves out of your
-          way.
+          Ranked by who's most ready to hear from you. Reach out, then tap what happened.
         </p>
+        <ActionQueue kind={kind} />
+      </section>
+
+      <section className="space-y-3">
+        <SectionHeader title="Set-up and reminders" />
         <TaskQueue kind={kind} />
       </section>
 
