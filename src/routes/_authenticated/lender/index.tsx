@@ -28,8 +28,8 @@ function LenderHome() {
   });
 
   return (
-    <BusinessShell kind="lender" bookId={data?.books?.[0]?.id ?? null}>
-      <BusinessDashboard kind="lender" />
+    <BusinessShell kind="lender" bookId={data?.books?.[0]?.id ?? null} isManager={data?.isManager}>
+      <BusinessDashboard kind="lender" isManager={data?.isManager} />
     </BusinessShell>
   );
 }
