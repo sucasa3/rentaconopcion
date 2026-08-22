@@ -26,12 +26,16 @@ export async function syncSharedOpportunities(
 
   const { data: connections, error: connErr } = await connQuery;
   if (connErr) throw new Error(connErr.message);
-  if (!connections?.length) return { created: 0, skipped: 0 };
+  const validConnections = (connections ?? []).filter(
+    (c): c is typeof c & { agent_org_id: string; lender_org_id: string } =>
+      Boolean(c.agent_org_id) && Boolean(c.lender_org_id),
+  );
+  if (!validConnections.length) return { created: 0, skipped: 0 };
 
   let created = 0;
   let skipped = 0;
 
-  for (const conn of connections) {
+  for (const conn of validConnections) {
     const [{ data: agentPortfolios }, { data: lenderPortfolios }] = await Promise.all([
       supabaseAdmin.from("lender_portfolios").select("id").eq("lender_org_id", conn.agent_org_id),
       supabaseAdmin.from("lender_portfolios").select("id").eq("lender_org_id", conn.lender_org_id),
