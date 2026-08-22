@@ -170,6 +170,23 @@ export function BusinessDashboard({
         <ActionQueue kind={kind} />
       </section>
 
+      {isManager && (
+        <section className="space-y-3">
+          <SectionHeader
+            title="Pipeline"
+            action={
+              <Link
+                to={`${base}/funnel` as never}
+                className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
+              >
+                View full report <ArrowRight className="h-4 w-4" />
+              </Link>
+            }
+          />
+          <FunnelPreview kind={kind} />
+        </section>
+      )}
+
       <section className="space-y-3">
         <SectionHeader title="Set-up and reminders" />
         <TaskQueue kind={kind} />
