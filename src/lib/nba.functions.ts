@@ -126,11 +126,10 @@ export const logOutcome = createServerFn({ method: "POST" })
         opportunityId: z.string().uuid(),
         audience: Audience,
         stage: z.enum([
-          "attempted",
+          "no_answer",
           "talked",
           "appointment",
           "application",
-          "listing",
           "closed",
           "not_interested",
         ]),
