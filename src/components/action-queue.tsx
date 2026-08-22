@@ -257,12 +257,28 @@ function ComposeDialog({
   });
 
   const sendFn = useServerFn(sendOutreach);
+  const outcomeFn = useServerFn(logOutcome);
   const send = useMutation({
-    mutationFn: () =>
-      sendFn({ data: { audience: kind, opportunityId: item!.opportunityId, subject, body } }),
+    mutationFn: async () => {
+      const r = await sendFn({
+        data: { audience: kind, opportunityId: item!.opportunityId, subject, body },
+      });
+      if (r.ok) {
+        // One-tap logging: a sent email is a recorded touch, no extra step needed.
+        await outcomeFn({
+          data: {
+            audience: kind,
+            opportunityId: item!.opportunityId,
+            stage: "emailed",
+            note: subject.slice(0, 200),
+          },
+        }).catch(() => undefined);
+      }
+      return r;
+    },
     onSuccess: (r) => {
       if (r.ok) {
-        toast.success("Sent — you'll see opens and clicks here.");
+        toast.success("Sent and logged — you'll see opens and clicks here.");
         onSent();
         onClose();
       } else {
@@ -271,6 +287,7 @@ function ComposeDialog({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <Dialog open={Boolean(item)} onOpenChange={(o) => !o && onClose()}>
