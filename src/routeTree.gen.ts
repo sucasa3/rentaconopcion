@@ -43,6 +43,8 @@ import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authe
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
+import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
@@ -235,6 +237,16 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTOpenRoute = ApiPublicTOpenRouteImport.update({
+  id: '/api/public/t/open',
+  path: '/api/public/t/open',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTClickRoute = ApiPublicTClickRouteImport.update({
+  id: '/api/public/t/click',
+  path: '/api/public/t/click',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -342,6 +354,8 @@ export interface FileRoutesByFullPath {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/t/click': typeof ApiPublicTClickRoute
+  '/api/public/t/open': typeof ApiPublicTOpenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -386,6 +400,8 @@ export interface FileRoutesByTo {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/t/click': typeof ApiPublicTClickRoute
+  '/api/public/t/open': typeof ApiPublicTOpenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -435,6 +451,8 @@ export interface FileRoutesById {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/t/click': typeof ApiPublicTClickRoute
+  '/api/public/t/open': typeof ApiPublicTOpenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -484,6 +502,8 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/t/click'
+    | '/api/public/t/open'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -528,6 +548,8 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/t/click'
+    | '/api/public/t/open'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -576,6 +598,8 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/t/click'
+    | '/api/public/t/open'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -603,6 +627,8 @@ export interface RootRouteChildren {
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
+  ApiPublicTClickRoute: typeof ApiPublicTClickRoute
+  ApiPublicTOpenRoute: typeof ApiPublicTOpenRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -848,6 +874,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/t/open': {
+      id: '/api/public/t/open'
+      path: '/api/public/t/open'
+      fullPath: '/api/public/t/open'
+      preLoaderRoute: typeof ApiPublicTOpenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/t/click': {
+      id: '/api/public/t/click'
+      path: '/api/public/t/click'
+      fullPath: '/api/public/t/click'
+      preLoaderRoute: typeof ApiPublicTClickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
       path: '/api/public/leads/tick'
@@ -1056,6 +1096,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
+  ApiPublicTClickRoute: ApiPublicTClickRoute,
+  ApiPublicTOpenRoute: ApiPublicTOpenRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,

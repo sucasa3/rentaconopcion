@@ -39,6 +39,8 @@ export interface CampaignUpdateProps {
   propertyAddress?: string
   propertyValue?: string
   equity?: string
+  /** 1x1 open-tracking pixel URL (optional). */
+  trackingPixelUrl?: string
 }
 
 const CampaignUpdateEmail = ({
@@ -58,6 +60,7 @@ const CampaignUpdateEmail = ({
   propertyAddress,
   propertyValue,
   equity,
+  trackingPixelUrl,
 }: CampaignUpdateProps) => {
   const paragraphs = (body ?? '')
     .split(/\n\s*\n/)
@@ -145,6 +148,9 @@ const CampaignUpdateEmail = ({
                 ? `Sent by SuCasa on behalf of ${partnerName}.`
                 : 'Sent by SuCasa.'}
             </Text>
+            {trackingPixelUrl ? (
+              <Img src={trackingPixelUrl} alt="" width="1" height="1" style={pixel} />
+            ) : null}
           </Section>
         </Container>
       </Body>
@@ -174,6 +180,8 @@ export const template = {
     equity: '$173,000',
   },
 } satisfies TemplateEntry
+
+const pixel = { display: 'block', width: '1px', height: '1px', opacity: 0 }
 
 const main = {
   backgroundColor: '#ffffff',
