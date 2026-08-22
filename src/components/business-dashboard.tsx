@@ -258,3 +258,68 @@ export function BusinessDashboard({
     </div>
   );
 }
+
+function FunnelPreview({ kind }: { kind: "agent" | "lender" }) {
+  const funnelFn = useServerFn(getFunnel);
+  const { data, isLoading } = useQuery({
+    queryKey: ["business-funnel-preview", kind],
+    queryFn: () => funnelFn({ data: { audience: kind, days: 30 } }),
+    staleTime: 60_000,
+  });
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">Loading pipeline…</div>;
+  const f = data?.funnel;
+  if (!f) {
+    return (
+      <EmptyState
+        icon={<BarChart3 className="mx-auto h-7 w-7" />}
+        title="No pipeline data yet"
+        hint="Start outreach to see your funnel come to life."
+      />
+    );
+  }
+
+  const steps = [
+    { label: "Homeowners", value: f.homeowners ?? 0 },
+    { label: "Opportunities", value: f.opportunities ?? 0 },
+    { label: "Contacted", value: f.contacted ?? 0 },
+    { label: "Engaged", value: f.engaged ?? 0 },
+    { label: "Conversations", value: f.conversations ?? 0 },
+    { label: "Appointments", value: f.appointments ?? 0 },
+    { label: "Closed", value: f.closed ?? 0 },
+  ];
+
+  return (
+    <Link
+      to={`/${kind}/funnel` as never}
+      className="block rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="rounded-xl bg-primary/10 p-2 text-primary">
+            <BarChart3 className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-semibold">30-day pipeline</p>
+            <p className="text-sm text-muted-foreground">
+              {f.closed ?? 0} closed · {(f.closed_value_cents ?? 0) > 0
+                ? `$${((f.closed_value_cents ?? 0) / 100).toLocaleString()}`
+                : "no value logged"}
+            </p>
+          </div>
+        </div>
+        <ArrowRight className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div className="mt-4 grid grid-cols-4 gap-2 sm:grid-cols-7">
+        {steps.map((s) => (
+          <div key={s.label} className="text-center">
+            <p className="text-lg font-semibold leading-tight">{s.value.toLocaleString()}</p>
+            <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+              {s.label}
+            </p>
+          </div>
+        ))}
+      </div>
+    </Link>
+  );
+}
