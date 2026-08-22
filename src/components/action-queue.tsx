@@ -58,15 +58,20 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
 
   const outcomeFn = useServerFn(logOutcome);
   const outcome = useMutation({
-    mutationFn: (v: { opportunityId: string; stage: OutcomeStage }) =>
+    mutationFn: (v: { opportunityId: string; stage: OutcomeStage; note?: string }) =>
       outcomeFn({ data: { audience: kind, ...v } }),
     onSuccess: (_r, v) => {
-      toast.success(`Logged: ${outcomeLabel(v.stage, kind)}`);
+      toast.success(
+        v.stage === "attempted"
+          ? "Reached out — tell us how it went below."
+          : `Logged: ${outcomeLabel(v.stage, kind)}`,
+      );
       qc.invalidateQueries({ queryKey: ["action-queue", kind] });
       qc.invalidateQueries({ queryKey: ["business-funnel", kind] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (isLoading) return <div className="text-sm text-muted-foreground">Loading your list…</div>;
 
@@ -149,6 +154,13 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                 {item.channel === "call" && item.phone && (
                   <a
                     href={`tel:${item.phone}`}
+                    onClick={() =>
+                      outcome.mutate({
+                        opportunityId: item.opportunityId,
+                        stage: "attempted",
+                        note: "Tapped call",
+                      })
+                    }
                     className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                   >
                     <Phone className="h-4 w-4" /> Call
@@ -157,11 +169,19 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                 {item.channel === "text" && item.phone && (
                   <a
                     href={`sms:${item.phone}`}
+                    onClick={() =>
+                      outcome.mutate({
+                        opportunityId: item.opportunityId,
+                        stage: "attempted",
+                        note: "Tapped text",
+                      })
+                    }
                     className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                   >
                     <MessageSquare className="h-4 w-4" /> Text
                   </a>
                 )}
+
                 <button
                   type="button"
                   onClick={() => setComposing(item)}
@@ -237,12 +257,28 @@ function ComposeDialog({
   });
 
   const sendFn = useServerFn(sendOutreach);
+  const outcomeFn = useServerFn(logOutcome);
   const send = useMutation({
-    mutationFn: () =>
-      sendFn({ data: { audience: kind, opportunityId: item!.opportunityId, subject, body } }),
+    mutationFn: async () => {
+      const r = await sendFn({
+        data: { audience: kind, opportunityId: item!.opportunityId, subject, body },
+      });
+      if (r.ok) {
+        // One-tap logging: a sent email is a recorded touch, no extra step needed.
+        await outcomeFn({
+          data: {
+            audience: kind,
+            opportunityId: item!.opportunityId,
+            stage: "emailed",
+            note: subject.slice(0, 200),
+          },
+        }).catch(() => undefined);
+      }
+      return r;
+    },
     onSuccess: (r) => {
       if (r.ok) {
-        toast.success("Sent — you'll see opens and clicks here.");
+        toast.success("Sent and logged — you'll see opens and clicks here.");
         onSent();
         onClose();
       } else {
@@ -251,6 +287,7 @@ function ComposeDialog({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <Dialog open={Boolean(item)} onOpenChange={(o) => !o && onClose()}>
