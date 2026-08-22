@@ -1,64 +1,42 @@
-# Fix: assistant search returns nothing
+# Fix: new home profiles come back with no data
 
-## What's wrong
+## What I verified
 
-The search is speaking a different vocabulary than the data.
+Both accounts have complete, valid addresses — this is not a profile problem.
 
-Confirmed against the live database:
+- Giselle Matthews (`matthewsg@fultonschools.org`), created today: `4213 Harris Ridge Ct, Roswell, GA 30076`.
+- Neil Terc (`neilterc@hotmail.com`): `2138 Gunstock Dr, Stone Mountain, GA 30087`.
 
-- Opportunity strength is stored as `strong` / `moderate` / `emerging`. The search
-  translates "potential sellers" into intent `high`, which matches **zero** rows.
-- Opportunity categories are `equity`, `refinance_review`, `heloc`, `move_up`,
-  `investment`, `home_condition`, `mortgage_review`. The search translates "sellers"
-  into `sell`, which doesn't exist, so that filter also matches zero rows.
-- Equity in the search is re-estimated from the loan amount at closing. Only 450 of
-  1,063 clients have a loan amount, so 613 clients get an equity of $0 and fail any
-  "$100,000+ equity" test — even though the real equity is already stored on the
-  opportunity record (for example one client shows $164,184 there).
+The real cause is on the property-records provider side:
 
-Combined, "clients with at least $100,000 in equity who are potential sellers"
-applies three filters that each independently eliminate everyone.
+1. On **Aug 14** the provider started returning `401 Unauthorized`. Our safety valve auto-disables an endpoint after 3 consecutive 401s, so **valuation, property detail, assessor/tax, sale history and mortgage are all switched off** in `attom_endpoint_health` right now. Once off, they are never retried — nothing re-enables them.
+2. Because of that, when Giselle saved her address today the system made exactly **one** provider call (building permits, the only class still enabled) and it also came back **401**. Zero records were fetched, so her home profile is empty and will stay empty.
+3. Neil's address does have cached records from **Aug 6** (valuation $516,914, detail, tax all "SuccessWithResult"). Those are served as stale, so his screen should show *something* — but the valuation cache is past its 30-day-ish freshness window and every refresh attempt is blocked by the same disabled endpoints, so parts of his profile read as unavailable.
 
-## The fix
+So: one root cause (provider returning 401 since Aug 14), two symptoms (new homes get nothing at all; existing homes are frozen on stale data).
 
-1. **Read the real numbers.** For each client, take equity, value, balance, rate and
-   monthly savings from the stored opportunity signals — the same numbers shown on the
-   portfolio and client detail pages. Only fall back to the estimate when a client has
-   no opportunity record yet, and never let a fallback of $0 silently exclude someone
-   from a "no maximum" equity question.
+## What I need from you
 
-2. **Speak the real vocabulary.** Map what people say to what's stored:
-   - "high intent", "hot", "likely sellers" -> `strong`; "medium" -> `moderate`;
-     "low"/"early" -> `emerging`.
-   - "seller", "selling", "moving", "move up" -> `move_up`
-   - "refi", "refinance" -> `refinance_review`; "rate review" -> `mortgage_review`
-   - "cash out", "HELOC", "tap equity" -> `heloc`
-   - "equity" -> `equity`; "maintenance", "condition", "repairs" -> `home_condition`
-   - "investor", "investment property" -> `investment`
-   A question about sellers matches `move_up` **or** high-equity sell-side signals
-   rather than one narrow category.
+Today's permits call still 401s, which means the credential itself is being rejected — not just an entitlement gap. Before any code change, this needs a working key:
 
-3. **Never show a blank screen.** When a question matches nothing, the result panel
-   explains which condition eliminated everyone ("no clients are tagged as likely
-   sellers; 214 have $100k+ equity") and offers one-tap chips to drop the failing
-   condition.
+- Has the ATTOM trial/subscription lapsed or been rotated since mid-August?
+- If you have a current API key, I'll store it as a secret and re-run the checks.
 
-4. **Show the numbers that were asked about.** Equity, rate and intent columns render
-   from the same stored signals, so the card list agrees with the client detail page.
+If the key is still valid and only certain products aren't entitled, the probe below will show exactly which endpoints pass.
+
+## Fix
+
+1. **Probe each endpoint once** with the current key against a known-good address (Neil's) and report per-endpoint pass/fail — so we know whether this is the whole account or specific products.
+2. **Update the key** (if you supply a new one) and re-enable the endpoints that pass, clearing the auto-disable flags and 401 counters.
+3. **Make the auto-disable self-healing** instead of permanent: a disabled endpoint gets one probe retry after a cooldown (e.g. every 6 hours) rather than staying off forever. That's what turned a temporary provider outage into a week-long data blackout.
+4. **Re-pull Giselle's home** (and any other profile created since Aug 14 with no records) once the endpoints are live, so her profile fills in.
+5. **Tell the truth in the UI**: when records can't be fetched because the provider is unavailable, the home profile should say "We're still pulling your home records — check back shortly" instead of rendering an empty/blank home. Same for the agent/lender client detail views, which read from the same source.
+6. **Alert on it**: surface provider health (disabled endpoints, recent 401s) on the admin panel so a blackout like this is visible the same day rather than found through a user complaint.
 
 ## Technical notes
 
-- `src/lib/copilot.functions.ts`: select `signals` alongside category/strength/score
-  from `homeowner_opportunities`; merge the richest signal per client and prefer those
-  values over the local `estimatedValueCents` / `remainingBalanceCents` math. Keep the
-  existing org-scoped, RLS-protected query path unchanged.
-- `src/lib/copilot.server.ts`: replace the `high|medium|low` intent enum with
-  `strong|moderate|emerging|any`, rewrite `CATEGORY_ALIASES` to the seven real
-  categories, allow a category set (not a single value) so "sellers" can match
-  `move_up` plus equity-driven sell signals, and update the system prompt with the
-  real category and strength names.
-- Add a diagnostic pass in `applyFilter` that reports per-condition match counts so
-  the empty state can name the blocking filter.
-- `src/components/copilot-search.tsx`: render the empty-state explanation and the
-  relax-condition chips.
-- No schema changes, no migration.
+- `src/lib/valuation.server.ts` — lines ~130-145 do the auto-disable upsert; ~208-219 short-circuit disabled classes. Add a `retry_after` / cooldown probe instead of a permanent `enabled=false`.
+- `src/lib/enrichment.server.ts` reads the same health table, so the background enrichment queue is silently skipping these classes too — it recovers automatically once health is restored.
+- `attom_endpoint_health` rows to clear: `avm`, `detail`, `tax`, `sales`, `mortgage` (all `enabled=false`), plus `permits` (`unauthorized_count=1`).
+- Monthly budget is not the constraint: 1,897 of 5,000 calls used in August, cache-only mode off.
+- No schema changes beyond an optional cooldown column on `attom_endpoint_health`.
