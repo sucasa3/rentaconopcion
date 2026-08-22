@@ -76,7 +76,7 @@ function AgentFunnel() {
   }
 
   return (
-    <BusinessShell kind="agent" bookId={book?.id ?? null}>
+    <BusinessShell kind="agent" bookId={book?.id ?? null} isManager={overview?.isManager}>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-4xl space-y-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
