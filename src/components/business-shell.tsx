@@ -6,6 +6,7 @@ import {
   Megaphone,
   Network,
   Home,
+  BarChart3,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
@@ -21,7 +22,7 @@ interface NavItem {
   icon: ReactNode;
 }
 
-function navItems(kind: BusinessKind, bookId: string | null): NavItem[] {
+function navItems(kind: BusinessKind, bookId: string | null, isManager: boolean): NavItem[] {
   const base = kind === "agent" ? "/agent" : "/lender";
   const items: NavItem[] = [
     { label: "Today", to: base, icon: <LayoutGrid className="h-5 w-5" /> },
@@ -38,6 +39,13 @@ function navItems(kind: BusinessKind, bookId: string | null): NavItem[] {
     { label: "Marketing", to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
     { label: "Network", to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
   );
+  if (isManager) {
+    items.push({
+      label: "Pipeline",
+      to: `${base}/funnel`,
+      icon: <BarChart3 className="h-5 w-5" />,
+    });
+  }
   return items;
 }
 
@@ -49,13 +57,15 @@ function navItems(kind: BusinessKind, bookId: string | null): NavItem[] {
 export function BusinessShell({
   kind,
   bookId = null,
+  isManager = false,
   children,
 }: {
   kind: BusinessKind;
   bookId?: string | null;
+  isManager?: boolean;
   children: ReactNode;
 }) {
-  const items = navItems(kind, bookId);
+  const items = navItems(kind, bookId, isManager);
 
 
 
