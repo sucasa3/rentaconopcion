@@ -149,6 +149,13 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                 {item.channel === "call" && item.phone && (
                   <a
                     href={`tel:${item.phone}`}
+                    onClick={() =>
+                      outcome.mutate({
+                        opportunityId: item.opportunityId,
+                        stage: "attempted",
+                        note: "Tapped call",
+                      })
+                    }
                     className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                   >
                     <Phone className="h-4 w-4" /> Call
@@ -157,11 +164,19 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                 {item.channel === "text" && item.phone && (
                   <a
                     href={`sms:${item.phone}`}
+                    onClick={() =>
+                      outcome.mutate({
+                        opportunityId: item.opportunityId,
+                        stage: "attempted",
+                        note: "Tapped text",
+                      })
+                    }
                     className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                   >
                     <MessageSquare className="h-4 w-4" /> Text
                   </a>
                 )}
+
                 <button
                   type="button"
                   onClick={() => setComposing(item)}
