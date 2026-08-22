@@ -50,8 +50,8 @@ function AgentFunnel() {
 
   if (!funnel?.isManager) {
     return (
-      <BusinessShell kind="agent" bookId={book?.id ?? null}>
-        <main className="px-4 py-6 sm:px-5 sm:py-8">
+    <BusinessShell kind="agent" bookId={book?.id ?? null} isManager={overview?.isManager}>
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
           <div className="mx-auto max-w-3xl">
             <Link
               to="/agent"
