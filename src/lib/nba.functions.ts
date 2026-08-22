@@ -183,16 +183,19 @@ export const getFunnel = createServerFn({ method: "POST" })
 
     const [{ data: rows, error }, { data: org }] = await Promise.all([
       context.supabase.rpc("business_funnel", { _org_id: orgId, _days: data.days ?? 30 }),
-      context.supabase
-        .from("lender_orgs")
-        .select("plan_key, plan_tiers(price_cents)")
-        .eq("id", orgId)
-        .maybeSingle(),
+      context.supabase.from("lender_orgs").select("plan_key").eq("id", orgId).maybeSingle(),
     ]);
     if (error) throw new Error(error.message);
 
-    const priceCents =
-      (org as any)?.plan_tiers?.price_cents ?? (org as any)?.plan_tiers?.[0]?.price_cents ?? 0;
+    let priceCents = 0;
+    if (org?.plan_key) {
+      const { data: tier } = await context.supabase
+        .from("plan_tiers")
+        .select("price_cents")
+        .eq("key", org.plan_key)
+        .maybeSingle();
+      priceCents = tier?.price_cents ?? 0;
+    }
     return {
       funnel: rows?.[0] ?? null,
       costCents: typeof priceCents === "number" ? priceCents : 0,
