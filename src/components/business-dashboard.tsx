@@ -39,7 +39,13 @@ export function categoryIcon(category: string) {
   }
 }
 
-export function BusinessDashboard({ kind }: { kind: "agent" | "lender" }) {
+export function BusinessDashboard({
+  kind,
+  isManager = false,
+}: {
+  kind: "agent" | "lender";
+  isManager?: boolean;
+}) {
   const overviewFn = useServerFn(getBusinessOverview);
   const { data, isLoading } = useQuery({
     queryKey: ["business-overview", kind],
