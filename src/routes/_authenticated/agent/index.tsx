@@ -28,8 +28,8 @@ function AgentHome() {
   });
 
   return (
-    <BusinessShell kind="agent" bookId={data?.books?.[0]?.id ?? null}>
-      <BusinessDashboard kind="agent" />
+    <BusinessShell kind="agent" bookId={data?.books?.[0]?.id ?? null} isManager={data?.isManager}>
+      <BusinessDashboard kind="agent" isManager={data?.isManager} />
     </BusinessShell>
   );
 }
