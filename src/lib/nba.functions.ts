@@ -179,10 +179,23 @@ export const getFunnel = createServerFn({ method: "POST" })
     const { resolveScope } = await import("./nba.server");
     const scope = await resolveScope(context.supabase, context.userId, data.audience);
     if (!scope.orgIds.length) return null;
-    const { data: rows, error } = await context.supabase.rpc("business_funnel", {
-      _org_id: scope.orgIds[0],
-      _days: data.days ?? 30,
-    });
+    const orgId = scope.orgIds[0];
+
+    const [{ data: rows, error }, { data: org }] = await Promise.all([
+      context.supabase.rpc("business_funnel", { _org_id: orgId, _days: data.days ?? 30 }),
+      context.supabase
+        .from("lender_orgs")
+        .select("plan_key, plan_tiers(price_cents)")
+        .eq("id", orgId)
+        .maybeSingle(),
+    ]);
     if (error) throw new Error(error.message);
-    return rows?.[0] ?? null;
+
+    const priceCents =
+      (org as any)?.plan_tiers?.price_cents ?? (org as any)?.plan_tiers?.[0]?.price_cents ?? 0;
+    return {
+      funnel: rows?.[0] ?? null,
+      costCents: typeof priceCents === "number" ? priceCents : 0,
+      isManager: scope.isManager,
+    };
   });
