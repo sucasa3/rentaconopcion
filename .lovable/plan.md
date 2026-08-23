@@ -37,4 +37,4 @@ If there are no live alerts and no inspection report on file, the assistant take
 - Empty-state branch reads the document list already loaded on the dashboard (`kind === "inspection"`) to decide the inspection invite.
 - `/assistant` accepts a `topic` search param; `HomeAssistantCard` auto-sends a grounded opening question for that signal key on mount and swaps its default suggestion chips for signal-specific ones. Signal titles/reasons already come from the engine, so the assistant answers from the same facts.
 - New i18n keys in `en.ts` / `es.ts` for the nudge line, "+ N more", and the inspection invite; drop the now-unused alert-list strings.
-- Dashboard change is limited to where the strip renders (above `HomeHero`).
+- Dashboard change is limited to where the strip renders (directly below `HomeHero`); the summary card stack is untouched.
