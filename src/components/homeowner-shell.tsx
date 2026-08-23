@@ -49,6 +49,14 @@ const ITEMS: Item[] = [
     match: (p) => p.startsWith("/request") || p.startsWith("/services"),
   },
   {
+    key: "timeline",
+    labelKey: "nav.timeline",
+    longLabelKey: "nav.timeline_long",
+    to: "/timeline",
+    icon: <History className="h-5 w-5" />,
+    match: (p) => p.startsWith("/timeline"),
+  },
+  {
     key: "report",
     labelKey: "nav.report",
     to: "/report",
