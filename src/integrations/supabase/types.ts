@@ -1217,6 +1217,45 @@ export type Database = {
         }
         Relationships: []
       }
+      homeowner_alerts: {
+        Row: {
+          created_at: string
+          dismissed_at: string | null
+          first_seen_at: string
+          id: string
+          read_at: string | null
+          signal_key: string
+          signal_type: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dismissed_at?: string | null
+          first_seen_at?: string
+          id?: string
+          read_at?: string | null
+          signal_key: string
+          signal_type: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dismissed_at?: string | null
+          first_seen_at?: string
+          id?: string
+          read_at?: string | null
+          signal_key?: string
+          signal_type?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       homeowner_lender_consents: {
         Row: {
           created_at: string
