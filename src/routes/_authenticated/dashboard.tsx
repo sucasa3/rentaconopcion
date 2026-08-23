@@ -93,6 +93,9 @@ function Dashboard() {
   const homeScore = report?.score ?? null;
   const timeline = record?.physical.timeline ?? [];
 
+  // Builds the value history the Home History page charts over time.
+  useValueSnapshot(okIntel?.value.value ?? null, okIntel?.address ?? profileAddr);
+
   // Supporting reads (same query keys as the sections, so nothing is fetched twice).
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const fetchFindings = useServerFn(listInspectionFindings);
