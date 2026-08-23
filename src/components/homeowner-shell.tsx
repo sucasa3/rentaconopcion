@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, HeartPulse, FileText, Wrench, BarChart3 } from "lucide-react";
+import { Home, HeartPulse, FileText, Wrench, BarChart3, History } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { useT, type TranslationKey } from "@/lib/i18n";
