@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { HeartPulse, FileText, TrendingUp, Sparkles, Plus } from "lucide-react";
+import { HeartPulse, FileText, TrendingUp, Sparkles, Plus, History } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeHero } from "@/components/home-hero/HomeHero";
