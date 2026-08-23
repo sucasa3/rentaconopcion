@@ -274,6 +274,15 @@ function Dashboard() {
             actionLabel={hasInspection ? t("dash.docs.action_open") : t("dash.docs.action_add")}
           />
 
+          <SummaryCard
+            icon={<History className="h-5 w-5" />}
+            label={t("nav.timeline_long")}
+            sentence={t("timeline.subtitle")}
+            tone="calm"
+            to="/timeline"
+            actionLabel={t("timeline.title")}
+          />
+
           <div className="pt-1 text-center">
             <OnboardingWalkthrough triggerLabel={t("dash.take_tour")} />
           </div>
