@@ -36,6 +36,12 @@ export const en = {
   "alerts.title": "Needs your attention",
   "alerts.new": "New",
   "alerts.dismiss": "Dismiss",
+  "nudge.tap": "Tap to see what this means",
+  "nudge.more": "+ {count} more things",
+  "nudge.inspection.headline": "Add your inspection report",
+  "nudge.inspection.topic":
+    "I haven't uploaded my home inspection report yet — what would SuCasa do with it and why is it worth it?",
+
 
   // --------------------------------------------------------------- timeline
   "timeline.title": "Your home's history",

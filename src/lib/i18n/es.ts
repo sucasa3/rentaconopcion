@@ -31,6 +31,12 @@ export const es: Dictionary = {
   "alerts.title": "Requiere tu atención",
   "alerts.new": "Nuevo",
   "alerts.dismiss": "Descartar",
+  "nudge.tap": "Toca para ver qué significa",
+  "nudge.more": "+ {count} cosas más",
+  "nudge.inspection.headline": "Sube tu informe de inspección",
+  "nudge.inspection.topic":
+    "Todavía no he subido el informe de inspección de mi casa — ¿qué haría SuCasa con él y por qué vale la pena?",
+
 
   "timeline.title": "El historial de tu casa",
   "timeline.subtitle": "Todo lo que ha pasado en esta casa y lo que viene.",
