@@ -227,6 +227,8 @@ function Dashboard() {
 
           <HomeHero data={heroData} scoreDetail={homeScore} scorePending={!homeScore} />
 
+          <HomeAlerts report={report} />
+
           <SummaryCard
             icon={<HeartPulse className="h-5 w-5" />}
             label={t("dash.care.label")}
