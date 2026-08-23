@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_authenticated/timeline")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: TimelinePage;
+  component: TimelinePage,
 });
 
 const ICONS: Record<HomeTimelineEntry["kind"], typeof History> = {
