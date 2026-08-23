@@ -25,6 +25,27 @@ export const es: Dictionary = {
   "nav.documents": "Documentos",
   "nav.services": "Servicios",
   "nav.report": "Informe",
+  "nav.timeline": "Historial",
+  "nav.timeline_long": "Historial del hogar",
+
+  "alerts.title": "Requiere tu atención",
+  "alerts.new": "Nuevo",
+  "alerts.dismiss": "Descartar",
+
+  "timeline.title": "El historial de tu casa",
+  "timeline.subtitle": "Todo lo que ha pasado en esta casa y lo que viene.",
+  "timeline.empty_title": "La historia de tu casa empieza aquí",
+  "timeline.empty_body":
+    "Agrega tu dirección y registra el trabajo que has hecho, y armaremos el historial completo de tu casa.",
+  "timeline.upcoming": "Próximamente",
+  "timeline.past": "Lo que ha pasado",
+  "timeline.kind.purchase": "Propiedad",
+  "timeline.kind.permit": "Trabajo con permiso",
+  "timeline.kind.service": "Trabajo registrado",
+  "timeline.kind.document": "Documento",
+  "timeline.kind.value": "Valor",
+  "timeline.kind.request": "Servicio",
+  "timeline.kind.projection": "Estimado",
 
   // ----------------------------------------------------------- account menu
   "account.title": "Cuenta",
