@@ -26,13 +26,15 @@ const SUGGESTION_KEYS: TranslationKey[] = [
   "assistant.suggestion.refi",
 ];
 
-export function HomeAssistantCard() {
+export function HomeAssistantCard({ topic }: { topic?: string } = {}) {
   const t = useT();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState<"ready" | "submitted" | "error">("ready");
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const askFn = useServerFn(askAssistant);
+  const seeded = useRef(false);
+
 
   const send = async (text: string) => {
     const question = text.trim();
