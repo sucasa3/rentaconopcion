@@ -120,16 +120,16 @@ function TimelinePage() {
       <main className="px-4 py-6 sm:px-5 sm:py-8">
         <div className="mx-auto max-w-3xl space-y-5">
           <SectionHero
-            icon={<History className="h-6 w-6" />}
+            icon={History}
             eyebrow={t("nav.timeline_long")}
             title={t("timeline.title")}
-            status={t("timeline.subtitle")}
+            subtitle={t("timeline.subtitle")}
           />
 
           {entries.length === 0 ? (
             <EmptyState
               title={t("timeline.empty_title")}
-              body={t("timeline.empty_body")}
+              hint={t("timeline.empty_body")}
             />
           ) : null}
 
