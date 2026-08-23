@@ -232,7 +232,8 @@ function Dashboard() {
 
           <HomeHero data={heroData} scoreDetail={homeScore} scorePending={!homeScore} />
 
-          <HomeAlerts report={report} />
+          <HomeAlerts report={report} hasInspection={hasInspection} />
+
 
           <SummaryCard
             icon={<HeartPulse className="h-5 w-5" />}

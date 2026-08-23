@@ -67,6 +67,18 @@ export function HomeAssistantCard({ topic }: { topic?: string } = {}) {
     textareaRef.current?.focus();
   }, []);
 
+  // Opened from the dashboard nudge: answer that topic straight away.
+  useEffect(() => {
+    if (!topic || seeded.current) return;
+    seeded.current = true;
+    const q = topic.trim().endsWith("?")
+      ? topic
+      : `${topic}. In plain language: what does this mean for my home, what does it cost me if I ignore it, and what should I do next?`;
+    void send(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topic]);
+
+
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
       <div className="flex items-center justify-between gap-3">
