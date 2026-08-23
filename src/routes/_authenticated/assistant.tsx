@@ -7,6 +7,10 @@ import { HomeAssistantCard } from "@/components/home-assistant-card";
 
 export const Route = createFileRoute("/_authenticated/assistant")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    topic: typeof search.topic === "string" ? search.topic.slice(0, 400) : undefined,
+  }),
+
   head: () => ({
     meta: [
       { title: "Home Assistant — SuCasa" },
@@ -29,6 +33,7 @@ export const Route = createFileRoute("/_authenticated/assistant")({
 
 function AssistantPage() {
   const t = useT();
+  const { topic } = Route.useSearch();
   return (
     <HomeownerShell>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
@@ -40,9 +45,10 @@ function AssistantPage() {
             <ArrowLeft className="h-4 w-4" /> {t("common.back_home")}
           </Link>
 
-          <HomeAssistantCard />
+          <HomeAssistantCard topic={topic} />
         </div>
       </main>
     </HomeownerShell>
   );
 }
+

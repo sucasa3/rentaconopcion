@@ -26,13 +26,15 @@ const SUGGESTION_KEYS: TranslationKey[] = [
   "assistant.suggestion.refi",
 ];
 
-export function HomeAssistantCard() {
+export function HomeAssistantCard({ topic }: { topic?: string } = {}) {
   const t = useT();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [status, setStatus] = useState<"ready" | "submitted" | "error">("ready");
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const askFn = useServerFn(askAssistant);
+  const seeded = useRef(false);
+
 
   const send = async (text: string) => {
     const question = text.trim();
@@ -64,6 +66,18 @@ export function HomeAssistantCard() {
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
+
+  // Opened from the dashboard nudge: answer that topic straight away.
+  useEffect(() => {
+    if (!topic || seeded.current) return;
+    seeded.current = true;
+    const q = topic.trim().endsWith("?")
+      ? topic
+      : `${topic}. In plain language: what does this mean for my home, what does it cost me if I ignore it, and what should I do next?`;
+    void send(q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topic]);
+
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
