@@ -12,6 +12,8 @@ import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 
 import { CompleteAddressCard } from "@/components/complete-address-card";
+import { HomeAlerts } from "@/components/home-alerts";
+import { useValueSnapshot } from "@/hooks/use-value-snapshot";
 import { SummaryCard } from "@/components/ui-kit";
 import { useLogOnMount } from "@/hooks/use-activity-log";
 import { profileCompleteness } from "@/lib/next-step";
