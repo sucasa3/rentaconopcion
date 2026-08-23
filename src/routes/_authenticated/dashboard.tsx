@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { HeartPulse, FileText, TrendingUp, Sparkles, Plus } from "lucide-react";
+import { HeartPulse, FileText, TrendingUp, Sparkles, Plus, History } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeHero } from "@/components/home-hero/HomeHero";
@@ -12,6 +12,8 @@ import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 
 import { CompleteAddressCard } from "@/components/complete-address-card";
+import { HomeAlerts } from "@/components/home-alerts";
+import { useValueSnapshot } from "@/hooks/use-value-snapshot";
 import { SummaryCard } from "@/components/ui-kit";
 import { useLogOnMount } from "@/hooks/use-activity-log";
 import { profileCompleteness } from "@/lib/next-step";
@@ -90,6 +92,9 @@ function Dashboard() {
   const { record, report } = useHomeRecord(profileAddr);
   const homeScore = report?.score ?? null;
   const timeline = record?.physical.timeline ?? [];
+
+  // Builds the value history the Home History page charts over time.
+  useValueSnapshot(okIntel?.value.value ?? null, okIntel?.address ?? profileAddr);
 
   // Supporting reads (same query keys as the sections, so nothing is fetched twice).
   const fetchLog = useServerFn(getMyComponentServiceLog);
@@ -227,6 +232,8 @@ function Dashboard() {
 
           <HomeHero data={heroData} scoreDetail={homeScore} scorePending={!homeScore} />
 
+          <HomeAlerts report={report} />
+
           <SummaryCard
             icon={<HeartPulse className="h-5 w-5" />}
             label={t("dash.care.label")}
@@ -265,6 +272,15 @@ function Dashboard() {
             tone={hasInspection ? "calm" : "brand"}
             to="/documents"
             actionLabel={hasInspection ? t("dash.docs.action_open") : t("dash.docs.action_add")}
+          />
+
+          <SummaryCard
+            icon={<History className="h-5 w-5" />}
+            label={t("nav.timeline_long")}
+            sentence={t("timeline.subtitle")}
+            tone="calm"
+            to="/timeline"
+            actionLabel={t("timeline.title")}
           />
 
           <div className="pt-1 text-center">

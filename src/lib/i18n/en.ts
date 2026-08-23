@@ -29,6 +29,29 @@ export const en = {
   "nav.documents": "Documents",
   "nav.services": "Services",
   "nav.report": "Report",
+  "nav.timeline": "History",
+  "nav.timeline_long": "Home history",
+
+  // ----------------------------------------------------------------- alerts
+  "alerts.title": "Needs your attention",
+  "alerts.new": "New",
+  "alerts.dismiss": "Dismiss",
+
+  // --------------------------------------------------------------- timeline
+  "timeline.title": "Your home's history",
+  "timeline.subtitle": "Everything that has happened to this home, and what's coming.",
+  "timeline.empty_title": "Your home's story starts here",
+  "timeline.empty_body":
+    "Add your address and log work you've done, and we'll build the full history of your home.",
+  "timeline.upcoming": "Coming up",
+  "timeline.past": "What has happened",
+  "timeline.kind.purchase": "Ownership",
+  "timeline.kind.permit": "Permitted work",
+  "timeline.kind.service": "Work logged",
+  "timeline.kind.document": "Document",
+  "timeline.kind.value": "Value",
+  "timeline.kind.request": "Service",
+  "timeline.kind.projection": "Expected",
 
   // ----------------------------------------------------------- account menu
   "account.title": "Account",

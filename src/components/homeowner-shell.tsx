@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, HeartPulse, FileText, Wrench, BarChart3 } from "lucide-react";
+import { Home, HeartPulse, FileText, Wrench, BarChart3, History } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { useT, type TranslationKey } from "@/lib/i18n";
@@ -47,6 +47,14 @@ const ITEMS: Item[] = [
     to: "/request",
     icon: <Wrench className="h-5 w-5" />,
     match: (p) => p.startsWith("/request") || p.startsWith("/services"),
+  },
+  {
+    key: "timeline",
+    labelKey: "nav.timeline",
+    longLabelKey: "nav.timeline_long",
+    to: "/timeline",
+    icon: <History className="h-5 w-5" />,
+    match: (p) => p.startsWith("/timeline"),
   },
   {
     key: "report",
