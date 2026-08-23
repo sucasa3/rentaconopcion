@@ -1,10 +1,10 @@
-# Simplify "Needs your attention" into one Home Assistant nudge
+# Simplify "Needs your attention" into one Home Assistant area
 
-Replace the stack of alert cards on the homeowner dashboard with a single, calm iOS-style row at the top: the Home Assistant raising a hand about the one thing that matters right now.
+Replace the alert stack on the homeowner dashboard with a single, calm iOS-style row: the Home Assistant raising a hand about the one thing that matters right now.
 
 ## What the homeowner sees
 
-A single rounded card pinned above the home hero:
+A single rounded card pinned directly below the home hero:
 
 ```text
 ┌──────────────────────────────────────────────┐
@@ -15,9 +15,10 @@ A single rounded card pinned above the home hero:
 └──────────────────────────────────────────────┘
 ```
 
-- One line, one action. No dismiss X, no red walls of text, no three stacked cards.
-- The assistant avatar carries a softly blinking/pulsing emoji badge that draws the eye without shouting (respects reduced-motion).
+- One line, one action. No dismiss X, no red walls of text. The stacked summary cards below it stay exactly as they are.
+- The assistant avatar carries a softly blinking/pulsing badge that draws the eye without shouting (respects reduced-motion).
 - "+ N more things" is plain text, not extra cards. Tapping anywhere opens the assistant.
+
 
 ## What happens on tap
 
@@ -36,4 +37,4 @@ If there are no live alerts and no inspection report on file, the assistant take
 - Empty-state branch reads the document list already loaded on the dashboard (`kind === "inspection"`) to decide the inspection invite.
 - `/assistant` accepts a `topic` search param; `HomeAssistantCard` auto-sends a grounded opening question for that signal key on mount and swaps its default suggestion chips for signal-specific ones. Signal titles/reasons already come from the engine, so the assistant answers from the same facts.
 - New i18n keys in `en.ts` / `es.ts` for the nudge line, "+ N more", and the inspection invite; drop the now-unused alert-list strings.
-- Dashboard change is limited to where the strip renders (above `HomeHero`).
+- Dashboard change is limited to where the strip renders (directly below `HomeHero`); the summary card stack is untouched.
