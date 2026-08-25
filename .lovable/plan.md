@@ -69,7 +69,7 @@ New table `home_plans` (user_id, plan jsonb, generated_at, source_hash) with GRA
 
 ### The "Take care of it" hand-off
 
-Every plan item gets one action: **"Take care of it"** → opens the existing service-request flow pre-filled with category, description (from the item), and home context. This is a real execution loop on day one without pretending Phase 3 automation exists. Completed requests feed the existing timeline, and the plan item clears itself.
+Every plan item gets one action: **"Take care of it"** → opens the existing service-request flow pre-filled with category, description (from the item), and home context. This is a real execution loop on day one without pretending Phase 3 automation exists. Completed requests feed the existing timeline, and the plan item clears itself. Any signal this creates for professionals passes the consent-and-relevance gate above — a homeowner acting on their plan is never broadcast to a lender by default.
 
 ### UI
 
@@ -93,6 +93,7 @@ A homeowner with an enriched profile opens the dashboard and sees a plan hero, o
 ## What I'd flag
 
 - **Don't oversell the agent loop yet.** Phase 1's "Take care of it" is a real hand-off, not autonomous coordination — the copy must say "we'll find and route this to pros," not "consider it done," until Phase 3.
+- **Consent is a feature, not a compliance checkbox.** The selective-sharing gate is part of the homeowner promise ("your home's AI works for you, not for the people who want your business") and it's also what keeps pro-side signal quality high — lenders see fewer, more relevant opportunities instead of every home event. Both sides win, and the controls must be legible to a 5th grader like the rest of the homeowner experience.
 - **Cost bands carry liability and trust risk.** Keep them wide, labeled as typical ranges, and sourced from category tables we control — never from AI generation.
 - **The plan must never fight the record.** Because it's derived from `assembleHomeRecord` with a source hash, homeowner, agent, and lender keep seeing one truth; that invariant is the moat and we protect it in every phase.
 - **AI spend stays bounded.** The planner is deterministic; AI writes only the "why" sentences, cached in `home_plans` — fits inside the existing per-seat usage cap pattern.
