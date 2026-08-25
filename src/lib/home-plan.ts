@@ -123,21 +123,12 @@ export function computePlanSourceHash(record: HomeRecord): string {
 const MAX_PER_HORIZON = 6;
 
 const SEASONAL_BAND: Record<string, CostBand> = {
-  "hvac-filter": COST_BANDS.hvac_filter!,
+  hvac_filter: COST_BANDS.hvac_filter!,
   gutters: COST_BANDS.gutters!,
-  "water-heater-flush": COST_BANDS.water_heater_flush!,
-  "dryer-vent": COST_BANDS.dryer_vent!,
-  "smoke-co-detectors": COST_BANDS.smoke_detectors!,
-  "exterior-caulk": COST_BANDS.exterior_caulk!,
-};
-
-const SEASONAL_CATEGORY: Record<string, string> = {
-  "hvac-filter": "HVAC",
-  gutters: "Roofing",
-  "water-heater-flush": "Plumbing",
-  "dryer-vent": "Handyman",
-  "smoke-co-detectors": "Electrical",
-  "exterior-caulk": "Handyman",
+  water_heater_flush: COST_BANDS.water_heater_flush!,
+  dryer_vent: COST_BANDS.dryer_vent!,
+  smoke_co_detectors: COST_BANDS.smoke_detectors!,
+  exterior_caulk: COST_BANDS.exterior_caulk!,
 };
 
 export function buildHomePlan(
@@ -199,15 +190,15 @@ export function buildHomePlan(
     if (!task.due) continue;
     items.push({
       key: `seasonal:${task.key}`,
-      title: task.title,
+      title: task.label,
       why:
         task.lastDone == null
-          ? "Never logged — a small recurring habit that prevents expensive damage."
+          ? `Never logged — ${task.hint}`
           : `Last done ${task.monthsSince ?? "?"} months ago; this one works best every ${task.everyMonths} months.`,
       horizon: "next90Days",
       costBand: SEASONAL_BAND[task.key] ?? null,
       urgency: "medium",
-      category: SEASONAL_CATEGORY[task.key] ?? null,
+      category: task.category,
       source: "seasonal",
     });
   }
