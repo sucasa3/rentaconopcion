@@ -28,7 +28,16 @@ The honest read: SuCasa is a strong *read-only intelligence* product today. The 
 
 **Phase 4 — The assistant becomes the OS.** Multi-turn, memory of the Home Plan and past conversations, and tool use: it can create requests, log maintenance, schedule tasks, and answer from the full record. The home screen converges to one greeting, today's needs, and one big Ask SuCasa button.
 
-**Phase 5 — Coordinated cross-role outcomes.** One event (a pre-sale plan, an HVAC replacement) flows to homeowner, agent, and lender as one coordinated opportunity instead of three separate dashboards noticing separately.
+**Phase 5 — Coordinated, consent-gated opportunities.** A homeowner event (a pre-sale plan started, a major project requested, an equity milestone) becomes **one coordinated opportunity** instead of three dashboards noticing separately — but information flows selectively, not broadcast. Each event is checked for relevance per role (a pre-sale plan matters to the agent; an equity milestone matters to the lender; a filter change matters to neither), and nothing reaches a professional unless the homeowner has permitted that class of sharing. Lenders won't always need to know — and under this rule, they don't.
+
+## The consent-and-relevance gate (cross-cutting rule)
+
+Every homeowner event that could surface to a professional passes two tests before anyone sees it:
+
+1. **Relevance** — does this role actually need this signal? Maintenance and project events default to the agent/vendor side; financing-relevant events (equity, refi window, cash-out headroom) are the ones that can reach a lender.
+2. **Permission** — has the homeowner consented to this class of sharing? Enforcement rides on the existing `homeowner_lender_consents` table and the consent-check function already used by campaigns; every new sharing path in every phase goes through the same gate, never around it.
+
+The homeowner controls this in plain language ("Share financing opportunities with my lender" — on/off per class), with the default being conservative. This applies starting in Phase 1: when a plan item becomes a service request, the event is visible to the homeowner's vendor flow and their agent's relationship view only where relevant and permitted — it never lands in a lender's queue by default.
 
 ## Phase 1 in buildable detail — Your Home Plan
 
@@ -60,7 +69,7 @@ New table `home_plans` (user_id, plan jsonb, generated_at, source_hash) with GRA
 
 ### The "Take care of it" hand-off
 
-Every plan item gets one action: **"Take care of it"** → opens the existing service-request flow pre-filled with category, description (from the item), and home context. This is a real execution loop on day one without pretending Phase 3 automation exists. Completed requests feed the existing timeline, and the plan item clears itself.
+Every plan item gets one action: **"Take care of it"** → opens the existing service-request flow pre-filled with category, description (from the item), and home context. This is a real execution loop on day one without pretending Phase 3 automation exists. Completed requests feed the existing timeline, and the plan item clears itself. Any signal this creates for professionals passes the consent-and-relevance gate above — a homeowner acting on their plan is never broadcast to a lender by default.
 
 ### UI
 
@@ -84,6 +93,7 @@ A homeowner with an enriched profile opens the dashboard and sees a plan hero, o
 ## What I'd flag
 
 - **Don't oversell the agent loop yet.** Phase 1's "Take care of it" is a real hand-off, not autonomous coordination — the copy must say "we'll find and route this to pros," not "consider it done," until Phase 3.
+- **Consent is a feature, not a compliance checkbox.** The selective-sharing gate is part of the homeowner promise ("your home's AI works for you, not for the people who want your business") and it's also what keeps pro-side signal quality high — lenders see fewer, more relevant opportunities instead of every home event. Both sides win, and the controls must be legible to a 5th grader like the rest of the homeowner experience.
 - **Cost bands carry liability and trust risk.** Keep them wide, labeled as typical ranges, and sourced from category tables we control — never from AI generation.
 - **The plan must never fight the record.** Because it's derived from `assembleHomeRecord` with a source hash, homeowner, agent, and lender keep seeing one truth; that invariant is the moat and we protect it in every phase.
 - **AI spend stays bounded.** The planner is deterministic; AI writes only the "why" sentences, cached in `home_plans` — fits inside the existing per-seat usage cap pattern.
