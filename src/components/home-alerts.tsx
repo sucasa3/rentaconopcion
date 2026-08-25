@@ -74,6 +74,16 @@ export function HomeAlerts({
   const open = () => {
     if (lead) {
       dismissMutation.mutate({ key: lead.key, type: lead.type, title: lead.title });
+      // Maintenance signals land on the Home Plan (with cost + action);
+      // everything else still hands off to the assistant.
+      if (
+        lead.type === "component_overdue" ||
+        lead.type === "component_due_soon" ||
+        lead.type === "inspection_findings"
+      ) {
+        void navigate({ to: "/home-plan" });
+        return;
+      }
     }
     void navigate({ to: "/assistant", search: { topic } });
   };

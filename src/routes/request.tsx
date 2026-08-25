@@ -7,7 +7,11 @@ import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { createServiceRequest } from "@/lib/service-requests.functions";
 
-const search = z.object({ category: z.string().optional() });
+const search = z.object({
+  category: z.string().optional(),
+  // A plan item hands over its title so the description starts pre-filled.
+  description: z.string().max(200).optional(),
+});
 
 export const Route = createFileRoute("/request")({
   validateSearch: search,
@@ -32,13 +36,13 @@ function parseBudget(s: string): { min?: number; max?: number } {
 
 function RequestFlow() {
   const navigate = useNavigate();
-  const { category: initialParam } = Route.useSearch();
-  // A category handed over from the dashboard skips the picker and drops the
-  // homeowner straight on "Tell us about the project".
+  const { category: initialParam, description: initialDesc } = Route.useSearch();
+  // A category handed over from the dashboard or a plan item skips the picker
+  // and drops the homeowner straight on "Tell us about the project".
   const initial = toCategorySlug(initialParam);
   const [step, setStep] = useState(initial ? 1 : 0);
   const [category, setCategory] = useState<string | undefined>(initial);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(initialDesc ?? "");
   const [budget, setBudget] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const [timeline, setTimeline] = useState<string>("This week");
