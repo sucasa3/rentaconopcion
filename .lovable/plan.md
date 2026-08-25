@@ -28,7 +28,16 @@ The honest read: SuCasa is a strong *read-only intelligence* product today. The 
 
 **Phase 4 — The assistant becomes the OS.** Multi-turn, memory of the Home Plan and past conversations, and tool use: it can create requests, log maintenance, schedule tasks, and answer from the full record. The home screen converges to one greeting, today's needs, and one big Ask SuCasa button.
 
-**Phase 5 — Coordinated cross-role outcomes.** One event (a pre-sale plan, an HVAC replacement) flows to homeowner, agent, and lender as one coordinated opportunity instead of three separate dashboards noticing separately.
+**Phase 5 — Coordinated, consent-gated opportunities.** A homeowner event (a pre-sale plan started, a major project requested, an equity milestone) becomes **one coordinated opportunity** instead of three dashboards noticing separately — but information flows selectively, not broadcast. Each event is checked for relevance per role (a pre-sale plan matters to the agent; an equity milestone matters to the lender; a filter change matters to neither), and nothing reaches a professional unless the homeowner has permitted that class of sharing. Lenders won't always need to know — and under this rule, they don't.
+
+## The consent-and-relevance gate (cross-cutting rule)
+
+Every homeowner event that could surface to a professional passes two tests before anyone sees it:
+
+1. **Relevance** — does this role actually need this signal? Maintenance and project events default to the agent/vendor side; financing-relevant events (equity, refi window, cash-out headroom) are the ones that can reach a lender.
+2. **Permission** — has the homeowner consented to this class of sharing? Enforcement rides on the existing `homeowner_lender_consents` table and the consent-check function already used by campaigns; every new sharing path in every phase goes through the same gate, never around it.
+
+The homeowner controls this in plain language ("Share financing opportunities with my lender" — on/off per class), with the default being conservative. This applies starting in Phase 1: when a plan item becomes a service request, the event is visible to the homeowner's vendor flow and their agent's relationship view only where relevant and permitted — it never lands in a lender's queue by default.
 
 ## Phase 1 in buildable detail — Your Home Plan
 
