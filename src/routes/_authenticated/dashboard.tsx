@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { HeartPulse, FileText, TrendingUp, Sparkles, Plus, History } from "lucide-react";
+import { HeartPulse, FileText, TrendingUp, Sparkles, Plus, History, CalendarCheck } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeHero } from "@/components/home-hero/HomeHero";
@@ -17,6 +17,7 @@ import { useValueSnapshot } from "@/hooks/use-value-snapshot";
 import { SummaryCard } from "@/components/ui-kit";
 import { useLogOnMount } from "@/hooks/use-activity-log";
 import { profileCompleteness } from "@/lib/next-step";
+import { buildHomePlan, planCounts } from "@/lib/home-plan";
 
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
@@ -115,6 +116,11 @@ function Dashboard() {
     queryFn: () => fetchDocs(undefined),
     staleTime: 5 * 60_000,
   });
+
+  // The forward-looking half: one plan drives this hero, /home-plan and the
+  // assistant's grounding.
+  const homePlan = record ? buildHomePlan(record, new Date(), serviceLog ?? []) : null;
+  const planSummary = homePlan ? planCounts(homePlan) : null;
 
   const hasAddress = !!profileAddr || !!okIntel?.address;
   const completeness = profileCompleteness({
@@ -234,6 +240,32 @@ function Dashboard() {
 
           <HomeAlerts report={report} hasInspection={hasInspection} />
 
+          {planSummary && (
+            <SummaryCard
+              icon={<CalendarCheck className="h-5 w-5" />}
+              label={t("plan.card.label")}
+              headline={
+                planSummary.next90Days > 0
+                  ? planSummary.next90Days === 1
+                    ? t("plan.hero.count_one")
+                    : t("plan.hero.count", { count: planSummary.next90Days })
+                  : planSummary.total === 0
+                    ? undefined
+                    : t("plan.hero.count", { count: planSummary.total })
+              }
+              sentence={
+                planSummary.total === 0
+                  ? t("plan.hero.none")
+                  : planSummary.top
+                    ? t("plan.hero.top", { title: planSummary.top.title })
+                    : t("plan.subtitle")
+              }
+              tone={planSummary.next90Days > 0 ? "urgent" : "calm"}
+              emphasis={planSummary.next90Days > 0}
+              to="/home-plan"
+              actionLabel={t("plan.hero.cta")}
+            />
+          )}
 
           <SummaryCard
             icon={<HeartPulse className="h-5 w-5" />}
