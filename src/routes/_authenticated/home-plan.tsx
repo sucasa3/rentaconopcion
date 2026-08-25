@@ -117,7 +117,7 @@ function HomePlanPage() {
       data: {
         sourceHash: plan.sourceHash,
         language,
-        homeCity: record.property.city ?? null,
+        homeCity: record.property.address ?? null,
         yearBuilt: record.property.yearBuilt ?? null,
         items: all,
       },
