@@ -36,6 +36,7 @@ type Snapshot = {
     recommended_category: string | null;
   }>;
   recentRequests: Array<{ category: string; status: string; when: string }>;
+  planItems: Array<{ title: string; horizon: string; why: string }>;
   language?: "en" | "es";
 };
 
@@ -87,6 +88,14 @@ function buildSystemPrompt(s: Snapshot): string {
     lines.push(`\nRecent service requests: none.`);
   }
 
+  if (s.planItems.length) {
+    lines.push(`\nCurrent Home Plan (what this home needs, by horizon):`);
+    for (const p of s.planItems.slice(0, 12)) {
+      lines.push(`- [${p.horizon}] ${p.title} — ${p.why}`);
+    }
+    lines.push(`When the user asks "what should I do next", answer from THIS plan first.`);
+  }
+
   return parts.join("\n\n") + "\n\n" + lines.join("\n");
 }
 
@@ -97,25 +106,40 @@ export const askAssistant = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Home Assistant is not configured (missing LOVABLE_API_KEY).");
 
-    // Fetch profile, findings, requests in parallel.
-    const [{ data: profile }, { data: findings }, { data: requests }] = await Promise.all([
-      context.supabase
-        .from("profiles")
-        .select("full_name, address, city, state, zip, language")
-        .eq("id", context.userId)
-        .maybeSingle(),
-      context.supabase
-        .from("home_inspection_findings")
-        .select("system, condition, urgency, defects, recommended_action, recommended_category")
-        .eq("user_id", context.userId)
-        .limit(20),
-      context.supabase
-        .from("service_requests")
-        .select("category, status, created_at")
-        .eq("homeowner_id", context.userId)
-        .order("created_at", { ascending: false })
-        .limit(5),
-    ]);
+    // Fetch profile, findings, requests, and the cached Home Plan in parallel.
+    const [{ data: profile }, { data: findings }, { data: requests }, { data: planRow }] =
+      await Promise.all([
+        context.supabase
+          .from("profiles")
+          .select("full_name, address, city, state, zip, language")
+          .eq("id", context.userId)
+          .maybeSingle(),
+        context.supabase
+          .from("home_inspection_findings")
+          .select("system, condition, urgency, defects, recommended_action, recommended_category")
+          .eq("user_id", context.userId)
+          .limit(20),
+        context.supabase
+          .from("service_requests")
+          .select("category, status, created_at")
+          .eq("homeowner_id", context.userId)
+          .order("created_at", { ascending: false })
+          .limit(5),
+        context.supabase
+          .from("home_plans")
+          .select("plan, ai_why")
+          .eq("user_id", context.userId)
+          .maybeSingle(),
+      ]);
+
+    const aiWhy = (planRow?.ai_why ?? {}) as Record<string, string>;
+    const planItems = (
+      ((planRow?.plan as { items?: any[] } | null)?.items ?? []) as any[]
+    ).map((i) => ({
+      title: String(i.title ?? "").slice(0, 120),
+      horizon: String(i.horizon ?? ""),
+      why: String(aiWhy[i.key] ?? i.why ?? "").slice(0, 200),
+    }));
 
     // Try home intel (AVM / equity / rate) — safe to fail.
     const snapshot: Snapshot = {
@@ -145,6 +169,7 @@ export const askAssistant = createServerFn({ method: "POST" })
         status: r.status,
         when: new Date(r.created_at).toLocaleDateString(),
       })),
+      planItems,
     };
 
     if (profile?.address) {

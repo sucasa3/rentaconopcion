@@ -1086,6 +1086,63 @@ export type Database = {
           },
         ]
       }
+      home_plan_state: {
+        Row: {
+          id: string
+          item_key: string
+          state: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          item_key: string
+          state: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          item_key?: string
+          state?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      home_plans: {
+        Row: {
+          ai_why: Json | null
+          created_at: string
+          generated_at: string
+          id: string
+          plan: Json
+          source_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_why?: Json | null
+          created_at?: string
+          generated_at?: string
+          id?: string
+          plan: Json
+          source_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_why?: Json | null
+          created_at?: string
+          generated_at?: string
+          id?: string
+          plan?: Json
+          source_hash?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       home_predicted_actions: {
         Row: {
           action_key: string

@@ -23,6 +23,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
 import { Route as AuthenticatedMoneyRouteImport } from './routes/_authenticated/money'
+import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticated/home-plan'
 import { Route as AuthenticatedHomeCareRouteImport } from './routes/_authenticated/home-care'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -128,6 +129,11 @@ const AuthenticatedTimelineRoute = AuthenticatedTimelineRouteImport.update({
 const AuthenticatedMoneyRoute = AuthenticatedMoneyRouteImport.update({
   id: '/money',
   path: '/money',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomePlanRoute = AuthenticatedHomePlanRouteImport.update({
+  id: '/home-plan',
+  path: '/home-plan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeCareRoute = AuthenticatedHomeCareRouteImport.update({
@@ -354,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
+  '/home-plan': typeof AuthenticatedHomePlanRoute
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
+  '/home-plan': typeof AuthenticatedHomePlanRoute
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -457,6 +465,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/home-care': typeof AuthenticatedHomeCareRoute
+  '/_authenticated/home-plan': typeof AuthenticatedHomePlanRoute
   '/_authenticated/money': typeof AuthenticatedMoneyRoute
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -511,6 +520,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/home-care'
+    | '/home-plan'
     | '/money'
     | '/timeline'
     | '/agent/campaigns'
@@ -561,6 +571,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/documents'
     | '/home-care'
+    | '/home-plan'
     | '/money'
     | '/timeline'
     | '/agent/campaigns'
@@ -613,6 +624,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/_authenticated/home-care'
+    | '/_authenticated/home-plan'
     | '/_authenticated/money'
     | '/_authenticated/timeline'
     | '/_authenticated/agent/campaigns'
@@ -770,6 +782,13 @@ declare module '@tanstack/react-router' {
       path: '/money'
       fullPath: '/money'
       preLoaderRoute: typeof AuthenticatedMoneyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home-plan': {
+      id: '/_authenticated/home-plan'
+      path: '/home-plan'
+      fullPath: '/home-plan'
+      preLoaderRoute: typeof AuthenticatedHomePlanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home-care': {
@@ -1122,6 +1141,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedHomeCareRoute: typeof AuthenticatedHomeCareRoute
+  AuthenticatedHomePlanRoute: typeof AuthenticatedHomePlanRoute
   AuthenticatedMoneyRoute: typeof AuthenticatedMoneyRoute
   AuthenticatedTimelineRoute: typeof AuthenticatedTimelineRoute
   AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
@@ -1135,6 +1155,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedHomeCareRoute: AuthenticatedHomeCareRoute,
+  AuthenticatedHomePlanRoute: AuthenticatedHomePlanRoute,
   AuthenticatedMoneyRoute: AuthenticatedMoneyRoute,
   AuthenticatedTimelineRoute: AuthenticatedTimelineRoute,
   AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,

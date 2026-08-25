@@ -438,6 +438,29 @@ export const en = {
   "assistant.thinking": "Thinking…",
   "assistant.placeholder": "Ask about your home…",
   "assistant.error": "Something went wrong.",
+
+  // ------------------------------------------------------------------- plan
+  "plan.title": "Your Home Plan",
+  "plan.subtitle": "What your home needs — the next 90 days, this year, and beyond.",
+  "plan.card.label": "Your home plan",
+  "plan.hero.none": "Your home is in great shape — nothing needs attention right now.",
+  "plan.hero.count": "{count} things to plan for",
+  "plan.hero.count_one": "1 thing to plan for",
+  "plan.hero.top": "First up: {title}",
+  "plan.hero.cta": "See my plan",
+  "plan.h90": "Next 90 days",
+  "plan.h90.sub": "Do these soon — they protect your home and your wallet.",
+  "plan.h12": "Next 12 months",
+  "plan.h12.sub": "Worth scheduling this year, before they become urgent.",
+  "plan.h35": "In 3–5 years",
+  "plan.h35.sub": "Big-ticket items to budget for early.",
+  "plan.take_care": "Take care of it",
+  "plan.done": "Done",
+  "plan.dismiss": "Not now",
+  "plan.undo": "Undo",
+  "plan.empty": "Nothing here — great news.",
+  "plan.updated": "Built from your home record",
+  "plan.cost_label": "Typical cost",
 } as const;
 
 export type TranslationKey = keyof typeof en;
