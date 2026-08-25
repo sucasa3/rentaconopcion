@@ -13,7 +13,7 @@
  */
 
 import type { HomeRecord } from "@/lib/home-record";
-import { buildSeasonalTasks } from "@/lib/seasonal-tasks";
+import { buildSeasonalTasks, type SeasonalLogLike } from "@/lib/seasonal-tasks";
 
 export type PlanHorizon = "next90Days" | "next12Months" | "next3to5Years";
 
@@ -122,7 +122,29 @@ export function computePlanSourceHash(record: HomeRecord): string {
 
 const MAX_PER_HORIZON = 6;
 
-export function buildHomePlan(record: HomeRecord, now: Date = new Date()): HomePlan {
+const SEASONAL_BAND: Record<string, CostBand> = {
+  "hvac-filter": COST_BANDS.hvac_filter!,
+  gutters: COST_BANDS.gutters!,
+  "water-heater-flush": COST_BANDS.water_heater_flush!,
+  "dryer-vent": COST_BANDS.dryer_vent!,
+  "smoke-co-detectors": COST_BANDS.smoke_detectors!,
+  "exterior-caulk": COST_BANDS.exterior_caulk!,
+};
+
+const SEASONAL_CATEGORY: Record<string, string> = {
+  "hvac-filter": "HVAC",
+  gutters: "Roofing",
+  "water-heater-flush": "Plumbing",
+  "dryer-vent": "Handyman",
+  "smoke-co-detectors": "Electrical",
+  "exterior-caulk": "Handyman",
+};
+
+export function buildHomePlan(
+  record: HomeRecord,
+  now: Date = new Date(),
+  serviceLog: SeasonalLogLike[] = [],
+): HomePlan {
   const nowYear = now.getFullYear();
   const items: PlanItem[] = [];
 
@@ -173,11 +195,21 @@ export function buildHomePlan(record: HomeRecord, now: Date = new Date()): HomeP
   }
 
   // 2. Seasonal tasks that are due — the small stuff that protects the big stuff.
-  for (const task of buildSeasonalTasks(record.physical.timeline as never, now)) {
-    // Note: seasonal state needs the raw service log; the dashboard passes the
-    // same log through the record hook, so callers can attach it. When absent,
-    // tasks all read as due — acceptable for a plan nudge.
-    void task;
+  for (const task of buildSeasonalTasks(serviceLog, now)) {
+    if (!task.due) continue;
+    items.push({
+      key: `seasonal:${task.key}`,
+      title: task.title,
+      why:
+        task.lastDone == null
+          ? "Never logged — a small recurring habit that prevents expensive damage."
+          : `Last done ${task.monthsSince ?? "?"} months ago; this one works best every ${task.everyMonths} months.`,
+      horizon: "next90Days",
+      costBand: SEASONAL_BAND[task.key] ?? null,
+      urgency: "medium",
+      category: SEASONAL_CATEGORY[task.key] ?? null,
+      source: "seasonal",
+    });
   }
 
   // 3. Inspection findings — real condition data beats estimates.
