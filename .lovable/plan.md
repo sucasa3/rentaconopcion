@@ -1,85 +1,89 @@
-# Celebration moments MVP — Robinhood-style gamification
+# SuCasa 100X: from home-information dashboard to AI operating system for the home
 
-A quick, single-mechanic experiment: surface animated, shareable celebration moments when agents, lenders, or homeowners hit high-value milestones. Keeps the SuCasa iOS-first visual language and avoids public leaderboards.
+The North Star shifts from "Home Dashboard" to **"My home has an AI that takes care of it."** One Home Record, one intelligence engine, three beneficiaries. The product-development filter for everything below: count the steps without SuCasa vs. with it, and ask what SuCasa actually *does* — showing information is 10% better, coordinating the outcome is the 100X direction.
 
-## What we are building
+You chose the **Homeowner AI manager** as the flagship pillar and a roadmap with Phase 1 buildable. The gamification plan stays parked.
 
-1. **Milestone detector** — a small set of first-time and threshold events tied to the behaviors you selected.
-2. **Celebration surface** — a mobile-first, confetti-style overlay + persistent milestone card that feels like a reward, not a notification.
-3. **Backend storage** — one new table to record what was celebrated and when, plus small hooks into existing success paths.
-4. **Three-role rollout** — same component, different milestones for agents, lenders, and homeowners.
+## Where we stand (audited against the vision)
 
-## Milestones for the MVP
-
-| Role | Trigger | Celebration copy |
+| Pillar | State | Gap |
 | --- | --- | --- |
-| Homeowner | Claims profile / first sign-in | "Your SuCasa Home Record is live." |
-| Homeowner | Completes Home Profile (address + owner details) | "Your home profile is complete — personalized insights unlocked." |
-| Homeowner | Uploads first inspection or document | "Your home docs are now working for you." |
-| Agent | First homeowner activates | "First homeowner activated — your book is working." |
-| Agent | Reaches 5 activated homeowners | "5 homeowners active — keep the momentum." |
-| Agent | First opportunity identified on a home | "First opportunity spotted." |
-| Agent | First referral or transaction outcome logged | "Relationship turned into business." |
-| Lender | First sponsored agent seat activated | "Your first sponsored agent is live." |
-| Lender | First homeowner activated through a sponsored seat | "A sponsored homeowner just claimed their profile." |
-| Lender | First loan opportunity engaged from a shared introduction | "First opportunity engaged." |
+| 7. Shared Home Record flywheel | **Exists** | `assembleHomeRecord` is the canonical record for homeowner, agent, and lender views. Agent/lender side uses cached property records without live behavior data. |
+| 5. Lender opportunity detection | **Exists** | Refi/HELOC/cash-out/move-up signals with per-category "what to say" recipes. Most complete pillar. |
+| 4. Agent opportunity segments | **Exists** | Category counts ("8 likely to sell") plus ranking and AI listing briefs. |
+| 6. "What your home needs today" + Ask SuCasa | **Exists** | Alert banner hands off to the assistant, but the assistant is single-turn, stateless, and cannot take action. |
+| 1. Forward-looking Home Plan | **Partial** | Lifespans, seasonal cadence, and timeline projections exist as pieces; nothing aggregates them into a 90-day / 12-month / 3–5-year plan with costs and priorities. |
+| 3. Selling analysis for the homeowner | **Partial, agent-only** | Listing readiness and net proceeds exist on the agent side; the homeowner has no price range, no ROI-ranked improvement plan, no pre-sale flow. |
+| 2. "I'll take care of it" execution | **Missing** | Full marketplace and lead-routing infrastructure exists, but every step needs a human; no cost estimates, no AI vendor selection, no booking loop. |
 
-## Technical approach
+The honest read: SuCasa is a strong *read-only intelligence* product today. The 100X leap is concentrated in pillars 1, 2, and 3 — and Phase 1 can deliver pillar 1 with a real (not mocked) execution hand-off into the marketplace that already exists.
 
-### New table
+## Roadmap
 
-`public.milestone_events`
-- `id uuid primary key`
-- `user_id uuid references auth.users(id) on delete cascade`
-- `org_id uuid nullable` (for agent/lender org-scoped milestones)
-- `role app_role not null`
-- `milestone_key text not null` (e.g. `agent_first_activation`, `homeowner_profile_complete`)
-- `context jsonb nullable` (client id, opportunity id, etc.)
-- `celebrated_at timestamptz default now()`
-- `seen boolean default false`
-- Unique on `(user_id, milestone_key)` for first-time events; threshold events use a separate `milestone_key` per threshold.
+**Phase 1 — Your Home Plan (buildable now).** The homeowner gets a living forward plan: what to do in the next 90 days, the next 12 months, and the next 3–5 years, each item with a reason, an estimated cost band, and a "Take care of it" action that starts a real service request. The dashboard hero becomes "Here's what your home needs" instead of a summary of cards.
 
-Grants: `SELECT, INSERT, UPDATE` to `authenticated`; `ALL` to `service_role`. RLS policy: users read/write their own rows.
+**Phase 2 — Selling analysis.** Homeowner asks "Could I sell for $750K?" and gets a price range, then an ROI-ranked pre-sale improvement plan ("spend ~$18K here, likely add $35–50K") built from valuation, comps, inspection findings, and component condition. Each improvement converts into the same "Take care of it" flow from Phase 1.
 
-### Detection
+**Phase 3 — True agentic execution.** "Take care of it" stops meaning "start a request" and starts meaning SuCasa matches qualified pros, estimates the job cost band, and coordinates scheduling — the human pros stay in the loop, but the homeowner stops doing the Google-call-compare-schedule dance.
 
-Detection runs in the same server paths that already record the underlying success, so we do not add polling or cron jobs:
-- Homeowner activation/profile completion: extend existing `tg_award_client_activation` and `tg_award_profile_completion` triggers to also write a milestone row when first/qualifying.
-- Agent opportunity: hook into `homeowner_opportunities` insert path or existing opportunity compute.
-- Agent referral/transaction: hook into `opportunity_outcomes` insert where outcome is a closed/won status.
-- Lender sponsored seat activation: hook into `sponsored_agent_seats` status change.
-- Lender opportunity engaged: hook into `introduction_requests` accepted/engaged path.
+**Phase 4 — The assistant becomes the OS.** Multi-turn, memory of the Home Plan and past conversations, and tool use: it can create requests, log maintenance, schedule tasks, and answer from the full record. The home screen converges to one greeting, today's needs, and one big Ask SuCasa button.
 
-Each hook calls a single helper: `recordMilestone(supabase, { userId, orgId, role, key, context })`, which no-ops on duplicates.
+**Phase 5 — Coordinated cross-role outcomes.** One event (a pre-sale plan, an HVAC replacement) flows to homeowner, agent, and lender as one coordinated opportunity instead of three separate dashboards noticing separately.
+
+## Phase 1 in buildable detail — Your Home Plan
+
+### The plan object
+
+New pure module `src/lib/home-plan.ts` (client-safe, same pattern as `engagement.ts`). Input: the existing Home Record (`assembleHomeRecord` output). Output:
+
+```text
+HomePlan
+├─ next90Days: PlanItem[]     ← overdue/due-soon components, seasonal tasks
+│                               due now, high-urgency inspection findings
+├─ next12Months: PlanItem[]   ← components inside replacement window,
+│                               insurance/permit/value reviews, medium findings
+└─ next3to5Years: PlanItem[]  ← long-horizon replacements (roof, HVAC,
+                                water heater) with target years
+PlanItem = { key, title, why, horizon, costBand, urgency,
+             category, source: "component"|"finding"|"seasonal"|"review" }
+```
+
+Deterministic rules do the planning (lifespans, seasonal cadence, finding urgency — all already in the codebase); AI is used once per plan to write the one-sentence "why" per item in plain language, grounded only in on-file facts. No invented numbers.
+
+### Cost bands
+
+Static band table in code per category (e.g. roof inspection $0–300, HVAC replacement $5–12K) — clearly labeled "typical range," not a quote. Real quoting is Phase 3.
+
+### Data
+
+New table `home_plans` (user_id, plan jsonb, generated_at, source_hash) with GRANT + RLS in the same migration, owner-read/write policies. Regenerated when the underlying record changes (address, new findings, new service log, completed item) — the source_hash makes that cheap and idempotent. Items dismissed or marked done are tracked in a `home_plan_state` table so the plan is a living list, not a regenerated surprise.
+
+### The "Take care of it" hand-off
+
+Every plan item gets one action: **"Take care of it"** → opens the existing service-request flow pre-filled with category, description (from the item), and home context. This is a real execution loop on day one without pretending Phase 3 automation exists. Completed requests feed the existing timeline, and the plan item clears itself.
 
 ### UI
 
-- `CelebrationToast` component: full-screen or bottom-sheet overlay with confetti burst (canvas or lightweight CSS particles), icon, headline, subline, and a primary CTA.
-- `MilestoneCard` component: a compact, persistent card for the dashboard showing the last unlocked milestone and the next one to chase.
-- Placement:
-  - Homeowner: on dashboard, after profile completion or first document upload.
-  - Agent: on "Today" dashboard after activation/opportunity/referral events.
-  - Lender: on lender dashboard after sponsored-seat milestones.
-- Mark as seen via server function so the celebration does not repeat.
+- Dashboard hero rework: replace the stack of summary cards' lead position with a **Home Plan hero** — "Good morning, {name}. Your home needs {n} things this quarter." plus the top item and a "See my plan" link to a new `/home-plan` route.
+- `/home-plan` route: three horizon sections (90 days / 12 months / 3–5 years) as stacked cards — iOS-first, cost band, why, and the action button on each.
+- The existing HomeAlerts nudge points at the plan instead of a dead-end.
+- Assistant: the plan is injected into the existing assistant snapshot so "What should I do with my house?" answers from the plan verbatim. Still single-turn this phase; conversational memory is Phase 4.
 
-### Animation
+### Wiring
 
-Use the existing animation tokens (`animate-scale-in`, `animate-fade-in`) plus a lightweight confetti burst. Keep it under 2 seconds, mobile-performant, and respect `prefers-reduced-motion`.
+- `src/lib/home-plan.ts` — pure planner + cost bands.
+- `src/lib/home-plan.functions.ts` — get/regenerate/act-on-plan server functions (requireSupabaseAuth; AI "why" generation streams internally per the long-call rule).
+- `src/lib/home-plan.server.ts` — assembly, persistence, hash check.
+- `src/routes/_authenticated/home-plan.tsx` — the plan page (own head() metadata).
+- Modify: `dashboard.tsx` (hero), `home-alerts.tsx` (route to plan), `assistant.functions.ts` (plan in snapshot), service-request creation (accept prefill params).
 
-## Out of scope for this MVP
+### Success check
 
-- Streaks, badges, leaderboards, or recurring daily goals.
-- Push notifications for milestones (can be added later).
-- Complex "what-if" score simulators.
-- Public rankings of agents.
+A homeowner with an enriched profile opens the dashboard and sees a plan hero, opens `/home-plan`, sees all three horizons populated from their real record, taps "Take care of it" on one item, and lands in a pre-filled request. After the request completes, the item is gone from the plan.
 
-## Success check
+## What I'd flag
 
-After implementation, a newly activating homeowner and a newly activating agent should each see one celebration moment on their next dashboard load, and the milestone should be recorded as `seen=true` after dismissal.
-
-## Files we expect to touch
-
-- New: `src/components/celebration-toast.tsx`, `src/components/milestone-card.tsx`, `src/lib/milestones.server.ts`, `src/lib/milestones.functions.ts`
-- Migration: `supabase/migrations/..._milestone_events.sql`
-- Modify: existing trigger paths in `src/lib/credits.server.ts` / `src/lib/opportunities.server.ts` / `src/lib/shared-opportunities.server.ts` to call milestone helper.
-- Modify: `src/routes/_authenticated/dashboard.tsx`, `src/routes/_authenticated/agent/index.tsx`, `src/routes/_authenticated/lender/index.tsx` to render pending celebration.
+- **Don't oversell the agent loop yet.** Phase 1's "Take care of it" is a real hand-off, not autonomous coordination — the copy must say "we'll find and route this to pros," not "consider it done," until Phase 3.
+- **Cost bands carry liability and trust risk.** Keep them wide, labeled as typical ranges, and sourced from category tables we control — never from AI generation.
+- **The plan must never fight the record.** Because it's derived from `assembleHomeRecord` with a source hash, homeowner, agent, and lender keep seeing one truth; that invariant is the moat and we protect it in every phase.
+- **AI spend stays bounded.** The planner is deterministic; AI writes only the "why" sentences, cached in `home_plans` — fits inside the existing per-seat usage cap pattern.
