@@ -1,49 +1,33 @@
-# SuCasa iOS App via Capacitor (App Store Path)
+# SuCasa Mobile App — Phase 1: Installable + App-Store-Ready Web Foundation
 
 ## Goal
-Ship SuCasa to the Apple App Store by wrapping the existing mobile-first web app in a Capacitor native shell — reusing 100% of the current codebase, with native push notifications, camera document upload, and secure session storage.
+Make SuCasa installable on iPhone/Android home screens today (no Mac, no Apple account needed), and complete the web-side groundwork so a Capacitor App Store wrapper can be added later with zero rework.
 
-## How it works
-The web app stays exactly as-is (built and deployed by Lovable). A thin native shell loads the published SuCasa URL, so every web update ships instantly without App Store review. Native plugins add device capabilities the browser can't provide.
+## What gets built (all here in Lovable)
 
-```text
-Lovable (web app, sucasa.com)  <--loads--  Capacitor iOS shell (App Store app)
-        |                                         |
-   All features/UI                          Push notifications
-   Home Record, dashboards                  Camera document upload
-   AI assistant, Home Plan                  Face ID / secure storage
-```
+### 1. Installable app (PWA manifest, no offline caching)
+- `public/manifest.webmanifest`: name "SuCasa", short_name, `display: "standalone"`, deep-blue theme/background colors, `start_url: /`.
+- Generated app icons: 192px, 512px, and 180px Apple touch icon (SuCasa mark on brand background) under `public/`.
+- Head tags in `__root.tsx`: manifest link, `theme-color`, `apple-touch-icon`, `apple-mobile-web-app-capable`, `apple-mobile-web-app-status-bar-style`, per-platform title.
+- Result: "Add to Home Screen" on iOS/Android launches SuCasa full-screen with its own icon — looks and opens like a native app. No service worker, no offline mode (keeps preview safe and avoids stale-cache risk).
 
-## Phase 1 — Web prep (done here in Lovable)
-1. **PWA-grade polish** so the app feels native inside the shell: app manifest, app icons (1024px), splash screen assets, safe-area insets (notch/home indicator), `apple-mobile-web-app-capable` meta, standalone display detection.
-2. **Deep-link & auth hardening**: ensure auth callbacks and magic links work when opened inside the Capacitor WebView (universal link handling, session persistence via Capacitor Preferences instead of localStorage fallback).
-3. **Native-bridge hooks**: a small `native.ts` util that detects Capacitor and no-ops on web, so native features degrade gracefully in the browser.
+### 2. Native-feel polish
+- Safe-area insets (notch / home indicator) applied to the mobile bottom-tab shells and fixed footers via `env(safe-area-inset-*)`.
+- Prevent iOS rubber-band overscroll on fixed shells; tap-highlight cleanup; `-webkit-touch-callout` tuning on images.
+- Splash background color matching the theme so launch has no white flash.
 
-## Phase 2 — Capacitor shell (exported to your machine / GitHub)
-This step happens outside Lovable — you export the project (GitHub integration or download) and on a Mac:
-1. `npm install @capacitor/core @capacitor/ios @capacitor/cli`
-2. `npx cap init` pointing the webDir at the built app (or configuring the shell to load the live published URL directly — recommended, so updates are instant)
-3. `npx cap add ios`, open in Xcode, set bundle ID (`com.sucasa.app`), signing team, version.
+### 3. Account deletion (Apple App Store requirement 5.1.1)
+- "Delete account" option in homeowner and professional settings with confirmation flow.
+- Server function that deletes the user's data rows (respecting existing tables/RLS) and removes the auth user via the admin client, then signs out.
+- This is mandatory for App Store review later and good practice regardless.
 
-## Phase 3 — Native features worth adding for SuCasa
-- **Push notifications** (`@capacitor/push-notifications` + APNs): maintenance alerts, campaign replies, opportunity HOT signals for agents/lenders. Requires wiring a push token table in the backend and a send path (can reuse existing notify.sucasa.com email infra's trigger points).
-- **Camera/document capture** (`@capacitor/camera`): homeowners photograph inspection reports and permits straight into Home Care Documents — big win for the AI document intelligence flow.
-- **Face ID / Touch ID** (`capacitor-native-biometric`) for fast re-entry.
-- **Haptics** on task completion (supports the iOS feel; gamification-safe, just tactile feedback).
+### 4. Native-ready utility
+- `src/lib/native.ts`: tiny helper detecting a Capacitor WebView (`window.Capacitor`) with graceful web fallback — future push/camera/biometric plugins slot in without touching app logic.
 
-## Phase 4 — App Store submission (you + Apple)
-- Apple Developer account: **$99/year** (required, in your company's name).
-- App Store listing: screenshots (6.7" and 5.5" required), description, keywords, privacy nutrition labels (SuCasa collects financial/home data — needs accurate disclosure), privacy policy URL.
-- App Review: ~24–48h. Because the shell loads remote content, the app must be functional and valuable on first open (it is — login → dashboard).
-- Guideline watchouts: 4.2 (minimum functionality — fine, SuCasa is a real service), 5.1.1 (account deletion option — **we should add in-app account deletion before submission**, Apple rejects without it).
-
-## What I need from you / decisions
-1. **Apple Developer account** — do you have one already ($99/yr)?
-2. **A Mac with Xcode** for building/submitting (or a CI service like Capacitor's or Codemagic).
-3. **Priority of Phase 3 features** — my recommendation: push notifications first (retention), camera upload second (data flywheel).
-4. **Account deletion flow** — add before submission (Phase 1 item); confirm and I'll include it.
+## What comes later (not in this phase, documented for you)
+- **Capacitor shell** (needs a Mac or CI + $99/yr Apple Developer account): `npx cap add ios`, point the shell at the published SuCasa URL, submit to App Store. The app then auto-updates with every Lovable publish.
+- **Native plugins** once the shell exists: push notifications (alerts/opportunities), camera capture for inspection documents, Face ID.
 
 ## Technical notes
-- No changes to the database, backend functions, or existing web behavior; all Phase 1 work is additive (manifest, icons, safe-area CSS, native-detection util, auth callback compatibility, account deletion).
-- The Capacitor shell repo can live in the same GitHub repo (`ios/` folder) — Lovable syncs it, builds happen on your Mac/CI.
-- Update cadence: web changes deploy instantly via Lovable publish; only native-plugin changes need a new App Store build.
+- No service worker is registered anywhere (per installability rules) — manifest-only. iOS/Android cache manifest fields at install time; icons/name are set correctly the first time.
+- No database schema changes expected except deletion cleanup queries; no changes to existing features or dashboards.
