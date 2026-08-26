@@ -1,75 +1,49 @@
-# Phase 2 — Homeowner selling analysis: ROI-ranked pre-sale improvements
+# SuCasa iOS App via Capacitor (App Store Path)
 
 ## Goal
-Give homeowners and agents a clear, ranked view of which deferred-maintenance fixes and light pre-sale improvements are most likely to increase net proceeds and saleability, using data SuCasa already collects.
+Ship SuCasa to the Apple App Store by wrapping the existing mobile-first web app in a Capacitor native shell — reusing 100% of the current codebase, with native push notifications, camera document upload, and secure session storage.
 
-## How we know what to rank
+## How it works
+The web app stays exactly as-is (built and deployed by Lovable). A thin native shell loads the published SuCasa URL, so every web update ships instantly without App Store review. Native plugins add device capabilities the browser can't provide.
 
-SuCasa already builds a `HomeRecord` for every profile that contains the exact signals we need:
+```text
+Lovable (web app, sucasa.com)  <--loads--  Capacitor iOS shell (App Store app)
+        |                                         |
+   All features/UI                          Push notifications
+   Home Record, dashboards                  Camera document upload
+   AI assistant, Home Plan                  Face ID / secure storage
+```
 
-- **Condition**: inspection findings, maintenance timeline (overdue / due-soon / healthy), permit history, and service-log gaps from `src/lib/maintenance-rules.ts` and `src/lib/home-maintenance.functions.ts`.
-- **Value**: resolved home value from `src/lib/home-value.ts` (AVM → assessed → equity estimate).
-- **Property context**: year built, beds/baths, sqft, last sale from `src/lib/property-intel.functions.ts`.
+## Phase 1 — Web prep (done here in Lovable)
+1. **PWA-grade polish** so the app feels native inside the shell: app manifest, app icons (1024px), splash screen assets, safe-area insets (notch/home indicator), `apple-mobile-web-app-capable` meta, standalone display detection.
+2. **Deep-link & auth hardening**: ensure auth callbacks and magic links work when opened inside the Capacitor WebView (universal link handling, session persistence via Capacitor Preferences instead of localStorage fallback).
+3. **Native-bridge hooks**: a small `native.ts` util that detects Capacitor and no-ops on web, so native features degrade gracefully in the browser.
 
-We do **not** need a new external ROI dataset for the MVP. Instead we use a conservative, category-based rule set:
+## Phase 2 — Capacitor shell (exported to your machine / GitHub)
+This step happens outside Lovable — you export the project (GitHub integration or download) and on a Mac:
+1. `npm install @capacitor/core @capacitor/ios @capacitor/cli`
+2. `npx cap init` pointing the webDir at the built app (or configuring the shell to load the live published URL directly — recommended, so updates are instant)
+3. `npx cap add ios`, open in Xcode, set bundle ID (`com.sucasa.app`), signing team, version.
 
-1. **Inspect the Home Record** for deferred-maintenance items already flagged by the Home Plan engine (Phase 1).
-2. **Map each item to a payback bucket** using category rules:
-   - **High payback**: safety/inspection blockers (electrical hazards, roof leaks, plumbing leaks, HVAC failure), curb appeal with low cost (paint, landscaping, deep clean).
-   - **Medium payback**: mechanical systems in due-soon window (HVAC, water heater, roof within 3–5 years), minor kitchen/bath refresh.
-   - **Low payback / discuss first**: major additions, luxury finishes, anything with long payback or high cost relative to home value.
-3. **Attach a planning cost range** from a small internal table keyed by category + home-value tier, not a quote. Example: "Roof repair/replacement — typically $8K–$18K for a home in this value range."
-4. **Rank by combined score**: (payback bucket weight) × (urgency multiplier) × (visibility to buyers). Overdue safety items float to the top; optional cosmetics sink to the bottom.
-5. **Show estimated value lift as a range**, not a guarantee. The range is derived from the same rule table and is intentionally conservative.
+## Phase 3 — Native features worth adding for SuCasa
+- **Push notifications** (`@capacitor/push-notifications` + APNs): maintenance alerts, campaign replies, opportunity HOT signals for agents/lenders. Requires wiring a push token table in the backend and a send path (can reuse existing notify.sucasa.com email infra's trigger points).
+- **Camera/document capture** (`@capacitor/camera`): homeowners photograph inspection reports and permits straight into Home Care Documents — big win for the AI document intelligence flow.
+- **Face ID / Touch ID** (`capacitor-native-biometric`) for fast re-entry.
+- **Haptics** on task completion (supports the iOS feel; gamification-safe, just tactile feedback).
 
-## What gets built
+## Phase 4 — App Store submission (you + Apple)
+- Apple Developer account: **$99/year** (required, in your company's name).
+- App Store listing: screenshots (6.7" and 5.5" required), description, keywords, privacy nutrition labels (SuCasa collects financial/home data — needs accurate disclosure), privacy policy URL.
+- App Review: ~24–48h. Because the shell loads remote content, the app must be functional and valuable on first open (it is — login → dashboard).
+- Guideline watchouts: 4.2 (minimum functionality — fine, SuCasa is a real service), 5.1.1 (account deletion option — **we should add in-app account deletion before submission**, Apple rejects without it).
 
-1. **`src/lib/selling-analysis.ts`**
-   - `PreSaleItem` type: category, urgency, payback bucket, typical cost range, estimated value-lift range, rationale.
-   - `buildSellingAnalysis(homeRecord)` returns ranked items and a "net-proceeds summary" (current estimated value + low/high improvement lift).
-   - Deterministic, testable, no AI needed.
+## What I need from you / decisions
+1. **Apple Developer account** — do you have one already ($99/yr)?
+2. **A Mac with Xcode** for building/submitting (or a CI service like Capacitor's or Codemagic).
+3. **Priority of Phase 3 features** — my recommendation: push notifications first (retention), camera upload second (data flywheel).
+4. **Account deletion flow** — add before submission (Phase 1 item); confirm and I'll include it.
 
-2. **`src/lib/selling-analysis.server.ts`**
-   - Optional Gemini wrapper to generate one plain-language "why this matters" sentence per item, cached by source hash (same pattern as Home Plan AI explanations).
-
-3. **`src/lib/selling-analysis.functions.ts`**
-   - `getSellingAnalysis()` authenticated server function that loads the owner’s Home Record and returns the ranked analysis.
-   - `saveSellingAnalysisSnapshot()` to cache the last generated analysis for agents/lenders to reference.
-
-4. **`src/routes/_authenticated/sell.tsx`**
-   - New iOS/mobile-first page: "What could you net if you sold?"
-   - Hero shows current estimated value + projected net range after top improvements.
-   - Stacked cards show ranked improvements with payback badge, cost range, value-lift range, and rationale.
-   - "Get a real estimate" CTA links to a service request or agent intro (consent-gated per Phase 5 rules).
-
-5. **`src/routes/_authenticated/agent/portfolio.$id.tsx` and lender portfolio views**
-   - Add a "Listing readiness" tab or drawer section that surfaces the same ranked list for the agent/lender to discuss with the homeowner.
-   - Agent-facing copy frames it as "conversation starter," not a guarantee.
-
-6. **`src/routes/_authenticated/dashboard.tsx`**
-   - Add a "Selling analysis" `SummaryCard` (behind a simple eligibility check: value resolved + condition data present) that links to `/sell`.
-
-7. **i18n**
-   - Add `sell.*` keys to `src/lib/i18n/en.ts` and `src/lib/i18n/es.ts`.
-
-## Out of scope for this phase
-
-- Live contractor bids or pro cost estimates.
-- MLS sold-with-renovation comps (can be added later when a data source is contracted).
-- Major renovation ROI (kitchen/bath remodels) beyond simple deferred-maintenance-linked refreshes.
-- Public leaderboards or gamification.
-
-## Risks and mitigations
-
-- **Risk**: ROI numbers feel like guarantees and create liability.  
-  **Mitigation**: Every estimate is labeled as a "planning range," not a quote or appraisal. Add a one-line disclaimer.
-- **Risk**: Home Record condition data is incomplete, so the analysis is empty for some profiles.  
-  **Mitigation**: If no condition signals exist, show a prompt to upload an inspection report or schedule a walk-through, then fall back to generic guidance.
-- **Risk**: Agents/lenders see the analysis before the homeowner consents.  
-  **Mitigation**: Professional views only show the analysis for clients where `homeowner_lender_consents` or agent relationship exists; otherwise the card is hidden.
-
-## Verification
-
-- Test with the `neilterc@hotmail.com` profile (545 Huntwick Pl) and confirm ranked items appear based on its Home Record.
-- Test with a profile that has no inspection/maintenance data and confirm the empty state prompts for inspection upload.
-- Typecheck passes (`bunx tsgo --noEmit -p tsconfig.json`).
+## Technical notes
+- No changes to the database, backend functions, or existing web behavior; all Phase 1 work is additive (manifest, icons, safe-area CSS, native-detection util, auth callback compatibility, account deletion).
+- The Capacitor shell repo can live in the same GitHub repo (`ios/` folder) — Lovable syncs it, builds happen on your Mac/CI.
+- Update cadence: web changes deploy instantly via Lovable publish; only native-plugin changes need a new App Store build.
