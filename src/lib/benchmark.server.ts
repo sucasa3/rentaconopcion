@@ -317,14 +317,15 @@ export async function runBenchmark(opts: {
 }): Promise<{ runId: string; requested: number; sample: SampleReport }> {
   const sample = await buildSample(opts.seed ?? BENCHMARK_SEED, opts.size ?? BENCHMARK_SIZE);
   const { runBatchdataTest } = await import("./batchdata-test.server");
-  const { runId } = await runBatchdataTest({
+  const { runId, blocked } = await runBatchdataTest({
     label: opts.label ?? `ATTOM benchmark — ${sample.size} properties`,
     createdBy: opts.createdBy,
     notes: `benchmark:${sample.seed}`,
     noRetry: true,
     inputs: sample.rows.map((r) => ({ address: r.address, sourceLabel: `pi:${r.propertyId}` })),
   });
-  return { runId, requested: sample.size, sample };
+  return { runId, requested: sample.size, sample, blocked };
+
 }
 
 // --------------------------------------------------------------------- report
