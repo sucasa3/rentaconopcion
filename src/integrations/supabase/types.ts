@@ -408,6 +408,137 @@ export type Database = {
         }
         Relationships: []
       }
+      batchdata_test_results: {
+        Row: {
+          address_normalized: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          http_status: number | null
+          id: string
+          input_address: string
+          matched: boolean
+          normalized: Json | null
+          provider: string
+          provider_property_id: string | null
+          provider_request_id: string | null
+          raw_response: Json | null
+          requested_at: string
+          responded_at: string | null
+          source_contact_id: string | null
+          source_label: string | null
+          success: boolean
+          test_run_id: string
+          usage_info: Json | null
+        }
+        Insert: {
+          address_normalized?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          input_address: string
+          matched?: boolean
+          normalized?: Json | null
+          provider?: string
+          provider_property_id?: string | null
+          provider_request_id?: string | null
+          raw_response?: Json | null
+          requested_at?: string
+          responded_at?: string | null
+          source_contact_id?: string | null
+          source_label?: string | null
+          success?: boolean
+          test_run_id: string
+          usage_info?: Json | null
+        }
+        Update: {
+          address_normalized?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          http_status?: number | null
+          id?: string
+          input_address?: string
+          matched?: boolean
+          normalized?: Json | null
+          provider?: string
+          provider_property_id?: string | null
+          provider_request_id?: string | null
+          raw_response?: Json | null
+          requested_at?: string
+          responded_at?: string | null
+          source_contact_id?: string | null
+          source_label?: string | null
+          success?: boolean
+          test_run_id?: string
+          usage_info?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batchdata_test_results_test_run_id_fkey"
+            columns: ["test_run_id"]
+            isOneToOne: false
+            referencedRelation: "batchdata_test_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batchdata_test_runs: {
+        Row: {
+          api_request_count: number
+          created_at: string
+          created_by: string | null
+          estimated_cost_cents: number
+          failed_count: number
+          finished_at: string | null
+          id: string
+          label: string
+          matched_count: number
+          notes: string | null
+          started_at: string
+          status: string
+          submitted_count: number
+          unmatched_count: number
+          updated_at: string
+        }
+        Insert: {
+          api_request_count?: number
+          created_at?: string
+          created_by?: string | null
+          estimated_cost_cents?: number
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          label: string
+          matched_count?: number
+          notes?: string | null
+          started_at?: string
+          status?: string
+          submitted_count?: number
+          unmatched_count?: number
+          updated_at?: string
+        }
+        Update: {
+          api_request_count?: number
+          created_at?: string
+          created_by?: string | null
+          estimated_cost_cents?: number
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          label?: string
+          matched_count?: number
+          notes?: string | null
+          started_at?: string
+          status?: string
+          submitted_count?: number
+          unmatched_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_task_state: {
         Row: {
           completed_at: string
