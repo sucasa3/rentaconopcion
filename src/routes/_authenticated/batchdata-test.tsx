@@ -384,7 +384,30 @@ function BatchdataTestLab() {
           </CardContent>
         </Card>
 
+        {activeRun && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Re-score this run</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Re-runs the normalizer over the responses already stored for this run. Makes zero provider calls
+                and costs nothing.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={rescoreMutation.isPending}
+                onClick={() => rescoreMutation.mutate()}
+              >
+                {rescoreMutation.isPending ? "Re-scoring…" : "Re-score from stored responses"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {report && <BatchdataReportView report={report} />}
+
 
         {activeRun && report && (
           <Card>
