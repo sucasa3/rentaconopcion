@@ -61,10 +61,12 @@ function BatchdataTestLab() {
   const startRun = useServerFn(startBatchdataTestRun);
   const listRuns = useServerFn(getBatchdataTestRuns);
   const listResults = useServerFn(getBatchdataTestResults);
+  const parseCsv = useServerFn(parseBatchdataTestCsv);
 
   const [label, setLabel] = useState("BatchData test run");
   const [pasted, setPasted] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [csvRows, setCsvRows] = useState<{ address: string; label?: string | null }[]>([]);
   const [activeRun, setActiveRun] = useState<string | null>(null);
   const [conn, setConn] = useState<any>(null);
 
@@ -86,10 +88,26 @@ function BatchdataTestLab() {
     enabled: Boolean(activeRun),
   });
 
+  const report = useMemo(() => {
+    const rows = (results.data ?? []) as unknown as CallRow[];
+    return rows.length ? buildReport(rows) : null;
+  }, [results.data]);
+
   const connMutation = useMutation({
     mutationFn: () => connTest(),
     onSuccess: (r) => setConn(r),
     onError: (e: any) => toast.error(e?.message ?? "Connection test failed"),
+  });
+
+  const csvMutation = useMutation({
+    mutationFn: (csv: string) => parseCsv({ data: { csv } }),
+    onSuccess: (r: any) => {
+      setCsvRows(r.rows);
+      toast.success(
+        `${r.rows.length} address(es) ready${r.totalParsed > r.rows.length ? ` — capped at ${r.cap}` : ""}`,
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not read that file"),
   });
 
   const runMutation = useMutation({
@@ -98,6 +116,7 @@ function BatchdataTestLab() {
         data: {
           label,
           contactIds: selected,
+          csvRows,
           pastedAddresses: pasted.split("\n").map((l) => l.trim()).filter(Boolean),
         },
       }),
@@ -110,25 +129,55 @@ function BatchdataTestLab() {
   });
 
   const totalSelected = useMemo(
-    () => selected.length + pasted.split("\n").filter((l) => l.trim()).length,
-    [selected, pasted],
+    () => selected.length + csvRows.length + pasted.split("\n").filter((l) => l.trim()).length,
+    [selected, csvRows, pasted],
   );
 
   function exportCsv() {
-    const rows = results.data ?? [];
+    const rows = (results.data ?? []) as any[];
     if (!rows.length) return;
-    const header = ["input_address", "matched", "success", "http_status", "duration_ms", "owner", "estimate", "loan_amount", "error"];
+    const header = [
+      "home_index",
+      "source_label",
+      "input_address",
+      "attempt",
+      "is_retry",
+      "is_duplicate_address",
+      "cache_hit",
+      "request_type",
+      "http_status",
+      "success",
+      "matched",
+      "completeness",
+      "duration_ms",
+      "owner",
+      "estimate",
+      "loan_amount",
+      "year_built",
+      "last_sale_date",
+      "error",
+    ];
     const lines = rows.map((r: any) => {
       const n = r.normalized;
       return [
+        r.home_index,
+        r.source_label ?? "",
         r.input_address,
-        r.matched,
-        r.success,
+        r.attempt,
+        r.is_retry,
+        r.is_duplicate_address,
+        r.cache_hit,
+        r.request_type ?? "",
         r.http_status,
+        r.success,
+        r.matched,
+        r.completeness ?? "",
         r.duration_ms,
         n?.ownership?.ownerName ?? "",
         n?.valuation?.estimate ?? "",
         n?.mortgage?.loanAmount ?? "",
+        n?.property?.yearBuilt ?? "",
+        n?.sales?.lastSaleDate ?? "",
         (r.error_message ?? "").replace(/"/g, "'"),
       ]
         .map((v) => `"${String(v ?? "")}"`)
@@ -142,6 +191,7 @@ function BatchdataTestLab() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
 
   if (isPending) {
     return (
