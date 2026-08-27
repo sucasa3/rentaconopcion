@@ -300,6 +300,29 @@ function BatchdataTestLab() {
 
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Or upload a homeowner list ({csvRows.length} ready)
+              </p>
+              <BulkClientUpload
+                title="Upload evaluation list"
+                hint="Excel or CSV with name + address columns. Test only — this never creates homeowners, portfolio clients, or production property records."
+                busy={csvMutation.isPending}
+                onCsv={(csv) => csvMutation.mutate(csv)}
+              />
+              {csvRows.length > 0 && (
+                <div className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-xl border bg-background p-2 text-xs">
+                  {csvRows.map((r, i) => (
+                    <p key={`${r.address}-${i}`} className="truncate text-muted-foreground">
+                      <span className="mr-2 tabular-nums">{i + 1}.</span>
+                      {r.label ? `${r.label} — ` : ""}
+                      {r.address}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Or paste addresses (one per line)
               </p>
               <Textarea
@@ -310,15 +333,23 @@ function BatchdataTestLab() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">{totalSelected} address(es) queued · max 100 per run</p>
-              <Button
-                onClick={() => runMutation.mutate()}
-                disabled={runMutation.isPending || totalSelected === 0}
-              >
-                {runMutation.isPending ? "Running…" : "Start test run"}
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">{totalSelected} address(es) queued · max 150 per run</p>
+              <div className="flex gap-2">
+                {csvRows.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setCsvRows([])}>
+                    Clear list
+                  </Button>
+                )}
+                <Button
+                  onClick={() => runMutation.mutate()}
+                  disabled={runMutation.isPending || totalSelected === 0}
+                >
+                  {runMutation.isPending ? "Running…" : "Start test run"}
+                </Button>
+              </div>
             </div>
+
           </CardContent>
         </Card>
 
