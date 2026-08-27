@@ -34,7 +34,6 @@ import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authenticated/agent/route'
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
-import { Route as ApiPublicBenchTempRouteImport } from './routes/api/public/bench-temp'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenticated/lender/tasks'
 import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
@@ -190,11 +189,6 @@ const AuthenticatedAgentIndexRoute = AuthenticatedAgentIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAgentRouteRoute,
-} as any)
-const ApiPublicBenchTempRoute = ApiPublicBenchTempRouteImport.update({
-  id: '/api/public/bench-temp',
-  path: '/api/public/bench-temp',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
   id: '/requests/$id',
@@ -388,7 +382,6 @@ export interface FileRoutesByFullPath {
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
-  '/api/public/bench-temp': typeof ApiPublicBenchTempRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
@@ -441,7 +434,6 @@ export interface FileRoutesByTo {
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
-  '/api/public/bench-temp': typeof ApiPublicBenchTempRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
@@ -497,7 +489,6 @@ export interface FileRoutesById {
   '/_authenticated/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/_authenticated/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
-  '/api/public/bench-temp': typeof ApiPublicBenchTempRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
@@ -554,7 +545,6 @@ export interface FileRouteTypes {
     | '/lender/opportunities'
     | '/lender/tasks'
     | '/requests/$id'
-    | '/api/public/bench-temp'
     | '/agent/'
     | '/lender/'
     | '/agent/add-client/$id'
@@ -607,7 +597,6 @@ export interface FileRouteTypes {
     | '/lender/opportunities'
     | '/lender/tasks'
     | '/requests/$id'
-    | '/api/public/bench-temp'
     | '/agent'
     | '/lender'
     | '/agent/add-client/$id'
@@ -662,7 +651,6 @@ export interface FileRouteTypes {
     | '/_authenticated/lender/opportunities'
     | '/_authenticated/lender/tasks'
     | '/_authenticated/requests/$id'
-    | '/api/public/bench-temp'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
     | '/_authenticated/agent/add-client/$id'
@@ -697,7 +685,6 @@ export interface RootRouteChildren {
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ApiPublicBenchTempRoute: typeof ApiPublicBenchTempRoute
   ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
   ApiPublicEnrichTickRoute: typeof ApiPublicEnrichTickRoute
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
@@ -886,13 +873,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/agent/'
       preLoaderRoute: typeof AuthenticatedAgentIndexRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/api/public/bench-temp': {
-      id: '/api/public/bench-temp'
-      path: '/api/public/bench-temp'
-      fullPath: '/api/public/bench-temp'
-      preLoaderRoute: typeof ApiPublicBenchTempRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/requests/$id': {
       id: '/_authenticated/requests/$id'
@@ -1219,7 +1199,6 @@ const rootRouteChildren: RootRouteChildren = {
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ApiPublicBenchTempRoute: ApiPublicBenchTempRoute,
   ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,
   ApiPublicEnrichTickRoute: ApiPublicEnrichTickRoute,
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
