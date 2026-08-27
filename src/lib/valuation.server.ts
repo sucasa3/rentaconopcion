@@ -346,88 +346,9 @@ export async function getPropertyIntel(
     }
   }
 
-  // 2c. BatchData fallback for classes ATTOM couldn't fill.
-  // ATTOM is primary by default; BatchData is the fallback when ATTOM is
-  // disabled, over budget, or returned no data for a requested class.
-  const providerPref = opts.provider ?? "auto";
-  const batchdataEligible = providerPref === "batchdata" || providerPref === "auto";
-  if (batchdataEligible) {
-    const resolvedStaleOrMissing = ordered.filter((cls) => {
-      const resolvedFresh = result.classes[cls]?.data && !result.classes[cls]?.stale;
-      if (resolvedFresh) return false;
-      if (providerPref === "batchdata") return true;
-      // auto: only fall back when ATTOM failed or was skipped
-      if (opts.cachedOnlyClasses?.includes(cls)) return false;
-      if (cacheOnly && !existing?.[cls]) return false;
-      return true;
-    });
+  // NOTE: BatchData is intentionally NOT wired into this production path.
+  // It lives behind an isolated admin test harness (see batchdata-test.server.ts).
 
-    if (resolvedStaleOrMissing.length > 0) {
-      const { data: bdHealth } = await supabaseAdmin
-        .from("data_provider_health")
-        .select("endpoint, enabled")
-        .eq("provider", "batchdata");
-      const batchdataDisabled = new Set(
-        (bdHealth ?? []).filter((r) => !r.enabled).map((r) => r.endpoint),
-      );
-      const toFetch = resolvedStaleOrMissing.filter((c) => !batchdataDisabled.has(c));
-
-      if (toFetch.length > 0) {
-        const bd = await batchdataFetchAll(address);
-        const bdCost = batchdataCostCents("detail"); // one call covers all attributes
-
-        await supabaseAdmin.from("batchdata_call_log").insert({
-          endpoint: "all-attributes",
-          address_normalized: normalized,
-          requested_by: opts.requestedBy ?? null,
-          cache_hit: false,
-          cost_cents: bd.ok ? bdCost : 0,
-          status: bd.status,
-          error_message: bd.ok ? null : bd.error,
-          revenue_source: opts.revenueSource,
-        });
-
-        if (bd.ok) {
-          const now = new Date().toISOString();
-          const extractors: Record<
-            IntelClass,
-            (raw: unknown) => AvmSummary | DetailSummary | TaxSummary | SalesSummary | MortgageSummary | PermitsSummary | null
-          > = {
-            avm: extractBatchdataAvm,
-            detail: extractBatchdataDetail,
-            tax: extractBatchdataTax,
-            sales: extractBatchdataSales,
-            permits: extractBatchdataPermits,
-            mortgage: extractBatchdataMortgage,
-            neighborhood: () => null,
-            risk: () => null,
-            owner: () => null,
-          };
-
-          for (const cls of toFetch) {
-            const extracted = extractors[cls](bd.data);
-            const meaningful = extracted && meaningfulBatchdataResult(cls, extracted);
-
-            if (meaningful) {
-              updates[cls] = extracted;
-              updates[`${cls}_fetched_at`] = now;
-              touched = true;
-              result.classes[cls] = { data: extracted, fetchedAt: now, stale: false };
-              delete result.errors[cls];
-            } else {
-              result.errors[cls] = "BatchData returned no usable data for this address.";
-              await recordMiss(cls, 200, "BatchData SuccessWithoutResult");
-            }
-          }
-        } else {
-          for (const cls of toFetch) {
-            result.errors[cls] = `BatchData failed: ${bd.error}`;
-            await recordMiss(cls, bd.status ?? null, bd.error);
-          }
-        }
-      }
-    }
-  }
 
   // 3. Persist any new/refreshed classes into property_intel (upsert)
   if (touched) {
