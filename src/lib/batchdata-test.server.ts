@@ -257,3 +257,58 @@ export async function runBatchdataTest(opts: {
   return { runId: run.id };
 }
 
+
+/**
+ * Re-score a completed run from the stored raw responses. Zero provider calls:
+ * this only re-runs the normalizer + coverage classifier over data already in
+ * `batchdata_test_results`.
+ */
+export async function rescoreBatchdataRun(runId: string): Promise<{
+  rowsUpdated: number;
+  matched: number;
+  unmatched: number;
+  failed: number;
+}> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: rows, error } = await supabaseAdmin
+    .from("batchdata_test_results")
+    .select("id, success, raw_response, home_index")
+    .eq("test_run_id", runId);
+  if (error) throw new Error(error.message);
+
+  let rowsUpdated = 0;
+  const finalByHome = new Map<number, { matched: boolean; success: boolean }>();
+
+  for (const row of rows ?? []) {
+    const normalized = row.success ? normalizeBatchdataProperty(row.raw_response) : null;
+    const didMatch = isMatched(normalized);
+    const coverage = evaluateCoverage(normalized);
+    await supabaseAdmin
+      .from("batchdata_test_results")
+      .update({
+        normalized: normalized as any,
+        coverage: coverage as any,
+        matched: didMatch,
+        completeness: classifyCompleteness(didMatch, coverage),
+      })
+      .eq("id", row.id);
+    rowsUpdated += 1;
+    finalByHome.set(row.home_index ?? rowsUpdated, { matched: didMatch, success: Boolean(row.success) });
+  }
+
+  let matched = 0;
+  let unmatched = 0;
+  let failed = 0;
+  for (const v of finalByHome.values()) {
+    if (!v.success) failed += 1;
+    else if (v.matched) matched += 1;
+    else unmatched += 1;
+  }
+
+  await supabaseAdmin
+    .from("batchdata_test_runs")
+    .update({ matched_count: matched, unmatched_count: unmatched, failed_count: failed })
+    .eq("id", runId);
+
+  return { rowsUpdated, matched, unmatched, failed };
+}
