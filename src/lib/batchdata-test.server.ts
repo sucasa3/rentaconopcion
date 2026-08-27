@@ -7,11 +7,14 @@
  */
 
 import {
+  firstBatchdataProperty,
   isMatched,
   normalizeBatchdataProperty,
   normalizeTestAddress,
   parseTestAddress,
 } from "./batchdata-normalize";
+import { classifyCompleteness, evaluateCoverage } from "./batchdata-report";
+
 
 const BATCHDATA_BASE = "https://api.batchdata.com/api/v1";
 const LOOKUP_PATH = "/property/lookup/all-attributes";
@@ -124,6 +127,14 @@ export interface TestInput {
   sourceLabel?: string | null;
 }
 
+/** Hard cap for a single evaluation run. */
+export const MAX_TEST_INPUTS = 150;
+
+function providerPropertyId(raw: unknown): string | null {
+  const p = firstBatchdataProperty(raw) as Record<string, any> | null;
+  return (p?.["_id"] as string | undefined) ?? (p?.["id"] as string | undefined) ?? null;
+}
+
 export async function runBatchdataTest(opts: {
   label: string;
   inputs: TestInput[];
@@ -131,7 +142,7 @@ export async function runBatchdataTest(opts: {
   notes?: string | null;
 }): Promise<{ runId: string }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const inputs = opts.inputs.slice(0, 100);
+  const inputs = opts.inputs.slice(0, MAX_TEST_INPUTS);
 
   const { data: run, error: runErr } = await supabaseAdmin
     .from("batchdata_test_runs")
@@ -140,6 +151,10 @@ export async function runBatchdataTest(opts: {
       created_by: opts.createdBy,
       status: "running",
       submitted_count: inputs.length,
+      input_record_count: inputs.length,
+      provider: "batchdata",
+      endpoint: LOOKUP_PATH,
+      attom_call_count: 0,
       notes: opts.notes ?? null,
     })
     .select("id")
@@ -151,46 +166,78 @@ export async function runBatchdataTest(opts: {
   let failed = 0;
   let requests = 0;
 
+  // Duplicate detection + in-run cache. Duplicates are LABELLED, never
+  // skipped — the point of the test is to measure them.
+  const seenAddresses = new Set<string>();
   const CONCURRENCY = 3;
+
   for (let i = 0; i < inputs.length; i += CONCURRENCY) {
     const slice = inputs.slice(i, i + CONCURRENCY);
-    const rows = await Promise.all(
-      slice.map(async (input) => {
-        const requestedAt = new Date().toISOString();
-        const call = await callBatchdata(input.address);
-        requests += 1;
-        const normalized = call.ok ? normalizeBatchdataProperty(call.raw) : null;
-        const didMatch = isMatched(normalized);
-        if (!call.ok) failed += 1;
-        else if (didMatch) matched += 1;
+    const nested = await Promise.all(
+      slice.map(async (input, sliceIdx) => {
+        const homeIndex = i + sliceIdx + 1;
+        const normalizedAddress = normalizeTestAddress(input.address);
+        const isDuplicate = seenAddresses.has(normalizedAddress);
+        seenAddresses.add(normalizedAddress);
+
+        const rows: any[] = [];
+        let attempt = 0;
+        let call: RawCall | null = null;
+
+        // Real workflow: one bundled lookup, one retry on transport/5xx only.
+        while (attempt < 2) {
+          attempt += 1;
+          const requestedAt = new Date().toISOString();
+          call = await callBatchdata(input.address);
+          requests += 1;
+
+          const normalized = call.ok ? normalizeBatchdataProperty(call.raw) : null;
+          const didMatch = isMatched(normalized);
+          const coverage = evaluateCoverage(normalized);
+
+          rows.push({
+            test_run_id: run.id,
+            home_index: homeIndex,
+            source_contact_id: input.sourceContactId ?? null,
+            source_label: input.sourceLabel ?? null,
+            input_address: input.address,
+            address_normalized: normalizedAddress,
+            provider: "batchdata",
+            request_type: "lookup_all_attributes",
+            attempt,
+            is_retry: attempt > 1,
+            is_duplicate_address: isDuplicate,
+            cache_hit: false,
+            provider_request_id: call.requestId,
+            provider_property_id: providerPropertyId(call.raw),
+            http_status: call.status,
+            success: call.ok,
+            matched: didMatch,
+            error_message: call.error,
+            duration_ms: call.durationMs,
+            raw_response: call.raw as any,
+            normalized: normalized as any,
+            coverage: coverage as any,
+            completeness: classifyCompleteness(didMatch, coverage),
+            usage_info: ((call.raw as any)?.status ?? null) as any,
+            requested_at: requestedAt,
+            responded_at: new Date().toISOString(),
+          });
+
+          const retryable = !call.ok && (call.status === 0 || call.status >= 500);
+          if (!retryable) break;
+        }
+
+        const final = rows[rows.length - 1];
+        if (!final.success) failed += 1;
+        else if (final.matched) matched += 1;
         else unmatched += 1;
 
-        return {
-          test_run_id: run.id,
-          source_contact_id: input.sourceContactId ?? null,
-          source_label: input.sourceLabel ?? null,
-          input_address: input.address,
-          address_normalized: normalizeTestAddress(input.address),
-          provider: "batchdata",
-          provider_request_id: call.requestId,
-          provider_property_id:
-            ((call.raw as any)?.results?.properties?.[0]?._id as string | undefined) ??
-            ((call.raw as any)?.results?.properties?.[0]?.id as string | undefined) ??
-            null,
-          http_status: call.status,
-          success: call.ok,
-          matched: didMatch,
-          error_message: call.error,
-          duration_ms: call.durationMs,
-          raw_response: call.raw as any,
-          normalized: normalized as any,
-          usage_info: ((call.raw as any)?.status ?? null) as any,
-          requested_at: requestedAt,
-          responded_at: new Date().toISOString(),
-        };
+        return rows;
       }),
     );
-    await supabaseAdmin.from("batchdata_test_results").insert(rows);
+    const flat = nested.flat();
+    if (flat.length) await supabaseAdmin.from("batchdata_test_results").insert(flat);
   }
 
   await supabaseAdmin
@@ -201,10 +248,12 @@ export async function runBatchdataTest(opts: {
       unmatched_count: unmatched,
       failed_count: failed,
       api_request_count: requests,
-      estimated_cost_cents: matched * BATCHDATA_EST_COST_CENTS,
+      attom_call_count: 0,
+      estimated_cost_cents: requests * BATCHDATA_EST_COST_CENTS,
       finished_at: new Date().toISOString(),
     })
     .eq("id", run.id);
 
   return { runId: run.id };
 }
+

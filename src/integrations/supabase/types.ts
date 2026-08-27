@@ -411,18 +411,26 @@ export type Database = {
       batchdata_test_results: {
         Row: {
           address_normalized: string | null
+          attempt: number
+          cache_hit: boolean
+          completeness: string | null
+          coverage: Json | null
           created_at: string
           duration_ms: number | null
           error_message: string | null
+          home_index: number | null
           http_status: number | null
           id: string
           input_address: string
+          is_duplicate_address: boolean
+          is_retry: boolean
           matched: boolean
           normalized: Json | null
           provider: string
           provider_property_id: string | null
           provider_request_id: string | null
           raw_response: Json | null
+          request_type: string
           requested_at: string
           responded_at: string | null
           source_contact_id: string | null
@@ -433,18 +441,26 @@ export type Database = {
         }
         Insert: {
           address_normalized?: string | null
+          attempt?: number
+          cache_hit?: boolean
+          completeness?: string | null
+          coverage?: Json | null
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
+          home_index?: number | null
           http_status?: number | null
           id?: string
           input_address: string
+          is_duplicate_address?: boolean
+          is_retry?: boolean
           matched?: boolean
           normalized?: Json | null
           provider?: string
           provider_property_id?: string | null
           provider_request_id?: string | null
           raw_response?: Json | null
+          request_type?: string
           requested_at?: string
           responded_at?: string | null
           source_contact_id?: string | null
@@ -455,18 +471,26 @@ export type Database = {
         }
         Update: {
           address_normalized?: string | null
+          attempt?: number
+          cache_hit?: boolean
+          completeness?: string | null
+          coverage?: Json | null
           created_at?: string
           duration_ms?: number | null
           error_message?: string | null
+          home_index?: number | null
           http_status?: number | null
           id?: string
           input_address?: string
+          is_duplicate_address?: boolean
+          is_retry?: boolean
           matched?: boolean
           normalized?: Json | null
           provider?: string
           provider_property_id?: string | null
           provider_request_id?: string | null
           raw_response?: Json | null
+          request_type?: string
           requested_at?: string
           responded_at?: string | null
           source_contact_id?: string | null
@@ -488,15 +512,19 @@ export type Database = {
       batchdata_test_runs: {
         Row: {
           api_request_count: number
+          attom_call_count: number
           created_at: string
           created_by: string | null
+          endpoint: string | null
           estimated_cost_cents: number
           failed_count: number
           finished_at: string | null
           id: string
+          input_record_count: number | null
           label: string
           matched_count: number
           notes: string | null
+          provider: string
           started_at: string
           status: string
           submitted_count: number
@@ -505,15 +533,19 @@ export type Database = {
         }
         Insert: {
           api_request_count?: number
+          attom_call_count?: number
           created_at?: string
           created_by?: string | null
+          endpoint?: string | null
           estimated_cost_cents?: number
           failed_count?: number
           finished_at?: string | null
           id?: string
+          input_record_count?: number | null
           label: string
           matched_count?: number
           notes?: string | null
+          provider?: string
           started_at?: string
           status?: string
           submitted_count?: number
@@ -522,15 +554,19 @@ export type Database = {
         }
         Update: {
           api_request_count?: number
+          attom_call_count?: number
           created_at?: string
           created_by?: string | null
+          endpoint?: string | null
           estimated_cost_cents?: number
           failed_count?: number
           finished_at?: string | null
           id?: string
+          input_record_count?: number | null
           label?: string
           matched_count?: number
           notes?: string | null
+          provider?: string
           started_at?: string
           status?: string
           submitted_count?: number

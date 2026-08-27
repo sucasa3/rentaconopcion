@@ -11,13 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { FlaskConical, CheckCircle2, XCircle, Download } from "lucide-react";
+import { BulkClientUpload } from "@/components/bulk-client-upload";
+import { BatchdataReportView } from "@/components/batchdata-report-view";
+import { buildReport, type CallRow } from "@/lib/batchdata-report";
 import {
   getBatchdataTestResults,
   getBatchdataTestRuns,
   listBatchdataCandidates,
+  parseBatchdataTestCsv,
   startBatchdataTestRun,
   testBatchdataConnection,
 } from "@/lib/batchdata-test.functions";
+
 
 export const Route = createFileRoute("/_authenticated/batchdata-test")({
   head: () => ({
@@ -56,10 +61,12 @@ function BatchdataTestLab() {
   const startRun = useServerFn(startBatchdataTestRun);
   const listRuns = useServerFn(getBatchdataTestRuns);
   const listResults = useServerFn(getBatchdataTestResults);
+  const parseCsv = useServerFn(parseBatchdataTestCsv);
 
   const [label, setLabel] = useState("BatchData test run");
   const [pasted, setPasted] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [csvRows, setCsvRows] = useState<{ address: string; label?: string | null }[]>([]);
   const [activeRun, setActiveRun] = useState<string | null>(null);
   const [conn, setConn] = useState<any>(null);
 
@@ -81,10 +88,26 @@ function BatchdataTestLab() {
     enabled: Boolean(activeRun),
   });
 
+  const report = useMemo(() => {
+    const rows = (results.data ?? []) as unknown as CallRow[];
+    return rows.length ? buildReport(rows) : null;
+  }, [results.data]);
+
   const connMutation = useMutation({
     mutationFn: () => connTest(),
     onSuccess: (r) => setConn(r),
     onError: (e: any) => toast.error(e?.message ?? "Connection test failed"),
+  });
+
+  const csvMutation = useMutation({
+    mutationFn: (csv: string) => parseCsv({ data: { csv } }),
+    onSuccess: (r: any) => {
+      setCsvRows(r.rows);
+      toast.success(
+        `${r.rows.length} address(es) ready${r.totalParsed > r.rows.length ? ` — capped at ${r.cap}` : ""}`,
+      );
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not read that file"),
   });
 
   const runMutation = useMutation({
@@ -93,6 +116,7 @@ function BatchdataTestLab() {
         data: {
           label,
           contactIds: selected,
+          csvRows,
           pastedAddresses: pasted.split("\n").map((l) => l.trim()).filter(Boolean),
         },
       }),
@@ -105,25 +129,55 @@ function BatchdataTestLab() {
   });
 
   const totalSelected = useMemo(
-    () => selected.length + pasted.split("\n").filter((l) => l.trim()).length,
-    [selected, pasted],
+    () => selected.length + csvRows.length + pasted.split("\n").filter((l) => l.trim()).length,
+    [selected, csvRows, pasted],
   );
 
   function exportCsv() {
-    const rows = results.data ?? [];
+    const rows = (results.data ?? []) as any[];
     if (!rows.length) return;
-    const header = ["input_address", "matched", "success", "http_status", "duration_ms", "owner", "estimate", "loan_amount", "error"];
+    const header = [
+      "home_index",
+      "source_label",
+      "input_address",
+      "attempt",
+      "is_retry",
+      "is_duplicate_address",
+      "cache_hit",
+      "request_type",
+      "http_status",
+      "success",
+      "matched",
+      "completeness",
+      "duration_ms",
+      "owner",
+      "estimate",
+      "loan_amount",
+      "year_built",
+      "last_sale_date",
+      "error",
+    ];
     const lines = rows.map((r: any) => {
       const n = r.normalized;
       return [
+        r.home_index,
+        r.source_label ?? "",
         r.input_address,
-        r.matched,
-        r.success,
+        r.attempt,
+        r.is_retry,
+        r.is_duplicate_address,
+        r.cache_hit,
+        r.request_type ?? "",
         r.http_status,
+        r.success,
+        r.matched,
+        r.completeness ?? "",
         r.duration_ms,
         n?.ownership?.ownerName ?? "",
         n?.valuation?.estimate ?? "",
         n?.mortgage?.loanAmount ?? "",
+        n?.property?.yearBuilt ?? "",
+        n?.sales?.lastSaleDate ?? "",
         (r.error_message ?? "").replace(/"/g, "'"),
       ]
         .map((v) => `"${String(v ?? "")}"`)
@@ -137,6 +191,7 @@ function BatchdataTestLab() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
 
   if (isPending) {
     return (
@@ -245,6 +300,29 @@ function BatchdataTestLab() {
 
             <div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Or upload a homeowner list ({csvRows.length} ready)
+              </p>
+              <BulkClientUpload
+                title="Upload evaluation list"
+                hint="Excel or CSV with name + address columns. Test only — this never creates homeowners, portfolio clients, or production property records."
+                busy={csvMutation.isPending}
+                onCsv={(csv) => csvMutation.mutate(csv)}
+              />
+              {csvRows.length > 0 && (
+                <div className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-xl border bg-background p-2 text-xs">
+                  {csvRows.map((r, i) => (
+                    <p key={`${r.address}-${i}`} className="truncate text-muted-foreground">
+                      <span className="mr-2 tabular-nums">{i + 1}.</span>
+                      {r.label ? `${r.label} — ` : ""}
+                      {r.address}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Or paste addresses (one per line)
               </p>
               <Textarea
@@ -255,15 +333,23 @@ function BatchdataTestLab() {
               />
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">{totalSelected} address(es) queued · max 100 per run</p>
-              <Button
-                onClick={() => runMutation.mutate()}
-                disabled={runMutation.isPending || totalSelected === 0}
-              >
-                {runMutation.isPending ? "Running…" : "Start test run"}
-              </Button>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">{totalSelected} address(es) queued · max 150 per run</p>
+              <div className="flex gap-2">
+                {csvRows.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setCsvRows([])}>
+                    Clear list
+                  </Button>
+                )}
+                <Button
+                  onClick={() => runMutation.mutate()}
+                  disabled={runMutation.isPending || totalSelected === 0}
+                >
+                  {runMutation.isPending ? "Running…" : "Start test run"}
+                </Button>
+              </div>
             </div>
+
           </CardContent>
         </Card>
 
@@ -298,7 +384,45 @@ function BatchdataTestLab() {
           </CardContent>
         </Card>
 
+        {report && <BatchdataReportView report={report} />}
+
+        {activeRun && report && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Per-home detail</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {report.homes.map((h) => (
+                <div key={h.key} className="rounded-xl border bg-background p-3 text-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="min-w-0">
+                      <span className="mr-2 text-xs tabular-nums text-muted-foreground">#{h.index}</span>
+                      <span className="font-medium">{h.label ?? h.address}</span>
+                      {h.label && <span className="block truncate text-xs text-muted-foreground">{h.address}</span>}
+                    </span>
+                    <Badge
+                      variant={
+                        h.completeness === "FULL" ? "default" : h.completeness === "PARTIAL" ? "secondary" : "destructive"
+                      }
+                    >
+                      {h.completeness}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {h.calls} call{h.calls === 1 ? "" : "s"}
+                    {h.retries > 0 ? ` · ${h.retries} retry` : ""}
+                    {h.duplicate ? " · duplicate address" : ""}
+                    {h.missing.length ? ` · missing: ${h.missing.join(", ")}` : ""}
+                    {h.errors.length ? ` · ${h.errors[0]}` : ""}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {activeRun && (
+
           <Card>
             <CardHeader className="flex-row items-center justify-between pb-3">
               <CardTitle className="text-base">Results</CardTitle>

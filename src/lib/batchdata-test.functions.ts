@@ -44,13 +44,14 @@ export const startBatchdataTestRun = createServerFn({ method: "POST" })
       label: string;
       contactIds?: string[];
       pastedAddresses?: string[];
+      csvRows?: { address: string; label?: string | null }[];
       notes?: string | null;
     }) => input,
   )
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { runBatchdataTest } = await import("./batchdata-test.server");
+    const { runBatchdataTest, MAX_TEST_INPUTS } = await import("./batchdata-test.server");
 
     const inputs: { address: string; sourceContactId?: string | null; sourceLabel?: string | null }[] = [];
 
@@ -58,13 +59,18 @@ export const startBatchdataTestRun = createServerFn({ method: "POST" })
       const { data: rows } = await supabaseAdmin
         .from("lender_portfolio_clients")
         .select("id, client_name, address_line1, city, state, zip")
-        .in("id", data.contactIds.slice(0, 100));
+        .in("id", data.contactIds.slice(0, MAX_TEST_INPUTS));
       for (const r of rows ?? []) {
         const address = [r.address_line1, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
           .filter(Boolean)
           .join(", ");
         if (address.trim()) inputs.push({ address, sourceContactId: r.id, sourceLabel: r.client_name });
       }
+    }
+
+    for (const row of data.csvRows ?? []) {
+      const address = (row.address ?? "").trim();
+      if (address) inputs.push({ address, sourceLabel: row.label ?? "csv" });
     }
 
     for (const line of data.pastedAddresses ?? []) {
@@ -81,6 +87,36 @@ export const startBatchdataTestRun = createServerFn({ method: "POST" })
       notes: data.notes ?? null,
     });
   });
+
+/**
+ * Parse an uploaded CSV into test inputs. Preview only — this never creates
+ * homeowners, portfolio clients, or production property records.
+ */
+export const parseBatchdataTestCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { csv: string }) => input)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { parseClientCsv } = await import("./lender.server");
+    const { MAX_TEST_INPUTS } = await import("./batchdata-test.server");
+    const rows = parseClientCsv(data.csv);
+    const parsed = rows
+      .map((r) => ({
+        label: r.full_name ?? null,
+        address: [r.address, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
+          .filter(Boolean)
+          .join(", ")
+          .trim(),
+      }))
+      .filter((r) => r.address.length > 0);
+    return {
+      rows: parsed.slice(0, MAX_TEST_INPUTS),
+      totalParsed: parsed.length,
+      skipped: rows.length - parsed.length,
+      cap: MAX_TEST_INPUTS,
+    };
+  });
+
 
 export const getBatchdataTestRuns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
