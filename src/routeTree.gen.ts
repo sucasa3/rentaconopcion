@@ -27,6 +27,7 @@ import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHomeCareRouteImport } from './routes/_authenticated/home-care'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBatchdataTestRouteImport } from './routes/_authenticated/batchdata-test'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
@@ -44,7 +45,6 @@ import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_a
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
 import { Route as AuthenticatedAgentFunnelRouteImport } from './routes/_authenticated/agent/funnel'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
-import { Route as AuthenticatedAdminBatchdataTestRouteImport } from './routes/_authenticated/admin/batchdata-test'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -152,6 +152,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBatchdataTestRoute =
+  AuthenticatedBatchdataTestRouteImport.update({
+    id: '/batchdata-test',
+    path: '/batchdata-test',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
@@ -247,12 +253,6 @@ const AuthenticatedAgentCampaignsRoute =
     id: '/campaigns',
     path: '/campaigns',
     getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAdminBatchdataTestRoute =
-  AuthenticatedAdminBatchdataTestRouteImport.update({
-    id: '/batchdata-test',
-    path: '/batchdata-test',
-    getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
@@ -362,15 +362,15 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/agent': typeof AuthenticatedAgentRouteRouteWithChildren
   '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
   '/assistant': typeof AuthenticatedAssistantRoute
+  '/batchdata-test': typeof AuthenticatedBatchdataTestRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
   '/home-plan': typeof AuthenticatedHomePlanRoute
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
-  '/admin/batchdata-test': typeof AuthenticatedAdminBatchdataTestRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/funnel': typeof AuthenticatedAgentFunnelRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
@@ -414,15 +414,15 @@ export interface FileRoutesByTo {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
   '/assistant': typeof AuthenticatedAssistantRoute
+  '/batchdata-test': typeof AuthenticatedBatchdataTestRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
   '/home-plan': typeof AuthenticatedHomePlanRoute
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
-  '/admin/batchdata-test': typeof AuthenticatedAdminBatchdataTestRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/funnel': typeof AuthenticatedAgentFunnelRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
@@ -469,15 +469,15 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/agent': typeof AuthenticatedAgentRouteRouteWithChildren
   '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
+  '/_authenticated/batchdata-test': typeof AuthenticatedBatchdataTestRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/home-care': typeof AuthenticatedHomeCareRoute
   '/_authenticated/home-plan': typeof AuthenticatedHomePlanRoute
   '/_authenticated/money': typeof AuthenticatedMoneyRoute
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
-  '/_authenticated/admin/batchdata-test': typeof AuthenticatedAdminBatchdataTestRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/_authenticated/agent/funnel': typeof AuthenticatedAgentFunnelRoute
   '/_authenticated/agent/network': typeof AuthenticatedAgentNetworkRoute
@@ -527,13 +527,13 @@ export interface FileRouteTypes {
     | '/lender'
     | '/admin'
     | '/assistant'
+    | '/batchdata-test'
     | '/dashboard'
     | '/documents'
     | '/home-care'
     | '/home-plan'
     | '/money'
     | '/timeline'
-    | '/admin/batchdata-test'
     | '/agent/campaigns'
     | '/agent/funnel'
     | '/agent/network'
@@ -579,13 +579,13 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/assistant'
+    | '/batchdata-test'
     | '/dashboard'
     | '/documents'
     | '/home-care'
     | '/home-plan'
     | '/money'
     | '/timeline'
-    | '/admin/batchdata-test'
     | '/agent/campaigns'
     | '/agent/funnel'
     | '/agent/network'
@@ -633,13 +633,13 @@ export interface FileRouteTypes {
     | '/_authenticated/lender'
     | '/_authenticated/admin'
     | '/_authenticated/assistant'
+    | '/_authenticated/batchdata-test'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/_authenticated/home-care'
     | '/_authenticated/home-plan'
     | '/_authenticated/money'
     | '/_authenticated/timeline'
-    | '/_authenticated/admin/batchdata-test'
     | '/_authenticated/agent/campaigns'
     | '/_authenticated/agent/funnel'
     | '/_authenticated/agent/network'
@@ -825,6 +825,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/batchdata-test': {
+      id: '/_authenticated/batchdata-test'
+      path: '/batchdata-test'
+      fullPath: '/batchdata-test'
+      preLoaderRoute: typeof AuthenticatedBatchdataTestRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/assistant': {
       id: '/_authenticated/assistant'
       path: '/assistant'
@@ -943,13 +950,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/agent/campaigns'
       preLoaderRoute: typeof AuthenticatedAgentCampaignsRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/_authenticated/admin/batchdata-test': {
-      id: '/_authenticated/admin/batchdata-test'
-      path: '/batchdata-test'
-      fullPath: '/admin/batchdata-test'
-      preLoaderRoute: typeof AuthenticatedAdminBatchdataTestRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
@@ -1153,22 +1153,12 @@ const AuthenticatedLenderRouteRouteWithChildren =
     AuthenticatedLenderRouteRouteChildren,
   )
 
-interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminBatchdataTestRoute: typeof AuthenticatedAdminBatchdataTestRoute
-}
-
-const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminBatchdataTestRoute: AuthenticatedAdminBatchdataTestRoute,
-}
-
-const AuthenticatedAdminRouteWithChildren =
-  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentRouteRoute: typeof AuthenticatedAgentRouteRouteWithChildren
   AuthenticatedLenderRouteRoute: typeof AuthenticatedLenderRouteRouteWithChildren
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
+  AuthenticatedBatchdataTestRoute: typeof AuthenticatedBatchdataTestRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedHomeCareRoute: typeof AuthenticatedHomeCareRoute
@@ -1181,8 +1171,9 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentRouteRoute: AuthenticatedAgentRouteRouteWithChildren,
   AuthenticatedLenderRouteRoute: AuthenticatedLenderRouteRouteWithChildren,
-  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
+  AuthenticatedBatchdataTestRoute: AuthenticatedBatchdataTestRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedHomeCareRoute: AuthenticatedHomeCareRoute,
