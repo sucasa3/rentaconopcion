@@ -31,16 +31,15 @@ export const BACKGROUND_BUDGET_PCT = 70;
  */
 export const DEFAULT_CLASSES: AttomEndpoint[] = ["detail", "avm", "permits", "mortgage"];
 
-/** Record classes currently switched on for our account (ATTOM or BatchData). */
+/** Record classes currently switched on for our ATTOM account. */
 async function enabledClasses(supabaseAdmin: any): Promise<Set<string>> {
-  const [{ data: attomRows }, { data: batchdataRows }] = await Promise.all([
-    supabaseAdmin.from("attom_endpoint_health").select("endpoint, enabled"),
-    supabaseAdmin.from("data_provider_health").select("endpoint, enabled").eq("provider", "batchdata"),
-  ]);
+  const { data: attomRows } = await supabaseAdmin
+    .from("attom_endpoint_health")
+    .select("endpoint, enabled");
   const attomEnabled = new Set((attomRows ?? []).filter((r: any) => r.enabled).map((r: any) => r.endpoint));
-  const batchdataEnabled = new Set((batchdataRows ?? []).filter((r: any) => r.enabled).map((r: any) => r.endpoint));
-  return new Set(Object.keys(ATTOM_TTL_DAYS).filter((c) => attomEnabled.has(c) || batchdataEnabled.has(c)));
+  return new Set(Object.keys(ATTOM_TTL_DAYS).filter((c) => attomEnabled.has(c)));
 }
+
 
 /** Rows stuck mid-flight (worker died / timed out) go back on the queue. */
 async function reapStuck(supabaseAdmin: any): Promise<void> {
