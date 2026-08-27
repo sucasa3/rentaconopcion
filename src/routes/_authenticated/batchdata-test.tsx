@@ -11,13 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { FlaskConical, CheckCircle2, XCircle, Download } from "lucide-react";
+import { BulkClientUpload } from "@/components/bulk-client-upload";
+import { BatchdataReportView } from "@/components/batchdata-report-view";
+import { buildReport, type CallRow } from "@/lib/batchdata-report";
 import {
   getBatchdataTestResults,
   getBatchdataTestRuns,
   listBatchdataCandidates,
+  parseBatchdataTestCsv,
   startBatchdataTestRun,
   testBatchdataConnection,
 } from "@/lib/batchdata-test.functions";
+
 
 export const Route = createFileRoute("/_authenticated/batchdata-test")({
   head: () => ({
