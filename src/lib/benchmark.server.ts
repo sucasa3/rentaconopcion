@@ -314,7 +314,7 @@ export async function runBenchmark(opts: {
   seed?: string;
   size?: number;
   label?: string;
-}): Promise<{ runId: string; requested: number; sample: SampleReport }> {
+}): Promise<{ runId: string; requested: number; sample: SampleReport; blocked: string | null }> {
   const sample = await buildSample(opts.seed ?? BENCHMARK_SEED, opts.size ?? BENCHMARK_SIZE);
   const { runBatchdataTest } = await import("./batchdata-test.server");
   const { runId, blocked } = await runBatchdataTest({
