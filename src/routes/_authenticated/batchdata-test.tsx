@@ -128,6 +128,16 @@ function BatchdataTestLab() {
     onError: (e: any) => toast.error(e?.message ?? "Test run failed"),
   });
 
+  const rescoreMutation = useMutation({
+    mutationFn: () => rescoreRun({ data: { runId: activeRun! } }),
+    onSuccess: (r: any) => {
+      toast.success(`Re-scored ${r.rowsUpdated} rows — ${r.matched} matched`);
+      queryClient.invalidateQueries({ queryKey: ["bd-results", activeRun] });
+      queryClient.invalidateQueries({ queryKey: ["bd-runs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Re-score failed"),
+  });
+
   const totalSelected = useMemo(
     () => selected.length + csvRows.length + pasted.split("\n").filter((l) => l.trim()).length,
     [selected, csvRows, pasted],
