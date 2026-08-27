@@ -19,6 +19,7 @@ import {
   getBatchdataTestRuns,
   listBatchdataCandidates,
   parseBatchdataTestCsv,
+  rescoreBatchdataTestRun,
   startBatchdataTestRun,
   testBatchdataConnection,
 } from "@/lib/batchdata-test.functions";
@@ -62,6 +63,7 @@ function BatchdataTestLab() {
   const listRuns = useServerFn(getBatchdataTestRuns);
   const listResults = useServerFn(getBatchdataTestResults);
   const parseCsv = useServerFn(parseBatchdataTestCsv);
+  const rescoreRun = useServerFn(rescoreBatchdataTestRun);
 
   const [label, setLabel] = useState("BatchData test run");
   const [pasted, setPasted] = useState("");
