@@ -1,38 +1,68 @@
-# ATTOM: it's a quota wall, not a bad key
+# BATCHDATA_TEST_104 — controlled provider evaluation
 
-## What the numbers show
+Goal: measure BatchData objectively across ~104 homeowner records, with zero ATTOM calls and a complete, auditable record of every provider request.
 
-ATTOM's dashboard reports 1,888 hits between 29 Jul and 27 Aug against a 2,000-call testing cap. Our own meter for August records 1,897 calls. Those agree. The 401s we hit on Giselle Matthews' address are the trial allowance being exhausted, not a rejected key — so the key does not need replacing.
+## Current state (verified)
 
-Two other facts confirmed on our side:
-- All 9 ATTOM datasets are currently switched off. Repeated 401s auto-disabled detail, AVM, tax and permits; the rest were switched off manually during the earlier investigation. Even with quota restored, nothing runs until those flags are turned back on.
-- Our internal budget is configured for 5,000 calls/month, not the 2,000 the trial actually allows. That is why nothing throttled before the wall was hit.
+The BatchData Test Lab already exists and is isolated from production:
+- Admin-only route with a live connection test, manual address entry, and contact selection (capped at 100).
+- Isolated tables `batchdata_test_runs` and `batchdata_test_results` — no writes to production property records.
+- One provider endpoint in use: `/property/lookup/all-attributes`, a single bundled lookup per address.
+- A normalizer that maps the bundle into property, ownership, valuation, mortgage, sales, permits and contact groups.
+- ATTOM is already fully disabled — all 9 datasets are off and the monthly trial cap is exhausted, so zero ATTOM calls will occur regardless.
 
-The call mix also matters: 486 property detail + 484 assessment + 419 AVM + 261 mortgage + 174 sales = roughly 5 calls per property. At that rate, 2,000 calls covers only about 380 properties, and Alex Officer's book alone has more than 500 un-enriched clients.
+What is missing for the test you specified: CSV upload as an input source, per-call audit fields (retry / duplicate / cache-hit / attempt number), the 104-record cap, and the analysis report.
 
-## Plan
+## What gets built
 
-### 1. Align our budget with reality
-Set the August allowance to the true 2,000-call cap so the soft cap trips at 80% (1,600) instead of 4,000, and switch to cache-only automatically at the ceiling rather than burning calls into 401s.
+### 1. CSV upload into the test lab
+Add a CSV/Excel drop zone to the Test Lab that reuses the existing bulk-upload parser (same header aliases and address splitting agents already use for adding homeowners). Parsed rows preview in a table before anything runs; the run button stays disabled until you confirm. Raise the run cap from 100 to 150 so all 104 records go in one run.
 
-### 2. Re-enable the datasets, tiered
-Turn the health flags back on in two tiers rather than all nine:
-- **Core (always on):** property detail, AVM, assessment/tax — these drive value, equity and the home record.
-- **On-demand only:** mortgage, sales, permits, owner, neighborhood, risk — fetched when a specific screen or an agent/lender action needs them, not during bulk enrichment.
+Records are held in the test run only — the CSV does not create homeowner accounts, portfolio clients, or production property records.
 
-This cuts bulk enrichment from ~5 calls per property to 3, raising trial coverage from ~380 to ~660 properties.
+### 2. Test run header
+Creating the run records: label `BATCHDATA_TEST_104`, test ID, start time, input record count, provider endpoint in use, and `attom_calls = 0` asserted in the run notes. A guard in the test runner throws if any ATTOM code path is reached during a test run.
 
-### 3. Verify with Giselle, using the remaining headroom
-About 100 calls remain on the trial. Spend 3 of them on 4213 Harris Ridge Ct, Roswell GA and confirm value, equity and tax populate on her profile end to end. Report the result before anything else runs.
+### 3. Full per-request audit log
+Extend the test result rows with the fields needed to audit call behavior: attempt number, retry flag, duplicate-address flag, cache-hit flag, request type, and the request/response identifiers already captured. Every single HTTP request — including retries and failures — writes its own row, so total rows equal total provider calls.
 
-### 4. Hold bulk enrichment until the cap is raised
-Leave the background worker paused. With ~100 calls left, releasing it would exhaust the trial in minutes and re-trigger the auto-disable loop. Ask ATTOM for a production allowance sized to the book: roughly 3 calls per property plus headroom, so about 2,000 calls for the current 541 un-enriched clients and 5,000-10,000/month for ongoing growth and refreshes.
+### 4. Run the real workflow, unoptimized
+Each record goes through the actual SuCasa path: normalize address → BatchData lookup → normalize response → store in the test cache. No pre-deduping of the input, no call-shaving. Duplicates and cache hits are detected and labeled, not prevented, so the difference between "BatchData needed this call" and "our app made this call" is measurable rather than hidden.
 
-### 5. Make the wall visible instead of silent
-Add a budget banner on the admin data page showing calls used vs. allowance and the auto-disabled datasets, and treat a 401 that arrives near the cap as "quota exhausted" rather than "key invalid" — so it pauses enrichment cleanly instead of disabling datasets permanently.
+Retry policy for the test: one retry only, on transport errors and 5xx. No retry on a clean no-match — an unmatched property is a result, not a failure.
+
+### 5. Analysis report
+A report view on the completed run computing, straight from the logged rows:
+- Matched / unmatched / fully enriched / partially enriched / failed counts.
+- Total calls, failed calls, retry calls, duplicate calls, cache hits.
+- Calls per home: average, median, min, max, plus the 1 / 2 / 3 / 4 / 5+ distribution.
+- Calls per matched home and per fully enriched home.
+- Provider-required calls vs. application-generated calls, reported separately.
+- Data coverage table across property, owner, sales, tax, mortgage, valuation, permits and other fields, each marked returned / not returned / not requested / not available on plan, with the percentage of matched homes and calls required.
+- FULL / PARTIAL / FAILED classification per home, with the specific missing fields that caused each PARTIAL.
+- Scale projections for 1,000 / 10,000 / 100,000 homes derived from the observed rate, given as a range using observed min, median and max.
+- CSV export of both the per-call log and the per-home summary.
+
+### 6. Executive summary
+Delivered in chat in the exact format you specified, ending with the five conclusion questions answered strictly from the test evidence — and no provider recommendation.
+
+## Guardrails
+
+- BatchData only. No ATTOM fallback, no other provider, no unrelated enrichment jobs.
+- The background enrichment worker stays paused for the duration of the run.
+- Production provider architecture and all ATTOM functionality remain untouched.
+- A field BatchData cannot return is recorded as not returned. It is never sourced elsewhere.
 
 ## Technical notes
 
-- Budget lives in `attom_monthly_budget` (`tier_calls_included`, `soft_cap_pct`, `cache_only_mode`); dataset switches live in `attom_endpoint_health`. Both are data updates, no schema change.
-- Tiering core vs. on-demand happens in the `DEFAULT_CLASSES` list in `src/lib/enrichment.server.ts`; on-demand classes stay fetchable through the existing per-class request path.
-- The 401-handling change is in `src/lib/attom.server.ts`: when the month's usage is at or above the allowance, record the failure as quota rather than incrementing the unauthorized counter that permanently disables an endpoint.
+- Input parsing reuses the existing `xlsx`-based bulk parser; no new dependency.
+- New columns land on `batchdata_test_results` (attempt, is_retry, is_duplicate_address, cache_hit, request_type) via one migration; no production table changes.
+- Concurrency stays at the current throttle to avoid rate-limit noise skewing the failure count.
+- Coverage classification is driven by an explicit required-field list for the SuCasa Home Profile, defined in the normalizer so the PARTIAL reasons are reproducible.
+
+## Sequence
+
+1. Build the above.
+2. You upload the CSV.
+3. I confirm: "CSV received. Test is configured. ATTOM calls are disabled for this test. Ready to begin."
+4. I wait for your go-ahead before a single provider call is made.
