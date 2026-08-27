@@ -61,6 +61,33 @@ function ttlOk(fetchedAt: string | null, cls: IntelClass, overrideDays?: number)
   return ageMs < (overrideDays ?? ATTOM_TTL_DAYS[cls]) * 24 * 60 * 60 * 1000;
 }
 
+function meaningfulBatchdataResult(
+  cls: IntelClass,
+  extracted: AvmSummary | DetailSummary | TaxSummary | SalesSummary | MortgageSummary | PermitsSummary | null,
+): boolean {
+  if (!extracted) return false;
+  switch (cls) {
+    case "avm":
+      return (extracted as AvmSummary).estimate != null;
+    case "detail":
+      return Object.values(extracted as DetailSummary).some((v) => v != null);
+    case "tax":
+      return Object.values(extracted as TaxSummary).some((v) => v != null);
+    case "sales":
+      return (extracted as SalesSummary).lastSale != null || (extracted as SalesSummary).priorSales.length > 0;
+    case "permits":
+      return (extracted as PermitsSummary).events.length > 0;
+    case "mortgage":
+      return (extracted as MortgageSummary).hasRecord || (extracted as MortgageSummary).loanAmount != null;
+    case "neighborhood":
+    case "risk":
+    case "owner":
+      return false;
+    default:
+      return false;
+  }
+}
+
 
 export async function getPropertyIntel(
   address: string,
