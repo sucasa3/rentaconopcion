@@ -27,6 +27,7 @@ import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHomeCareRouteImport } from './routes/_authenticated/home-care'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBatchdataTestRouteImport } from './routes/_authenticated/batchdata-test'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
@@ -151,6 +152,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBatchdataTestRoute =
+  AuthenticatedBatchdataTestRouteImport.update({
+    id: '/batchdata-test',
+    path: '/batchdata-test',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
@@ -357,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/assistant': typeof AuthenticatedAssistantRoute
+  '/batchdata-test': typeof AuthenticatedBatchdataTestRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
@@ -408,6 +416,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/assistant': typeof AuthenticatedAssistantRoute
+  '/batchdata-test': typeof AuthenticatedBatchdataTestRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
@@ -462,6 +471,7 @@ export interface FileRoutesById {
   '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
+  '/_authenticated/batchdata-test': typeof AuthenticatedBatchdataTestRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/home-care': typeof AuthenticatedHomeCareRoute
@@ -517,6 +527,7 @@ export interface FileRouteTypes {
     | '/lender'
     | '/admin'
     | '/assistant'
+    | '/batchdata-test'
     | '/dashboard'
     | '/documents'
     | '/home-care'
@@ -568,6 +579,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin'
     | '/assistant'
+    | '/batchdata-test'
     | '/dashboard'
     | '/documents'
     | '/home-care'
@@ -621,6 +633,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lender'
     | '/_authenticated/admin'
     | '/_authenticated/assistant'
+    | '/_authenticated/batchdata-test'
     | '/_authenticated/dashboard'
     | '/_authenticated/documents'
     | '/_authenticated/home-care'
@@ -810,6 +823,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/batchdata-test': {
+      id: '/_authenticated/batchdata-test'
+      path: '/batchdata-test'
+      fullPath: '/batchdata-test'
+      preLoaderRoute: typeof AuthenticatedBatchdataTestRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/assistant': {
@@ -1138,6 +1158,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLenderRouteRoute: typeof AuthenticatedLenderRouteRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
+  AuthenticatedBatchdataTestRoute: typeof AuthenticatedBatchdataTestRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedHomeCareRoute: typeof AuthenticatedHomeCareRoute
@@ -1152,6 +1173,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLenderRouteRoute: AuthenticatedLenderRouteRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
+  AuthenticatedBatchdataTestRoute: AuthenticatedBatchdataTestRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedHomeCareRoute: AuthenticatedHomeCareRoute,

@@ -116,6 +116,20 @@ function Admin() {
 
           <AttomSpendPanel />
 
+          <Link
+            to="/batchdata-test"
+            className="flex items-center justify-between rounded-2xl border bg-card p-4 text-sm shadow-sm hover:bg-muted"
+          >
+            <span>
+              <span className="font-medium">BatchData Test Lab</span>
+              <span className="block text-xs text-muted-foreground">
+                Isolated provider testing — does not touch production property data.
+              </span>
+            </span>
+            <span className="text-primary">Open</span>
+          </Link>
+
+
           <AdminLenderPanel />
 
           <AdminCampaignPanel />
