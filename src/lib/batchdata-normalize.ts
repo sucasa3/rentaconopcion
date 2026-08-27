@@ -84,6 +84,23 @@ export interface NormalizedBatchdataProperty {
     loanType: string | null;
     termYears: number | null;
     estimatedEquity: number | null;
+    openLienCount: number | null;
+    totalOpenLienBalance: number | null;
+    ltv: number | null;
+    equityPercent: number | null;
+    estimatedPayment: number | null;
+    maturityDate: string | null;
+    liens: Array<{
+      lender: string | null;
+      amount: number | null;
+      loanType: string | null;
+      termYears: number | null;
+      recordingDate: string | null;
+      maturityDate: string | null;
+      rate: number | null;
+      ltv: number | null;
+      estimatedPayment: number | null;
+    }>;
   };
   sales: {
     lastSaleDate: string | null;
@@ -94,6 +111,8 @@ export interface NormalizedBatchdataProperty {
     count: number;
     totalValue: number | null;
     lastPermitDate: string | null;
+    firstPermitDate: string | null;
+    tags: string[];
     events: Array<{ date: string | null; type: string | null; description: string | null; value: number | null; status: string | null }>;
   };
   contact: {
@@ -101,6 +120,7 @@ export interface NormalizedBatchdataProperty {
     emails: string[];
   };
 }
+
 
 type AnyRec = Record<string, any>;
 
