@@ -239,6 +239,10 @@ function BatchdataTestLab() {
           </p>
         </header>
 
+        <BenchmarkPanel />
+
+
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Connection test</CardTitle>
