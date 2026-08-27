@@ -183,10 +183,12 @@ export const getFunnel = createServerFn({ method: "POST" })
     if (!scope.orgIds.length) return null;
     const orgId = scope.orgIds[0];
 
+    const since = new Date(Date.now() - (data.days ?? 30) * 86_400_000).toISOString();
     const [{ data: rows, error }, { data: org }] = await Promise.all([
-      context.supabase.rpc("business_funnel", { _org_id: orgId, _days: data.days ?? 30 }),
+      context.supabase.rpc("business_funnel", { _org_id: orgId, _since: since }),
       context.supabase.from("lender_orgs").select("plan_key").eq("id", orgId).maybeSingle(),
     ]);
+
     if (error) throw new Error(error.message);
 
     let priceCents = 0;
