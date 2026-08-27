@@ -264,7 +264,7 @@ export async function runBatchdataTest(opts: {
   await supabaseAdmin
     .from("batchdata_test_runs")
     .update({
-      status: "complete",
+      status: blocked ? "blocked" : "complete",
       matched_count: matched,
       unmatched_count: unmatched,
       failed_count: failed,
@@ -272,10 +272,12 @@ export async function runBatchdataTest(opts: {
       attom_call_count: 0,
       estimated_cost_cents: requests * BATCHDATA_EST_COST_CENTS,
       finished_at: new Date().toISOString(),
+      notes: blocked ? `${opts.notes ?? ""} | STOPPED: ${blocked}`.trim() : opts.notes ?? null,
     })
     .eq("id", run.id);
 
-  return { runId: run.id };
+  return { runId: run.id, blocked };
+
 }
 
 
