@@ -142,7 +142,7 @@ export async function runBatchdataTest(opts: {
   notes?: string | null;
   /** Benchmark runs disable retries so the call count is exactly one per property. */
   noRetry?: boolean;
-}): Promise<{ runId: string }> {
+}): Promise<{ runId: string; blocked: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const inputs = opts.inputs.slice(0, MAX_TEST_INPUTS);
 
