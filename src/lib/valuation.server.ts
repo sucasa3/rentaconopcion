@@ -415,13 +415,13 @@ export async function getPropertyIntel(
               result.classes[cls] = { data: extracted, fetchedAt: now, stale: false };
               delete result.errors[cls];
             } else {
-              result.errors[cls] = result.errors[cls] ?? "BatchData returned no usable data for this class.";
+              result.errors[cls] = "BatchData returned no usable data for this address.";
               await recordMiss(cls, 200, "BatchData SuccessWithoutResult");
             }
           }
         } else {
           for (const cls of toFetch) {
-            result.errors[cls] = result.errors[cls] ?? bd.error;
+            result.errors[cls] = `BatchData failed: ${bd.error}`;
             await recordMiss(cls, bd.status ?? null, bd.error);
           }
         }
