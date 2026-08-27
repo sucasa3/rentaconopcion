@@ -19,6 +19,7 @@ import {
   getBatchdataTestRuns,
   listBatchdataCandidates,
   parseBatchdataTestCsv,
+  rescoreBatchdataTestRun,
   startBatchdataTestRun,
   testBatchdataConnection,
 } from "@/lib/batchdata-test.functions";
@@ -62,6 +63,7 @@ function BatchdataTestLab() {
   const listRuns = useServerFn(getBatchdataTestRuns);
   const listResults = useServerFn(getBatchdataTestResults);
   const parseCsv = useServerFn(parseBatchdataTestCsv);
+  const rescoreRun = useServerFn(rescoreBatchdataTestRun);
 
   const [label, setLabel] = useState("BatchData test run");
   const [pasted, setPasted] = useState("");
@@ -126,6 +128,16 @@ function BatchdataTestLab() {
       queryClient.invalidateQueries({ queryKey: ["bd-runs"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Test run failed"),
+  });
+
+  const rescoreMutation = useMutation({
+    mutationFn: () => rescoreRun({ data: { runId: activeRun! } }),
+    onSuccess: (r: any) => {
+      toast.success(`Re-scored ${r.rowsUpdated} rows — ${r.matched} matched`);
+      queryClient.invalidateQueries({ queryKey: ["bd-results", activeRun] });
+      queryClient.invalidateQueries({ queryKey: ["bd-runs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Re-score failed"),
   });
 
   const totalSelected = useMemo(
@@ -384,7 +396,30 @@ function BatchdataTestLab() {
           </CardContent>
         </Card>
 
+        {activeRun && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Re-score this run</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Re-runs the normalizer over the responses already stored for this run. Makes zero provider calls
+                and costs nothing.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={rescoreMutation.isPending}
+                onClick={() => rescoreMutation.mutate()}
+              >
+                {rescoreMutation.isPending ? "Re-scoring…" : "Re-score from stored responses"}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {report && <BatchdataReportView report={report} />}
+
 
         {activeRun && report && (
           <Card>

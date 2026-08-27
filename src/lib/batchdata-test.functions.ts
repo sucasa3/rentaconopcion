@@ -144,3 +144,13 @@ export const getBatchdataTestResults = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true });
     return rows ?? [];
   });
+
+/** Re-score a stored run from saved raw responses. Makes zero provider calls. */
+export const rescoreBatchdataTestRun = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { runId: string }) => input)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { rescoreBatchdataRun } = await import("./batchdata-test.server");
+    return rescoreBatchdataRun(data.runId);
+  });
