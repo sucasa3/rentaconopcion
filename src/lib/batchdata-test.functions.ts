@@ -88,6 +88,35 @@ export const startBatchdataTestRun = createServerFn({ method: "POST" })
     });
   });
 
+/**
+ * Parse an uploaded CSV into test inputs. Preview only — this never creates
+ * homeowners, portfolio clients, or production property records.
+ */
+export const parseBatchdataTestCsv = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { csv: string }) => input)
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { parseClientCsv } = await import("./lender.server");
+    const { MAX_TEST_INPUTS } = await import("./batchdata-test.server");
+    const rows = parseClientCsv(data.csv);
+    const parsed = rows
+      .map((r) => ({
+        label: r.full_name ?? null,
+        address: [r.address, r.city, [r.state, r.zip].filter(Boolean).join(" ")]
+          .filter(Boolean)
+          .join(", ")
+          .trim(),
+      }))
+      .filter((r) => r.address.length > 0);
+    return {
+      rows: parsed.slice(0, MAX_TEST_INPUTS),
+      totalParsed: parsed.length,
+      skipped: rows.length - parsed.length,
+      cap: MAX_TEST_INPUTS,
+    };
+  });
+
 
 export const getBatchdataTestRuns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
