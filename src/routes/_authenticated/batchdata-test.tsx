@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { FlaskConical, CheckCircle2, XCircle, Download } from "lucide-react";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { BatchdataReportView } from "@/components/batchdata-report-view";
+import { BenchmarkPanel } from "@/components/benchmark-panel";
+
 import { buildReport, type CallRow } from "@/lib/batchdata-report";
 import {
   getBatchdataTestResults,
