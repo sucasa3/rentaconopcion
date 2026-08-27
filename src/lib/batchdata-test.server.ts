@@ -7,11 +7,14 @@
  */
 
 import {
+  firstBatchdataProperty,
   isMatched,
   normalizeBatchdataProperty,
   normalizeTestAddress,
   parseTestAddress,
 } from "./batchdata-normalize";
+import { classifyCompleteness, evaluateCoverage } from "./batchdata-report";
+
 
 const BATCHDATA_BASE = "https://api.batchdata.com/api/v1";
 const LOOKUP_PATH = "/property/lookup/all-attributes";
