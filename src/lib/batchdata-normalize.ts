@@ -173,21 +173,45 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
   const p = firstBatchdataProperty(raw);
   if (!p) return null;
 
-  const salesRows: AnyRec[] = (pick(p, "sales_history", "salesHistory", "sale.history", "intel.salesHistory") as AnyRec[]) ?? [];
-  const sales = salesRows
-    .map((s) => ({
-      date: str(pick(s, "date", "saleDate", "recordingDate")),
-      amount: num(pick(s, "amount", "price", "salePrice")),
-      docType: str(pick(s, "document_type", "documentType", "deedType")),
-    }))
+  // --- Sales -------------------------------------------------------------
+  // BatchData emits `sale.lastSale`, `sale.priorSale` and `deedHistory[]`.
+  const deedRows: AnyRec[] = (pick(p, "deedHistory", "sales_history", "salesHistory") as AnyRec[]) ?? [];
+  const priorSaleObj = pick(p, "sale.priorSale") as AnyRec | null;
+  const sales = [
+    ...(priorSaleObj
+      ? [
+          {
+            date: str(pick(priorSaleObj, "saleDate", "recordingDate")),
+            amount: num(pick(priorSaleObj, "price", "salePrice")),
+            docType: str(pick(priorSaleObj, "documentType", "transactionType")),
+          },
+        ]
+      : []),
+    ...deedRows.map((s) => ({
+      date: str(pick(s, "saleDate", "recordingDate", "date", "documentDate")),
+      amount: num(pick(s, "price", "salePrice", "amount")),
+      docType: str(pick(s, "documentType", "deedType", "document_type")),
+    })),
+  ]
     .filter((s) => s.date || s.amount)
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
-  const lastSaleDate = str(pick(p, "sale.lastSaleDate", "sale.saleDate", "lastSaleDate")) ?? sales[0]?.date ?? null;
-  const lastSaleAmount = num(pick(p, "sale.lastSalePrice", "sale.price", "lastSalePrice")) ?? sales[0]?.amount ?? null;
+  const lastSaleDate =
+    str(pick(p, "sale.lastSale.saleDate", "sale.lastSale.recordingDate", "intel.lastSoldDate", "sale.lastSaleDate")) ??
+    sales[0]?.date ??
+    null;
+  const lastSaleAmount =
+    num(pick(p, "sale.lastSale.price", "intel.lastSoldPrice", "sale.lastTransfer.price", "sale.lastSalePrice")) ??
+    sales[0]?.amount ??
+    null;
 
-  const permitRows: AnyRec[] = (pick(p, "permits", "building.permits") as AnyRec[]) ?? [];
-  const permits = permitRows
+  // --- Permits ------------------------------------------------------------
+  // `permit` (singular) is a summary object, not an event list.
+  const permitSummary = (pick(p, "permit", "permits") as AnyRec | null) ?? null;
+  const permitCount = num(pick(permitSummary, "permitCount")) ?? 0;
+  const permitTags = ((pick(permitSummary, "allTags") as string[]) ?? []).filter(Boolean);
+  const permitEventRows: AnyRec[] = Array.isArray(permitSummary) ? (permitSummary as AnyRec[]) : [];
+  const permitEvents = permitEventRows
     .map((r) => ({
       date: str(pick(r, "date", "issueDate", "effectiveDate")),
       type: [str(pick(r, "type", "permitType")), str(pick(r, "sub_type", "subType"))].filter(Boolean).join(" · ") || null,
@@ -197,8 +221,37 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
     }))
     .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""));
 
-  const estimate = num(pick(p, "valuation.estimatedValue", "valuation.estimated_value", "valuation.value", "avm.value", "estimatedValue"));
-  const loanAmount = num(pick(p, "mortgage.loan_amount", "mortgage.loanAmount", "openLien.totalOpenLienBalance", "mortgage.amount"));
+  // --- Valuation & mortgage ----------------------------------------------
+  const estimate = num(pick(p, "valuation.estimatedValue", "valuation.value", "avm.value", "estimatedValue"));
+
+  const openLien = (pick(p, "openLien") as AnyRec | null) ?? null;
+  const openLienRows: AnyRec[] = (pick(openLien, "mortgages") as AnyRec[]) ?? [];
+  const ownershipStart = str(pick(p, "owner.ownershipStartDate"));
+  const historyRows: AnyRec[] = ((pick(p, "mortgageHistory") as AnyRec[]) ?? []).filter((m) => {
+    const d = str(pick(m, "recordingDate", "documentDate", "saleDate"));
+    return !ownershipStart || !d || d >= ownershipStart;
+  });
+
+  const liens = (openLienRows.length ? openLienRows : historyRows).map((m) => ({
+    lender: str(pick(m, "lenderName", "assignedLenderName")),
+    amount: num(pick(m, "loanAmount")),
+    loanType: str(pick(m, "loanType")),
+    termYears: (() => {
+      const months = num(pick(m, "loanTermMonths"));
+      return months != null ? Math.round(months / 12) : num(pick(m, "loanTerm")) != null ? Math.round((num(pick(m, "loanTerm")) as number) / 12) : null;
+    })(),
+    recordingDate: str(pick(m, "recordingDate", "documentDate")),
+    maturityDate: str(pick(m, "dueDate")),
+    rate: num(pick(m, "currentEstimatedInterestRate", "interestRate")),
+    ltv: num(pick(m, "ltv")),
+    estimatedPayment: num(pick(m, "estimatedPaymentAmount")),
+  }));
+
+  // Primary lien = largest recorded balance among the open liens.
+  const primary = [...liens].sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0))[0] ?? null;
+  const totalOpenLienBalance = num(pick(openLien, "totalOpenLienBalance"));
+  const openLienCount = num(pick(openLien, "totalOpenLienCount"));
+  const loanAmount = totalOpenLienBalance ?? primary?.amount ?? null;
 
   const phones = ((pick(p, "phoneNumbers", "phone_numbers", "contact.phones") as AnyRec[]) ?? [])
     .map((x) => str(typeof x === "string" ? x : pick(x, "number", "phone")))
@@ -209,57 +262,79 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
 
   return {
     property: {
-      addressLine1: str(pick(p, "address.street", "address.address_line1", "address.addressLine1", "address.house")),
+      addressLine1: str(pick(p, "address.street", "address.streetNoUnit", "address.address_line1")),
       city: str(pick(p, "address.city")),
       state: str(pick(p, "address.state")),
       zip: str(pick(p, "address.zip", "address.zipCode")),
-      propertyType: str(pick(p, "general.propertyTypeDetail", "property.property_type", "building.propertyType", "propertyType", "property.use_code")),
-      beds: num(pick(p, "building.bedroomCount", "property.bedrooms", "bedrooms")),
-      baths: num(pick(p, "building.bathroomCount", "property.bathrooms", "bathrooms")),
-      sqft: num(pick(p, "building.totalBuildingAreaSquareFeet", "property.square_feet", "squareFeet")),
-      lotSqft: num(pick(p, "lot.lotSizeSquareFeet", "property.lot_size", "lotSize")),
-      yearBuilt: num(pick(p, "building.yearBuilt", "property.year_built", "yearBuilt")),
+      propertyType: str(pick(p, "general.propertyTypeDetail", "general.propertyTypeCategory", "building.propertyType", "propertyType")),
+      beds: num(pick(p, "building.bedroomCount", "listing.bedroomCount", "bedrooms")),
+      baths: num(pick(p, "building.bathroomCount", "building.calculatedBathroomCount", "listing.bathroomCount")),
+      sqft: num(pick(p, "building.livingAreaSquareFeet", "building.totalBuildingAreaSquareFeet", "squareFeet")),
+      lotSqft: num(pick(p, "lot.lotSizeSquareFeet", "listing.lotSizeSquareFeet", "lotSize")),
+      yearBuilt: num(pick(p, "building.yearBuilt", "building.effectiveYearBuilt", "listing.yearBuilt")),
     },
     ownership: {
-      ownerName: str(pick(p, "owner.fullName", "owner.name", "owner.owner1FullName")),
-      mailingAddress: str(pick(p, "owner.mailingAddress.street", "owner.mailing_address", "owner.mailingAddressFull")),
-      ownerOccupied: typeof pick(p, "quickLists.ownerOccupied", "owner.owner_occupied", "owner.ownerOccupied") === "boolean"
-        ? Boolean(pick(p, "quickLists.ownerOccupied", "owner.owner_occupied", "owner.ownerOccupied"))
-        : null,
-      ownershipYears: num(pick(p, "owner.ownershipLengthYears", "ownershipYears")),
+      ownerName:
+        str(pick(p, "owner.fullName", "owner.name")) ??
+        str(((pick(p, "owner.names") as AnyRec[]) ?? [])[0]?.["full"]),
+      mailingAddress: (() => {
+        const m = pick(p, "owner.mailingAddress") as AnyRec | null;
+        if (!m) return str(pick(p, "owner.mailing_address"));
+        return (
+          [str(pick(m, "street")), str(pick(m, "city")), [str(pick(m, "state")), str(pick(m, "zip"))].filter(Boolean).join(" ")]
+            .filter(Boolean)
+            .join(", ") || null
+        );
+      })(),
+      ownerOccupied:
+        typeof pick(p, "owner.ownerOccupied", "quickLists.ownerOccupied") === "boolean"
+          ? Boolean(pick(p, "owner.ownerOccupied", "quickLists.ownerOccupied"))
+          : null,
+      ownershipYears: num(pick(p, "owner.lengthOfResidenceYears", "intel.lengthOfResidenceYears", "owner.ownershipLengthYears")),
     },
     valuation: {
       estimate,
-      low: num(pick(p, "valuation.low", "valuation.estimatedValueLow", "avm.low")),
-      high: num(pick(p, "valuation.high", "valuation.estimatedValueHigh", "avm.high")),
-      confidence: num(pick(p, "valuation.confidence", "valuation.confidenceScore")),
-      asOf: str(pick(p, "valuation.value_date", "valuation.asOf", "valuation.date")),
-      assessedValue: num(pick(p, "assessment.assessedValue", "assessment.assessed_value", "tax.assessedValue")),
-      marketValue: num(pick(p, "assessment.marketValue", "assessment.market_value", "tax.marketValue")),
-      taxAmount: num(pick(p, "assessment.taxAmount", "assessment.tax_amount", "tax.taxAmount")),
-      taxYear: num(pick(p, "assessment.taxYear", "assessment.tax_year", "tax.year")),
+      low: num(pick(p, "valuation.priceRangeMin", "valuation.estimatedValueLow", "valuation.low")),
+      high: num(pick(p, "valuation.priceRangeMax", "valuation.estimatedValueHigh", "valuation.high")),
+      confidence: num(pick(p, "valuation.confidenceScore", "valuation.confidence")),
+      asOf: str(pick(p, "valuation.asOfDate", "valuation.value_date", "valuation.date")),
+      assessedValue: num(pick(p, "assessment.totalAssessedValue", "assessment.assessedValue", "tax.assessedValue")),
+      marketValue: num(pick(p, "assessment.totalMarketValue", "assessment.marketValue")),
+      taxAmount: num(pick(p, "tax.taxAmount", "assessment.taxAmount")),
+      taxYear: num(pick(p, "tax.taxYear", "assessment.assessmentYear", "assessment.taxYear")),
     },
     mortgage: {
-      hasRecord: Boolean(loanAmount || pick(p, "mortgage.lender", "mortgage.lenderName")),
+      hasRecord: Boolean((openLienCount ?? 0) > 0 || loanAmount || primary?.lender || liens.length),
       loanAmount,
-      lender: str(pick(p, "mortgage.lenderName", "mortgage.lender")),
-      originationDate: str(pick(p, "mortgage.recordingDate", "mortgage.date", "mortgage.originationDate")),
-      interestRate: num(pick(p, "mortgage.interestRate", "mortgage.interest_rate")),
-      loanType: str(pick(p, "mortgage.loanType", "mortgage.loan_type")),
-      termYears: num(pick(p, "mortgage.termYears", "mortgage.term_years")),
-      estimatedEquity: num(pick(p, "valuation.equityCurrentEstimatedBalance", "valuation.estimatedEquity"))
-        ?? (estimate != null && loanAmount != null ? estimate - loanAmount : null),
+      lender: primary?.lender ?? null,
+      originationDate: primary?.recordingDate ?? str(pick(openLien, "lastLoanRecordingDate")),
+      interestRate: primary?.rate ?? null,
+      loanType: primary?.loanType ?? str(((pick(openLien, "allLoanTypes") as string[]) ?? [])[0]),
+      termYears: primary?.termYears ?? null,
+      estimatedEquity:
+        num(pick(p, "valuation.equityCurrentEstimatedBalance", "valuation.estimatedEquity")) ??
+        (estimate != null && loanAmount != null ? estimate - loanAmount : null),
+      openLienCount,
+      totalOpenLienBalance,
+      ltv: num(pick(p, "valuation.ltv")) ?? primary?.ltv ?? null,
+      equityPercent: num(pick(p, "valuation.equityPercent")),
+      estimatedPayment: primary?.estimatedPayment ?? null,
+      maturityDate: primary?.maturityDate ?? null,
+      liens,
     },
-    sales: { lastSaleDate, lastSaleAmount, priorSales: sales.slice(1) },
+    sales: { lastSaleDate, lastSaleAmount, priorSales: sales },
     permits: {
-      count: permits.length,
-      totalValue: permits.reduce((sum, e) => sum + (e.value ?? 0), 0) || null,
-      lastPermitDate: permits[0]?.date ?? null,
-      events: permits,
+      count: permitCount || permitEvents.length,
+      totalValue: num(pick(permitSummary, "totalJobValue")) ?? (permitEvents.reduce((s, e) => s + (e.value ?? 0), 0) || null),
+      lastPermitDate: str(pick(permitSummary, "latestDate")) ?? permitEvents[0]?.date ?? null,
+      firstPermitDate: str(pick(permitSummary, "earliestDate")) ?? null,
+      tags: permitTags,
+      events: permitEvents,
     },
     contact: { phones, emails },
   };
 }
+
 
 /** True when BatchData returned something usable, not just an empty envelope. */
 export function isMatched(n: NormalizedBatchdataProperty | null): boolean {
