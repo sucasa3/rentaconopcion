@@ -384,7 +384,45 @@ function BatchdataTestLab() {
           </CardContent>
         </Card>
 
+        {report && <BatchdataReportView report={report} />}
+
+        {activeRun && report && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Per-home detail</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {report.homes.map((h) => (
+                <div key={h.key} className="rounded-xl border bg-background p-3 text-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="min-w-0">
+                      <span className="mr-2 text-xs tabular-nums text-muted-foreground">#{h.index}</span>
+                      <span className="font-medium">{h.label ?? h.address}</span>
+                      {h.label && <span className="block truncate text-xs text-muted-foreground">{h.address}</span>}
+                    </span>
+                    <Badge
+                      variant={
+                        h.completeness === "FULL" ? "default" : h.completeness === "PARTIAL" ? "secondary" : "destructive"
+                      }
+                    >
+                      {h.completeness}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {h.calls} call{h.calls === 1 ? "" : "s"}
+                    {h.retries > 0 ? ` · ${h.retries} retry` : ""}
+                    {h.duplicate ? " · duplicate address" : ""}
+                    {h.missing.length ? ` · missing: ${h.missing.join(", ")}` : ""}
+                    {h.errors.length ? ` · ${h.errors[0]}` : ""}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {activeRun && (
+
           <Card>
             <CardHeader className="flex-row items-center justify-between pb-3">
               <CardTitle className="text-base">Results</CardTitle>
