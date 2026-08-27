@@ -379,10 +379,7 @@ export async function getPropertyIntel(
 
           for (const cls of toFetch) {
             const extracted = extractors[cls](bd.data);
-            const meaningful =
-              extracted &&
-              (cls !== "avm" || (extracted as AvmSummary).estimate != null) &&
-              (cls !== "mortgage" || (extracted as MortgageSummary).hasRecord || (extracted as MortgageSummary).loanAmount != null);
+            const meaningful = extracted && meaningfulBatchdataResult(cls, extracted);
 
             if (meaningful) {
               updates[cls] = extracted;
