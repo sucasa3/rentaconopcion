@@ -173,8 +173,12 @@ export async function runBatchdataTest(opts: {
   // skipped — the point of the test is to measure them.
   const seenAddresses = new Set<string>();
   const CONCURRENCY = 3;
+  const maxAttempts = opts.noRetry ? 1 : 2;
+  /** Set when the account blocks further calls (payment/quota). Stops the run. */
+  let blocked: string | null = null;
 
   for (let i = 0; i < inputs.length; i += CONCURRENCY) {
+    if (blocked) break;
     const slice = inputs.slice(i, i + CONCURRENCY);
     const nested = await Promise.all(
       slice.map(async (input, sliceIdx) => {
@@ -188,7 +192,7 @@ export async function runBatchdataTest(opts: {
         let call: RawCall | null = null;
 
         // Real workflow: one bundled lookup, one retry on transport/5xx only.
-        while (attempt < 2) {
+        while (attempt < maxAttempts) {
           attempt += 1;
           const requestedAt = new Date().toISOString();
           call = await callBatchdata(input.address);
@@ -227,7 +231,19 @@ export async function runBatchdataTest(opts: {
             responded_at: new Date().toISOString(),
           });
 
-          const retryable = !call.ok && (call.status === 0 || call.status >= 500);
+          // Account-level block (payment required / quota): stop the whole run.
+          const bodyText = JSON.stringify(call.raw ?? "").toLowerCase();
+          if (
+            !call.ok &&
+            (call.status === 402 ||
+              call.status === 403 ||
+              call.status === 429 ||
+              /insufficient|balance|quota|credit/.test(bodyText))
+          ) {
+            blocked = `HTTP ${call.status} — account blocked further calls`;
+          }
+
+          const retryable = !call.ok && !blocked && (call.status === 0 || call.status >= 500);
           if (!retryable) break;
         }
 
@@ -242,6 +258,8 @@ export async function runBatchdataTest(opts: {
     const flat = nested.flat();
     if (flat.length) await supabaseAdmin.from("batchdata_test_results").insert(flat);
   }
+
+
 
   await supabaseAdmin
     .from("batchdata_test_runs")
