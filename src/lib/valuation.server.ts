@@ -13,8 +13,21 @@
 import { BENCHMARK_REFI_RATE } from "./refi";
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
+import {
+  batchdataCostCents,
+  batchdataFetchAll,
+  BATCHDATA_TTL_DAYS,
+  extractAvm as extractBatchdataAvm,
+  extractDetail as extractBatchdataDetail,
+  extractMortgage as extractBatchdataMortgage,
+  extractPermits as extractBatchdataPermits,
+  extractSales as extractBatchdataSales,
+  extractTax as extractBatchdataTax,
+  type BatchdataEndpoint,
+} from "./batchdata.server";
 
 export type IntelClass = AttomEndpoint;
+export type DataProvider = "attom" | "batchdata";
 
 export interface GetPropertyIntelOptions {
   classes: IntelClass[];
@@ -28,6 +41,11 @@ export interface GetPropertyIntelOptions {
   ttlOverrides?: Partial<Record<IntelClass, number>>;
   /** Never spend on these classes — serve them only if already cached. */
   cachedOnlyClasses?: IntelClass[];
+  /**
+   * Which provider to use. 'auto' tries ATTOM first, then BatchData fallback.
+   * 'attom' and 'batchdata' pin to one provider.
+   */
+  provider?: "auto" | "attom" | "batchdata";
 }
 
 export interface PropertyIntelResult {
@@ -41,6 +59,33 @@ function ttlOk(fetchedAt: string | null, cls: IntelClass, overrideDays?: number)
   if (!fetchedAt) return false;
   const ageMs = Date.now() - new Date(fetchedAt).getTime();
   return ageMs < (overrideDays ?? ATTOM_TTL_DAYS[cls]) * 24 * 60 * 60 * 1000;
+}
+
+function meaningfulBatchdataResult(
+  cls: IntelClass,
+  extracted: AvmSummary | DetailSummary | TaxSummary | SalesSummary | MortgageSummary | PermitsSummary | null,
+): boolean {
+  if (!extracted) return false;
+  switch (cls) {
+    case "avm":
+      return (extracted as AvmSummary).estimate != null;
+    case "detail":
+      return Object.values(extracted as DetailSummary).some((v) => v != null);
+    case "tax":
+      return Object.values(extracted as TaxSummary).some((v) => v != null);
+    case "sales":
+      return (extracted as SalesSummary).lastSale != null || (extracted as SalesSummary).priorSales.length > 0;
+    case "permits":
+      return (extracted as PermitsSummary).events.length > 0;
+    case "mortgage":
+      return (extracted as MortgageSummary).hasRecord || (extracted as MortgageSummary).loanAmount != null;
+    case "neighborhood":
+    case "risk":
+    case "owner":
+      return false;
+    default:
+      return false;
+  }
 }
 
 
@@ -301,9 +346,88 @@ export async function getPropertyIntel(
     }
   }
 
+  // 2c. BatchData fallback for classes ATTOM couldn't fill.
+  // ATTOM is primary by default; BatchData is the fallback when ATTOM is
+  // disabled, over budget, or returned no data for a requested class.
+  const providerPref = opts.provider ?? "auto";
+  const batchdataEligible = providerPref === "batchdata" || providerPref === "auto";
+  if (batchdataEligible) {
+    const resolvedStaleOrMissing = ordered.filter((cls) => {
+      const resolvedFresh = result.classes[cls]?.data && !result.classes[cls]?.stale;
+      if (resolvedFresh) return false;
+      if (providerPref === "batchdata") return true;
+      // auto: only fall back when ATTOM failed or was skipped
+      if (opts.cachedOnlyClasses?.includes(cls)) return false;
+      if (cacheOnly && !existing?.[cls]) return false;
+      return true;
+    });
 
+    if (resolvedStaleOrMissing.length > 0) {
+      const { data: bdHealth } = await supabaseAdmin
+        .from("data_provider_health")
+        .select("endpoint, enabled")
+        .eq("provider", "batchdata");
+      const batchdataDisabled = new Set(
+        (bdHealth ?? []).filter((r) => !r.enabled).map((r) => r.endpoint),
+      );
+      const toFetch = resolvedStaleOrMissing.filter((c) => !batchdataDisabled.has(c));
 
+      if (toFetch.length > 0) {
+        const bd = await batchdataFetchAll(address);
+        const bdCost = batchdataCostCents("detail"); // one call covers all attributes
 
+        await supabaseAdmin.from("batchdata_call_log").insert({
+          endpoint: "all-attributes",
+          address_normalized: normalized,
+          requested_by: opts.requestedBy ?? null,
+          cache_hit: false,
+          cost_cents: bd.ok ? bdCost : 0,
+          status: bd.status,
+          error_message: bd.ok ? null : bd.error,
+          revenue_source: opts.revenueSource,
+        });
+
+        if (bd.ok) {
+          const now = new Date().toISOString();
+          const extractors: Record<
+            IntelClass,
+            (raw: unknown) => AvmSummary | DetailSummary | TaxSummary | SalesSummary | MortgageSummary | PermitsSummary | null
+          > = {
+            avm: extractBatchdataAvm,
+            detail: extractBatchdataDetail,
+            tax: extractBatchdataTax,
+            sales: extractBatchdataSales,
+            permits: extractBatchdataPermits,
+            mortgage: extractBatchdataMortgage,
+            neighborhood: () => null,
+            risk: () => null,
+            owner: () => null,
+          };
+
+          for (const cls of toFetch) {
+            const extracted = extractors[cls](bd.data);
+            const meaningful = extracted && meaningfulBatchdataResult(cls, extracted);
+
+            if (meaningful) {
+              updates[cls] = extracted;
+              updates[`${cls}_fetched_at`] = now;
+              touched = true;
+              result.classes[cls] = { data: extracted, fetchedAt: now, stale: false };
+              delete result.errors[cls];
+            } else {
+              result.errors[cls] = "BatchData returned no usable data for this address.";
+              await recordMiss(cls, 200, "BatchData SuccessWithoutResult");
+            }
+          }
+        } else {
+          for (const cls of toFetch) {
+            result.errors[cls] = `BatchData failed: ${bd.error}`;
+            await recordMiss(cls, bd.status ?? null, bd.error);
+          }
+        }
+      }
+    }
+  }
 
   // 3. Persist any new/refreshed classes into property_intel (upsert)
   if (touched) {
@@ -386,7 +510,16 @@ export interface AvmSummary {
   confidence: number | null;
   asOf: string | null;
 }
+export function isAvmSummary(raw: unknown): raw is AvmSummary {
+  return (
+    raw != null &&
+    typeof raw === "object" &&
+    "estimate" in raw &&
+    !("property" in raw)
+  );
+}
 export function extractAvm(raw: unknown): AvmSummary {
+  if (isAvmSummary(raw)) return raw;
   const r = raw as { property?: Array<{ avm?: { amount?: { value?: number; low?: number; high?: number; confidence?: number }; eventDate?: string } }> } | null;
   const avm = r?.property?.[0]?.avm;
   return {
@@ -406,7 +539,11 @@ export interface DetailSummary {
   yearBuilt: number | null;
   propertyType: string | null;
 }
+export function isDetailSummary(raw: unknown): raw is DetailSummary {
+  return raw != null && typeof raw === "object" && "beds" in raw && !("property" in raw);
+}
 export function extractDetail(raw: unknown): DetailSummary {
+  if (isDetailSummary(raw)) return raw;
   const r = raw as { property?: Array<{ building?: { rooms?: { beds?: number; bathstotal?: number }; size?: { livingsize?: number }; summary?: { yearbuilt?: number } }; lot?: { lotsize2?: number }; summary?: { proptype?: string; yearbuilt?: number } }> } | null;
   const p = r?.property?.[0];
   return {
@@ -426,7 +563,11 @@ export interface TaxSummary {
   taxAmount: number | null;
   taxYear: number | null;
 }
+export function isTaxSummary(raw: unknown): raw is TaxSummary {
+  return raw != null && typeof raw === "object" && "assessedTotal" in raw && !("property" in raw);
+}
 export function extractTax(raw: unknown): TaxSummary {
+  if (isTaxSummary(raw)) return raw;
   const r = raw as { property?: Array<{ assessment?: { assessed?: { assdttlvalue?: number }; market?: { mktttlvalue?: number }; tax?: { taxamt?: number; taxyear?: number } } }> } | null;
   const a = r?.property?.[0]?.assessment;
   return {
@@ -448,7 +589,11 @@ export interface SalesSummary {
   priorSales: SaleEvent[];
   tenureYears: number | null;
 }
+export function isSalesSummary(raw: unknown): raw is SalesSummary {
+  return raw != null && typeof raw === "object" && "lastSale" in raw && !("property" in raw);
+}
 export function extractSales(raw: unknown): SalesSummary {
+  if (isSalesSummary(raw)) return raw;
   const r = raw as {
     property?: Array<{
       salehistory?: Array<{
@@ -487,7 +632,11 @@ export interface MortgageSummary {
   termYears: number | null;
   termMonths: number | null;
 }
+export function isMortgageSummary(raw: unknown): raw is MortgageSummary {
+  return raw != null && typeof raw === "object" && "hasRecord" in raw && !("property" in raw);
+}
 export function extractMortgage(raw: unknown): MortgageSummary {
+  if (isMortgageSummary(raw)) return raw;
   const r = raw as {
     property?: Array<{
       mortgage?: {
@@ -570,6 +719,9 @@ export interface PermitsSummary {
   totalValue: number | null;
   lastPermitDate: string | null;
 }
+export function isPermitsSummary(raw: unknown): raw is PermitsSummary {
+  return raw != null && typeof raw === "object" && "events" in raw && !("property" in raw);
+}
 type RawPermit = {
   effectiveDate?: string;
   type?: string;
@@ -582,6 +734,7 @@ type RawPermit = {
 };
 
 export function extractPermits(raw: unknown): PermitsSummary {
+  if (isPermitsSummary(raw)) return raw;
   const p = (raw as { property?: Array<Record<string, unknown>> } | null)?.property?.[0] ?? null;
   // ATTOM returns permits either at property[].buildingPermits (current) or
   // nested under building.permits (older shape). Support both.
