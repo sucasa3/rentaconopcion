@@ -103,11 +103,10 @@ export async function batchdataFetchAll(address: string): Promise<BatchdataFetch
 
   const url = `${BATCHDATA_BASE}/property/lookup/all-attributes`;
 
-  // BatchData accepts either a structured address object or a one-line string.
-  // We send the structured form first; the mapper below is defensive about
-  // whichever shape the API actually returns.
+  // BatchData's /property/lookup/all-attributes endpoint expects a
+  // `requests` array of structured address objects.
   const body = {
-    addresses: [
+    requests: [
       {
         address_line1: parsed.address_line1,
         city: parsed.city,
