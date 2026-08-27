@@ -13,18 +13,6 @@
 import { BENCHMARK_REFI_RATE } from "./refi";
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
-import {
-  batchdataCostCents,
-  batchdataFetchAll,
-  BATCHDATA_TTL_DAYS,
-  extractAvm as extractBatchdataAvm,
-  extractDetail as extractBatchdataDetail,
-  extractMortgage as extractBatchdataMortgage,
-  extractPermits as extractBatchdataPermits,
-  extractSales as extractBatchdataSales,
-  extractTax as extractBatchdataTax,
-  type BatchdataEndpoint,
-} from "./batchdata.server";
 
 export type IntelClass = AttomEndpoint;
 export type DataProvider = "attom" | "batchdata";
@@ -41,11 +29,6 @@ export interface GetPropertyIntelOptions {
   ttlOverrides?: Partial<Record<IntelClass, number>>;
   /** Never spend on these classes — serve them only if already cached. */
   cachedOnlyClasses?: IntelClass[];
-  /**
-   * Which provider to use. 'auto' tries ATTOM first, then BatchData fallback.
-   * 'attom' and 'batchdata' pin to one provider.
-   */
-  provider?: "auto" | "attom" | "batchdata";
 }
 
 export interface PropertyIntelResult {
@@ -61,32 +44,6 @@ function ttlOk(fetchedAt: string | null, cls: IntelClass, overrideDays?: number)
   return ageMs < (overrideDays ?? ATTOM_TTL_DAYS[cls]) * 24 * 60 * 60 * 1000;
 }
 
-function meaningfulBatchdataResult(
-  cls: IntelClass,
-  extracted: AvmSummary | DetailSummary | TaxSummary | SalesSummary | MortgageSummary | PermitsSummary | null,
-): boolean {
-  if (!extracted) return false;
-  switch (cls) {
-    case "avm":
-      return (extracted as AvmSummary).estimate != null;
-    case "detail":
-      return Object.values(extracted as DetailSummary).some((v) => v != null);
-    case "tax":
-      return Object.values(extracted as TaxSummary).some((v) => v != null);
-    case "sales":
-      return (extracted as SalesSummary).lastSale != null || (extracted as SalesSummary).priorSales.length > 0;
-    case "permits":
-      return (extracted as PermitsSummary).events.length > 0;
-    case "mortgage":
-      return (extracted as MortgageSummary).hasRecord || (extracted as MortgageSummary).loanAmount != null;
-    case "neighborhood":
-    case "risk":
-    case "owner":
-      return false;
-    default:
-      return false;
-  }
-}
 
 
 export async function getPropertyIntel(
