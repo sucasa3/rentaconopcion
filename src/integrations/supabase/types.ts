@@ -369,6 +369,45 @@ export type Database = {
         }
         Relationships: []
       }
+      batchdata_call_log: {
+        Row: {
+          address_normalized: string | null
+          cache_hit: boolean
+          cost_cents: number
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          id: string
+          requested_by: string | null
+          revenue_source: string | null
+          status: number | null
+        }
+        Insert: {
+          address_normalized?: string | null
+          cache_hit?: boolean
+          cost_cents?: number
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          requested_by?: string | null
+          revenue_source?: string | null
+          status?: number | null
+        }
+        Update: {
+          address_normalized?: string | null
+          cache_hit?: boolean
+          cost_cents?: number
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          requested_by?: string | null
+          revenue_source?: string | null
+          status?: number | null
+        }
+        Relationships: []
+      }
       business_task_state: {
         Row: {
           completed_at: string
@@ -820,6 +859,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      data_provider_health: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          last_unauthorized_at: string | null
+          note: string | null
+          priority: number
+          provider: string
+          unauthorized_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          last_unauthorized_at?: string | null
+          note?: string | null
+          priority?: number
+          provider: string
+          unauthorized_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          last_unauthorized_at?: string | null
+          note?: string | null
+          priority?: number
+          provider?: string
+          unauthorized_count?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       ghl_sync_queue: {
         Row: {
