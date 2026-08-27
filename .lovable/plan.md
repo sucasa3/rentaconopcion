@@ -1,31 +1,38 @@
-# Giselle Matthews test result + ATTOM recovery
+# ATTOM: it's a quota wall, not a bad key
 
-## What I tested
+## What the numbers show
 
-I ran a live property-data lookup for Giselle Matthews (4213 Harris Ridge Ct, Roswell, GA 30076) using the ATTOM key currently stored in this project, hitting five endpoints directly: property detail, AVM, tax/expanded profile, sales history, and building permits.
+ATTOM's dashboard reports 1,888 hits between 29 Jul and 27 Aug against a 2,000-call testing cap. Our own meter for August records 1,897 calls. Those agree. The 401s we hit on Giselle Matthews' address are the trial allowance being exhausted, not a rejected key — so the key does not need replacing.
 
-**Result: all five returned 401 Unauthorized.** The key stored in the project is still being rejected.
+Two other facts confirmed on our side:
+- All 9 ATTOM datasets are currently switched off. Repeated 401s auto-disabled detail, AVM, tax and permits; the rest were switched off manually during the earlier investigation. Even with quota restored, nothing runs until those flags are turned back on.
+- Our internal budget is configured for 5,000 calls/month, not the 2,000 the trial actually allows. That is why nothing throttled before the wall was hit.
 
-Supporting evidence from the system:
-- The most recent real (non-cached) ATTOM call was a permits request at 14:59 UTC today, which returned 401 and auto-disabled that dataset.
-- All 9 ATTOM datasets (detail, avm, tax, sales, mortgage, permits, owner, neighborhood, risk) are currently disabled, so the app makes no live calls at all.
-- Every 200 in the recent call log is a cache hit from previously stored data, not a fresh provider response.
-- Giselle has no property record stored at all, so her profile shows nothing. Neil Terc's Stone Mountain address does have cached data from August 6.
-
-## Why this happens
-
-Either the new key was never saved into this project's stored credentials (it still holds the old one), or the key is valid but the ATTOM account lacks entitlement for these endpoints. A 401 on every endpoint including basic property detail points to the key itself rather than per-endpoint entitlement.
+The call mix also matters: 486 property detail + 484 assessment + 419 AVM + 261 mortgage + 174 sales = roughly 5 calls per property. At that rate, 2,000 calls covers only about 380 properties, and Alex Officer's book alone has more than 500 un-enriched clients.
 
 ## Plan
 
-1. **Update the key.** Save the new ATTOM key into project secrets (I need you to paste it, since I can't read what's on ATTOM's side).
-2. **Probe before trusting.** Run a 9-endpoint probe against a known-good address and record which endpoints return 200, 401, or 404. This costs at most 9 lookups.
-3. **Re-enable only what passes.** Flip the dataset health flags back on for endpoints that authenticate, clear their failure counters, and leave failing ones off with a note.
-4. **Enrich Giselle.** Run a live enrichment for 4213 Harris Ridge Ct and confirm value, equity, tax, sales, and permits populate on her profile.
-5. **Backfill.** Once verified, re-queue the un-enriched clients (including the ~541 lender contacts) through the existing background enrichment worker and report progress.
+### 1. Align our budget with reality
+Set the August allowance to the true 2,000-call cap so the soft cap trips at 80% (1,600) instead of 4,000, and switch to cache-only automatically at the ceiling rather than burning calls into 401s.
+
+### 2. Re-enable the datasets, tiered
+Turn the health flags back on in two tiers rather than all nine:
+- **Core (always on):** property detail, AVM, assessment/tax — these drive value, equity and the home record.
+- **On-demand only:** mortgage, sales, permits, owner, neighborhood, risk — fetched when a specific screen or an agent/lender action needs them, not during bulk enrichment.
+
+This cuts bulk enrichment from ~5 calls per property to 3, raising trial coverage from ~380 to ~660 properties.
+
+### 3. Verify with Giselle, using the remaining headroom
+About 100 calls remain on the trial. Spend 3 of them on 4213 Harris Ridge Ct, Roswell GA and confirm value, equity and tax populate on her profile end to end. Report the result before anything else runs.
+
+### 4. Hold bulk enrichment until the cap is raised
+Leave the background worker paused. With ~100 calls left, releasing it would exhaust the trial in minutes and re-trigger the auto-disable loop. Ask ATTOM for a production allowance sized to the book: roughly 3 calls per property plus headroom, so about 2,000 calls for the current 541 un-enriched clients and 5,000-10,000/month for ongoing growth and refreshes.
+
+### 5. Make the wall visible instead of silent
+Add a budget banner on the admin data page showing calls used vs. allowance and the auto-disabled datasets, and treat a 401 that arrives near the cap as "quota exhausted" rather than "key invalid" — so it pauses enrichment cleanly instead of disabling datasets permanently.
 
 ## Technical notes
 
-- Health flags live in `attom_endpoint_health`; disabled endpoints short-circuit before any HTTP call, so a good key alone does not restore enrichment — step 3 is required.
-- Probe results and 401s are recorded in `attom_call_log` for audit.
-- No production code changes are needed for steps 1-4; they are credential and data operations.
+- Budget lives in `attom_monthly_budget` (`tier_calls_included`, `soft_cap_pct`, `cache_only_mode`); dataset switches live in `attom_endpoint_health`. Both are data updates, no schema change.
+- Tiering core vs. on-demand happens in the `DEFAULT_CLASSES` list in `src/lib/enrichment.server.ts`; on-demand classes stay fetchable through the existing per-class request path.
+- The 401-handling change is in `src/lib/attom.server.ts`: when the month's usage is at or above the allowance, record the failure as quota rather than incrementing the unauthorized counter that permanently disables an endpoint.
