@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { FlaskConical, CheckCircle2, XCircle, Download } from "lucide-react";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { BatchdataReportView } from "@/components/batchdata-report-view";
+import { BenchmarkPanel } from "@/components/benchmark-panel";
+
 import { buildReport, type CallRow } from "@/lib/batchdata-report";
 import {
   getBatchdataTestResults,
@@ -238,6 +240,10 @@ function BatchdataTestLab() {
             Isolated provider testing. Nothing here writes to production property data or the enrichment queue.
           </p>
         </header>
+
+        <BenchmarkPanel />
+
+
 
         <Card>
           <CardHeader className="pb-3">

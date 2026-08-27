@@ -140,9 +140,12 @@ export async function runBatchdataTest(opts: {
   inputs: TestInput[];
   createdBy: string;
   notes?: string | null;
-}): Promise<{ runId: string }> {
+  /** Benchmark runs disable retries so the call count is exactly one per property. */
+  noRetry?: boolean;
+}): Promise<{ runId: string; blocked: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const inputs = opts.inputs.slice(0, MAX_TEST_INPUTS);
+
 
   const { data: run, error: runErr } = await supabaseAdmin
     .from("batchdata_test_runs")
@@ -170,8 +173,12 @@ export async function runBatchdataTest(opts: {
   // skipped — the point of the test is to measure them.
   const seenAddresses = new Set<string>();
   const CONCURRENCY = 3;
+  const maxAttempts = opts.noRetry ? 1 : 2;
+  /** Set when the account blocks further calls (payment/quota). Stops the run. */
+  let blocked: string | null = null;
 
   for (let i = 0; i < inputs.length; i += CONCURRENCY) {
+    if (blocked) break;
     const slice = inputs.slice(i, i + CONCURRENCY);
     const nested = await Promise.all(
       slice.map(async (input, sliceIdx) => {
@@ -185,7 +192,7 @@ export async function runBatchdataTest(opts: {
         let call: RawCall | null = null;
 
         // Real workflow: one bundled lookup, one retry on transport/5xx only.
-        while (attempt < 2) {
+        while (attempt < maxAttempts) {
           attempt += 1;
           const requestedAt = new Date().toISOString();
           call = await callBatchdata(input.address);
@@ -224,7 +231,19 @@ export async function runBatchdataTest(opts: {
             responded_at: new Date().toISOString(),
           });
 
-          const retryable = !call.ok && (call.status === 0 || call.status >= 500);
+          // Account-level block (payment required / quota): stop the whole run.
+          const bodyText = JSON.stringify(call.raw ?? "").toLowerCase();
+          if (
+            !call.ok &&
+            (call.status === 402 ||
+              call.status === 403 ||
+              call.status === 429 ||
+              /insufficient|balance|quota|credit/.test(bodyText))
+          ) {
+            blocked = `HTTP ${call.status} — account blocked further calls`;
+          }
+
+          const retryable = !call.ok && !blocked && (call.status === 0 || call.status >= 500);
           if (!retryable) break;
         }
 
@@ -240,10 +259,12 @@ export async function runBatchdataTest(opts: {
     if (flat.length) await supabaseAdmin.from("batchdata_test_results").insert(flat);
   }
 
+
+
   await supabaseAdmin
     .from("batchdata_test_runs")
     .update({
-      status: "complete",
+      status: blocked ? "blocked" : "complete",
       matched_count: matched,
       unmatched_count: unmatched,
       failed_count: failed,
@@ -251,10 +272,12 @@ export async function runBatchdataTest(opts: {
       attom_call_count: 0,
       estimated_cost_cents: requests * BATCHDATA_EST_COST_CENTS,
       finished_at: new Date().toISOString(),
+      notes: blocked ? `${opts.notes ?? ""} | STOPPED: ${blocked}`.trim() : opts.notes ?? null,
     })
     .eq("id", run.id);
 
-  return { runId: run.id };
+  return { runId: run.id, blocked };
+
 }
 
 
