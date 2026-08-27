@@ -19,7 +19,7 @@ import {
   testBatchdataConnection,
 } from "@/lib/batchdata-test.functions";
 
-export const Route = createFileRoute("/_authenticated/admin/batchdata-test")({
+export const Route = createFileRoute("/_authenticated/batchdata-test")({
   head: () => ({
     meta: [
       { title: "BatchData Test Lab — SuCasa" },
