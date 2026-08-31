@@ -1,6 +1,5 @@
 import type {
   AgentSignal,
-  ListingStatus,
   MoveScore,
   MoveScoreInput,
   ListingRow,
