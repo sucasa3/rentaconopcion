@@ -108,41 +108,18 @@ export async function buildHomeContext(supabase: DB, userId: string): Promise<Ho
     .join(", ");
   if (addr) lines.push(`Address: ${addr}`);
 
+  // The persistent Home Profile is the agent's memory of the physical home:
+  // property, mortgage, valuation and maintenance, stored once and reused
+  // instead of re-buying property-record calls on every turn.
   if (profile?.address) {
     try {
-      const {
-        getPropertyIntel,
-        extractAvm,
-        extractDetail,
-        extractMortgage,
-        extractSales,
-        extractTax,
-        computeEquityRibbon,
-        estimateLoanBalance,
-      } = await import("@/lib/valuation.server");
-      const intel = await getPropertyIntel(addr, {
-        classes: ["avm", "detail", "mortgage", "sales", "tax"],
-        cachedOnlyClasses: ["sales", "tax"],
-        requestedBy: userId,
-        revenueSource: "assistant_context",
-      });
-      const avm = extractAvm(intel.classes.avm?.data);
-      const detail = extractDetail(intel.classes.detail?.data);
-      const mortgage = extractMortgage(intel.classes.mortgage?.data);
-      const sales = extractSales(intel.classes.sales?.data);
-      const tax = intel.classes.tax ? extractTax(intel.classes.tax.data) : null;
-      const equity = computeEquityRibbon(avm, mortgage, sales, tax);
-      const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-      const value = equity.estimatedValue ?? avm?.estimate ?? null;
-      if (detail?.yearBuilt) lines.push(`Year built: ${detail.yearBuilt}`);
-      if (detail?.sqft) lines.push(`Size: ${detail.sqft} sqft`);
-      if (value) lines.push(`Estimated value: $${Math.round(value).toLocaleString()}`);
-      if (equity?.equityDollars != null)
-        lines.push(`Equity: $${Math.round(equity.equityDollars).toLocaleString()}`);
-      if (mortgage?.interestRate != null) lines.push(`Mortgage rate: ${mortgage.interestRate}%`);
-      if (balance != null) lines.push(`Loan balance: $${Math.round(balance).toLocaleString()}`);
+      const { loadHomeProfile, renderHomeProfileForAgent } = await import(
+        "@/lib/home-profile.server"
+      );
+      const stored = await loadHomeProfile(supabase, userId);
+      lines.push(...renderHomeProfileForAgent(stored));
     } catch (e) {
-      console.warn("[home-agent] intel skipped:", (e as Error).message);
+      console.warn("[home-agent] home profile skipped:", (e as Error).message);
     }
   }
 
