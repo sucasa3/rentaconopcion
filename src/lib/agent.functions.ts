@@ -877,12 +877,12 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
       tax,
       listing: listing ?? null,
       moveScore: score.score,
-      signals: score.signals.map((s) => `${s.label}: ${s.detail}`),
+      signals: score.signals.map((s: { label: string; detail: string }) => `${s.label}: ${s.detail}`),
     };
 
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) {
-      return { brief: score.signals.map((s) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
+      return { brief: score.signals.map((s: { label: string; detail: string }) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
     }
 
     const sys =
@@ -913,7 +913,7 @@ ${JSON.stringify(facts, null, 2)}`,
       }),
     });
     if (!res.ok) {
-      return { brief: score.signals.map((s) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
+      return { brief: score.signals.map((s: { label: string; detail: string }) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
     }
     const json: any = await res.json();
     return { brief: json?.choices?.[0]?.message?.content ?? "", ai: true, score: score.score };
