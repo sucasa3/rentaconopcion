@@ -1,450 +1,519 @@
 /**
- * Agent intelligence layer.
+ * HOME AGENT — server brain.
  *
- * Pure functions only — no network, no Supabase. Everything here runs on
- * ATTOM data we have ALREADY cached in `property_intel` plus the listing
- * status we track ourselves, so scoring a whole book of business costs $0.
- *
- * The lender side asks "can this loan be improved?".
- * The agent side asks "how likely is this household to move, and what's my
- * opening line?".
+ * Builds the grounded home context, runs the tool-using loop against the
+ * Lovable AI Gateway, and enforces the permission ladder before anything is
+ * ever actually done. Server-only: never imported from a component.
  */
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import {
+  CAPABILITIES,
+  defaultPermissions,
+  type CapabilityKey,
+  type PermissionLevel,
+} from "@/lib/agent-core";
+
+type DB = SupabaseClient<Database>;
+
+// Keep the agent-side portfolio intelligence exports stable while the Home
+// Agent uses this same server-only module.
+export {
+  extractOwnership,
+  extractCharacteristics,
+  extractTaxTrend,
+  computeMoveScore,
+  computeListingReadiness,
+  draftOpener,
+} from "./agent-portfolio-helpers";
+
+
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL = "google/gemini-3.7-flash";
+const MAX_STEPS = 6;
+
 // ---------------------------------------------------------------------------
-// Extractors for ATTOM classes the lender flow never needed.
+// Permissions
 // ---------------------------------------------------------------------------
 
-export interface OwnershipSummary {
-  ownerNames: string[];
-  ownerOccupied: boolean | null;
-  absentee: boolean | null;
-  vesting: string | null;
-  mailingDiffersFromSite: boolean | null;
-}
-
-export function extractOwnership(raw: unknown): OwnershipSummary {
-  const p = (raw as any)?.property?.[0] ?? null;
-  const owner = p?.owner ?? {};
-  const names: string[] = [];
-  for (const key of ["owner1", "owner2", "owner3", "owner4"]) {
-    const o = owner?.[key];
-    if (!o) continue;
-    const name =
-      typeof o === "string"
-        ? o
-        : [o.firstnameandmi ?? o.firstname, o.lastname].filter(Boolean).join(" ");
-    if (name && name.trim()) names.push(name.trim());
+export async function loadPermissions(
+  supabase: DB,
+  userId: string,
+): Promise<Record<CapabilityKey, PermissionLevel>> {
+  const perms = defaultPermissions();
+  const { data } = await supabase
+    .from("agent_permissions")
+    .select("capability, level")
+    .eq("user_id", userId);
+  for (const row of data ?? []) {
+    const cap = row.capability as CapabilityKey;
+    if (cap in perms) perms[cap] = Math.min(5, Math.max(1, row.level)) as PermissionLevel;
   }
-  const absenteeInd: string | null = p?.summary?.absenteeInd ?? null;
-  const absentee = absenteeInd ? /absentee/i.test(absenteeInd) : null;
-  const mailing = p?.address?.mailingAddressOneLine ?? null;
-  const site = p?.address?.oneLine ?? null;
-
-  return {
-    ownerNames: names,
-    ownerOccupied: absentee == null ? null : !absentee,
-    absentee,
-    vesting: owner?.corporateindicator === "Y" ? "entity" : owner?.type ?? null,
-    mailingDiffersFromSite:
-      mailing && site ? mailing.trim().toLowerCase() !== site.trim().toLowerCase() : null,
-  };
-}
-
-export interface CharacteristicsSummary {
-  beds: number | null;
-  baths: number | null;
-  livingSqft: number | null;
-  lotSqft: number | null;
-  yearBuilt: number | null;
-  propertyType: string | null;
-  garage: number | null;
-  pool: boolean | null;
-}
-
-export function extractCharacteristics(raw: unknown): CharacteristicsSummary {
-  const p = (raw as any)?.property?.[0] ?? null;
-  const b = p?.building ?? {};
-  return {
-    beds: b?.rooms?.beds ?? null,
-    baths: b?.rooms?.bathstotal ?? b?.rooms?.bathsfull ?? null,
-    livingSqft: b?.size?.livingsize ?? b?.size?.universalsize ?? null,
-    lotSqft: p?.lot?.lotsize2 ?? null,
-    yearBuilt: p?.summary?.yearbuilt ?? b?.summary?.yearbuilteffective ?? null,
-    propertyType: p?.summary?.proptype ?? p?.summary?.propclass ?? null,
-    garage: b?.parking?.prkgSize ?? null,
-    pool: p?.lot?.pooltype ? p.lot.pooltype !== "NO POOL" : null,
-  };
-}
-
-export interface TaxTrend {
-  latestAssessedValue: number | null;
-  latestTaxAmount: number | null;
-  taxYear: number | null;
-  taxChangePct: number | null; // year over year
-  assessedToMarketPct: number | null;
-}
-
-export function extractTaxTrend(raw: unknown, marketValue: number | null): TaxTrend {
-  const p = (raw as any)?.property?.[0] ?? null;
-  const assessment = p?.assessment ?? {};
-  const history: any[] = Array.isArray((raw as any)?.property)
-    ? (raw as any).property
-        .map((row: any) => row?.assessment?.tax)
-        .filter(Boolean)
-    : [];
-  const latestTax = assessment?.tax?.taxamt ?? history[0]?.taxamt ?? null;
-  const prevTax = history[1]?.taxamt ?? null;
-  const assessed = assessment?.assessed?.assdttlvalue ?? null;
-
-  return {
-    latestAssessedValue: assessed ?? null,
-    latestTaxAmount: latestTax ?? null,
-    taxYear: assessment?.tax?.taxyear ?? null,
-    taxChangePct:
-      latestTax && prevTax ? Math.round(((latestTax - prevTax) / prevTax) * 1000) / 10 : null,
-    assessedToMarketPct:
-      assessed && marketValue ? Math.round((assessed / marketValue) * 1000) / 10 : null,
-  };
+  return perms;
 }
 
 // ---------------------------------------------------------------------------
-// Listing status (ours — manual today, MLS feed later)
+// Context
 // ---------------------------------------------------------------------------
 
-export type ListingStatus =
-  | "off_market"
-  | "active"
-  | "pending"
-  | "sold"
-  | "expired"
-  | "withdrawn";
+export type HomeContext = {
+  language: "en" | "es";
+  lines: string[];
+};
 
-export interface ListingRow {
-  status: ListingStatus;
-  list_price_cents: number | null;
-  list_date: string | null;
-  expiry_date: string | null;
-  listed_with_other_agent: boolean;
-  listing_agent_name: string | null;
-  source: string;
-}
+export async function buildHomeContext(supabase: DB, userId: string): Promise<HomeContext> {
+  const [{ data: profile }, { data: findings }, { data: requests }, { data: planRow }, { data: memory }, { data: intents }, { data: log }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("full_name, address, city, state, zip, language")
+        .eq("id", userId)
+        .maybeSingle(),
+      supabase
+        .from("home_inspection_findings")
+        .select("system, condition, urgency, defects, recommended_action, recommended_category")
+        .eq("user_id", userId)
+        .limit(20),
+      supabase
+        .from("service_requests")
+        .select("category, status, created_at")
+        .eq("homeowner_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(5),
+      supabase.from("home_plans").select("plan, ai_why").eq("user_id", userId).maybeSingle(),
+      supabase
+        .from("home_memory")
+        .select("kind, label, value, confidence")
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false })
+        .limit(40),
+      supabase
+        .from("homeowner_intents")
+        .select("intent_type, confidence, evidence, status")
+        .eq("user_id", userId)
+        .eq("status", "active"),
+      supabase
+        .from("home_component_service_log")
+        .select("component_key, action, serviced_on, provider")
+        .eq("user_id", userId)
+        .order("serviced_on", { ascending: false })
+        .limit(10),
+    ]);
 
-// ---------------------------------------------------------------------------
-// Move score
-// ---------------------------------------------------------------------------
+  const lines: string[] = ["=== HOME RECORD ==="];
+  if (profile?.full_name) lines.push(`Homeowner: ${profile.full_name}`);
+  const addr = [profile?.address, profile?.city, profile?.state, profile?.zip]
+    .filter(Boolean)
+    .join(", ");
+  if (addr) lines.push(`Address: ${addr}`);
 
-export interface MoveScoreInput {
-  tenureYears: number | null;
-  equityPct: number | null; // 0..1
-  equityDollars: number | null;
-  ownerOccupied: boolean | null;
-  lastPermitDate: string | null;
-  permitTotalValue: number | null;
-  taxChangePct: number | null;
-  listing: ListingRow | null;
-  livingSqft: number | null;
-  beds: number | null;
-}
-
-export interface AgentSignal {
-  kind:
-    | "expired_listing"
-    | "listed_elsewhere"
-    | "tenure"
-    | "equity"
-    | "renovation"
-    | "tax_pressure"
-    | "absentee"
-    | "outgrown";
-  label: string;
-  detail: string;
-  weight: number;
-  tone: "hot" | "warm" | "info" | "hold";
-}
-
-export interface MoveScore {
-  score: number; // 0..100
-  band: "hot" | "warm" | "nurture" | "hold";
-  signals: AgentSignal[];
-  headline: string;
-}
-
-function yearsSince(date: string | null): number | null {
-  if (!date) return null;
-  const t = new Date(date).getTime();
-  if (Number.isNaN(t)) return null;
-  return (Date.now() - t) / (365.25 * 24 * 3600 * 1000);
-}
-
-export function computeMoveScore(input: MoveScoreInput): MoveScore {
-  const signals: AgentSignal[] = [];
-  let score = 0;
-
-  const listing = input.listing;
-
-  // Compliance first: never prospect a home actively listed with another agent.
-  if (listing && listing.listed_with_other_agent && (listing.status === "active" || listing.status === "pending")) {
-    signals.push({
-      kind: "listed_elsewhere",
-      label: "Listed with another agent",
-      detail:
-        listing.listing_agent_name
-          ? `Represented by ${listing.listing_agent_name}. Quiet mode — no solicitation.`
-          : "Quiet mode — value-only touches, no solicitation.",
-      weight: 0,
-      tone: "hold",
-    });
-    return {
-      score: 0,
-      band: "hold",
-      signals,
-      headline: "Quiet mode — currently represented",
-    };
-  }
-
-  if (listing && (listing.status === "expired" || listing.status === "withdrawn")) {
-    const w = 40;
-    score += w;
-    signals.push({
-      kind: "expired_listing",
-      label: listing.status === "expired" ? "Listing expired" : "Listing withdrawn",
-      detail: `Tried to sell${
-        listing.list_price_cents
-          ? ` at $${Math.round(listing.list_price_cents / 100).toLocaleString()}`
-          : ""
-      } and came off market. Highest-intent conversation you can have today.`,
-      weight: w,
-      tone: "hot",
-    });
-  }
-
-  const tenure = input.tenureYears;
-  if (tenure != null) {
-    let w = 0;
-    if (tenure >= 12) w = 22;
-    else if (tenure >= 8) w = 16;
-    else if (tenure >= 6) w = 10;
-    else if (tenure >= 4) w = 5;
-    if (w > 0) {
-      score += w;
-      signals.push({
-        kind: "tenure",
-        label: `${Math.round(tenure)} yrs in home`,
-        detail:
-          tenure >= 8
-            ? "Past the typical 7–9 year move window for this market."
-            : "Approaching the typical move window.",
-        weight: w,
-        tone: tenure >= 8 ? "warm" : "info",
+  if (profile?.address) {
+    try {
+      const {
+        getPropertyIntel,
+        extractAvm,
+        extractDetail,
+        extractMortgage,
+        extractSales,
+        extractTax,
+        computeEquityRibbon,
+        estimateLoanBalance,
+      } = await import("@/lib/valuation.server");
+      const intel = await getPropertyIntel(addr, {
+        classes: ["avm", "detail", "mortgage", "sales", "tax"],
+        cachedOnlyClasses: ["sales", "tax"],
+        requestedBy: userId,
+        revenueSource: "assistant_context",
       });
+      const avm = extractAvm(intel.classes.avm?.data);
+      const detail = extractDetail(intel.classes.detail?.data);
+      const mortgage = extractMortgage(intel.classes.mortgage?.data);
+      const sales = extractSales(intel.classes.sales?.data);
+      const tax = intel.classes.tax ? extractTax(intel.classes.tax.data) : null;
+      const equity = computeEquityRibbon(avm, mortgage, sales, tax);
+      const balance = mortgage ? estimateLoanBalance(mortgage) : null;
+      const value = equity.estimatedValue ?? avm?.estimate ?? null;
+      if (detail?.yearBuilt) lines.push(`Year built: ${detail.yearBuilt}`);
+      if (detail?.sqft) lines.push(`Size: ${detail.sqft} sqft`);
+      if (value) lines.push(`Estimated value: $${Math.round(value).toLocaleString()}`);
+      if (equity?.equityDollars != null)
+        lines.push(`Equity: $${Math.round(equity.equityDollars).toLocaleString()}`);
+      if (mortgage?.interestRate != null) lines.push(`Mortgage rate: ${mortgage.interestRate}%`);
+      if (balance != null) lines.push(`Loan balance: $${Math.round(balance).toLocaleString()}`);
+    } catch (e) {
+      console.warn("[home-agent] intel skipped:", (e as Error).message);
     }
   }
 
-  const eq = input.equityPct;
-  if (eq != null) {
-    let w = 0;
-    if (eq >= 0.6) w = 22;
-    else if (eq >= 0.45) w = 16;
-    else if (eq >= 0.3) w = 9;
-    if (w > 0) {
-      score += w;
-      signals.push({
-        kind: "equity",
-        label: `${Math.round(eq * 100)}% equity`,
-        detail: input.equityDollars
-          ? `About $${Math.round(input.equityDollars).toLocaleString()} of move-up down payment sitting in the house.`
-          : "Enough equity to fund a move-up purchase.",
-        weight: w,
-        tone: eq >= 0.45 ? "warm" : "info",
-      });
+  const aiWhy = (planRow?.ai_why ?? {}) as Record<string, string>;
+  const planItems = (((planRow?.plan as { items?: any[] } | null)?.items ?? []) as any[]).slice(0, 12);
+  if (planItems.length) {
+    lines.push("\nHome plan (what this home needs):");
+    for (const i of planItems) {
+      lines.push(`- [${i.horizon ?? "?"}] ${i.title} — ${aiWhy[i.key] ?? i.why ?? ""}`.slice(0, 220));
     }
   }
 
-  const permitYears = yearsSince(input.lastPermitDate);
-  if (permitYears != null && permitYears <= 2 && (input.permitTotalValue ?? 0) >= 15000) {
-    const w = 12;
-    score += w;
-    signals.push({
-      kind: "renovation",
-      label: "Recent major permit",
-      detail: `$${Math.round(input.permitTotalValue ?? 0).toLocaleString()} of permitted work in the last ${Math.max(
-        1,
-        Math.round(permitYears),
-      )} yr — value story for a CMA, and a reason to call.`,
-      weight: w,
-      tone: "warm",
-    });
+  if ((findings ?? []).length) {
+    lines.push("\nInspection findings:");
+    for (const f of findings ?? []) {
+      lines.push(
+        `- ${f.system}${f.urgency ? ` (${f.urgency})` : ""}: ${
+          Array.isArray(f.defects) ? (f.defects as string[]).slice(0, 2).join("; ") : "—"
+        }${f.recommended_action ? ` → ${f.recommended_action}` : ""}`,
+      );
+    }
   }
 
-  if ((input.taxChangePct ?? 0) >= 8) {
-    const w = 8;
-    score += w;
-    signals.push({
-      kind: "tax_pressure",
-      label: `Taxes up ${input.taxChangePct}%`,
-      detail: "Assessment jump — a common trigger for downsizing or appeal conversations.",
-      weight: w,
-      tone: "info",
-    });
+  if ((log ?? []).length) {
+    lines.push("\nRecent service log:");
+    for (const l of log ?? [])
+      lines.push(`- ${l.component_key}: ${l.action}${l.serviced_on ? ` on ${l.serviced_on}` : ""}`);
   }
 
-  if (input.ownerOccupied === false) {
-    const w = 10;
-    score += w;
-    signals.push({
-      kind: "absentee",
-      label: "Absentee owner",
-      detail: "Mailing address differs from the property — likely a rental or second home.",
-      weight: w,
-      tone: "warm",
-    });
+  if ((requests ?? []).length) {
+    lines.push("\nService requests:");
+    for (const r of requests ?? [])
+      lines.push(`- ${r.category} — ${r.status} (${new Date(r.created_at).toLocaleDateString()})`);
   }
 
-  if (input.beds != null && input.livingSqft != null && input.beds <= 3 && input.livingSqft < 1500 && (tenure ?? 0) >= 6) {
-    const w = 6;
-    score += w;
-    signals.push({
-      kind: "outgrown",
-      label: "Likely outgrown",
-      detail: `${input.beds} bd / ${input.livingSqft.toLocaleString()} sqft after ${Math.round(
-        tenure ?? 0,
-      )} years.`,
-      weight: w,
-      tone: "info",
-    });
+  if ((memory ?? []).length) {
+    lines.push("\nWhat I remember about this homeowner:");
+    for (const m of memory ?? []) lines.push(`- [${m.kind}] ${m.label}: ${m.value ?? ""}`);
   }
 
-  score = Math.max(0, Math.min(100, Math.round(score)));
-  const band: MoveScore["band"] =
-    score >= 60 ? "hot" : score >= 38 ? "warm" : score >= 18 ? "nurture" : "hold";
+  if ((intents ?? []).length) {
+    lines.push("\nActive intents:");
+    for (const i of intents ?? [])
+      lines.push(`- ${i.intent_type} (confidence ${i.confidence})${i.evidence ? ` — ${i.evidence}` : ""}`);
+  }
 
-  const top = [...signals].sort((a, b) => b.weight - a.weight)[0];
-  const headline = top ? top.label : "No movement signals yet";
+  return { language: profile?.language === "es" ? "es" : "en", lines };
+}
 
-  return { score, band, signals, headline };
+function systemPrompt(ctx: HomeContext, perms: Record<CapabilityKey, PermissionLevel>): string {
+  const permLines = CAPABILITIES.map((c) => `- ${c.key}: level ${perms[c.key]}`).join("\n");
+  return [
+    `You are the SuCasa Home Agent — an AI that actively takes care of ONE specific home.`,
+    `You are not a chatbot. You observe the home record, understand what the homeowner wants, prioritize what matters, recommend, and — where you are allowed — prepare or take action.`,
+    `Be concise and plain-spoken. Short paragraphs, bullets when useful, under ~180 words unless depth is asked for. Never invent numbers or facts that are not in the record; if something is missing, say so and offer to find it.`,
+    ctx.language === "es"
+      ? `IMPORTANTE: responde SIEMPRE en español.`
+      : `Always answer in English.`,
+    `PERMISSION LADDER (1 observe, 2 recommend, 3 prepare & wait for approval, 4 do it, 5 bring in a human). Current grants:\n${permLines}`,
+    `Rules for tools:`,
+    `- Call remember_fact whenever the homeowner tells you something durable about their home, their preferences, their plans or important dates.`,
+    `- Call record_intent when the conversation reveals what they want (SELL, BUY, REFINANCE, HELOC, RENOVATE, MAINTAIN, REPAIR, INSURE, MOVE, VALUE, INVEST, FINANCIAL_PLANNING).`,
+    `- Call propose_action when there is real work to do (a service request to file, maintenance to log, a professional to bring in). The system enforces permission: at level 3 it waits for a tap, at level 4 it runs.`,
+    `- Never claim you did something a tool did not confirm.`,
+    ctx.lines.join("\n"),
+  ].join("\n\n");
 }
 
 // ---------------------------------------------------------------------------
-// Listing readiness — "if they said yes today, could we list it?"
-// Separate from move score (intent). This is preparation.
+// Tools
 // ---------------------------------------------------------------------------
 
-export interface ReadinessCheck {
-  key: "equity_covers_costs" | "records" | "condition" | "tenure_basis" | "clear_of_listing" | "contactable";
-  label: string;
-  ok: boolean;
-  detail: string;
+const TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "remember_fact",
+      description: "Store a durable fact about this home or homeowner in long-term memory.",
+      parameters: {
+        type: "object",
+        properties: {
+          kind: {
+            type: "string",
+            enum: ["preference", "goal", "important_date", "appliance", "system", "note"],
+          },
+          label: { type: "string", description: "Short human label, e.g. 'Roof replaced'." },
+          value: { type: "string", description: "The fact itself, in plain language." },
+        },
+        required: ["kind", "label", "value"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "record_intent",
+      description: "Record what the homeowner wants, with the evidence that revealed it.",
+      parameters: {
+        type: "object",
+        properties: {
+          intent_type: { type: "string" },
+          confidence: { type: "number" },
+          evidence: { type: "string" },
+        },
+        required: ["intent_type", "evidence"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "propose_action",
+      description:
+        "Propose a concrete piece of work. Depending on permission level it is prepared for approval or executed now.",
+      parameters: {
+        type: "object",
+        properties: {
+          capability: {
+            type: "string",
+            enum: ["watch", "record_keeping", "service_request", "introductions"],
+          },
+          kind: {
+            type: "string",
+            enum: ["service_request", "log_service", "reminder", "introduction"],
+          },
+          title: { type: "string" },
+          summary: { type: "string" },
+          rationale: { type: "string", description: "Why this home needs it, from the record." },
+          category: { type: "string", description: "Service category when kind=service_request." },
+          component_key: { type: "string", description: "Component when kind=log_service." },
+        },
+        required: ["capability", "kind", "title", "rationale"],
+      },
+    },
+  },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Action execution
+// ---------------------------------------------------------------------------
+
+export async function executeAction(
+  supabase: DB,
+  userId: string,
+  action: {
+    id: string;
+    capability: string;
+    title: string;
+    summary: string | null;
+    payload: Record<string, any>;
+  },
+): Promise<{ ok: boolean; note: string }> {
+  const kind = String(action.payload?.kind ?? "reminder");
+  try {
+    if (kind === "service_request") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("address, city, state, zip")
+        .eq("id", userId)
+        .maybeSingle();
+      const { error } = await supabase.from("service_requests").insert({
+        homeowner_id: userId,
+        category: String(action.payload?.category ?? "General"),
+        description: action.summary ?? action.title,
+        source: "home_agent",
+        address: profile?.address ?? null,
+        city: profile?.city ?? null,
+        state: profile?.state ?? null,
+        zip: profile?.zip ?? null,
+      });
+      if (error) throw error;
+      return { ok: true, note: "Service request filed." };
+    }
+    if (kind === "log_service") {
+      const { error } = await supabase.from("home_component_service_log").insert({
+        user_id: userId,
+        component_key: String(action.payload?.component_key ?? "general"),
+        action: "serviced",
+        serviced_on: new Date().toISOString().slice(0, 10),
+        notes: action.summary ?? action.title,
+      });
+      if (error) throw error;
+      return { ok: true, note: "Logged to your home record." };
+    }
+    return { ok: true, note: "Noted." };
+  } catch (e) {
+    return { ok: false, note: (e as Error).message };
+  }
 }
 
-export interface ListingReadiness {
-  score: number; // 0..100
-  label: "list-ready" | "prep-needed" | "not-ready";
-  netProceeds: number | null;
-  checks: ReadinessCheck[];
+// ---------------------------------------------------------------------------
+// The loop
+// ---------------------------------------------------------------------------
+
+type GatewayMessage = {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string | null;
+  tool_calls?: any[];
+  tool_call_id?: string;
+};
+
+async function callGateway(apiKey: string, messages: GatewayMessage[]) {
+  const res = await fetch(GATEWAY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+    body: JSON.stringify({ model: MODEL, messages, tools: TOOLS }),
+  });
+  if (res.status === 429)
+    throw new Error("Your Home Agent is busy right now — try again in a moment.");
+  if (res.status === 402)
+    throw new Error("The Home Agent is temporarily unavailable (AI credits exhausted).");
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("[home-agent] gateway error", res.status, body.slice(0, 400));
+    throw new Error("The Home Agent couldn't respond. Please try again.");
+  }
+  return (await res.json()) as any;
 }
 
-export function computeListingReadiness(input: {
-  estimatedValue: number | null;
-  loanBalance: number | null;
-  sellCostPct: number; // e.g. 8 (commission + closing + concessions)
-  yearBuilt: number | null;
-  lastPermitDate: string | null;
-  tenureYears: number | null;
-  hasIntel: boolean;
-  listing: ListingRow | null;
-  hasContact: boolean;
-}): ListingReadiness {
-  const value = input.estimatedValue;
-  const netProceeds =
-    value != null
-      ? Math.round(value * (1 - input.sellCostPct / 100) - (input.loanBalance ?? 0))
-      : null;
+export async function runAgentTurn(
+  supabase: DB,
+  userId: string,
+  history: { role: "user" | "assistant"; content: string }[],
+  question: string,
+): Promise<{ answer: string; toolActivity: { tool: string; note: string }[] }> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  if (!apiKey) throw new Error("The Home Agent is not configured.");
 
-  const permitYears = yearsSince(input.lastPermitDate);
-  const age = input.yearBuilt ? new Date().getFullYear() - input.yearBuilt : null;
+  const [ctx, perms] = await Promise.all([
+    buildHomeContext(supabase, userId),
+    loadPermissions(supabase, userId),
+  ]);
 
-  const checks: ReadinessCheck[] = [
-    {
-      key: "equity_covers_costs",
-      label: "Equity clears selling costs",
-      ok: netProceeds != null && netProceeds > 0,
-      detail:
-        netProceeds == null
-          ? "Need a valuation to model net proceeds."
-          : netProceeds > 0
-            ? `Est. $${netProceeds.toLocaleString()} at closing after ${input.sellCostPct}% costs.`
-            : "Underwater after selling costs — not a listing conversation yet.",
-    },
-    {
-      key: "records",
-      label: "Property records on file",
-      ok: input.hasIntel,
-      detail: input.hasIntel
-        ? "Valuation, tax, sale and permit history cached."
-        : "Pull property records to score this household.",
-    },
-    {
-      key: "condition",
-      label: "Condition story",
-      ok: (permitYears != null && permitYears <= 7) || (age != null && age <= 15),
-      detail:
-        permitYears != null && permitYears <= 7
-          ? "Recent permitted work supports a premium list price."
-          : age != null && age <= 15
-            ? "Newer construction — limited prep expected."
-            : "No recent permits — expect a pre-list prep conversation.",
-    },
-    {
-      key: "tenure_basis",
-      label: "Past the 2-year basis window",
-      ok: (input.tenureYears ?? 0) >= 2,
-      detail:
-        (input.tenureYears ?? 0) >= 2
-          ? "Qualifies for the capital-gains exclusion window."
-          : "Under two years of ownership — tax hit on gains.",
-    },
-    {
-      key: "clear_of_listing",
-      label: "Not represented elsewhere",
-      ok: !(
-        input.listing?.listed_with_other_agent &&
-        (input.listing.status === "active" || input.listing.status === "pending")
-      ),
-      detail: input.listing?.listed_with_other_agent
-        ? "Under another agent's agreement — value-only contact."
-        : "No active representation on record.",
-    },
-    {
-      key: "contactable",
-      label: "Reachable",
-      ok: input.hasContact,
-      detail: input.hasContact ? "Phone or email on file." : "No contact info — needs skip trace.",
-    },
+  const messages: GatewayMessage[] = [
+    { role: "system", content: systemPrompt(ctx, perms) },
+    ...history.slice(-12).map((m) => ({ role: m.role, content: m.content })),
+    { role: "user", content: question },
   ];
 
-  const passed = checks.filter((c) => c.ok).length;
-  const score = Math.round((passed / checks.length) * 100);
-  const label: ListingReadiness["label"] =
-    score >= 84 ? "list-ready" : score >= 50 ? "prep-needed" : "not-ready";
+  const toolActivity: { tool: string; note: string }[] = [];
 
-  return { score, label, netProceeds, checks };
-}
+  for (let step = 0; step < MAX_STEPS; step++) {
+    const json = await callGateway(apiKey, messages);
+    const msg = json?.choices?.[0]?.message;
+    const calls = msg?.tool_calls as any[] | undefined;
 
-/** Deterministic, no-AI opening line so the dashboard is useful offline. */
-export function draftOpener(name: string | null, score: MoveScore): string {
-  const first = (name ?? "there").split(" ")[0];
-  switch (score.signals[0]?.kind) {
-    case "listed_elsewhere":
-      return `No outreach — ${first}'s home is represented. Keep sending value-only updates.`;
-    case "expired_listing":
-      return `Hi ${first} — I pulled the public record on your home and put together a short read on why it may not have sold, plus what the last 90 days of sales nearby suggest about pricing. Want me to send it over?`;
-    case "renovation":
-      return `Hi ${first} — I noticed the permitted work on your place. Most owners underprice that in a valuation. I ran an updated number for you.`;
-    case "equity":
-      return `Hi ${first} — your equity position has moved a lot. I mapped what it would buy in a move-up right now. Interested in the one-pager?`;
-    case "tenure":
-      return `Hi ${first} — you've been in the home a while and the block has repriced. Here's what your neighbors actually closed at.`;
-    default:
-      return `Hi ${first} — here's your quarterly home value update with what sold nearby.`;
+    if (!calls?.length) {
+      return {
+        answer:
+          (msg?.content ?? "").trim() ||
+          "I don't have a good answer for that yet — try asking another way?",
+        toolActivity,
+      };
+    }
+
+    messages.push({ role: "assistant", content: msg?.content ?? "", tool_calls: calls });
+
+    for (const call of calls) {
+      let args: any = {};
+      try {
+        args = JSON.parse(call.function?.arguments || "{}");
+      } catch {
+        args = {};
+      }
+      const name = call.function?.name as string;
+      let result: Record<string, unknown> = { ok: false };
+
+      if (name === "remember_fact") {
+        const key = `${args.kind}:${String(args.label ?? "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .slice(0, 60)}`;
+        const level = perms.record_keeping;
+        if (level < 2) {
+          result = { ok: false, reason: "Homeowner has not allowed record keeping." };
+        } else {
+          const { error } = await supabase.from("home_memory").upsert(
+            {
+              user_id: userId,
+              kind: String(args.kind ?? "note"),
+              memory_key: key,
+              label: String(args.label ?? "").slice(0, 160),
+              value: String(args.value ?? "").slice(0, 1000),
+              source: "agent",
+            },
+            { onConflict: "user_id,memory_key" },
+          );
+          result = error ? { ok: false, reason: error.message } : { ok: true };
+          if (!error) toolActivity.push({ tool: "memory", note: `Remembered: ${args.label}` });
+        }
+      } else if (name === "record_intent") {
+        const { error } = await supabase.from("homeowner_intents").upsert(
+          {
+            user_id: userId,
+            intent_type: String(args.intent_type ?? "").toUpperCase().slice(0, 40),
+            confidence: Math.min(1, Math.max(0, Number(args.confidence ?? 0.6))),
+            evidence: String(args.evidence ?? "").slice(0, 500),
+            status: "active",
+            source: "conversation",
+          },
+          { onConflict: "user_id,intent_type" },
+        );
+        result = error ? { ok: false, reason: error.message } : { ok: true };
+        if (!error)
+          toolActivity.push({ tool: "intent", note: `Noted intent: ${args.intent_type}` });
+      } else if (name === "propose_action") {
+        const capability = (String(args.capability ?? "watch") as CapabilityKey) in perms
+          ? (String(args.capability) as CapabilityKey)
+          : "watch";
+        const level = perms[capability];
+        const kind = String(args.kind ?? "reminder");
+        const payload = { kind, category: args.category, component_key: args.component_key };
+        if (level < 2) {
+          result = { ok: false, reason: "This capability is set to observe only." };
+        } else {
+          const status = level >= 4 ? "in_progress" : "proposed";
+          const { data: row, error } = await supabase
+            .from("agent_actions")
+            .insert({
+              user_id: userId,
+              capability,
+              title: String(args.title ?? "").slice(0, 160),
+              summary: String(args.summary ?? "").slice(0, 600) || null,
+              rationale: String(args.rationale ?? "").slice(0, 600) || null,
+              required_level: kind === "reminder" ? 2 : 3,
+              status,
+              payload,
+              source_kind: "conversation",
+            })
+            .select("id")
+            .single();
+          if (error) {
+            result = { ok: false, reason: error.message };
+          } else if (level >= 4 && kind !== "reminder") {
+            const exec = await executeAction(supabase, userId, {
+              id: row.id,
+              capability,
+              title: String(args.title ?? ""),
+              summary: String(args.summary ?? ""),
+              payload,
+            });
+            await supabase
+              .from("agent_actions")
+              .update({
+                status: exec.ok ? "done" : "blocked",
+                result: { note: exec.note },
+                completed_at: exec.ok ? new Date().toISOString() : null,
+                decided_at: new Date().toISOString(),
+              })
+              .eq("id", row.id);
+            result = { ok: exec.ok, executed: exec.ok, note: exec.note };
+            toolActivity.push({ tool: "action", note: `${args.title} — ${exec.note}` });
+          } else {
+            result = { ok: true, executed: false, note: "Waiting for the homeowner to approve." };
+            toolActivity.push({ tool: "action", note: `Proposed: ${args.title}` });
+          }
+        }
+      } else {
+        result = { ok: false, reason: "Unknown tool." };
+      }
+
+      messages.push({
+        role: "tool",
+        tool_call_id: call.id,
+        content: JSON.stringify(result),
+      });
+    }
   }
+
+  return {
+    answer: "I looked into that but couldn't wrap it up — can you ask again?",
+    toolActivity,
+  };
 }

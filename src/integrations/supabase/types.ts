@@ -14,6 +14,104 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_actions: {
+        Row: {
+          capability: string
+          completed_at: string | null
+          conversation_id: string | null
+          created_at: string
+          decided_at: string | null
+          id: string
+          payload: Json
+          proposed_at: string
+          rationale: string | null
+          required_level: number
+          result: Json
+          source_key: string | null
+          source_kind: string | null
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capability: string
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          payload?: Json
+          proposed_at?: string
+          rationale?: string | null
+          required_level?: number
+          result?: Json
+          source_key?: string | null
+          source_kind?: string | null
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capability?: string
+          completed_at?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          payload?: Json
+          proposed_at?: string
+          rationale?: string | null
+          required_level?: number
+          result?: Json
+          source_key?: string | null
+          source_kind?: string | null
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_actions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          last_message_at: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_credit_ledger: {
         Row: {
           created_at: string
@@ -160,6 +258,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agent_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          tool_activity: Json
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          tool_activity?: Json
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          tool_activity?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_permissions: {
+        Row: {
+          capability: string
+          created_at: string
+          id: string
+          level: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          capability: string
+          created_at?: string
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          capability?: string
+          created_at?: string
+          id?: string
+          level?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       agent_plans: {
         Row: {
@@ -1328,6 +1491,48 @@ export type Database = {
           },
         ]
       }
+      home_memory: {
+        Row: {
+          confidence: number
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          label: string
+          memory_key: string
+          source: string
+          updated_at: string
+          user_id: string
+          value: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          label: string
+          memory_key: string
+          source?: string
+          updated_at?: string
+          user_id: string
+          value?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          label?: string
+          memory_key?: string
+          source?: string
+          updated_at?: string
+          user_id?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       home_plan_state: {
         Row: {
           id: string
@@ -1550,6 +1755,48 @@ export type Database = {
           signal_key?: string
           signal_type?: string
           title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      homeowner_intents: {
+        Row: {
+          confidence: number
+          created_at: string
+          detail: Json
+          evidence: string | null
+          expires_at: string | null
+          id: string
+          intent_type: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          detail?: Json
+          evidence?: string | null
+          expires_at?: string | null
+          id?: string
+          intent_type: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          detail?: Json
+          evidence?: string | null
+          expires_at?: string | null
+          id?: string
+          intent_type?: string
+          source?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
