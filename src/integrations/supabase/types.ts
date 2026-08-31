@@ -1661,6 +1661,60 @@ export type Database = {
           },
         ]
       }
+      home_profiles: {
+        Row: {
+          address: string | null
+          address_normalized: string | null
+          behavior: Json
+          completeness: Json
+          completeness_pct: number
+          created_at: string
+          financial: Json
+          id: string
+          last_refreshed_at: string
+          physical: Json
+          property: Json
+          provider_refreshed_at: string | null
+          stale_classes: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          address_normalized?: string | null
+          behavior?: Json
+          completeness?: Json
+          completeness_pct?: number
+          created_at?: string
+          financial?: Json
+          id?: string
+          last_refreshed_at?: string
+          physical?: Json
+          property?: Json
+          provider_refreshed_at?: string | null
+          stale_classes?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          address_normalized?: string | null
+          behavior?: Json
+          completeness?: Json
+          completeness_pct?: number
+          created_at?: string
+          financial?: Json
+          id?: string
+          last_refreshed_at?: string
+          physical?: Json
+          property?: Json
+          provider_refreshed_at?: string | null
+          stale_classes?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       home_value_snapshots: {
         Row: {
           address_normalized: string | null
