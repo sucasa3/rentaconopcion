@@ -56,7 +56,8 @@ Using measured initial and recurring costs, project provider COGS at 250 / 1,000
 
 ## Sequence
 
-1. Build the audit fields, cost meter, implied-value module and reports.
-2. Confirm the 10 selected addresses back to you.
-3. Wait for your go-ahead before a single provider call is made.
-4. Run, then report and stop.
+1. Save the new BatchData key you just sent into secure storage (replacing the old one) so every call in this test uses it. It is stored server-side only and never shown in the app or in chat.
+2. Build the audit fields, cost meter, implied-value module and reports.
+3. Confirm the 10 selected addresses back to you.
+4. Run the 10-property test, then report and stop.
+
