@@ -1,45 +1,62 @@
-# Homeowner account activation invitations
+# Stage 1 — Production-economics test (10 homeowners, BatchData only)
 
-## Goal
-Give agents and lenders a clear way to invite an imported homeowner to activate their SuCasa account, while preserving the existing client record and linking it to the homeowner account after activation.
+A controlled 10-property run inside the existing isolated Test Lab, measuring the true cost and call count to build one production-quality SuCasa home profile, plus a mortgage-derived implied value experiment. No ATTOM calls, no changes to production data flow.
 
-## Current flow confirmed
-- Agents and lenders can add a homeowner/client with name, address, and optional email, or import clients in bulk.
-- A client is considered activated only when `lender_portfolio_clients.homeowner_id` is populated.
-- Standard signup creates the auth/profile record, but it does not currently match a new signup back to an existing client by email.
-- An invite email template already exists, but no homeowner-facing invite action currently sends it.
+## Sample
 
-## Implementation
-1. **Add a secure invitation model and server functions**
-   - Store a hashed, expiring, single-use activation token tied to the specific portfolio client and inviter, with resend/revocation state and timestamps.
-   - Add authenticated server functions for agents/lenders to invite or resend an invite only for client records they are authorized to access.
-   - On acceptance, securely resolve the token, create or complete the homeowner account through the backend auth flow, link `homeowner_id`, and preserve the imported property and financial data.
-   - Make the link idempotent: repeat clicks, resends, and an already-activated client produce a clear result rather than duplicate accounts or links.
+Your uploaded file has 18 contacts; 17 have a usable address (one has none and is skipped). Stage 1 uses the first 10 usable addresses, deliberately mixed: metro Atlanta suburbs, a condo/apartment unit, a lot-numbered record, plus the two out-of-state homes (La Vergne TN, Maywood IL) so we see coverage outside Georgia.
 
-2. **Wire branded activation email delivery**
-   - Use the existing managed email route and invite template, adding the homeowner’s name, the inviter’s organization/MLO identity, the existing home context, expiration, and a primary “Activate my home” CTA.
-   - Keep email contents limited to the minimum needed to identify the invitation; do not expose financial details in the email.
-   - Handle existing email addresses with a safe “sign in to connect your home” path instead of creating a second account.
+Each address is checked against prior test results first; anything already fetched is either swapped for an untested address or clearly labelled as a warm record, so the "cold enrichment" number stays honest.
 
-3. **Add the invitation experience to business workflows**
-   - Add an “Invite to activate” action to homeowner rows/detail views for both agent and lender experiences.
-   - Show clear states: not invited, invitation sent with date, resend, activated, and missing email.
-   - Add a compact activation status/filter so business users can see which homeowners still need activation without confusing it with property-data enrichment.
-   - After a successful send, refresh the client/work-queue counts and show a concise confirmation/error toast.
+## What gets built
 
-4. **Create the public activation route**
-   - Add a public `/activate` page that validates the token, explains which home is being connected, and supports both new-account creation and sign-in for existing users.
-   - After authentication, link the client and route the homeowner to their Home Profile/dashboard; do not put the activation page behind the authenticated layout.
-   - Add a safe expired, revoked, already-used, and invalid-token state with a route back to sign in/support.
+1. **Per-call audit log.** Extend the test result rows so every single HTTP request writes its own row with: property ID, normalized address, endpoint, request number, HTTP status, matched/no-match/failed, latency, fields returned, fields SuCasa actually uses, necessary yes/no, "data already present in an earlier response" flag, cache hit/miss, and any cost/credit figure BatchData returns in the response or headers.
+2. **Cost meter.** Capture whatever cost signal the provider exposes (response body, headers) rather than only the flat 10-cent estimate. Wallet balance before and after is recorded if the API or your dashboard exposes it; if it does not, the report says "not measurable" instead of guessing.
+3. **Hard stops.** Cap of 10 properties, one call per property, retries disabled, immediate halt on any payment/quota/rate error. The run cannot spend more than roughly $2 at the current estimate.
+4. **Implied-value module.** A separate calculated field `batchdata_implied_value` stored alongside — never overwriting — the raw response, with the exact inputs and method stored for audit.
+5. **Report views + CSV export** for the per-call log and the per-home summary.
 
-5. **Security and validation**
-   - Keep token values out of the database and logs by storing only a cryptographic hash.
-   - Enforce inviter organization membership, client ownership/scope, expiration, one-time use, and exact-email matching for existing accounts.
-   - Add grants and RLS for any new public table in the same migration, with service-role access only where the verified server flow requires it.
-   - Cover the key paths: new homeowner, existing account, resend, expired token, wrong email, duplicate click, and already activated client.
+## Implied value logic
 
-## Technical details
-- Reuse the project’s TanStack Start `createServerFn` boundary for internal invitation/account-linking operations; do not add an edge function.
-- Reuse the existing auth email infrastructure and custom invite template rather than introducing a second mail system.
-- Preserve the current signup behavior and email-confirmation setting unless the activation test explicitly requires a configuration change.
-- Update route head metadata for the new public activation route and keep business routes noindex.
+Before any arithmetic, the raw mortgage block of each response is inspected to establish which balance the returned LTV corresponds to (open-lien balance, first-mortgage balance, original amount, combined). Pairing is decided from the actual response structure across the 10 records, not assumed.
+
+- Value = corresponding balance / (LTV / 100). Never divide by zero or a missing figure.
+- If the pairing cannot be established with confidence, the record is marked UNVERIFIED, the raw fields are reported, and the plan states exactly what to confirm with your BatchData rep.
+- First-mortgage LTV and CLTV are calculated and reported separately; balances are never summed unless the response structure supports it.
+- Implausible outputs are flagged for review, not displayed.
+- Source is labelled internally as "BatchData Mortgage-Derived Implied Value"; homeowner-facing wording would be the neutral "Estimated Home Value". It is never described as a provider AVM.
+- Where an implied value exists, the test environment may use it for equity/LTV/cash-out signals — labelled as derived, and never re-presented as independent confirmation of the original LTV.
+
+## Reports produced
+
+**Per homeowner:** total/successful/failed/duplicate calls, availability of property, owner, tax, mortgage/lien, valuation, sales history, permits; equity/LTV calculable; opportunity signals generated; estimated cost; usable SuCasa profile yes/no.
+
+**Stage 1 summary:** total calls, average and median calls per homeowner, success %, match %, mortgage %, valuation %, equity/LTV calculable %, permit %, opportunity-generation %, wasted calls, total spend, average initial-enrichment cost, cost per enriched homeowner, cost per actionable homeowner, wallet start/end/reduction where measurable.
+
+**Implied-valuation table:** address, balance used, LTV used, implied value, calculation successful, confidence/status, existing stored benchmark value (offline only, from data we already hold — no new paid calls), variance %, notes. Variance grouped into 0-5 / 5-10 / 10-15 / 15-20 / 20%+ bands, with implied-valuation coverage = successful implied values ÷ matched properties, plus median and average implied value and the multiple-lien share.
+
+**Waste analysis:** every call that looks unnecessary or could be consolidated, cached, or served from data already present in another response. Findings only — no production change.
+
+**Incremental valuation cost:** confirmation of whether the implied value needs any call beyond the mortgage/bundled lookup already being purchased, targeting $0 incremental.
+
+## Monthly refresh analysis
+
+Every field we collect is categorized A (initial only / rarely changes), B (monthly refresh for lender opportunity detection), or C (event-driven), followed by the minimum calls needed to monitor an already-enriched homeowner each month. Produces: initial calls and cost per homeowner, and monthly calls and cost per homeowner.
+
+## Plan economics
+
+Using measured initial and recurring costs, project provider COGS at 250 / 1,000 / 5,000 / 10,000 / 25,000 profiles, for the first (full-enrichment) month and a normal recurring month. Add $10/month platform reserve per paying account, and show gross profit and gross margin against MLO $79/250, Growth $149/1,000, Branch $499/5,000, Branch Pro $799/10,000, Network $1,499/25,000 — both months shown side by side.
+
+## Guardrails
+
+- Zero ATTOM calls; the ATTOM path stays untouched and remains disabled.
+- Writes only to the isolated test tables. Nothing touches property records, the enrichment queue, or homeowner-facing data.
+- Production valuation logic is unchanged. Optimizations are recommended, not applied.
+- Stage 2 (the further 15 properties) does not run without your explicit approval.
+
+## Sequence
+
+1. Build the audit fields, cost meter, implied-value module and reports.
+2. Confirm the 10 selected addresses back to you.
+3. Wait for your go-ahead before a single provider call is made.
+4. Run, then report and stop.
