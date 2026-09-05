@@ -14,6 +14,7 @@ import {
   parseTestAddress,
 } from "./batchdata-normalize";
 import { classifyCompleteness, evaluateCoverage } from "./batchdata-report";
+import { classifyReadiness } from "./property-safety";
 
 
 const BATCHDATA_BASE = "https://api.batchdata.com/api/v1";
