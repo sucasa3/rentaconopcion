@@ -330,13 +330,18 @@ export async function runBatchdataTest(opts: {
       failed_count: failed,
       api_request_count: requests,
       attom_call_count: 0,
+      green_count: green,
+      yellow_count: yellow,
+      red_count: red,
       estimated_cost_cents: requests * BATCHDATA_EST_COST_CENTS,
       finished_at: new Date().toISOString(),
       notes: blocked ? `${opts.notes ?? ""} | STOPPED: ${blocked}`.trim() : opts.notes ?? null,
     })
     .eq("id", run.id);
 
+  unlockAttom();
   return { runId: run.id, blocked };
+
 
 }
 
