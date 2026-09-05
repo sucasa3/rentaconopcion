@@ -231,6 +231,10 @@ export async function runBatchdataTest(opts: {
 
         // Real workflow: one bundled lookup, one retry on transport/5xx only.
         while (attempt < maxAttempts) {
+          if (requests >= callCeiling) {
+            blocked = blocked ?? `Call ceiling of ${callCeiling} reached`;
+            break;
+          }
           attempt += 1;
           const requestedAt = new Date().toISOString();
           call = await callBatchdata(input.address);
@@ -239,6 +243,7 @@ export async function runBatchdataTest(opts: {
           const normalized = call.ok ? normalizeBatchdataProperty(call.raw) : null;
           const didMatch = isMatched(normalized);
           const coverage = evaluateCoverage(normalized);
+          const verdict = classifyReadiness({ matched: didMatch, normalized, unit: call.unit });
 
           rows.push({
             test_run_id: run.id,
@@ -249,6 +254,7 @@ export async function runBatchdataTest(opts: {
             address_normalized: normalizedAddress,
             provider: "batchdata",
             request_type: "lookup_all_attributes",
+            endpoint: LOOKUP_PATH,
             attempt,
             is_retry: attempt > 1,
             is_duplicate_address: isDuplicate,
@@ -261,6 +267,16 @@ export async function runBatchdataTest(opts: {
             error_message: call.error,
             duration_ms: call.durationMs,
             raw_response: call.raw as any,
+            request_payload: call.payload as any,
+            response_headers: call.headers as any,
+            unit_designator: call.unit,
+            match_confidence: !didMatch
+              ? "none"
+              : call.unit
+                ? "unit_unconfirmed"
+                : "address",
+            readiness: verdict.readiness,
+            readiness_reason: verdict.reason,
             normalized: normalized as any,
             coverage: coverage as any,
             completeness: classifyCompleteness(didMatch, coverage),
@@ -286,11 +302,16 @@ export async function runBatchdataTest(opts: {
         }
 
         const final = rows[rows.length - 1];
+        if (!final) return rows;
         if (!final.success) failed += 1;
         else if (final.matched) matched += 1;
         else unmatched += 1;
+        if (final.readiness === "GREEN") green += 1;
+        else if (final.readiness === "YELLOW") yellow += 1;
+        else red += 1;
 
         return rows;
+
       }),
     );
     const flat = nested.flat();
