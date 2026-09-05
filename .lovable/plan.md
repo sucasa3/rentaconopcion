@@ -1,71 +1,59 @@
-# Launch Sprint — Stage A (checkpoint at the end)
+# Home Value Estimate Without a Provider AVM
 
-Delivered in stages. This plan covers **Stage A: Phases 1–5**. Phases 6–13 are outlined at the end and planned in detail after you review Stage A results.
+## The problem, stated from the data
 
-## Decisions locked in
-- Final validation uses 15 addresses from today's upload, deliberately mixed: ~10 houses + ~5 apartment/unit addresses.
-- BatchData becomes the primary source for new homeowner enrichment. ATTOM stays off.
-- Payments: Stripe gets built (Stage B) — no payment path exists in the app today.
-- Every cost number stays a configurable setting, never hard-coded, so Tuesday's confirmed pricing drops in without rework.
+Across the 13 matched properties in the latest validation run, the provider returned an automated value estimate on **0 of 13**. What it did return, consistently:
 
----
+| Field | Present |
+|---|---|
+| Assessor market value | 13 / 13 |
+| Living area (sqft), beds, baths, year built | 13 / 13 |
+| Last sale price + date | 12 / 13 |
+| Open lien balance + LTV | 8 / 13 |
 
-## Phase 1 — Finish the test harness
+So we have plenty of value signal — just not a packaged estimate. The fix is to compute our own, transparently, and show how confident we are.
 
-The last run was lost because it was executed ad hoc instead of through the saved harness. Fix that first.
+## The approach: SuCasa Value Engine
 
-- Every request and response gets written to the isolated test tables before anything else runs: run ID, original address, normalized address, exact request payload, endpoint, timestamp, HTTP status, latency, attempt number, match result, parsed fields, full raw response, and response headers.
-- Add a stored-response viewer so any past run can be reopened and re-scored without spending a single new call.
-- Hard block: the test path cannot reach the property-records provider we are not testing. A guard throws if anything tries.
-- Unit/apartment handling: send the unit in the provider's own secondary-address field rather than jamming it into the street line. If the schema we have does not clearly define one, the run records exactly what was sent and the item is flagged for Tuesday rather than guessed at.
+One shared function that every screen calls (it replaces the ad-hoc "value or dash" logic in `src/lib/home-value.ts`). It evaluates several independent value candidates, picks and blends the strongest, and always returns a number **plus** a plain-English source line and a confidence band.
 
-## Phase 2 — The 15-property validation run
+### Candidate 1 — Recent sale price (strongest)
+A sale in the last 12 months is the market's own answer. Use the price, drifted forward by a market factor for the months elapsed. Example from the data: 2319 Castilla Isle sold Feb 2026 for $3,000,000.
 
-- Hard cap of 15 new lookups, one bundled lookup per property, retries off, no separate value/mortgage/permit calls.
-- Stops the whole run immediately on any payment, quota or permission error.
-- Captures per property: building details, owner and tenure, tax and assessment, sale history, valuation with range/confidence/as-of date, liens with balances and rates, LTV and equity, and every signal flag (permits, listing, pre-foreclosure, vacancy, ownership change).
-- Each record classified GREEN (safe to show), YELLOW (show with a guardrail) or RED (do not surface), with the reason recorded.
-- Output: an on-screen report plus a downloadable spreadsheet.
+### Candidate 2 — Mortgage-implied value
+Open lien balance divided by the reported LTV. Example: 429 Regina St, $241,656 / 0.702 = about $344,000. Only used when there is exactly one open lien and the LTV clearly belongs to it — never when liens are ambiguous, and never by inventing a missing balance.
 
-## Phase 3 — Data safety guardrails
+### Candidate 3 — Assessor market value, ratio-corrected
+Counties assess at different fractions of true market value. We build a correction factor per state/county and apply it, rather than showing the raw assessor number as if it were market value.
 
-A single shared safety layer that every screen reads through, so no page can invent a number:
+### Candidate 4 — Sale price aged forward
+An older sale price grown by a market appreciation factor for the years since. Low confidence on its own, useful as a sanity check and as a floor/ceiling.
 
-- Value estimates carry an as-of date and are flagged or hidden past a configurable age.
-- An old distress record is never presented as a current one.
-- Multiple loans stay separate; balances and LTV are never merged when the relationship is unknown.
-- A missing loan balance is never back-calculated.
-- Assessor value is never shown as a market value without being labelled as assessor data.
-- "Owns it outright" only appears when the data clearly shows zero open loans.
-- Weak address matches are not attached to a homeowner at all.
-- Provider confidence and our own status are both preserved and visible.
+### Blending and confidence
+- Candidates are ranked; where two independent candidates agree within a tolerance, confidence rises and we publish a tight range.
+- Where they disagree materially, we publish the stronger one, widen the range, and say why.
+- Output always carries: estimate, low/high range, source label, as-of date, confidence (High / Medium / Low).
+- If nothing qualifies, we say "not enough public record data yet" instead of a dash — no invented number.
 
-## Phase 4 — Provider → Home Profile mapping
+## Guardrails (matching your earlier direction)
 
-Map the validated fields into the existing Home Profile in clean blocks: property, owner, tax, sales, valuation, equity, loans, permits/events, and data quality. The provider's own value estimate is used directly — the balance-divided-by-LTV calculation is dropped, since it just reproduces that same number. Enrichment for new homeowners switches to BatchData behind a provider setting.
+- Show with a label rather than hide. An assessor-derived number says "based on county assessor records, {year}". A mortgage-derived number says "estimated from recorded loan data".
+- Equity, cash-out and any lender-facing offer only uses **High or Medium** confidence values; Low confidence shows the number to the homeowner but suppresses the money-offer opportunity.
+- Never derive value from LTV when liens are ambiguous or a balance is missing.
 
-## Phase 5 — Opportunity engine
+## Validating it before it ships (no new API calls)
 
-Every Home Profile is evaluated for: high equity, owns-outright, cash-out/HELOC, refinance, loan age, rate opportunity, likely move/sell, recent purchase, and home-improvement activity — alongside the signals already in the product.
-
-Each opportunity records the type, what triggered it, the supporting numbers, the homeowner and property, the linked lender and agent, confidence, priority, the date found, why it matters, the recommended next step, and a suggested outreach reason. Suppression rules stop an opportunity being created at all when the underlying data is stale, ambiguous or unsafe.
-
-**Stage A ends here with a written report and a checkpoint before Stage B.**
-
----
-
-## Stage B and C (planned in detail after your review)
-
-- **Stage B — revenue path:** lender action dashboard (Phase 6), sponsored-agent audit and launch-blocker fixes only (Phase 7), CRM actionability with duplicate prevention (Phase 9), onboarding friction audit (Phase 10), Stripe plans/checkout/subscription state and profile + sponsored-agent limits (Phase 11).
-- **Stage C — depth and launch:** AI Document Inbox MVP (Phase 8), end-to-end QA including all the edge cases you listed (Phase 12), and the Launch Command Center with the ranked top-10 and the "what stops us taking a paying lender tomorrow" answer (Phase 13).
-
-## Pending BatchData confirmation (tracked, blocks nothing else)
-
-A living checklist page in the admin area holding: real per-lookup cost, whether no-matches are billed, value-estimate entitlement and refresh cadence, loan balance/equity refresh cadence, the correct apartment/unit request format, signal-list entitlement, realistic permit coverage, whether a cheaper refresh endpoint exists, the multi-loan LTV definition, and whether wallet balance is readable via the API. Each item is wired to a configuration value, so answers get typed in rather than coded in.
+We already have stored provider AVMs from the August benchmark run and stored ATTOM values in the database. We backtest the engine against those saved records: run the estimator on the stored inputs, compare to the stored AVM, and report median absolute error, share within 10%, and error by candidate type. That tells us how good each candidate really is and sets the correction factors and tolerances from evidence rather than guesswork. Results go into a short accuracy report.
 
 ## Technical notes
 
-- Harness persistence moves into `batchdata-test.server.ts` with header capture and a replay/re-score path over `batchdata_test_results`.
-- New guardrail module (`property-safety.ts`) with thresholds in a config table; consumed by valuation, equity, opportunity and dashboard code paths.
-- Mapping lands in `home-profile.server.ts` / `property_intel`; `batchdata.server.ts` normalizers get corrected to the real response shape confirmed by the stored runs.
-- Opportunity rules extend `opportunities.server.ts`, writing typed rows with confidence, priority and suppression reasons.
+- New `src/lib/value-engine.ts` — pure, testable, no I/O: takes a normalized property record, returns `{ estimate, low, high, source, asOf, confidence, reason }`.
+- Market drift and assessment-ratio factors live in a small data table in `src/lib/data/` so they can be tuned without touching logic.
+- `src/lib/home-value.ts` `resolveHomeValue` delegates to the engine, keeping its current signature so no screen breaks.
+- Backtest runs as a script against `batchdata_test_results` and stored ATTOM records; read-only.
+- No provider calls, no change to live enrichment, no ATTOM activation.
+
+## Out of scope for now
+
+- Comparable-sales modelling (needs a comps endpoint we haven't priced).
+- Switching live enrichment to the new provider — that stays gated behind the earlier checkpoint.
