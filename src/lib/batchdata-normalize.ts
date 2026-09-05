@@ -10,6 +10,31 @@ export interface ParsedAddress {
   city: string | null;
   state: string | null;
   zip: string | null;
+  /** Secondary designator (Apt 3, # 62, Ph 29, Trlr T26...) when present. */
+  unit: string | null;
+  /** Street line with the secondary designator removed. */
+  street_no_unit: string;
+}
+
+const UNIT_RE =
+  /\s+(?:(apt|apartment|unit|ste|suite|ph|penthouse|trlr|trailer|lot|rm|room|fl|floor|bldg|building)\.?\s*|#\s*)([A-Za-z0-9-]+)\s*$/i;
+
+/**
+ * Split a secondary designator off a street line.
+ *
+ * BatchData's documented address object is { street, city, state, zip } — it
+ * exposes no separate unit field in the schema available to this project, so
+ * we do NOT invent one. We only record the unit separately for auditing and
+ * for the (currently disabled) building-level fallback.
+ */
+export function splitUnitDesignator(streetLine: string): { street: string; unit: string | null } {
+  const m = streetLine.match(UNIT_RE);
+  if (!m) return { street: streetLine.trim(), unit: null };
+  const keyword = m[1] ? m[1] : "#";
+  return {
+    street: streetLine.slice(0, m.index).trim(),
+    unit: `${keyword} ${m[2]}`.trim(),
+  };
 }
 
 export function parseTestAddress(address: string): ParsedAddress {
@@ -38,8 +63,10 @@ export function parseTestAddress(address: string): ParsedAddress {
     }
   }
 
-  return { address_line1, city, state, zip };
+  const { street, unit } = splitUnitDesignator(address_line1);
+  return { address_line1, city, state, zip, unit, street_no_unit: street };
 }
+
 
 export function normalizeTestAddress(address: string): string {
   return address.trim().toLowerCase().replace(/\s+/g, " ");
