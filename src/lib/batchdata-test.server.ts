@@ -14,6 +14,7 @@ import {
   parseTestAddress,
 } from "./batchdata-normalize";
 import { classifyCompleteness, evaluateCoverage } from "./batchdata-report";
+import { classifyReadiness } from "./property-safety";
 
 
 const BATCHDATA_BASE = "https://api.batchdata.com/api/v1";
@@ -29,16 +30,43 @@ export interface RawCall {
   raw: unknown;
   error: string | null;
   requestId: string | null;
+  /** Exact JSON body we sent, persisted for replay/audit. */
+  payload: unknown;
+  /** Response headers, persisted for rate-limit / billing forensics. */
+  headers: Record<string, string>;
+  unit: string | null;
 }
 
-async function callBatchdata(address: string): Promise<RawCall> {
+async function callBatchdata(address: string, opts?: { stripUnit?: boolean }): Promise<RawCall> {
   const apiKey = process.env["BATCHDATA_API_KEY"];
   const started = Date.now();
+  const parsed = parseTestAddress(address);
+  const street = opts?.stripUnit ? parsed.street_no_unit : parsed.address_line1;
+
+  // BatchData's documented address object is { street, city, state, zip }.
+  // There is no unit field in the schema available to us, so the designator
+  // stays on the street line and is recorded separately for auditing.
+  const body = {
+    requests: [
+      {
+        address: {
+          street,
+          city: parsed.city,
+          state: parsed.state,
+          zip: parsed.zip,
+        },
+      },
+    ],
+  };
+
   if (!apiKey) {
-    return { ok: false, status: 500, durationMs: 0, raw: null, error: "BATCHDATA_API_KEY not configured", requestId: null };
+    return {
+      ok: false, status: 500, durationMs: 0, raw: null,
+      error: "BATCHDATA_API_KEY not configured", requestId: null,
+      payload: body, headers: {}, unit: parsed.unit,
+    };
   }
 
-  const parsed = parseTestAddress(address);
   if (!parsed.address_line1 || (!parsed.city && !parsed.state && !parsed.zip)) {
     return {
       ok: false,
@@ -47,21 +75,11 @@ async function callBatchdata(address: string): Promise<RawCall> {
       raw: null,
       error: "Incomplete address: street plus city/state/ZIP required",
       requestId: null,
+      payload: body,
+      headers: {},
+      unit: parsed.unit,
     };
   }
-
-  const body = {
-    requests: [
-      {
-        address: {
-          street: parsed.address_line1,
-          city: parsed.city,
-          state: parsed.state,
-          zip: parsed.zip,
-        },
-      },
-    ],
-  };
 
   try {
     const res = await fetch(`${BATCHDATA_BASE}${LOOKUP_PATH}`, {
@@ -74,6 +92,12 @@ async function callBatchdata(address: string): Promise<RawCall> {
       body: JSON.stringify(body),
     });
     const durationMs = Date.now() - started;
+    const headers: Record<string, string> = {};
+    res.headers.forEach((value, key) => {
+      // Never persist anything that could echo credentials.
+      if (/authorization|set-cookie|api-key/i.test(key)) return;
+      headers[key] = value;
+    });
     const requestId = res.headers.get("x-request-id") ?? res.headers.get("request-id");
     const text = await res.text();
     let raw: unknown = null;
@@ -83,9 +107,9 @@ async function callBatchdata(address: string): Promise<RawCall> {
       raw = { _nonJson: text.slice(0, 2000) };
     }
     if (!res.ok) {
-      return { ok: false, status: res.status, durationMs, raw, error: `HTTP ${res.status}`, requestId };
+      return { ok: false, status: res.status, durationMs, raw, error: `HTTP ${res.status}`, requestId, payload: body, headers, unit: parsed.unit };
     }
-    return { ok: true, status: res.status, durationMs, raw, error: null, requestId };
+    return { ok: true, status: res.status, durationMs, raw, error: null, requestId, payload: body, headers, unit: parsed.unit };
   } catch (err) {
     return {
       ok: false,
@@ -94,9 +118,13 @@ async function callBatchdata(address: string): Promise<RawCall> {
       raw: null,
       error: err instanceof Error ? err.message : String(err),
       requestId: null,
+      payload: body,
+      headers: {},
+      unit: parsed.unit,
     };
   }
 }
+
 
 /** Connection check — one live call against a known-good address. */
 export async function batchdataConnectionTest(): Promise<{
@@ -142,9 +170,16 @@ export async function runBatchdataTest(opts: {
   notes?: string | null;
   /** Benchmark runs disable retries so the call count is exactly one per property. */
   noRetry?: boolean;
+  /** Hard ceiling on live provider requests for this run. */
+  maxCalls?: number;
 }): Promise<{ runId: string; blocked: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { lockAttom, unlockAttom } = await import("./provider-lock.server");
+  lockAttom("BatchData evaluation run in progress");
   const inputs = opts.inputs.slice(0, MAX_TEST_INPUTS);
+  const callCeiling = opts.maxCalls ?? MAX_TEST_INPUTS;
+
+
 
 
   const { data: run, error: runErr } = await supabaseAdmin
@@ -168,6 +203,9 @@ export async function runBatchdataTest(opts: {
   let unmatched = 0;
   let failed = 0;
   let requests = 0;
+  let green = 0;
+  let yellow = 0;
+  let red = 0;
 
   // Duplicate detection + in-run cache. Duplicates are LABELLED, never
   // skipped — the point of the test is to measure them.
@@ -176,6 +214,7 @@ export async function runBatchdataTest(opts: {
   const maxAttempts = opts.noRetry ? 1 : 2;
   /** Set when the account blocks further calls (payment/quota). Stops the run. */
   let blocked: string | null = null;
+
 
   for (let i = 0; i < inputs.length; i += CONCURRENCY) {
     if (blocked) break;
@@ -193,6 +232,10 @@ export async function runBatchdataTest(opts: {
 
         // Real workflow: one bundled lookup, one retry on transport/5xx only.
         while (attempt < maxAttempts) {
+          if (requests >= callCeiling) {
+            blocked = blocked ?? `Call ceiling of ${callCeiling} reached`;
+            break;
+          }
           attempt += 1;
           const requestedAt = new Date().toISOString();
           call = await callBatchdata(input.address);
@@ -201,6 +244,7 @@ export async function runBatchdataTest(opts: {
           const normalized = call.ok ? normalizeBatchdataProperty(call.raw) : null;
           const didMatch = isMatched(normalized);
           const coverage = evaluateCoverage(normalized);
+          const verdict = classifyReadiness({ matched: didMatch, normalized, unit: call.unit });
 
           rows.push({
             test_run_id: run.id,
@@ -211,6 +255,7 @@ export async function runBatchdataTest(opts: {
             address_normalized: normalizedAddress,
             provider: "batchdata",
             request_type: "lookup_all_attributes",
+            endpoint: LOOKUP_PATH,
             attempt,
             is_retry: attempt > 1,
             is_duplicate_address: isDuplicate,
@@ -223,6 +268,16 @@ export async function runBatchdataTest(opts: {
             error_message: call.error,
             duration_ms: call.durationMs,
             raw_response: call.raw as any,
+            request_payload: call.payload as any,
+            response_headers: call.headers as any,
+            unit_designator: call.unit,
+            match_confidence: !didMatch
+              ? "none"
+              : call.unit
+                ? "unit_unconfirmed"
+                : "address",
+            readiness: verdict.readiness,
+            readiness_reason: verdict.reason,
             normalized: normalized as any,
             coverage: coverage as any,
             completeness: classifyCompleteness(didMatch, coverage),
@@ -248,11 +303,16 @@ export async function runBatchdataTest(opts: {
         }
 
         const final = rows[rows.length - 1];
+        if (!final) return rows;
         if (!final.success) failed += 1;
         else if (final.matched) matched += 1;
         else unmatched += 1;
+        if (final.readiness === "GREEN") green += 1;
+        else if (final.readiness === "YELLOW") yellow += 1;
+        else red += 1;
 
         return rows;
+
       }),
     );
     const flat = nested.flat();
@@ -270,13 +330,18 @@ export async function runBatchdataTest(opts: {
       failed_count: failed,
       api_request_count: requests,
       attom_call_count: 0,
+      green_count: green,
+      yellow_count: yellow,
+      red_count: red,
       estimated_cost_cents: requests * BATCHDATA_EST_COST_CENTS,
       finished_at: new Date().toISOString(),
       notes: blocked ? `${opts.notes ?? ""} | STOPPED: ${blocked}`.trim() : opts.notes ?? null,
     })
     .eq("id", run.id);
 
+  unlockAttom();
   return { runId: run.id, blocked };
+
 
 }
 

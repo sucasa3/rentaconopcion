@@ -77,8 +77,13 @@ export async function attomFetch(
   address: string,
   opts?: { attomId?: string | number | null },
 ): Promise<{ ok: true; data: unknown; status: number } | { ok: false; error: string; status: number }> {
+  // Hard guard: an isolated provider evaluation must never spend ATTOM credit.
+  const { assertAttomAllowed } = await import("./provider-lock.server");
+  assertAttomAllowed();
+
   const apiKey = process.env.ATTOM_API_KEY;
   if (!apiKey) return { ok: false, error: "ATTOM_API_KEY not configured", status: 500 };
+
 
   const url = new URL(`${ATTOM_BASE}${ENDPOINT_PATHS[endpoint]}`);
   if (opts?.attomId) {
