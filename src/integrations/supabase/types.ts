@@ -580,6 +580,7 @@ export type Database = {
           coverage: Json | null
           created_at: string
           duration_ms: number | null
+          endpoint: string | null
           error_message: string | null
           home_index: number | null
           http_status: number | null
@@ -587,19 +588,25 @@ export type Database = {
           input_address: string
           is_duplicate_address: boolean
           is_retry: boolean
+          match_confidence: string | null
           matched: boolean
           normalized: Json | null
           provider: string
           provider_property_id: string | null
           provider_request_id: string | null
           raw_response: Json | null
+          readiness: string | null
+          readiness_reason: string | null
+          request_payload: Json | null
           request_type: string
           requested_at: string
           responded_at: string | null
+          response_headers: Json | null
           source_contact_id: string | null
           source_label: string | null
           success: boolean
           test_run_id: string
+          unit_designator: string | null
           usage_info: Json | null
         }
         Insert: {
@@ -610,6 +617,7 @@ export type Database = {
           coverage?: Json | null
           created_at?: string
           duration_ms?: number | null
+          endpoint?: string | null
           error_message?: string | null
           home_index?: number | null
           http_status?: number | null
@@ -617,19 +625,25 @@ export type Database = {
           input_address: string
           is_duplicate_address?: boolean
           is_retry?: boolean
+          match_confidence?: string | null
           matched?: boolean
           normalized?: Json | null
           provider?: string
           provider_property_id?: string | null
           provider_request_id?: string | null
           raw_response?: Json | null
+          readiness?: string | null
+          readiness_reason?: string | null
+          request_payload?: Json | null
           request_type?: string
           requested_at?: string
           responded_at?: string | null
+          response_headers?: Json | null
           source_contact_id?: string | null
           source_label?: string | null
           success?: boolean
           test_run_id: string
+          unit_designator?: string | null
           usage_info?: Json | null
         }
         Update: {
@@ -640,6 +654,7 @@ export type Database = {
           coverage?: Json | null
           created_at?: string
           duration_ms?: number | null
+          endpoint?: string | null
           error_message?: string | null
           home_index?: number | null
           http_status?: number | null
@@ -647,19 +662,25 @@ export type Database = {
           input_address?: string
           is_duplicate_address?: boolean
           is_retry?: boolean
+          match_confidence?: string | null
           matched?: boolean
           normalized?: Json | null
           provider?: string
           provider_property_id?: string | null
           provider_request_id?: string | null
           raw_response?: Json | null
+          readiness?: string | null
+          readiness_reason?: string | null
+          request_payload?: Json | null
           request_type?: string
           requested_at?: string
           responded_at?: string | null
+          response_headers?: Json | null
           source_contact_id?: string | null
           source_label?: string | null
           success?: boolean
           test_run_id?: string
+          unit_designator?: string | null
           usage_info?: Json | null
         }
         Relationships: [
@@ -682,17 +703,20 @@ export type Database = {
           estimated_cost_cents: number
           failed_count: number
           finished_at: string | null
+          green_count: number
           id: string
           input_record_count: number | null
           label: string
           matched_count: number
           notes: string | null
           provider: string
+          red_count: number
           started_at: string
           status: string
           submitted_count: number
           unmatched_count: number
           updated_at: string
+          yellow_count: number
         }
         Insert: {
           api_request_count?: number
@@ -703,17 +727,20 @@ export type Database = {
           estimated_cost_cents?: number
           failed_count?: number
           finished_at?: string | null
+          green_count?: number
           id?: string
           input_record_count?: number | null
           label: string
           matched_count?: number
           notes?: string | null
           provider?: string
+          red_count?: number
           started_at?: string
           status?: string
           submitted_count?: number
           unmatched_count?: number
           updated_at?: string
+          yellow_count?: number
         }
         Update: {
           api_request_count?: number
@@ -724,17 +751,20 @@ export type Database = {
           estimated_cost_cents?: number
           failed_count?: number
           finished_at?: string | null
+          green_count?: number
           id?: string
           input_record_count?: number | null
           label?: string
           matched_count?: number
           notes?: string | null
           provider?: string
+          red_count?: number
           started_at?: string
           status?: string
           submitted_count?: number
           unmatched_count?: number
           updated_at?: string
+          yellow_count?: number
         }
         Relationships: []
       }
