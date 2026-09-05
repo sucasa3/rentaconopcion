@@ -29,16 +29,43 @@ export interface RawCall {
   raw: unknown;
   error: string | null;
   requestId: string | null;
+  /** Exact JSON body we sent, persisted for replay/audit. */
+  payload: unknown;
+  /** Response headers, persisted for rate-limit / billing forensics. */
+  headers: Record<string, string>;
+  unit: string | null;
 }
 
-async function callBatchdata(address: string): Promise<RawCall> {
+async function callBatchdata(address: string, opts?: { stripUnit?: boolean }): Promise<RawCall> {
   const apiKey = process.env["BATCHDATA_API_KEY"];
   const started = Date.now();
+  const parsed = parseTestAddress(address);
+  const street = opts?.stripUnit ? parsed.street_no_unit : parsed.address_line1;
+
+  // BatchData's documented address object is { street, city, state, zip }.
+  // There is no unit field in the schema available to us, so the designator
+  // stays on the street line and is recorded separately for auditing.
+  const body = {
+    requests: [
+      {
+        address: {
+          street,
+          city: parsed.city,
+          state: parsed.state,
+          zip: parsed.zip,
+        },
+      },
+    ],
+  };
+
   if (!apiKey) {
-    return { ok: false, status: 500, durationMs: 0, raw: null, error: "BATCHDATA_API_KEY not configured", requestId: null };
+    return {
+      ok: false, status: 500, durationMs: 0, raw: null,
+      error: "BATCHDATA_API_KEY not configured", requestId: null,
+      payload: body, headers: {}, unit: parsed.unit,
+    };
   }
 
-  const parsed = parseTestAddress(address);
   if (!parsed.address_line1 || (!parsed.city && !parsed.state && !parsed.zip)) {
     return {
       ok: false,
@@ -47,21 +74,11 @@ async function callBatchdata(address: string): Promise<RawCall> {
       raw: null,
       error: "Incomplete address: street plus city/state/ZIP required",
       requestId: null,
+      payload: body,
+      headers: {},
+      unit: parsed.unit,
     };
   }
-
-  const body = {
-    requests: [
-      {
-        address: {
-          street: parsed.address_line1,
-          city: parsed.city,
-          state: parsed.state,
-          zip: parsed.zip,
-        },
-      },
-    ],
-  };
 
   try {
     const res = await fetch(`${BATCHDATA_BASE}${LOOKUP_PATH}`, {
@@ -74,6 +91,12 @@ async function callBatchdata(address: string): Promise<RawCall> {
       body: JSON.stringify(body),
     });
     const durationMs = Date.now() - started;
+    const headers: Record<string, string> = {};
+    res.headers.forEach((value, key) => {
+      // Never persist anything that could echo credentials.
+      if (/authorization|set-cookie|api-key/i.test(key)) return;
+      headers[key] = value;
+    });
     const requestId = res.headers.get("x-request-id") ?? res.headers.get("request-id");
     const text = await res.text();
     let raw: unknown = null;
@@ -83,9 +106,9 @@ async function callBatchdata(address: string): Promise<RawCall> {
       raw = { _nonJson: text.slice(0, 2000) };
     }
     if (!res.ok) {
-      return { ok: false, status: res.status, durationMs, raw, error: `HTTP ${res.status}`, requestId };
+      return { ok: false, status: res.status, durationMs, raw, error: `HTTP ${res.status}`, requestId, payload: body, headers, unit: parsed.unit };
     }
-    return { ok: true, status: res.status, durationMs, raw, error: null, requestId };
+    return { ok: true, status: res.status, durationMs, raw, error: null, requestId, payload: body, headers, unit: parsed.unit };
   } catch (err) {
     return {
       ok: false,
@@ -94,9 +117,13 @@ async function callBatchdata(address: string): Promise<RawCall> {
       raw: null,
       error: err instanceof Error ? err.message : String(err),
       requestId: null,
+      payload: body,
+      headers: {},
+      unit: parsed.unit,
     };
   }
 }
+
 
 /** Connection check — one live call against a known-good address. */
 export async function batchdataConnectionTest(): Promise<{
