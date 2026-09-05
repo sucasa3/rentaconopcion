@@ -169,9 +169,16 @@ export async function runBatchdataTest(opts: {
   notes?: string | null;
   /** Benchmark runs disable retries so the call count is exactly one per property. */
   noRetry?: boolean;
+  /** Hard ceiling on live provider requests for this run. */
+  maxCalls?: number;
 }): Promise<{ runId: string; blocked: string | null }> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { lockAttom, unlockAttom } = await import("./provider-lock.server");
+  lockAttom("BatchData evaluation run in progress");
   const inputs = opts.inputs.slice(0, MAX_TEST_INPUTS);
+  const callCeiling = opts.maxCalls ?? MAX_TEST_INPUTS;
+
+
 
 
   const { data: run, error: runErr } = await supabaseAdmin
