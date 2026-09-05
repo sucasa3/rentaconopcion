@@ -202,6 +202,9 @@ export async function runBatchdataTest(opts: {
   let unmatched = 0;
   let failed = 0;
   let requests = 0;
+  let green = 0;
+  let yellow = 0;
+  let red = 0;
 
   // Duplicate detection + in-run cache. Duplicates are LABELLED, never
   // skipped — the point of the test is to measure them.
@@ -210,6 +213,7 @@ export async function runBatchdataTest(opts: {
   const maxAttempts = opts.noRetry ? 1 : 2;
   /** Set when the account blocks further calls (payment/quota). Stops the run. */
   let blocked: string | null = null;
+
 
   for (let i = 0; i < inputs.length; i += CONCURRENCY) {
     if (blocked) break;
