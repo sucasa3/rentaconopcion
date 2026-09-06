@@ -57,7 +57,7 @@ export async function enrichViaBatchdata(
 
   const raw = firstBatchdataProperty(res.data);
   const normalized = normalizeBatchdataProperty(raw);
-  const costCents = batchdataCostCents("all_attributes");
+  const costCents = batchdataCostCents("detail");
   const parsed = parseTestAddress(address);
 
   if (!isMatched(normalized)) {
@@ -89,7 +89,7 @@ export async function enrichViaBatchdata(
     detail_fetched_at: now,
     tax: n.valuation ?? null,
     tax_fetched_at: now,
-    owner: n.owner ?? null,
+    owner: n.ownership ?? null,
     owner_fetched_at: now,
     sales: n.sales ?? null,
     sales_fetched_at: now,
