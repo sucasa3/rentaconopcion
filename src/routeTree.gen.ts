@@ -14,6 +14,7 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProRouteImport } from './routes/pro'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LendersRouteImport } from './routes/lenders'
@@ -88,6 +89,11 @@ const ReportRoute = ReportRouteImport.update({
 const ProRoute = ProRouteImport.update({
   id: '/pro',
   path: '/pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartnerRoute = PartnerRouteImport.update({
@@ -368,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
@@ -424,6 +431,7 @@ export interface FileRoutesByTo {
   '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
@@ -479,6 +487,7 @@ export interface FileRoutesById {
   '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
@@ -537,6 +546,7 @@ export interface FileRouteTypes {
     | '/lenders'
     | '/onboarding'
     | '/partner'
+    | '/pricing'
     | '/pro'
     | '/report'
     | '/request'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/lenders'
     | '/onboarding'
     | '/partner'
+    | '/pricing'
     | '/pro'
     | '/report'
     | '/request'
@@ -647,6 +658,7 @@ export interface FileRouteTypes {
     | '/lenders'
     | '/onboarding'
     | '/partner'
+    | '/pricing'
     | '/pro'
     | '/report'
     | '/request'
@@ -705,6 +717,7 @@ export interface RootRouteChildren {
   LendersRoute: typeof LendersRoute
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRoute
+  PricingRoute: typeof PricingRoute
   ProRoute: typeof ProRoute
   ReportRoute: typeof ReportRoute
   RequestRoute: typeof RequestRoute
@@ -758,6 +771,13 @@ declare module '@tanstack/react-router' {
       path: '/pro'
       fullPath: '/pro'
       preLoaderRoute: typeof ProRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/partner': {
@@ -1236,6 +1256,7 @@ const rootRouteChildren: RootRouteChildren = {
   LendersRoute: LendersRoute,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRoute,
+  PricingRoute: PricingRoute,
   ProRoute: ProRoute,
   ReportRoute: ReportRoute,
   RequestRoute: RequestRoute,
