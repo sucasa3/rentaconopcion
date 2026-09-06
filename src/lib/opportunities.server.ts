@@ -252,7 +252,8 @@ export async function computeForPortfolio(
   const { data: clients, error } = await supabase
     .from("lender_portfolio_clients")
     .select(CLIENT_COLUMNS)
-    .eq("portfolio_id", portfolioId);
+    .eq("portfolio_id", portfolioId)
+    .is("archived_at", null);
   if (error) throw new Error(error.message);
 
   const rows = (clients ?? []) as PortfolioClientRow[];
@@ -388,7 +389,8 @@ export async function listPortfolioOpportunityRows(supabase: any, portfolioId: s
   const { data: clients, error: cErr } = await supabase
     .from("lender_portfolio_clients")
     .select(CLIENT_COLUMNS)
-    .eq("portfolio_id", portfolioId);
+    .eq("portfolio_id", portfolioId)
+    .is("archived_at", null);
   if (cErr) throw new Error(cErr.message);
 
   const rows = (clients ?? []) as PortfolioClientRow[];
