@@ -55,6 +55,11 @@ export interface LenderClientRow {
   channels: { call: boolean; text: boolean; email: boolean };
   channelReasons: Record<string, string>;
   estimatedValueCents: number | null;
+  /** Where the value came from: a cached property record, or a loan-derived estimate. */
+  valueSource: "property_record" | "loan_estimate";
+  /** Plain-language reason when the numbers can't be shown for this record. */
+  dataGap: string | null;
+
   estimatedBalanceCents: number | null;
   estimatedEquityCents: number | null;
   estimatedLtvPct: number | null;
