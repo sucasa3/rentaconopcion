@@ -137,7 +137,13 @@ function pctOf(checks: { ok: boolean; label: string }[]): { pct: number; missing
 export function assembleHomeRecord(input: HomeRecordInput): HomeRecord {
   const now = input.now ?? new Date();
 
-  const value = resolveHomeValue({ avm: input.avm, tax: input.tax, equity: input.equity });
+  const value = resolveHomeValue({
+    avm: input.avm,
+    tax: input.tax,
+    equity: input.equity,
+    sales: input.sales,
+    now,
+  });
 
   const property: HomeProperty = {
     addressNormalized: input.addressNormalized ?? null,
