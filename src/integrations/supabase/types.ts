@@ -1372,6 +1372,45 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_language_violations: {
+        Row: {
+          attempt: number
+          created_at: string
+          excerpt: string | null
+          id: string
+          org_id: string | null
+          resolved: boolean
+          surface: string
+          updated_at: string
+          user_id: string | null
+          violations: string[]
+        }
+        Insert: {
+          attempt?: number
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          org_id?: string | null
+          resolved?: boolean
+          surface: string
+          updated_at?: string
+          user_id?: string | null
+          violations?: string[]
+        }
+        Update: {
+          attempt?: number
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          org_id?: string | null
+          resolved?: boolean
+          surface?: string
+          updated_at?: string
+          user_id?: string | null
+          violations?: string[]
+        }
+        Relationships: []
+      }
       consent_records: {
         Row: {
           consent_type: string
@@ -2155,10 +2194,12 @@ export type Database = {
           network: string | null
           org_id: string
           portfolio_client_id: string
+          reason_codes: string[]
           reasons: string[]
           score: number
           signal_key: string | null
           signals: Json
+          source_fields: string[]
           state: string
           strength: string
           updated_at: string
@@ -2172,10 +2213,12 @@ export type Database = {
           network?: string | null
           org_id: string
           portfolio_client_id: string
+          reason_codes?: string[]
           reasons?: string[]
           score?: number
           signal_key?: string | null
           signals?: Json
+          source_fields?: string[]
           state?: string
           strength?: string
           updated_at?: string
@@ -2189,10 +2232,12 @@ export type Database = {
           network?: string | null
           org_id?: string
           portfolio_client_id?: string
+          reason_codes?: string[]
           reasons?: string[]
           score?: number
           signal_key?: string | null
           signals?: Json
+          source_fields?: string[]
           state?: string
           strength?: string
           updated_at?: string
@@ -2850,9 +2895,11 @@ export type Database = {
           client_name: string | null
           client_phone: string | null
           close_date: string | null
+          contact_marketing_permission: string
           created_at: string
           homeowner_id: string | null
           id: string
+          intelligence_access_scope: string[]
           last_intel_refreshed_at: string | null
           loan_amount_at_close_cents: number | null
           notes: string | null
@@ -2873,9 +2920,11 @@ export type Database = {
           client_name?: string | null
           client_phone?: string | null
           close_date?: string | null
+          contact_marketing_permission?: string
           created_at?: string
           homeowner_id?: string | null
           id?: string
+          intelligence_access_scope?: string[]
           last_intel_refreshed_at?: string | null
           loan_amount_at_close_cents?: number | null
           notes?: string | null
@@ -2896,9 +2945,11 @@ export type Database = {
           client_name?: string | null
           client_phone?: string | null
           close_date?: string | null
+          contact_marketing_permission?: string
           created_at?: string
           homeowner_id?: string | null
           id?: string
+          intelligence_access_scope?: string[]
           last_intel_refreshed_at?: string | null
           loan_amount_at_close_cents?: number | null
           notes?: string | null
@@ -3148,6 +3199,81 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_channel_permissions: {
+        Row: {
+          automated_contact_allowed: boolean
+          consent_at: string | null
+          consent_basis: string
+          consent_source: string
+          created_at: string
+          do_not_call: boolean
+          do_not_email: boolean
+          do_not_text: boolean
+          email_allowed: boolean
+          homeowner_id: string | null
+          id: string
+          notes: string | null
+          org_id: string | null
+          phone_allowed: boolean
+          portfolio_client_id: string
+          sms_allowed: boolean
+          updated_at: string
+        }
+        Insert: {
+          automated_contact_allowed?: boolean
+          consent_at?: string | null
+          consent_basis?: string
+          consent_source?: string
+          created_at?: string
+          do_not_call?: boolean
+          do_not_email?: boolean
+          do_not_text?: boolean
+          email_allowed?: boolean
+          homeowner_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string | null
+          phone_allowed?: boolean
+          portfolio_client_id: string
+          sms_allowed?: boolean
+          updated_at?: string
+        }
+        Update: {
+          automated_contact_allowed?: boolean
+          consent_at?: string | null
+          consent_basis?: string
+          consent_source?: string
+          created_at?: string
+          do_not_call?: boolean
+          do_not_email?: boolean
+          do_not_text?: boolean
+          email_allowed?: boolean
+          homeowner_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string | null
+          phone_allowed?: boolean
+          portfolio_client_id?: string
+          sms_allowed?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_channel_permissions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_channel_permissions_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: true
+            referencedRelation: "lender_portfolio_clients"
             referencedColumns: ["id"]
           },
         ]
