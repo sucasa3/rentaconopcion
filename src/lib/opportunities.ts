@@ -394,7 +394,7 @@ export interface DerivedOpportunity {
   score: number;
   reasons: string[];
   /** Value Engine confidence behind any dollar figure quoted in reasons. */
-  confidence?: "high" | "medium" | "low" | null;
+  valueConfidence?: "high" | "medium" | "low" | null;
   /** Value Engine method behind any dollar figure quoted in reasons. */
   valueSource?: string | null;
 }
@@ -426,7 +426,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
   // equity resolver both rate the position safe for lender use.
   const equity = s.equityActionable ? s.equityCents : 0;
   const seasoned = s.monthsSinceClose >= 12;
-  const prov = { confidence: s.valueConfidence, valueSource: s.valueSource };
+  const prov = { valueConfidence: s.valueConfidence, valueSource: s.valueSource };
 
   // --- Refinance review -----------------------------------------------------
   if (s.ratePct != null && seasoned && s.ratePct - s.benchmarkRate >= 0.5) {
