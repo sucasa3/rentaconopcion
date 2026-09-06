@@ -152,6 +152,41 @@ function nonOwnerOccupied(row: IntelRow | undefined): boolean {
  * Assemble the shared Home Record for one client of a book from the cached
  * property record. Same shape, same assembler the homeowner dashboard uses.
  */
+function ribbonFor(client: PortfolioClientRow, row: IntelRow | undefined) {
+  const avm = row ? extractAvm(row.avm) : null;
+  const tax = row ? extractTax(row.tax) : null;
+  const sales = row ? extractSales(row.sales) : null;
+  const mortgage = row ? extractMortgage(row.mortgage) : null;
+  return {
+    ribbon: computeEquityRibbon(avm, mortgage, sales, tax, client.state),
+    sales,
+    mortgage,
+  };
+}
+
+/**
+ * Value + equity facts for the rules engine, sourced only from the shared
+ * Value Engine / equity resolver via the equity ribbon.
+ */
+function engineFactsFor(client: PortfolioClientRow, row: IntelRow | undefined): EngineFacts | null {
+  if (!row) return null;
+  const { ribbon } = ribbonFor(client, row);
+  if (ribbon.estimatedValue == null) return null;
+  return {
+    value: ribbon.estimatedValue,
+    valueSource: ribbon.valueSource,
+    valueConfidence: ribbon.valueConfidence,
+    valueMethodology: ribbon.valueMethodology,
+    balance: ribbon.loanBalanceEstimate,
+    equityDollars: ribbon.equityDollars,
+    ltvPct: ribbon.equityPct != null ? Math.round((1 - ribbon.equityPct) * 1000) / 10 : null,
+    actionable: ribbon.equityActionable,
+    suppressionReason: ribbon.equitySuppressionReason,
+    freeAndClear: ribbon.noMortgageOnRecord,
+    multiLien: ribbon.multiLien,
+  };
+}
+
 function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, now: Date) {
   const avm = row ? extractAvm(row.avm) : null;
   const detail = row ? extractDetail(row.detail) : null;
@@ -159,7 +194,7 @@ function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, 
   const sales = row ? extractSales(row.sales) : null;
   const mortgage = row ? extractMortgage(row.mortgage) : null;
   const permits = row ? extractPermits(row.permits) : null;
-  const equity = computeEquityRibbon(avm, mortgage, sales, tax);
+  const equity = computeEquityRibbon(avm, mortgage, sales, tax, client.state);
 
   return assembleHomeRecord({
     homeownerId: client.homeowner_id,
@@ -185,6 +220,14 @@ function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, 
     permits: permits?.events ?? [],
     now,
   });
+}
+
+/** Whole months between a record date and now, null when the date is absent. */
+function monthsSince(date: string | null, now: Date): number | null {
+  if (!date) return null;
+  const t = Date.parse(date);
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.round((now.getTime() - t) / (1000 * 60 * 60 * 24 * 30.44)));
 }
 
 export interface ComputedClientOpportunities {
@@ -225,6 +268,11 @@ export async function computeForPortfolio(
       benchmarkRate,
       permitCount: intel ? extractPermits(intel.permits).events.length : 0,
       likelyNonOwnerOccupied: nonOwnerOccupied(intel),
+      engine: engineFactsFor(c, intel),
+      monthsSinceSale: monthsSince(
+        intel ? (extractSales(intel.sales).lastSale?.date ?? null) : null,
+        now,
+      ),
       now,
     });
 
