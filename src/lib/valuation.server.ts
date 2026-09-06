@@ -10,6 +10,8 @@
  * in a createServerFn in `property-intel.functions.ts`.
  */
 
+import { estimateHomeValue } from "@/lib/value-engine";
+import { resolveEquity, equityOffersAllowed } from "@/lib/equity";
 import { BENCHMARK_REFI_RATE } from "./refi";
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
@@ -652,6 +654,17 @@ export interface EquityRibbon {
   tenureYears: number | null;
   /** true when public records show no open mortgage */
   noMortgageOnRecord: boolean;
+  /** how confident the Value Engine is in estimatedValue */
+  valueConfidence: "high" | "medium" | "low" | null;
+  /** machine label of the valuation method used */
+  valueMethodology: string;
+  /** set when equity figures must not drive a lender offer */
+  equitySuppression: string | null;
+  equitySuppressionReason: string | null;
+  /** true when a lender may act on the equity position */
+  equityActionable: boolean;
+  /** more than one open recorded loan */
+  multiLien: boolean;
 }
 
 
@@ -681,53 +694,90 @@ export function computeEquityRibbon(
   mortgage: MortgageSummary | null,
   sales: SalesSummary | null,
   tax?: TaxSummary | null,
+  state?: string | null,
 ): EquityRibbon {
-  // Prefer the automated valuation; fall back to the assessor's market value
-  // (or assessed total) so the card isn't blank where AVM coverage is missing.
-  const assessed = tax?.marketTotal ?? tax?.assessedTotal ?? null;
-  const value = avm?.estimate ?? assessed ?? null;
-  const valueSource: EquityRibbon["valueSource"] =
-    avm?.estimate != null ? "avm" : value != null ? "assessed" : null;
+  // Value always comes from the shared SuCasa Value Engine — this function
+  // never decides what a home is worth on its own.
+  const resolved = estimateHomeValue({
+    state: state ?? null,
+    avm,
+    tax,
+    sales: {
+      lastSalePrice: sales?.lastSale?.amount ?? null,
+      lastSaleDate: sales?.lastSale?.date ?? null,
+    },
+    mortgage: mortgage
+      ? {
+          openLienCount: (mortgage as MortgageSummary & { openLienCount?: number | null }).openLienCount ?? null,
+          totalOpenLienBalance:
+            (mortgage as MortgageSummary & { totalOpenLienBalance?: number | null }).totalOpenLienBalance ?? null,
+          loanAmount: mortgage.loanAmount,
+          ltv: (mortgage as MortgageSummary & { ltv?: number | null }).ltv ?? null,
+        }
+      : null,
+  });
 
   const noMortgageOnRecord = mortgage != null && mortgage.hasRecord === false;
-  const balance = mortgage && !noMortgageOnRecord ? estimateLoanBalance(mortgage) : null;
-  const effectiveBalance = noMortgageOnRecord ? 0 : balance;
-  const equity = value != null && effectiveBalance != null ? value - effectiveBalance : null;
-  const equityPct = value && equity != null ? Math.max(0, Math.min(1, equity / value)) : null;
-  const cashOut =
-    value != null && effectiveBalance != null
-      ? Math.max(0, Math.round(value * 0.8 - effectiveBalance))
-      : null;
+  const balanceEstimate = mortgage && !noMortgageOnRecord ? estimateLoanBalance(mortgage) : null;
 
+  const mExt = mortgage as (MortgageSummary & {
+    openLienCount?: number | null;
+    totalOpenLienBalance?: number | null;
+    ltv?: number | null;
+    liens?: Array<{ balance?: number | null; lender?: string | null; position?: number | null }> | null;
+  }) | null;
+
+  const equity = resolveEquity({
+    value: resolved,
+    mortgage: mortgage
+      ? {
+          hasRecord: mortgage.hasRecord,
+          openLienCount: mExt?.openLienCount ?? null,
+          totalOpenLienBalance: mExt?.totalOpenLienBalance ?? null,
+          balanceEstimate,
+          ltv: mExt?.ltv ?? null,
+          liens: mExt?.liens ?? null,
+        }
+      : null,
+  });
+
+  const valueSource: EquityRibbon["valueSource"] =
+    resolved.kind === "provider_avm" ? "avm" : resolved.value != null ? "assessed" : null;
+
+  // Refi/cash-out signal only fires on an equity position we are allowed to
+  // act on; otherwise the raw data stays visible but no signal is raised.
   let refi: EquityRibbon["refiSignal"] = null;
-  const marketRate = BENCHMARK_REFI_RATE;
-  if (equityPct != null && mortgage?.interestRate != null) {
-    // Rate-driven refi: 20%+ equity AND current market meaningfully below their rate.
-    const spread = mortgage.interestRate - marketRate;
-    if (equityPct >= 0.2 && spread >= 1) refi = "strong";
-    else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
-    else if (equityPct >= 0.15) refi = "watch";
-  } else if (equityPct != null) {
-    // Equity-driven signal when there's no mortgage record: cash-out / HELOC angle.
-    if (equityPct >= 0.5) refi = "strong";
-    else if (equityPct >= 0.3) refi = "moderate";
-    else if (equityPct >= 0.2) refi = "watch";
-  } else if (value != null && (mortgage == null || noMortgageOnRecord)) {
-    // No mortgage on file at all — likely owned free-and-clear or unrecorded.
-    refi = "moderate";
+  if (equityOffersAllowed(equity)) {
+    const equityPct = equity.equityPct;
+    const marketRate = BENCHMARK_REFI_RATE;
+    if (equityPct != null && mortgage?.interestRate != null) {
+      const spread = mortgage.interestRate - marketRate;
+      if (equityPct >= 0.2 && spread >= 1) refi = "strong";
+      else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
+      else if (equityPct >= 0.15) refi = "watch";
+    } else if (equityPct != null) {
+      if (equityPct >= 0.5) refi = "strong";
+      else if (equityPct >= 0.3) refi = "moderate";
+      else if (equityPct >= 0.2) refi = "watch";
+    }
   }
 
-
   return {
-    estimatedValue: value,
+    estimatedValue: resolved.value,
     valueSource,
-    loanBalanceEstimate: balance,
-    equityDollars: equity,
-    equityPct,
-    cashOutHeadroom80: cashOut,
+    loanBalanceEstimate: equity.balance ?? balanceEstimate,
+    equityDollars: equity.equityDollars,
+    equityPct: equity.equityPct,
+    cashOutHeadroom80: equityOffersAllowed(equity) ? equity.cashOutHeadroom : null,
     refiSignal: refi,
     tenureYears: sales?.tenureYears ?? null,
     noMortgageOnRecord,
+    valueConfidence: resolved.confidence,
+    valueMethodology: resolved.methodology,
+    equitySuppression: equity.suppression,
+    equitySuppressionReason: equity.suppressionReason,
+    equityActionable: equityOffersAllowed(equity),
+    multiLien: equity.multiLien,
   };
 }
 
