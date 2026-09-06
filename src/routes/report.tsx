@@ -481,19 +481,42 @@ function zoneInsight(zone: string, status: ZoneStatus) {
   return map[zone]?.[status] ?? "Status normal.";
 }
 
+/**
+ * Membership is a real record now: it can be paid by the homeowner, granted by
+ * SuCasa, or sponsored. The local flag is only a preview fallback for people
+ * who aren't signed in.
+ */
 function usePremium() {
   const [hydrated, setHydrated] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [membership, setMembership] = useState<any>(null);
+
   useEffect(() => {
-    setIsPremium(localStorage.getItem("sucasa_premium") === "1");
-    setHydrated(true);
+    let alive = true;
+    (async () => {
+      try {
+        const { getMyPremium } = await import("@/lib/premium.functions");
+        const res: any = await getMyPremium();
+        if (!alive) return;
+        setMembership(res?.membership ?? null);
+        setIsPremium(Boolean(res?.active));
+      } catch {
+        if (alive) setIsPremium(localStorage.getItem("sucasa_premium") === "1");
+      } finally {
+        if (alive) setHydrated(true);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
+
   const setPremium = (v: boolean) => {
     setIsPremium(v);
     if (v) localStorage.setItem("sucasa_premium", "1");
     else localStorage.removeItem("sucasa_premium");
   };
-  return { isPremium, setPremium, hydrated };
+  return { isPremium, setPremium, hydrated, membership };
 }
 
 const PREMIUM_PERKS = [
