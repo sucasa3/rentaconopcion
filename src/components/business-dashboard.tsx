@@ -93,6 +93,7 @@ export function BusinessDashboard({
 
   return (
     <div className="space-y-8 px-4 py-6 sm:px-6">
+      {showHeader && (<>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">{orgName}</p>
@@ -154,6 +155,7 @@ export function BusinessDashboard({
           hash="work-queue"
         />
       </div>
+      </>)}
 
       {book && (
         <CopilotSearch
