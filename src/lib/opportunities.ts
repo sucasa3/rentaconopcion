@@ -18,6 +18,11 @@ export const OPPORTUNITY_CATEGORIES = [
   "mortgage_review",
   "home_condition",
   "market_timing",
+  "free_and_clear",
+  "recent_purchase",
+  "mortgage_age",
+  "permit_activity",
+  "distress",
 ] as const;
 
 
@@ -85,6 +90,83 @@ export const CATEGORY_META: Record<OpportunityCategory, CategoryMeta> = {
   },
 };
 
+  free_and_clear: {
+    key: "free_and_clear",
+    label: "Owned free and clear",
+    blurb: "Public records show no open loan against this home.",
+    lenderBlurb: "No open loan on record — a first conversation about financing options may be welcome.",
+  },
+  recent_purchase: {
+    key: "recent_purchase",
+    label: "Recent purchase",
+    blurb: "This home changed hands recently.",
+    lenderBlurb: "Recently purchased — a good moment for a relationship-building touch.",
+  },
+  mortgage_age: {
+    key: "mortgage_age",
+    label: "Loan age",
+    blurb: "This loan has been in place long enough for a review to be useful.",
+    lenderBlurb: "Loan seasoning suggests a financing review may be worthwhile.",
+  },
+  permit_activity: {
+    key: "permit_activity",
+    label: "Home improvement activity",
+    blurb: "Permit records show recent work on this home.",
+    lenderBlurb: "Recent permit activity can signal ongoing improvement plans.",
+  },
+  distress: {
+    key: "distress",
+    label: "Needs attention",
+    blurb: "Public records show a recent filing worth a careful conversation.",
+    lenderBlurb: "A recent public filing may warrant a sensitive, timely outreach.",
+  },
+};
+
+/**
+ * Launch status of each opportunity type.
+ *
+ *  on                      — live, no extra conditions
+ *  on_with_guardrails      — live but gated on value/equity confidence or date safety
+ *  off_pending_data        — rule exists, waiting on a data field we do not have yet
+ *  off_pending_external    — waiting on provider entitlement or account configuration
+ */
+export type OpportunityStatus =
+  | "on"
+  | "on_with_guardrails"
+  | "off_pending_data"
+  | "off_pending_external";
+
+export const OPPORTUNITY_STATUS: Record<OpportunityCategory, { status: OpportunityStatus; note: string }> = {
+  equity: {
+    status: "on_with_guardrails",
+    note: "Requires an equity position the Value Engine rates high or medium confidence.",
+  },
+  heloc: {
+    status: "on_with_guardrails",
+    note: "Requires a resolved single-lien balance and an actionable equity position.",
+  },
+  refinance_review: {
+    status: "on_with_guardrails",
+    note: "Requires a recorded rate; suppressed when equity cannot be stated.",
+  },
+  move_up: { status: "on_with_guardrails", note: "Requires actionable equity plus tenure." },
+  investment: { status: "on_with_guardrails", note: "Requires actionable equity plus occupancy or tenure signal." },
+  mortgage_review: { status: "on", note: "Informational only; no equity figures quoted." },
+  home_condition: { status: "on", note: "Driven by the home record, not by valuation." },
+  market_timing: { status: "on", note: "Driven by homeowner behaviour in the app." },
+  free_and_clear: {
+    status: "on_with_guardrails",
+    note: "Only when the provider clearly reports zero open liens.",
+  },
+  recent_purchase: { status: "on", note: "Sale date within the recent-purchase window." },
+  mortgage_age: { status: "on", note: "Loan seasoning only; quotes no value or equity." },
+  permit_activity: { status: "on", note: "Permit records only." },
+  distress: {
+    status: "off_pending_external",
+    note: "Held until provider confirms filing recency semantics; old filings must never read as current.",
+  },
+};
+
 export const CATEGORY_ORDER: OpportunityCategory[] = [
   "refinance_review",
   "equity",
@@ -93,7 +175,12 @@ export const CATEGORY_ORDER: OpportunityCategory[] = [
   "market_timing",
   "home_condition",
   "investment",
+  "free_and_clear",
+  "recent_purchase",
+  "permit_activity",
+  "mortgage_age",
   "mortgage_review",
+  "distress",
 ];
 
 
