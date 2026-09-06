@@ -1,65 +1,90 @@
-# Separating the three SuCasa relationships
+# Lender experience: same power as the agent side, different permissions
 
-SuCasa becomes three independent products: the agent's account comes from SuCasa, the lender buys monitoring and sponsorship services from SuCasa, and the homeowner receives a Premium Home Intelligence Membership from SuCasa. No lender payment ever produces an agent benefit.
+Goal: a lender opens SuCasa and immediately knows who to contact today, why now,
+what to say, and what happened after — but only for homeowners the lender has an
+independent right to see.
 
-## What exists today (verified)
+## What already exists and gets reused
 
-- Agent capacity comes from a credit ledger that includes a lender "sponsor" grant and a 5-credit "Referral or transaction" reward — both conflict with the new model.
-- Lender plans are sold partly on "sponsored agents", and lender→agent seat allocations (`sponsored_agent_seats`) directly increase an agent's Home Profile capacity.
-- Homeowner-level sponsorship exists (`sponsored_profiles`), but Premium itself is only a browser flag on the report page — there is no membership record, status, badge or sponsor disclosure.
-- Homeowner→lender consent records exist but are not wired to a homeowner-initiated "connect me" action.
+- Daily work queue (`ActionQueue`) already accepts `kind="lender"` and already
+  has lender-specific plays, hot/warm/nurture, draft email, call/text, and
+  one-tap outcome logging. Reused as-is with a lender wrapper.
+- Ranking, temperature, outcome vocabulary, funnel rollup, tasks, CRM sync,
+  Copilot search, opportunity detection, Value Engine, equity resolver: all
+  shared. Nothing is rewritten.
+- The lender command center (My Book / Homeowners Served / Permissioned
+  Opportunities) stays and becomes the frame for the new sections.
 
-## Phase 1 — build now
+## The access gate (the core new logic)
 
-### 1. Agent entitlement independence
-- Every agent organization gets a SuCasa-provided base entitlement of 100 active Home Profiles, recorded with an explicit source of `sucasa`.
-- Existing agents keep everything already in use; nothing is deleted or archived. Where current use exceeds the base, the record stays active and new additions are blocked until they add capacity or archive.
-- Lender allocations stop granting agent capacity. Existing allocation rows are preserved for history and re-read as sponsorship of homeowner Premium, not agent capacity.
-- Earned credits stay, but every transaction/referral/lender-activity reward is removed. Agents can only earn from their own platform work (activation, profile completion, engagement, service requests).
-- A single policy module holds these rules with a prominent comment: agent entitlements must remain independent of lender payments and mortgage referral activity.
+One shared classifier decides, per homeowner, what a lender may see:
 
-### 2. Premium Home Intelligence Membership
-- New membership record per homeowner: status, tier, start/end, funding source (lender sponsorship, SuCasa grant, or homeowner self-purchase) and disclosure version.
-- Sponsorship becomes a separate record tied to the homeowner and the sponsoring lender, never to the agent.
-- Premium status badge across the homeowner dashboard ("Premium Home Intelligence — Active / Your home is being monitored"), replacing the browser-flag demo.
-- Sponsor block with the approved wording and the disclosure that the homeowner is not required to use the sponsor, plus the note that they control what is shared.
-- Homeowner self-purchase is architected now with a monthly price placeholder; the live price is created only after you review the amount.
+- **Own relationship** — the lender uploaded them or has a documented basis.
+  Full lender-side intelligence and named workflow.
+- **Asked to connect** — homeowner affirmatively requested contact. Named, top
+  of the queue, limited to the information they authorized.
+- **Sponsored only** — lender funds Premium but has no relationship and no
+  request. Never named, never in the queue, never in a brief. Counts only
+  toward aggregate service-delivery numbers.
+- **Agent-connected only** — invisible individually. An agent connection is not
+  a data permission.
 
-### 3. "What Changed?" feed and monthly digest
-Built from data SuCasa already holds — value, equity, mortgage position, permits, tax/assessment, property status, maintenance. Shown as an ongoing feed on the homeowner dashboard and assembled into a "Your Home This Month" digest with sponsor branding where sponsored.
+Every named surface (queue, book, detail, brief, CRM push, outreach draft)
+passes through this gate on the server. Sponsorship never affects ranking.
 
-### 4. Homeowner-controlled connection
-- Opportunities get "Talk to someone about this", and where a sponsor exists, "Ask [Sponsor] about this".
-- An explicit confirmation names exactly what will be shared before anything is sent.
-- Each authorization writes a consent record (homeowner, recipient, type, scope, disclosure version, source, timestamp, revocation) and a compliance audit event.
-- Sponsorship alone never creates a lead. Contacts a lender already owns through its own uploaded database keep their existing basis and are labelled as such.
+## New lender surfaces
 
-### 5. Lender dashboard and terminology
-Reorganized around My Book, Homeowners Served, Brand Impact, Relationship Network, and a highly visible "Homeowners Who Asked to Connect" bucket. Agent relationships are renamed Agent Connections everywhere. No referral rankings or loan-volume metrics anywhere in the product.
+1. **Today**: Homeowners monitored · Changes detected · Review opportunities ·
+   Asked to connect · Engaged this month · Tasks due, then "Who to contact
+   today" with the shared hot/warm/nurture queue. The score is labeled
+   **Contact Priority** — never a credit, approval or qualification score.
+2. **Asked to Connect** queue at the top, with a REQUESTED CONTACT badge, what
+   they asked about, when, and exactly what they authorized.
+3. **Review opportunity cards**: equity review, mortgage checkup, refinance
+   review, home-equity conversation, move planning, improvement planning,
+   ownership anniversary, value milestone, equity milestone, property change.
+   Each shows estimated value / equity / LTV / loan age, a "Why now" line, a
+   suggested opener, and next best action.
+4. **Homeowner detail (lender view)**: property snapshot, mortgage snapshot with
+   every estimate labeled as an estimate, Why Now signals, engagement signals
+   only where permitted.
+5. **Generate Homeowner Review Brief** — lender sibling of the agent's listing
+   brief: why now, data-backed signals, conversation opportunities, questions to
+   ask, suggested call/email/text openers, next best action, compliance notes.
+6. **My Book filters**: equity change, value change, mortgage age, engagement,
+   tenure, recent property activity, projects, annual review due, opportunity
+   type, last contact, contact priority.
+7. **Service delivery**: Premium memberships active, reports delivered, data
+   refreshes, alerts delivered, sponsor impressions, CRM syncs.
 
-### 6. Marketing and pricing copy
-Lender pages rewritten around Monitor / Serve / Connect. Pricing plans keep their current prices and Home Profile limits, and lead with profiles monitored, Premium memberships sponsored and refresh capacity; agent connections become a secondary line. Agent pages state the first 100 profiles are provided by SuCasa with no lender relationship required. All "sponsored agent", "gifted", "free accounts from your lender" language is removed.
+## Language rules enforced in code
 
-### 7. Compliance guardrails
-- Central rule layer that rejects any attempt to grant agent entitlement from a lender payment, plan, sponsorship or mortgage event.
-- Compliance audit log for sponsorship, consent, sharing and entitlement changes.
-- A `compliance_review_required` flag configuration for future features touching lender-paid agent benefits, lead routing, provider ranking, referral incentives or automatic data sharing.
-- Internal service-delivery reporting (profiles processed, refreshes, reports, alerts, digests, sponsor impressions, CRM syncs) to substantiate what the subscription buys. No monetary value is assigned to referrals.
+Allowed: review, worth reviewing, estimated, may support a conversation.
+Blocked everywhere: qualified, prequalified, approved, eligible, guaranteed
+savings, preferred/recommended lender. A shared check strips these from AI
+output before it reaches the screen.
 
-### 8. Acceptance tests
-All eight scenarios in your list are implemented as automated checks over the entitlement, sponsorship and consent rules.
+## Fair-lending guardrails
 
-## Phase 2 — architected now, built later
+Prioritization uses only property, mortgage, tenure and engagement facts. No
+protected characteristics or demographic proxies, no approval/denial/credit
+scores, no underwriting output. Sponsorship, agent connection and referral
+activity are excluded from ranking inputs.
 
-AI Home Concierge, annual Home Intelligence Review, project intelligence, deeper document intelligence and maintenance intelligence, expanded property monitoring, advanced sponsor analytics. Their data shapes and entry points are reserved so they slot in without rework.
+## Data changes
 
-## Technical notes
+No destructive changes. Existing `relationship_basis` on book records is put to
+work, backfilled to "own relationship" for records the lender already uploaded,
+and consent records supply the other categories. Lender outcome logging reuses
+the existing outcome tables and can never award agent credits or capacity.
 
-- Migrations: `agent_base_entitlements`, `premium_memberships`, `premium_sponsorships`, `consent_records`, `compliance_audit_events`, `service_delivery_events`, plus a source/basis column on existing lender–homeowner links. Existing `sponsored_agent_seats` / `sponsored_profiles` rows are retained and mapped forward, never dropped.
-- Capacity engine (`profile-pool.ts`, `capacity.server.ts`) gains an entitlement-source dimension so lender pool math and agent base math no longer share a path; database triggers that spend agent credit on lender allocation are reworked accordingly.
-- Limits and entitlements move into a configuration table so future changes need no code edits.
-- Stripe prices, plans and commitments are unchanged.
+## Tests
 
-## Needs your decision before Stripe work
+Automated tests cover the nine acceptance scenarios: lender-uploaded customer
+visible, agent-connected homeowner hidden, sponsored-only homeowner aggregate
+only, connection request unlocks the authorized view, agent and lender views
+independent, equity opportunity never claims qualification, brief labels
+estimates, sponsor change does not move ranking, closing a loan grants no agent
+benefit.
 
-Homeowner self-purchase Premium price. Everything else uses existing prices.
+Stripe pricing and plan commitments are untouched.
