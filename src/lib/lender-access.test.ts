@@ -144,3 +144,13 @@ describe("outreach channel gate", () => {
     expect(channelDecision("text", { sms_allowed: true }, access).allowed).toBe(true);
   });
 });
+
+describe("importer relationship labels", () => {
+  it("treats org_uploaded as the lender's own relationship with baseline scopes", () => {
+    const a = classifyLenderAccess({ relationshipBasis: "org_uploaded", intelligenceAccessScope: [] });
+    expect(a.category).toBe("own_relationship");
+    expect(a.named).toBe(true);
+    expect(a.scopes).toContain("valuation");
+    expect(a.scopes).toContain("equity");
+  });
+});
