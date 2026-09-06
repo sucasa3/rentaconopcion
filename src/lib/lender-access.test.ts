@@ -16,9 +16,16 @@ describe("A — lender uploads its own existing customer", () => {
     expect(a.category).toBe("own_relationship");
     expect(a.named).toBe(true);
     expect(a.inQueue).toBe(true);
-    // Baseline only: uploading does not grant mortgage/equity/engagement data.
-    expect(a.scopes).toEqual(["contact", "property_snapshot", "valuation"]);
-    expect(a.scopes).not.toContain("mortgage");
+    // Baseline: the lender's own loan facts, but not behavioural engagement.
+    expect(a.scopes).toEqual([
+      "contact",
+      "property_snapshot",
+      "valuation",
+      "mortgage",
+      "equity",
+    ]);
+    expect(a.scopes).not.toContain("engagement");
+
   });
 
   it("honours a wider documented scope when one is recorded", () => {
