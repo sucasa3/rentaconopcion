@@ -1,90 +1,27 @@
-# Lender experience: same power as the agent side, different permissions
+# Why the lender side shows nothing, and how to fix it
 
-Goal: a lender opens SuCasa and immediately knows who to contact today, why now,
-what to say, and what happened after — but only for homeowners the lender has an
-independent right to see.
+## What's happening
 
-## What already exists and gets reused
+Every homeowner record in the lender books is currently marked with the relationship label `org_uploaded` (all 1,088 rows). The lender access gate only recognises a fixed list of labels (`lender_upload`, `existing_customer`, `servicing`, `past_borrower`, `import`, ...) as "this lender's own relationship". `org_uploaded` is not on that list, so every homeowner is classified as "no documented basis": they are counted in an aggregate bucket and dropped from the named list.
 
-- Daily work queue (`ActionQueue`) already accepts `kind="lender"` and already
-  has lender-specific plays, hot/warm/nurture, draft email, call/text, and
-  one-tap outcome logging. Reused as-is with a lender wrapper.
-- Ranking, temperature, outcome vocabulary, funnel rollup, tasks, CRM sync,
-  Copilot search, opportunity detection, Value Engine, equity resolver: all
-  shared. Nothing is rewritten.
-- The lender command center (My Book / Homeowners Served / Permissioned
-  Opportunities) stays and becomes the frame for the new sections.
+Consequences, all from that one mismatch:
+- My Book and the contact queue come back empty.
+- The homeowner detail view returns nothing.
+- The briefing tool refuses with "Not permitted", because it first asks for the same detail view.
 
-## The access gate (the core new logic)
+A second, smaller gap explains why the lender detail would still look thin next to the agent's: the agent's client view reads the cached property record (value, characteristics, permits) for the address, while the lender view derives value only from the loan amount and closing date. Roughly 80% of lender rows have no loan amount on file, so those homeowners would have no numbers and therefore no review cards even after the gate is fixed.
 
-One shared classifier decides, per homeowner, what a lender may see:
+## The fix
 
-- **Own relationship** — the lender uploaded them or has a documented basis.
-  Full lender-side intelligence and named workflow.
-- **Asked to connect** — homeowner affirmatively requested contact. Named, top
-  of the queue, limited to the information they authorized.
-- **Sponsored only** — lender funds Premium but has no relationship and no
-  request. Never named, never in the queue, never in a brief. Counts only
-  toward aggregate service-delivery numbers.
-- **Agent-connected only** — invisible individually. An agent connection is not
-  a data permission.
+1. **Accept the real label.** Add `org_uploaded` (and the other labels our own importers write) to the set of bases that establish a lender's own relationship, so uploaded book records are named again. Keep the existing scope limits — an uploaded record still only gets the baseline own-relationship scope, never contact-marketing consent.
+2. **Backfill the label** on existing rows to the canonical value so the data and the code agree going forward, and set the importer to write the canonical value.
+3. **Use the cached property record for lenders too.** Join the already-cached property data by address in the lender workspace read — the same cache the agent side uses, so no new provider calls and no extra cost. Value, equity, LTV and loan age then come from real records where they exist, falling back to the loan-derived estimate as today.
+4. **Make the empty state honest.** When a homeowner is visible but we still have no numbers, show the reason ("no property record on file for this address") rather than silently omitting them from the queue.
+5. **Brief tool.** No logic change needed — once the detail view resolves, the brief generates with the compliance loop already in place. Add a clear message when a homeowner genuinely has no permitted basis, instead of a raw error.
 
-Every named surface (queue, book, detail, brief, CRM push, outreach draft)
-passes through this gate on the server. Sponsorship never affects ranking.
+## Technical notes
 
-## New lender surfaces
-
-1. **Today**: Homeowners monitored · Changes detected · Review opportunities ·
-   Asked to connect · Engaged this month · Tasks due, then "Who to contact
-   today" with the shared hot/warm/nurture queue. The score is labeled
-   **Contact Priority** — never a credit, approval or qualification score.
-2. **Asked to Connect** queue at the top, with a REQUESTED CONTACT badge, what
-   they asked about, when, and exactly what they authorized.
-3. **Review opportunity cards**: equity review, mortgage checkup, refinance
-   review, home-equity conversation, move planning, improvement planning,
-   ownership anniversary, value milestone, equity milestone, property change.
-   Each shows estimated value / equity / LTV / loan age, a "Why now" line, a
-   suggested opener, and next best action.
-4. **Homeowner detail (lender view)**: property snapshot, mortgage snapshot with
-   every estimate labeled as an estimate, Why Now signals, engagement signals
-   only where permitted.
-5. **Generate Homeowner Review Brief** — lender sibling of the agent's listing
-   brief: why now, data-backed signals, conversation opportunities, questions to
-   ask, suggested call/email/text openers, next best action, compliance notes.
-6. **My Book filters**: equity change, value change, mortgage age, engagement,
-   tenure, recent property activity, projects, annual review due, opportunity
-   type, last contact, contact priority.
-7. **Service delivery**: Premium memberships active, reports delivered, data
-   refreshes, alerts delivered, sponsor impressions, CRM syncs.
-
-## Language rules enforced in code
-
-Allowed: review, worth reviewing, estimated, may support a conversation.
-Blocked everywhere: qualified, prequalified, approved, eligible, guaranteed
-savings, preferred/recommended lender. A shared check strips these from AI
-output before it reaches the screen.
-
-## Fair-lending guardrails
-
-Prioritization uses only property, mortgage, tenure and engagement facts. No
-protected characteristics or demographic proxies, no approval/denial/credit
-scores, no underwriting output. Sponsorship, agent connection and referral
-activity are excluded from ranking inputs.
-
-## Data changes
-
-No destructive changes. Existing `relationship_basis` on book records is put to
-work, backfilled to "own relationship" for records the lender already uploaded,
-and consent records supply the other categories. Lender outcome logging reuses
-the existing outcome tables and can never award agent credits or capacity.
-
-## Tests
-
-Automated tests cover the nine acceptance scenarios: lender-uploaded customer
-visible, agent-connected homeowner hidden, sponsored-only homeowner aggregate
-only, connection request unlocks the authorized view, agent and lender views
-independent, equity opportunity never claims qualification, brief labels
-estimates, sponsor change does not move ranking, closing a loan grants no agent
-benefit.
-
-Stripe pricing and plan commitments are untouched.
+- `src/lib/lender-access.ts`: extend `OWN_RELATIONSHIP_BASES`; add a unit test asserting `org_uploaded` classifies as `own_relationship` with the baseline scope.
+- `src/lib/lender-workspace.server.ts`: add a cached `property_intel` lookup keyed by normalised address for the visible client rows; prefer record-derived value over `estimatedValueCents`; keep everything behind `hasScope`.
+- Migration: `update lender_portfolio_clients set relationship_basis = 'lender_upload' where relationship_basis = 'org_uploaded'` (plus the importer writing that value), so the code path has one canonical label.
+- `src/lib/lender-workspace.functions.ts`: return a typed "not permitted" result instead of throwing, so the UI can explain it.
