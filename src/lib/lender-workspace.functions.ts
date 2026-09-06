@@ -95,7 +95,15 @@ export const generateHomeownerReviewBrief = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { readLenderHomeowner } = await import("./lender-workspace.server");
     const person = await readLenderHomeowner(context.supabase, context.userId, data.clientId);
-    if (!person) throw new Error("Not permitted");
+    if (!person)
+      return {
+        brief:
+          "This homeowner isn't in your own book, so a review can't be prepared for them here.",
+        ai: false,
+        complianceNotes: COMPLIANCE_NOTES,
+        attempts: 0,
+      };
+
 
     const money = (c: number | null) => (c == null ? null : Math.round(c / 100));
     const facts = {
