@@ -29,6 +29,7 @@ function LenderHome() {
 
   return (
     <BusinessShell kind="lender" bookId={data?.books?.[0]?.id ?? null} isManager={data?.isManager}>
+      <LenderCommandCenter />
       <BusinessDashboard kind="lender" isManager={data?.isManager} />
     </BusinessShell>
   );
