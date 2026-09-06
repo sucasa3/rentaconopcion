@@ -179,6 +179,17 @@ function BillingPage() {
                     This plan isn&apos;t set up for self-serve payment yet.
                   </p>
                 )}
+                {p.purchasable && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    disabled={busy === `comp:${p.key}` || !orgId}
+                    onClick={() => comp(p.key)}
+                  >
+                    {busy === `comp:${p.key}` ? "Activating…" : "Activate without payment (admin)"}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
