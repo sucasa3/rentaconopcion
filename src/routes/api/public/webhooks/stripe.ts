@@ -37,13 +37,41 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { applySubscription, stripeRequest } = await import("@/lib/billing.server");
 
+        /**
+         * A homeowner's own Premium membership is a separate product from a
+         * lender subscription: it belongs to the homeowner and never touches
+         * an organization's plan.
+         */
+        const homeownerId = (sub: any): string | null =>
+          sub?.metadata?.sucasa_product === "premium_membership"
+            ? (sub.metadata.sucasa_homeowner_id ?? null)
+            : null;
+
+        async function route(sub: any) {
+          const owner = homeownerId(sub);
+          if (!owner) {
+            await applySubscription(supabaseAdmin, sub);
+            return;
+          }
+          const premium = await import("@/lib/premium.server");
+          const live = ["active", "trialing", "past_due"].includes(sub.status);
+          if (live) {
+            await premium.startMembership({
+              homeownerId: owner,
+              fundingSource: "homeowner_paid",
+              stripeSubscriptionId: sub.id,
+              stripeCustomerId: sub.customer ?? null,
+              priceCents: sub.items?.data?.[0]?.price?.unit_amount ?? null,
+            });
+          } else {
+            await premium.endMembership(owner);
+          }
+        }
+
         switch (event.type) {
           case "checkout.session.completed": {
             const subId = event.data.object?.subscription;
-            if (subId) {
-              const sub = await stripeRequest(`/subscriptions/${subId}`);
-              await applySubscription(supabaseAdmin, sub);
-            }
+            if (subId) await route(await stripeRequest(`/subscriptions/${subId}`));
             break;
           }
           case "customer.subscription.created":
@@ -55,7 +83,7 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
             const sub = obj?.object === "subscription" ? obj : obj?.subscription
               ? await stripeRequest(`/subscriptions/${obj.subscription}`)
               : null;
-            if (sub) await applySubscription(supabaseAdmin, sub);
+            if (sub) await route(sub);
             break;
           }
           default:

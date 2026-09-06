@@ -180,15 +180,9 @@ export const respondToIntroduction = createServerFn({ method: "POST" })
       .eq("id", data.requestId);
     if (error) throw new Error(error.message);
 
-    if (data.approve && req.portfolio_client_id) {
-      const { awardAgentCredit } = await import("./credits.server");
-      await awardAgentCredit(
-        req.agent_org_id,
-        req.portfolio_client_id,
-        "lender_engaged",
-        data.requestId,
-      );
-    }
+    // No capacity is awarded here: this outcome involves a lender, and an
+    // agent benefit may never follow from lender activity. See entitlements.ts.
+
     return { id: data.requestId, status: data.approve ? "approved" : "declined" };
   });
 

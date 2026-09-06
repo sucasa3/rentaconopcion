@@ -1,23 +1,28 @@
 /**
- * Homeowner credits — the distribution engine.
+ * Agent Home Profile capacity — the distribution engine.
  *
  * Pure, client-safe. The same weights drive the copy an agent reads and the
  * awards the server writes, so the two can never drift apart.
  *
- * Capacity is the currency: every homeowner an agent adds costs one credit.
- * Credits arrive three ways — a base grant, a lender sponsorship, or work the
- * agent does on the platform.
+ * Capacity comes from SuCasa, or from the agent's own work or purchase:
+ *   1. the base entitlement SuCasa provides to every agent account,
+ *   2. lender-neutral platform activity the agent does themselves,
+ *   3. an Agent continuation plan the agent buys.
+ *
+ * A lender payment is never a source. Nothing here may reward a loan,
+ * referral, closing, transaction, lender activity, or the selection of a
+ * title, escrow, inspection, appraisal or insurance provider.
+ * See `entitlements.ts` for the rule and the guards.
  */
+
+import { DEFAULT_AGENT_BASE_PROFILES } from "./entitlements";
 
 export type CreditEventKind =
   | "activate"
   | "profile"
   | "engage"
   | "opportunity"
-  | "lender_engaged"
-  | "service_request"
-  | "opportunity_progress"
-  | "referral";
+  | "service_request";
 
 export interface CreditRule {
   kind: CreditEventKind;
@@ -43,39 +48,32 @@ export const CREDIT_RULES: CreditRule[] = [
     kind: "engage",
     credits: 1,
     label: "You engage the homeowner",
-    detail: "An introduction, a campaign send, or a note on their record.",
+    detail: "A message, an update you send, or a note on their record.",
   },
   {
     kind: "opportunity",
     credits: 2,
     label: "Opportunity identified",
-    detail: "SuCasa finds equity, refinance, move-up or service potential on that home.",
-  },
-  {
-    kind: "lender_engaged",
-    credits: 2,
-    label: "Lender opportunity engaged",
-    detail: "A connected lender acts on one of your homeowners, with your approval.",
+    detail: "SuCasa spots equity, condition or move-up potential on that home.",
   },
   {
     kind: "service_request",
     credits: 2,
-    label: "Vendor or service request",
-    detail: "The homeowner requests work on their home through SuCasa.",
-  },
-  {
-    kind: "opportunity_progress",
-    credits: 3,
-    label: "Opportunity progresses",
-    detail: "An introduction reaches a real outcome.",
-  },
-  {
-    kind: "referral",
-    credits: 5,
-    label: "Referral or transaction",
-    detail: "The relationship turns into business.",
+    label: "Home service request",
+    detail:
+      "The homeowner requests maintenance or improvement work through SuCasa. Never awarded for lender, title, escrow, closing, inspection, appraisal or insurance activity.",
   },
 ];
+
+/**
+ * Removed on purpose — each was tied to a loan, a referral, a transaction or a
+ * settlement service provider, so none may award an agent anything.
+ */
+export const RETIRED_CREDIT_RULES = [
+  "lender_engaged",
+  "opportunity_progress",
+  "referral",
+] as const;
 
 export function creditsFor(kind: CreditEventKind): number {
   return CREDIT_RULES.find((r) => r.kind === kind)?.credits ?? 0;
@@ -99,44 +97,44 @@ export interface AgentPlanDef {
 export const AGENT_PLANS: AgentPlanDef[] = [
   {
     key: "agent_core",
-    name: "Agent Core",
+    name: "SuCasa for Agents",
     priceMonthly: 0,
-    credits: 25,
-    headline: "25 homeowners to start, plus everything you earn",
+    credits: DEFAULT_AGENT_BASE_PROFILES,
+    headline: "Your first 100 Home Profiles, free from SuCasa",
     features: [
-      "25 homeowner connections",
+      "100 Home Profiles provided by SuCasa",
+      "No lender relationship required",
       "Home Intelligence basics",
       "Opportunity alerts",
-      "Lender and vendor connections",
-      "Earn more credits as you work",
+      "Earn more capacity from your own work",
     ],
   },
   {
-    key: "agent_plus",
-    name: "Agent Plus",
-    priceMonthly: 20,
-    credits: 100,
-    headline: "Unlock 100 more homeowners",
-    features: [
-      "+100 homeowner connections",
-      "Premium Home Intelligence reports",
-      "Opportunity identification across your book",
-      "Included in the SuCasa referral network",
-      "Keep earning credits as you work",
-    ],
-  },
-  {
-    key: "agent_pro",
-    name: "Agent Pro",
-    priceMonthly: 39,
+    key: "agent",
+    name: "Agent",
+    priceMonthly: 49,
     credits: 250,
-    headline: "Unlock 250 more homeowners",
+    headline: "250 Home Profiles",
     features: [
-      "+250 homeowner connections",
-      "Premium reports for every client",
+      "250 Home Profiles",
+      "Full Home Intelligence reports",
+      "Opportunity identification across your book",
+      "Document and maintenance intelligence",
+      "Keep earning capacity as you work",
+    ],
+  },
+  {
+    key: "agent_growth",
+    name: "Agent Growth",
+    priceMonthly: 99,
+    credits: 1000,
+    headline: "1,000 Home Profiles",
+    features: [
+      "1,000 Home Profiles",
+      "Full Home Intelligence for every client",
       "Advanced opportunity intelligence",
-      "Priority referral opportunities",
-      "Enhanced lender and vendor matching",
+      "Bulk import and CRM sync",
+      "Priority support",
     ],
   },
 ];

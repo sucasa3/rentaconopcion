@@ -86,29 +86,17 @@ export const getSponsoredSeats = createServerFn({ method: "POST" })
     return { seats, allowance };
   });
 
-/** Sponsor a connected agent with a grant of homeowner credits. */
+/**
+ * RETIRED: lenders no longer fund agent Home Profiles. Kept as an explicit
+ * refusal so any stale caller fails loudly instead of quietly granting.
+ */
 export const sponsorAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        lenderOrgId: uuid,
-        agentOrgId: uuid,
-        credits: z.union([z.literal(25), z.literal(50)]).default(25),
-      })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const { assertMember, assertConnection } = await import("./network.server");
-    const { sponsorAgentSeat, seatAllowance } = await import("./credits.server");
-    await assertMember(context.supabase, context.userId, data.lenderOrgId);
-    await assertConnection(context.supabase, data.lenderOrgId, data.agentOrgId);
-
-    const allowance = await seatAllowance(context.supabase, data.lenderOrgId);
-    if (allowance.remaining != null && allowance.remaining <= 0) {
-      throw new Error("All sponsored agent seats on your plan are in use");
-    }
-    return sponsorAgentSeat(data.lenderOrgId, data.agentOrgId, data.credits, context.userId);
+  .inputValidator((i: unknown) => z.object({}).passthrough().parse(i))
+  .handler(async () => {
+    const { assertAgentEntitlementSource } = await import("./entitlements");
+    assertAgentEntitlementSource("lender_sponsorship");
+    return { ok: false };
   });
 
 /** End a sponsorship. Credits already granted stay with the agent. */
