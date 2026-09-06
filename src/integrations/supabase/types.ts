@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_products: {
+        Row: {
+          active: boolean
+          audience: string
+          created_at: string
+          key: string
+          kind: string
+          name: string
+          price_cents: number
+          sort_order: number
+          stripe_price_id: string | null
+          unit_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          audience: string
+          created_at?: string
+          key: string
+          kind: string
+          name: string
+          price_cents: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          unit_quantity: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          audience?: string
+          created_at?: string
+          key?: string
+          kind?: string
+          name?: string
+          price_cents?: number
+          sort_order?: number
+          stripe_price_id?: string | null
+          unit_quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_actions: {
         Row: {
           capability: string
@@ -2515,6 +2557,7 @@ export type Database = {
         Row: {
           activated_at: string | null
           active: boolean
+          commitment_ends_at: string | null
           contact_name: string | null
           contact_phone: string | null
           contact_title: string | null
@@ -2525,11 +2568,14 @@ export type Database = {
           logo_url: string | null
           name: string
           org_type: string
+          pending_plan_effective_at: string | null
+          pending_plan_key: string | null
           plan: string
           plan_key: string | null
           primary_contact_email: string | null
           profile_allowance: number
           reply_to_email: string | null
+          reserved_profiles: number
           seat_limit: number | null
           sender_name: string | null
           signoff: string | null
@@ -2542,6 +2588,7 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           active?: boolean
+          commitment_ends_at?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           contact_title?: string | null
@@ -2552,11 +2599,14 @@ export type Database = {
           logo_url?: string | null
           name: string
           org_type?: string
+          pending_plan_effective_at?: string | null
+          pending_plan_key?: string | null
           plan?: string
           plan_key?: string | null
           primary_contact_email?: string | null
           profile_allowance?: number
           reply_to_email?: string | null
+          reserved_profiles?: number
           seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
@@ -2569,6 +2619,7 @@ export type Database = {
         Update: {
           activated_at?: string | null
           active?: boolean
+          commitment_ends_at?: string | null
           contact_name?: string | null
           contact_phone?: string | null
           contact_title?: string | null
@@ -2579,11 +2630,14 @@ export type Database = {
           logo_url?: string | null
           name?: string
           org_type?: string
+          pending_plan_effective_at?: string | null
+          pending_plan_key?: string | null
           plan?: string
           plan_key?: string | null
           primary_contact_email?: string | null
           profile_allowance?: number
           reply_to_email?: string | null
+          reserved_profiles?: number
           seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
@@ -2594,6 +2648,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "lender_orgs_pending_plan_key_fkey"
+            columns: ["pending_plan_key"]
+            isOneToOne: false
+            referencedRelation: "plan_tiers"
+            referencedColumns: ["key"]
+          },
           {
             foreignKeyName: "lender_orgs_plan_key_fkey"
             columns: ["plan_key"]
@@ -2606,6 +2667,8 @@ export type Database = {
       lender_portfolio_clients: {
         Row: {
           address_line1: string
+          archived_at: string | null
+          archived_reason: string | null
           city: string | null
           client_email: string | null
           client_name: string | null
@@ -2626,6 +2689,8 @@ export type Database = {
         }
         Insert: {
           address_line1: string
+          archived_at?: string | null
+          archived_reason?: string | null
           city?: string | null
           client_email?: string | null
           client_name?: string | null
@@ -2646,6 +2711,8 @@ export type Database = {
         }
         Update: {
           address_line1?: string
+          archived_at?: string | null
+          archived_reason?: string | null
           city?: string | null
           client_email?: string | null
           client_name?: string | null
@@ -2848,6 +2915,60 @@ export type Database = {
             columns: ["portfolio_client_id"]
             isOneToOne: false
             referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_addons: {
+        Row: {
+          addon_key: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          org_id: string
+          quantity: number
+          started_at: string
+          status: string
+          stripe_subscription_item_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          addon_key: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          org_id: string
+          quantity?: number
+          started_at?: string
+          status?: string
+          stripe_subscription_item_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          addon_key?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          org_id?: string
+          quantity?: number
+          started_at?: string
+          status?: string
+          stripe_subscription_item_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_addons_addon_key_fkey"
+            columns: ["addon_key"]
+            isOneToOne: false
+            referencedRelation: "addon_products"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "org_addons_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -3727,6 +3848,7 @@ export type Database = {
           created_by: string | null
           credits_granted: number
           ended_at: string | null
+          grace_until: string | null
           id: string
           sponsor_org_id: string
           started_at: string
@@ -3739,6 +3861,7 @@ export type Database = {
           created_by?: string | null
           credits_granted?: number
           ended_at?: string | null
+          grace_until?: string | null
           id?: string
           sponsor_org_id: string
           started_at?: string
@@ -3751,6 +3874,7 @@ export type Database = {
           created_by?: string | null
           credits_granted?: number
           ended_at?: string | null
+          grace_until?: string | null
           id?: string
           sponsor_org_id?: string
           started_at?: string
@@ -3969,6 +4093,8 @@ export type Database = {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
+      org_active_profile_count: { Args: { _org_id: string }; Returns: number }
+      org_profile_capacity: { Args: { _org_id: string }; Returns: number }
       portfolio_engagement: {
         Args: { _portfolio_id: string }
         Returns: {

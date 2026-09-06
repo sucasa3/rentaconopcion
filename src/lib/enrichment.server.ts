@@ -237,7 +237,9 @@ export async function runEnrichmentTick(opts?: {
     .in(
       "id",
       queue.map((q: any) => q.portfolio_client_id),
-    );
+    )
+    // Archived Home Profiles go quiet: no refreshes, no provider spend.
+    .is("archived_at", null);
   const clientById = new Map((clients ?? []).map((c: any) => [c.id, c]));
 
   const { getPropertyIntel, extractMortgage, extractSales } = await import("./valuation.server");

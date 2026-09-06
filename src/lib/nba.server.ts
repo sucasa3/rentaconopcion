@@ -139,7 +139,8 @@ export async function buildActionQueue(
     .select(
       "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, homeowner_id",
     )
-    .in("portfolio_id", scope.bookIds);
+    .in("portfolio_id", scope.bookIds)
+    .is("archived_at", null);
   const rows = clients ?? [];
   if (!rows.length) return empty;
   const clientById = new Map<string, any>(rows.map((c: any) => [c.id, c]));

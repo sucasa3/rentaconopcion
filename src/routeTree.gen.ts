@@ -14,6 +14,7 @@ import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as ProRouteImport } from './routes/pro'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LendersRouteImport } from './routes/lenders'
@@ -39,6 +40,7 @@ import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
 import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
 import { Route as AuthenticatedLenderFunnelRouteImport } from './routes/_authenticated/lender/funnel'
+import { Route as AuthenticatedLenderCapacityRouteImport } from './routes/_authenticated/lender/capacity'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
 import { Route as AuthenticatedLenderBillingRouteImport } from './routes/_authenticated/lender/billing'
 import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authenticated/agent/tasks'
@@ -88,6 +90,11 @@ const ReportRoute = ReportRouteImport.update({
 const ProRoute = ProRouteImport.update({
   id: '/pro',
   path: '/pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartnerRoute = PartnerRouteImport.update({
@@ -219,6 +226,12 @@ const AuthenticatedLenderFunnelRoute =
   AuthenticatedLenderFunnelRouteImport.update({
     id: '/funnel',
     path: '/funnel',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
+const AuthenticatedLenderCapacityRoute =
+  AuthenticatedLenderCapacityRouteImport.update({
+    id: '/capacity',
+    path: '/capacity',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
 const AuthenticatedLenderCampaignsRoute =
@@ -368,6 +381,7 @@ export interface FileRoutesByFullPath {
   '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
@@ -391,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/agent/tasks': typeof AuthenticatedAgentTasksRoute
   '/lender/billing': typeof AuthenticatedLenderBillingRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
+  '/lender/capacity': typeof AuthenticatedLenderCapacityRoute
   '/lender/funnel': typeof AuthenticatedLenderFunnelRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
@@ -424,6 +439,7 @@ export interface FileRoutesByTo {
   '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
@@ -445,6 +461,7 @@ export interface FileRoutesByTo {
   '/agent/tasks': typeof AuthenticatedAgentTasksRoute
   '/lender/billing': typeof AuthenticatedLenderBillingRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
+  '/lender/capacity': typeof AuthenticatedLenderCapacityRoute
   '/lender/funnel': typeof AuthenticatedLenderFunnelRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
@@ -479,6 +496,7 @@ export interface FileRoutesById {
   '/lenders': typeof LendersRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
+  '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
@@ -502,6 +520,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/tasks': typeof AuthenticatedAgentTasksRoute
   '/_authenticated/lender/billing': typeof AuthenticatedLenderBillingRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
+  '/_authenticated/lender/capacity': typeof AuthenticatedLenderCapacityRoute
   '/_authenticated/lender/funnel': typeof AuthenticatedLenderFunnelRoute
   '/_authenticated/lender/network': typeof AuthenticatedLenderNetworkRoute
   '/_authenticated/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
@@ -537,6 +556,7 @@ export interface FileRouteTypes {
     | '/lenders'
     | '/onboarding'
     | '/partner'
+    | '/pricing'
     | '/pro'
     | '/report'
     | '/request'
@@ -560,6 +580,7 @@ export interface FileRouteTypes {
     | '/agent/tasks'
     | '/lender/billing'
     | '/lender/campaigns'
+    | '/lender/capacity'
     | '/lender/funnel'
     | '/lender/network'
     | '/lender/opportunities'
@@ -593,6 +614,7 @@ export interface FileRouteTypes {
     | '/lenders'
     | '/onboarding'
     | '/partner'
+    | '/pricing'
     | '/pro'
     | '/report'
     | '/request'
@@ -614,6 +636,7 @@ export interface FileRouteTypes {
     | '/agent/tasks'
     | '/lender/billing'
     | '/lender/campaigns'
+    | '/lender/capacity'
     | '/lender/funnel'
     | '/lender/network'
     | '/lender/opportunities'
@@ -647,6 +670,7 @@ export interface FileRouteTypes {
     | '/lenders'
     | '/onboarding'
     | '/partner'
+    | '/pricing'
     | '/pro'
     | '/report'
     | '/request'
@@ -670,6 +694,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/tasks'
     | '/_authenticated/lender/billing'
     | '/_authenticated/lender/campaigns'
+    | '/_authenticated/lender/capacity'
     | '/_authenticated/lender/funnel'
     | '/_authenticated/lender/network'
     | '/_authenticated/lender/opportunities'
@@ -705,6 +730,7 @@ export interface RootRouteChildren {
   LendersRoute: typeof LendersRoute
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRoute
+  PricingRoute: typeof PricingRoute
   ProRoute: typeof ProRoute
   ReportRoute: typeof ReportRoute
   RequestRoute: typeof RequestRoute
@@ -758,6 +784,13 @@ declare module '@tanstack/react-router' {
       path: '/pro'
       fullPath: '/pro'
       preLoaderRoute: typeof ProRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/partner': {
@@ -933,6 +966,13 @@ declare module '@tanstack/react-router' {
       path: '/funnel'
       fullPath: '/lender/funnel'
       preLoaderRoute: typeof AuthenticatedLenderFunnelRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
+    '/_authenticated/lender/capacity': {
+      id: '/_authenticated/lender/capacity'
+      path: '/capacity'
+      fullPath: '/lender/capacity'
+      preLoaderRoute: typeof AuthenticatedLenderCapacityRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
     '/_authenticated/lender/campaigns': {
@@ -1168,6 +1208,7 @@ const AuthenticatedLenderPortfolioIdRouteWithChildren =
 interface AuthenticatedLenderRouteRouteChildren {
   AuthenticatedLenderBillingRoute: typeof AuthenticatedLenderBillingRoute
   AuthenticatedLenderCampaignsRoute: typeof AuthenticatedLenderCampaignsRoute
+  AuthenticatedLenderCapacityRoute: typeof AuthenticatedLenderCapacityRoute
   AuthenticatedLenderFunnelRoute: typeof AuthenticatedLenderFunnelRoute
   AuthenticatedLenderNetworkRoute: typeof AuthenticatedLenderNetworkRoute
   AuthenticatedLenderOpportunitiesRoute: typeof AuthenticatedLenderOpportunitiesRoute
@@ -1180,6 +1221,7 @@ const AuthenticatedLenderRouteRouteChildren: AuthenticatedLenderRouteRouteChildr
   {
     AuthenticatedLenderBillingRoute: AuthenticatedLenderBillingRoute,
     AuthenticatedLenderCampaignsRoute: AuthenticatedLenderCampaignsRoute,
+    AuthenticatedLenderCapacityRoute: AuthenticatedLenderCapacityRoute,
     AuthenticatedLenderFunnelRoute: AuthenticatedLenderFunnelRoute,
     AuthenticatedLenderNetworkRoute: AuthenticatedLenderNetworkRoute,
     AuthenticatedLenderOpportunitiesRoute:
@@ -1236,6 +1278,7 @@ const rootRouteChildren: RootRouteChildren = {
   LendersRoute: LendersRoute,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRoute,
+  PricingRoute: PricingRoute,
   ProRoute: ProRoute,
   ReportRoute: ReportRoute,
   RequestRoute: RequestRoute,

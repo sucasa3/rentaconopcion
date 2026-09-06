@@ -98,7 +98,11 @@ function BillingPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Plan &amp; billing</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Your plan sets how many homeowner profiles and sponsored agents you can have.
+            Every plan includes the full SuCasa intelligence platform. Choose the plan based on the
+            size of your homeowner database and agent network.
+          </p>
+          <p className="text-muted-foreground text-xs mt-1">
+            90-day initial commitment. Month-to-month after that.
           </p>
         </div>
 
@@ -111,18 +115,23 @@ function BillingPage() {
               {activeLabel[status] ?? status}
             </Badge>
             {(state as any)?.plan_key && <span>Plan: {(state as any).plan_key}</span>}
-            <span>Homeowner profiles: {(state as any)?.profile_allowance ?? 0}</span>
+            <span>Home Profiles: {(state as any)?.profile_allowance ?? 0}</span>
             <span>Sponsored agents: {(state as any)?.sponsored_allocation ?? 0}</span>
             {(state as any)?.current_period_end && (
               <span className="text-muted-foreground">
                 Renews {new Date((state as any).current_period_end).toLocaleDateString()}
               </span>
             )}
+            <Button asChild size="sm" variant="outline" className="ml-auto">
+              <a href="/lender/capacity">Manage capacity</a>
+            </Button>
           </CardContent>
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(plans ?? []).map((p: any) => (
+          {(plans ?? [])
+            .filter((p: any) => p.audience !== "agent")
+            .map((p: any) => (
             <Card key={p.key} className="flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{p.name}</CardTitle>
@@ -133,9 +142,8 @@ function BillingPage() {
               </CardHeader>
               <CardContent className="mt-auto space-y-3 text-sm">
                 <ul className="text-muted-foreground space-y-1">
-                  <li>{p.profile_allowance ?? 0} homeowner profiles</li>
-                  <li>{p.sponsored_allocation ?? 0} sponsored agents</li>
-                  {p.seat_limit != null && <li>{p.seat_limit} team seats</li>}
+                  <li>{(p.profile_allowance ?? 0).toLocaleString()} Home Profiles</li>
+                  <li>Up to {p.sponsored_allocation ?? 0} sponsored agents</li>
                 </ul>
                 <Button
                   className="w-full"
@@ -157,7 +165,27 @@ function BillingPage() {
             </Card>
           ))}
         </div>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Need more room?</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 text-sm text-muted-foreground">
+            <p>+500 Home Profiles — $49/month</p>
+            <p>+5 Sponsored Agents — $29/month</p>
+            <p className="text-xs">
+              Add-ons are coming to self-serve checkout. Ask us to add capacity in the meantime.
+            </p>
+          </CardContent>
+        </Card>
+
+        <p className="text-muted-foreground text-xs">
+          Upgrades take effect immediately. Downgrades take effect at your next billing date, and
+          we&apos;ll tell you exactly what to archive or reassign first if you&apos;re over the
+          smaller plan&apos;s limits. Your homeowner records are never deleted.
+        </p>
       </div>
     </BusinessShell>
   );
 }
+
