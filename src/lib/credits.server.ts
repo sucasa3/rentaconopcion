@@ -12,14 +12,22 @@ import { creditReason, creditsFor, type CreditEventKind } from "./credits";
 
 const admin = () => supabaseAdmin as any;
 
-/** Award a credit for one portfolio client, once ever, for this event kind. */
+/**
+ * Award a credit for one portfolio client, once ever, for this event kind.
+ *
+ * `activity` describes what actually happened, so the settlement-service and
+ * lender/transaction guards run here rather than at each call site.
+ */
 export async function awardAgentCredit(
   orgId: string | null | undefined,
   clientId: string | null,
   kind: CreditEventKind,
   suffix?: string,
+  activity?: { serviceCategory?: string | null; involvesLender?: boolean; involvesTransaction?: boolean },
 ): Promise<void> {
   if (!orgId) return;
+  const { isRewardableActivity } = await import("./entitlements");
+  if (!isRewardableActivity({ kind, ...(activity ?? {}) })) return;
   const delta = creditsFor(kind);
   if (delta <= 0) return;
   const key = `${kind}:${clientId ?? orgId}${suffix ? `:${suffix}` : ""}`;
