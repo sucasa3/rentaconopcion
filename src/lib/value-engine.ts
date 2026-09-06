@@ -76,6 +76,8 @@ export interface ValueEngineResult {
   asOf: string | null;
   confidence: ValueConfidence | null;
   reason: string;
+  /** stable machine label of the method used, for audit + admin views */
+  methodology: string;
   /** every candidate we could build, strongest first — for audit + admin views */
   candidates: ValueCandidate[];
   /** true when two independent candidates landed within tolerance */
@@ -201,6 +203,15 @@ export function buildValueCandidates(input: ValueEngineInput): ValueCandidate[] 
   return out.sort((a, b) => b.weight - a.weight);
 }
 
+
+const METHODOLOGY: Record<ValueCandidateKind, string> = {
+  provider_avm: "provider_avm",
+  recent_sale: "recent_sale_drift_adjusted",
+  mortgage_implied: "lien_balance_over_reported_ltv",
+  assessor: "assessor_value_state_ratio_adjusted",
+  aged_sale: "last_sale_drift_adjusted",
+};
+
 const CONF_ORDER: Record<ValueConfidence, number> = { low: 0, medium: 1, high: 2 };
 
 function raise(c: ValueConfidence): ValueConfidence {
@@ -222,6 +233,7 @@ export function estimateHomeValue(input: ValueEngineInput): ValueEngineResult {
         asOf: null,
         confidence: "low",
         reason: "Carried from an earlier public-record lookup.",
+        methodology: "legacy_public_record",
         candidates: [],
         corroborated: false,
       };
@@ -235,6 +247,7 @@ export function estimateHomeValue(input: ValueEngineInput): ValueEngineResult {
       asOf: null,
       confidence: null,
       reason: "Not enough public record data yet to estimate a value.",
+      methodology: "none",
       candidates: [],
       corroborated: false,
     };
@@ -282,6 +295,7 @@ export function estimateHomeValue(input: ValueEngineInput): ValueEngineResult {
     asOf: primary.asOf,
     confidence,
     reason,
+    methodology: METHODOLOGY[primary.kind],
     candidates,
     corroborated,
   };

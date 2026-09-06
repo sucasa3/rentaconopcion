@@ -18,6 +18,11 @@ export const OPPORTUNITY_CATEGORIES = [
   "mortgage_review",
   "home_condition",
   "market_timing",
+  "free_and_clear",
+  "recent_purchase",
+  "mortgage_age",
+  "permit_activity",
+  "distress",
 ] as const;
 
 
@@ -83,6 +88,82 @@ export const CATEGORY_META: Record<OpportunityCategory, CategoryMeta> = {
     blurb: "Recent behavior suggests this homeowner is weighing a move.",
     lenderBlurb: "Activity suggests a move may be under consideration.",
   },
+
+  free_and_clear: {
+    key: "free_and_clear",
+    label: "Owned free and clear",
+    blurb: "Public records show no open loan against this home.",
+    lenderBlurb: "No open loan on record — a first conversation about financing options may be welcome.",
+  },
+  recent_purchase: {
+    key: "recent_purchase",
+    label: "Recent purchase",
+    blurb: "This home changed hands recently.",
+    lenderBlurb: "Recently purchased — a good moment for a relationship-building touch.",
+  },
+  mortgage_age: {
+    key: "mortgage_age",
+    label: "Loan age",
+    blurb: "This loan has been in place long enough for a review to be useful.",
+    lenderBlurb: "Loan seasoning suggests a financing review may be worthwhile.",
+  },
+  permit_activity: {
+    key: "permit_activity",
+    label: "Home improvement activity",
+    blurb: "Permit records show recent work on this home.",
+    lenderBlurb: "Recent permit activity can signal ongoing improvement plans.",
+  },
+  distress: {
+    key: "distress",
+    label: "Needs attention",
+    blurb: "Public records show a recent filing worth a careful conversation.",
+    lenderBlurb: "A recent public filing may warrant a sensitive, timely outreach.",
+  },
+};
+
+/**
+ * Launch status of each opportunity type.
+ *
+ *  on                      — live, no extra conditions
+ *  on_with_guardrails      — live but gated on value/equity confidence or date safety
+ *  off_pending_data        — rule exists, waiting on a data field we do not have yet
+ *  off_pending_external    — waiting on provider entitlement or account configuration
+ */
+export type OpportunityStatus =
+  | "on"
+  | "on_with_guardrails"
+  | "off_pending_data"
+  | "off_pending_external";
+
+export const OPPORTUNITY_STATUS: Record<OpportunityCategory, { status: OpportunityStatus; note: string }> = {
+  equity: {
+    status: "on_with_guardrails",
+    note: "Requires an equity position the Value Engine rates high or medium confidence.",
+  },
+  heloc: {
+    status: "on_with_guardrails",
+    note: "Requires a resolved single-lien balance and an actionable equity position.",
+  },
+  refinance_review: {
+    status: "on_with_guardrails",
+    note: "Requires a recorded rate; suppressed when equity cannot be stated.",
+  },
+  move_up: { status: "on_with_guardrails", note: "Requires actionable equity plus tenure." },
+  investment: { status: "on_with_guardrails", note: "Requires actionable equity plus occupancy or tenure signal." },
+  mortgage_review: { status: "on", note: "Informational only; no equity figures quoted." },
+  home_condition: { status: "on", note: "Driven by the home record, not by valuation." },
+  market_timing: { status: "on", note: "Driven by homeowner behaviour in the app." },
+  free_and_clear: {
+    status: "on_with_guardrails",
+    note: "Only when the provider clearly reports zero open liens.",
+  },
+  recent_purchase: { status: "on", note: "Sale date within the recent-purchase window." },
+  mortgage_age: { status: "on", note: "Loan seasoning only; quotes no value or equity." },
+  permit_activity: { status: "on", note: "Permit records only." },
+  distress: {
+    status: "off_pending_external",
+    note: "Held until provider confirms filing recency semantics; old filings must never read as current.",
+  },
 };
 
 export const CATEGORY_ORDER: OpportunityCategory[] = [
@@ -93,7 +174,12 @@ export const CATEGORY_ORDER: OpportunityCategory[] = [
   "market_timing",
   "home_condition",
   "investment",
+  "free_and_clear",
+  "recent_purchase",
+  "permit_activity",
+  "mortgage_age",
   "mortgage_review",
+  "distress",
 ];
 
 
@@ -190,6 +276,41 @@ export interface ClientSignals {
   permitCount: number;
   /** True when the mailing address differs from the property address. */
   likelyNonOwnerOccupied: boolean;
+
+  // --- Value Engine provenance (the only sanctioned source of value) --------
+  /** which Value Engine method produced valueCents, null when unenriched */
+  valueSource: string | null;
+  valueConfidence: "high" | "medium" | "low" | null;
+  valueMethodology: string | null;
+  /** equity figures are safe enough for a lender to act on */
+  equityActionable: boolean;
+  /** why equity products are withheld, when they are */
+  equitySuppressionReason: string | null;
+  /** provider clearly reports zero open liens */
+  freeAndClear: boolean;
+  /** more than one open recorded loan */
+  multiLien: boolean;
+  /** months since the property last changed hands, from sale records */
+  monthsSinceSale: number | null;
+}
+
+/**
+ * Value + equity facts as resolved by the SuCasa Value Engine and the shared
+ * equity resolver. When absent, the loan-fact heuristic still produces a rough
+ * value for context, but equity-based opportunities stay suppressed.
+ */
+export interface EngineFacts {
+  value: number | null;
+  valueSource: string | null;
+  valueConfidence: "high" | "medium" | "low" | null;
+  valueMethodology: string | null;
+  balance: number | null;
+  equityDollars: number | null;
+  ltvPct: number | null;
+  actionable: boolean;
+  suppressionReason: string | null;
+  freeAndClear: boolean;
+  multiLien: boolean;
 }
 
 export function deriveSignals(input: {
@@ -200,22 +321,35 @@ export function deriveSignals(input: {
   benchmarkRate?: number;
   permitCount?: number;
   likelyNonOwnerOccupied?: boolean;
+  /** resolved value/equity — always preferred over the heuristic */
+  engine?: EngineFacts | null;
+  monthsSinceSale?: number | null;
   now?: Date;
 }): ClientSignals {
   const now = input.now ?? new Date();
   const benchmarkRate = input.benchmarkRate ?? BENCHMARK_RATE_DEFAULT;
   const termMonths = input.termMonths ?? 360;
   const monthsSinceClose = monthsBetween(input.closeDate, now);
-  const balanceCents = remainingBalanceCents(
+  const heuristicBalance = remainingBalanceCents(
     input.loanAtCloseCents,
     input.ratePct,
     termMonths,
     monthsSinceClose,
   );
-  const valueCents = estimatedValueCents(input.loanAtCloseCents, monthsSinceClose);
-  const equityCents = (valueCents ?? 0) - (balanceCents ?? 0);
+
+  const e = input.engine ?? null;
+  const engineValueCents = e?.value != null ? Math.round(e.value * 100) : null;
+  const engineBalanceCents = e?.balance != null ? Math.round(e.balance * 100) : null;
+
+  const valueCents = engineValueCents ?? estimatedValueCents(input.loanAtCloseCents, monthsSinceClose);
+  const balanceCents = engineBalanceCents ?? heuristicBalance;
+  const equityCents =
+    e?.equityDollars != null
+      ? Math.round(e.equityDollars * 100)
+      : (valueCents ?? 0) - (balanceCents ?? 0);
   const ltvPct =
-    valueCents && balanceCents ? Math.round((balanceCents / valueCents) * 1000) / 10 : null;
+    e?.ltvPct ??
+    (valueCents && balanceCents ? Math.round((balanceCents / valueCents) * 1000) / 10 : null);
 
   const p = (balanceCents ?? 0) / 100;
   const pay = (rate: number) => {
@@ -238,14 +372,37 @@ export function deriveSignals(input: {
     savingsPerMonth,
     permitCount: input.permitCount ?? 0,
     likelyNonOwnerOccupied: input.likelyNonOwnerOccupied ?? false,
+    valueSource: e?.valueSource ?? null,
+    valueConfidence: e?.valueConfidence ?? null,
+    valueMethodology: e?.valueMethodology ?? null,
+    equityActionable: e?.actionable ?? false,
+    equitySuppressionReason:
+      e?.suppressionReason ??
+      (e
+        ? null
+        : "This home's records haven't been enriched yet, so equity figures are estimates only."),
+    freeAndClear: e?.freeAndClear ?? false,
+    multiLien: e?.multiLien ?? false,
+    monthsSinceSale: input.monthsSinceSale ?? null,
   };
 }
+
 
 export interface DerivedOpportunity {
   category: OpportunityCategory;
   strength: OpportunityStrength;
   score: number;
   reasons: string[];
+  /** Value Engine confidence behind any dollar figure quoted in reasons. */
+  valueConfidence?: "high" | "medium" | "low" | null;
+  /** Value Engine method behind any dollar figure quoted in reasons. */
+  valueSource?: string | null;
+}
+
+/** An opportunity the rules would have raised but a guardrail withheld. */
+export interface SuppressedOpportunity {
+  category: OpportunityCategory;
+  reason: string;
 }
 
 function usd(cents: number): string {
@@ -265,8 +422,11 @@ function bandStrength(score: number): OpportunityStrength {
  */
 export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
   const out: DerivedOpportunity[] = [];
-  const equity = s.equityCents;
+  // Equity dollars may only drive an opportunity when the Value Engine and the
+  // equity resolver both rate the position safe for lender use.
+  const equity = s.equityActionable ? s.equityCents : 0;
   const seasoned = s.monthsSinceClose >= 12;
+  const prov = { valueConfidence: s.valueConfidence, valueSource: s.valueSource };
 
   // --- Refinance review -----------------------------------------------------
   if (s.ratePct != null && seasoned && s.ratePct - s.benchmarkRate >= 0.5) {
@@ -274,6 +434,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 40 + delta * 25 + (s.savingsPerMonth > 200 ? 15 : 0));
     out.push({
       category: "refinance_review",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -291,6 +452,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 35 + equity / 100 / 10_000);
     out.push({
       category: "equity",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -305,6 +467,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 45 + (65 - s.ltvPct) * 1.5);
     out.push({
       category: "heloc",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -322,6 +485,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 40 + s.monthsSinceClose / 6 + equity / 100 / 20_000);
     out.push({
       category: "move_up",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -336,6 +500,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 40 + (s.likelyNonOwnerOccupied ? 25 : 0) + equity / 100 / 25_000);
     out.push({
       category: "investment",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -343,6 +508,63 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
         s.likelyNonOwnerOccupied
           ? "Property records suggest the mailing address differs from the property address"
           : `Long tenure of about ${Math.round(s.monthsSinceClose / 12)} years`,
+      ],
+    });
+  }
+
+  // --- Free and clear -------------------------------------------------------
+  if (s.freeAndClear) {
+    const score = s.equityActionable && s.valueCents ? 80 : 60;
+    out.push({
+      category: "free_and_clear",
+      ...prov,
+      strength: bandStrength(score),
+      score,
+      reasons: [
+        "Public records show no open loan against this home",
+        s.equityActionable && s.valueCents
+          ? `Estimated home value of about ${usd(s.valueCents)}`
+          : "Value shown for context only until records are confirmed",
+      ],
+    });
+  }
+
+  // --- Recent purchase ------------------------------------------------------
+  if (s.monthsSinceSale != null && s.monthsSinceSale <= 12) {
+    out.push({
+      category: "recent_purchase",
+      strength: "moderate",
+      score: 55,
+      reasons: [
+        `Property records show a sale about ${Math.max(1, Math.round(s.monthsSinceSale))} month(s) ago`,
+        "Early contact builds the relationship before it is needed",
+      ],
+    });
+  }
+
+  // --- Permit activity ------------------------------------------------------
+  if (s.permitCount > 0) {
+    const score = Math.min(70, 40 + s.permitCount * 5);
+    out.push({
+      category: "permit_activity",
+      strength: bandStrength(score),
+      score,
+      reasons: [
+        `Property records show ${s.permitCount} recent permit(s)`,
+        "Improvement work can point to plans that need funding",
+      ],
+    });
+  }
+
+  // --- Loan age (no value or equity quoted) ---------------------------------
+  if (s.monthsSinceClose >= 84 && (s.balanceCents ?? 0) > 0) {
+    out.push({
+      category: "mortgage_age",
+      strength: "moderate",
+      score: 45,
+      reasons: [
+        `This loan has been in place about ${Math.round(s.monthsSinceClose / 12)} years`,
+        "Long-held loans are usually worth a review",
       ],
     });
   }
@@ -360,5 +582,28 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     });
   }
 
+  return out;
+}
+
+/**
+ * Opportunities the rules would have raised but a guardrail withheld, so the
+ * dashboard can explain the gap instead of silently showing nothing.
+ */
+export function deriveSuppressed(s: ClientSignals): SuppressedOpportunity[] {
+  const out: SuppressedOpportunity[] = [];
+  if (!s.equityActionable && s.equityCents >= 75_000 * 100) {
+    const reason =
+      s.equitySuppressionReason ??
+      "Equity figures are not confident enough to quote to a homeowner.";
+    for (const category of ["equity", "heloc", "move_up", "investment"] as const) {
+      out.push({ category, reason });
+    }
+  }
+  if (s.multiLien) {
+    out.push({
+      category: "heloc",
+      reason: "More than one loan is recorded — balances are kept separate rather than combined.",
+    });
+  }
   return out;
 }

@@ -125,6 +125,36 @@ const AGENT_RECIPES: Record<OpportunityCategory, ActionRecipe> = {
     headline: "Call now — they're looking",
     ask: "Recent activity suggests they're weighing a move.",
   },
+  free_and_clear: {
+    key: "agent_free_clear",
+    channel: "call",
+    headline: "Call about their plans for the home",
+    ask: "No loan on record — ask what they want the home to do for them next.",
+  },
+  recent_purchase: {
+    key: "agent_new_owner",
+    channel: "email",
+    headline: "Welcome the new owner",
+    ask: "A recent purchase is the best moment to start the relationship.",
+  },
+  mortgage_age: {
+    key: "agent_loan_age",
+    channel: "email",
+    headline: "Send a financing check-in",
+    ask: "The loan has been in place a while — a review is a warm reason to reconnect.",
+  },
+  permit_activity: {
+    key: "agent_permit",
+    channel: "text",
+    headline: "Ask about the project",
+    ask: "Permit records show work underway — offer a trusted pro or a value update.",
+  },
+  distress: {
+    key: "agent_sensitive",
+    channel: "call",
+    headline: "Reach out personally",
+    ask: "Handle with care: ask how you can help, never assume the situation.",
+  },
 };
 
 const LENDER_RECIPES: Record<OpportunityCategory, ActionRecipe> = {
@@ -175,6 +205,36 @@ const LENDER_RECIPES: Record<OpportunityCategory, ActionRecipe> = {
     channel: "call",
     headline: "Call before they shop",
     ask: "Activity suggests a move is being considered — get in early.",
+  },
+  free_and_clear: {
+    key: "mlo_free_clear",
+    channel: "call",
+    headline: "Call about options with no loan in place",
+    ask: "No open loan on record — introduce what their equity could do.",
+  },
+  recent_purchase: {
+    key: "mlo_new_owner",
+    channel: "email",
+    headline: "Introduce yourself to the new owner",
+    ask: "Be the lender they already know before they need one.",
+  },
+  mortgage_age: {
+    key: "mlo_loan_age",
+    channel: "email",
+    headline: "Offer a financing review",
+    ask: "Loan seasoning makes a no-pressure review an easy yes.",
+  },
+  permit_activity: {
+    key: "mlo_permit",
+    channel: "email",
+    headline: "Send a renovation financing overview",
+    ask: "Recent permits suggest a project that may need funding.",
+  },
+  distress: {
+    key: "mlo_sensitive",
+    channel: "call",
+    headline: "Reach out personally",
+    ask: "Handle with care: offer help, never assume the homeowner's situation.",
   },
 };
 

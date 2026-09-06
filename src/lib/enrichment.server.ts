@@ -17,6 +17,7 @@
  */
 
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
+import { batchdataPrimaryEnabled, enrichViaBatchdata } from "./provider-primary.server";
 import { persistPortfolioOpportunities } from "./opportunities.server";
 import { verifyAddress } from "./geocode.server";
 
@@ -348,6 +349,53 @@ export async function runEnrichmentTick(opts?: {
         .eq("id", item.id);
       out.paused = "background_cap";
       break;
+    }
+
+    // --- Primary provider switch -------------------------------------------
+    // When BatchData is the primary source, new enrichment goes through one
+    // bundled request and never touches ATTOM. Historical ATTOM data stays.
+    if (batchdataPrimaryEnabled()) {
+      const bd = await enrichViaBatchdata(supabaseAdmin, address);
+      const attempts = (item.attempts ?? 0) + 1;
+      if (bd.status === "matched") {
+        out.completed += 1;
+        out.spentCalls += 1;
+        await supabaseAdmin
+          .from("property_enrichment_queue")
+          .update({
+            status: "done",
+            attempts,
+            last_result: `batchdata:${bd.classes.join(",")}`,
+            last_error: null,
+            completed_at: now,
+          })
+          .eq("id", item.id);
+        await supabaseAdmin
+          .from("lender_portfolio_clients")
+          .update({ last_intel_refreshed_at: now })
+          .eq("id", client.id);
+        touchedPortfolios.add(client.portfolio_id);
+      } else if (bd.status === "error") {
+        out.retried += 1;
+        await supabaseAdmin
+          .from("property_enrichment_queue")
+          .update({ status: "failed", attempts, last_result: "batchdata_error", last_error: bd.error })
+          .eq("id", item.id);
+      } else {
+        // No record: keep the address exactly as entered and ask for review.
+        out.needsReview += 1;
+        out.spentCalls += 1;
+        await supabaseAdmin
+          .from("property_enrichment_queue")
+          .update({
+            status: "needs_review",
+            attempts,
+            last_result: bd.status,
+            last_error: bd.review,
+          })
+          .eq("id", item.id);
+      }
+      continue;
     }
 
     try {
