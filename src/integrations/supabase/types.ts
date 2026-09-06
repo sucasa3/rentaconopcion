@@ -3137,6 +3137,7 @@ export type Database = {
           sponsored_allocation: number | null
           sponsored_seats: number | null
           stripe_price_id: string | null
+          stripe_test_price_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3154,6 +3155,7 @@ export type Database = {
           sponsored_allocation?: number | null
           sponsored_seats?: number | null
           stripe_price_id?: string | null
+          stripe_test_price_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3171,6 +3173,7 @@ export type Database = {
           sponsored_allocation?: number | null
           sponsored_seats?: number | null
           stripe_price_id?: string | null
+          stripe_test_price_id?: string | null
           updated_at?: string
         }
         Relationships: []
