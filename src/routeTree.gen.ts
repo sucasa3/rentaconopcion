@@ -48,6 +48,7 @@ import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authe
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
 import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
 import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
@@ -270,6 +271,11 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
+  id: '/api/public/webhooks/stripe',
+  path: '/api/public/webhooks/stripe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTOpenRoute = ApiPublicTOpenRouteImport.update({
   id: '/api/public/t/open',
   path: '/api/public/t/open',
@@ -394,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -445,6 +452,7 @@ export interface FileRoutesByTo {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -501,6 +509,7 @@ export interface FileRoutesById {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -557,6 +566,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -663,6 +674,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -692,6 +704,7 @@ export interface RootRouteChildren {
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
   ApiPublicTClickRoute: typeof ApiPublicTClickRoute
   ApiPublicTOpenRoute: typeof ApiPublicTOpenRoute
+  ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -972,6 +985,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/stripe': {
+      id: '/api/public/webhooks/stripe'
+      path: '/api/public/webhooks/stripe'
+      fullPath: '/api/public/webhooks/stripe'
+      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/t/open': {
       id: '/api/public/t/open'
       path: '/api/public/t/open'
@@ -1206,6 +1226,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
   ApiPublicTClickRoute: ApiPublicTClickRoute,
   ApiPublicTOpenRoute: ApiPublicTOpenRoute,
+  ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
