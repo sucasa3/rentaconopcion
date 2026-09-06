@@ -95,7 +95,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       subscription_data: { metadata: { sucasa_org_id: org.id } },
-      metadata: { sucasa_org_id: org.id, plan_key: plan.key },
+      metadata: { sucasa_org_id: org.id, plan_key: plan?.key ?? data.planKey },
     });
 
     return { url: session.url };
@@ -144,7 +144,7 @@ export const activateComped = createServerFn({ method: "POST" })
     if (plan.seat_limit != null) patch["seat_limit"] = plan.seat_limit;
     if (!org.activated_at) patch["activated_at"] = new Date().toISOString();
 
-    await supabaseAdmin.from("lender_orgs").update(patch).eq("id", data.orgId);
+    await supabaseAdmin.from("lender_orgs").update(patch as any).eq("id", data.orgId);
     return { status: "comped", planKey: plan.key, activated: true };
   });
 
