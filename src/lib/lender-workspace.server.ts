@@ -405,6 +405,9 @@ export async function readLenderWorkspace(
       },
       channelReasons,
       estimatedValueCents: value,
+      valueSource,
+      dataGap,
+
       estimatedBalanceCents: balance,
       estimatedEquityCents: equity,
       estimatedLtvPct: ltv,
