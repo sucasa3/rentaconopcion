@@ -230,3 +230,45 @@ export const auditLenderPrioritization = createServerFn({ method: "POST" })
       aggregateOnly: ws.aggregateOnly,
     };
   });
+
+/**
+ * Lender workflow outcome. Recorded for the lender's own pipeline only: it can
+ * never create an agent reward, agent capacity, entitlement change or any
+ * sponsorship benefit.
+ */
+export const logLenderOutcome = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        clientId: z.string().uuid(),
+        stage: z.enum([
+          "no_answer",
+          "talked",
+          "appointment",
+          "application",
+          "in_process",
+          "closed",
+          "not_interested",
+          "follow_up",
+        ]),
+        note: z.string().max(500).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { readLenderWorkspace } = await import("./lender-workspace.server");
+    const ws = await readLenderWorkspace(context.supabase, context.userId);
+    const person = ws?.book.find((c) => c.id === data.clientId);
+    if (!ws || !person) throw new Error("Not permitted");
+
+    const { error } = await context.supabase.from("opportunity_outcomes").insert({
+      org_id: ws.org.id,
+      portfolio_client_id: data.clientId,
+      stage: data.stage,
+      note: data.note ?? null,
+      actor_user_id: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
