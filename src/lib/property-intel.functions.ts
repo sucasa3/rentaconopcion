@@ -137,7 +137,15 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     }
 
 
-    const resolved = resolveHomeValue({ avm, tax, equity });
+    const resolved = resolveHomeValue({
+      state: profile.state ?? null,
+      avm,
+      tax,
+      equity,
+      sales: sales?.lastSale
+        ? { lastSalePrice: sales.lastSale.amount, lastSaleDate: sales.lastSale.date }
+        : null,
+    });
     const valueStatus: ValueStatus =
       resolved.value != null
         ? "resolved"
