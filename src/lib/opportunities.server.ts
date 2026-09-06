@@ -14,6 +14,7 @@ import {
   deriveOpportunities,
   deriveSignals,
   type ClientSignals,
+  type EngineFacts,
 } from "./opportunities";
 import {
   mergeOpportunities,
