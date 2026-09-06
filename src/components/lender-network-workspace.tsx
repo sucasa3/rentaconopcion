@@ -227,22 +227,13 @@ function AgentCard({
 
       {connected && (
         <div className="px-5 pb-4">
-          <button
-            type="button"
-            onClick={() => setSponsorOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-semibold"
-          >
-            <Gift className="h-3.5 w-3.5" /> Sponsor homeowner profiles
-          </button>
-          <LenderAgentSponsorDialog
-            lenderOrgId={lenderOrgId}
-            agentOrgId={agent.agent_org_id}
-            agentName={agent.agent_org_name}
-            open={sponsorOpen}
-            onOpenChange={setSponsorOpen}
-          />
+          <p className="rounded-2xl bg-muted/60 px-3 py-2 text-[11px] text-muted-foreground">
+            Agent accounts and their Home Profiles come from SuCasa. Your subscription funds
+            homeowner memberships and your own intelligence — never an agent&apos;s account.
+          </p>
         </div>
       )}
+
 
       {open && connected && (
         <OpportunityList lenderOrgId={lenderOrgId} agentOrgId={agent.agent_org_id} />
