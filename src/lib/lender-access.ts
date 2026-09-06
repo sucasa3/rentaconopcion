@@ -74,13 +74,19 @@ export interface AccessInput {
 /** Relationship bases that establish the lender's own, independent relationship. */
 const OWN_RELATIONSHIP_BASES = new Set([
   "lender_upload",
+  "org_uploaded",
+  "uploaded",
+  "csv_import",
   "existing_customer",
   "existing_relationship",
   "own_relationship",
   "servicing",
   "past_borrower",
+  "borrower",
+  "client",
   "import",
 ]);
+
 
 export interface LenderAccess {
   category: LenderAccessCategory;
