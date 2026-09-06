@@ -5,36 +5,52 @@
  * assistant, lender + agent portfolios) must resolve value through this so a
  * home can never show a number in one place and a dash in another.
  *
- * Order: automated valuation → assessor market value → assessed total.
+ * The actual reasoning lives in the SuCasa Value Engine
+ * (`src/lib/value-engine.ts`), which builds independent candidates from the
+ * automated estimate, recent sale, recorded loan data and assessor records.
  */
 
-export type HomeValueSource = "avm" | "assessed" | null;
+import { estimateHomeValue, type ValueEngineInput, type ValueConfidence } from "@/lib/value-engine";
+
+export type HomeValueSource = "avm" | "assessed" | "sale" | "mortgage" | null;
 
 export interface ResolvedHomeValue {
   value: number | null;
   source: HomeValueSource;
   /** short, user-facing label for where the number came from */
   label: string | null;
+  low?: number | null;
+  high?: number | null;
+  confidence?: ValueConfidence | null;
+  /** one plain sentence explaining how we got here */
+  reason?: string;
 }
 
-export function resolveHomeValue(input: {
-  avm?: { estimate?: number | null } | null;
-  tax?: { marketTotal?: number | null; assessedTotal?: number | null } | null;
-  equity?: { estimatedValue?: number | null } | null;
-}): ResolvedHomeValue {
-  const avm = input.avm?.estimate ?? null;
-  if (avm != null) return { value: avm, source: "avm", label: "Automated estimate" };
+export function resolveHomeValue(input: ValueEngineInput): ResolvedHomeValue {
+  const r = estimateHomeValue(input);
 
-  const assessed = input.tax?.marketTotal ?? input.tax?.assessedTotal ?? null;
-  if (assessed != null)
-    return { value: assessed, source: "assessed", label: "From assessor records" };
+  const source: HomeValueSource =
+    r.kind === "provider_avm"
+      ? "avm"
+      : r.kind === "recent_sale" || r.kind === "aged_sale"
+        ? "sale"
+        : r.kind === "mortgage_implied"
+          ? "mortgage"
+          : r.kind === "assessor"
+            ? "assessed"
+            : null;
 
-  const fromEquity = input.equity?.estimatedValue ?? null;
-  if (fromEquity != null)
-    return { value: fromEquity, source: "assessed", label: "From assessor records" };
-
-  return { value: null, source: null, label: null };
+  return {
+    value: r.value,
+    source,
+    label: r.label,
+    low: r.low,
+    high: r.high,
+    confidence: r.confidence,
+    reason: r.reason,
+  };
 }
+
 
 /** Status the UI uses to pick a message instead of rendering a bare dash. */
 export type ValueStatus =

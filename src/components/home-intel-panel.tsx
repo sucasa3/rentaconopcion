@@ -91,16 +91,13 @@ export function HomeIntelPanel() {
           label="Estimated value"
           primary={fmtMoney(value.value)}
           secondary={
-            value.source === "avm" && avm?.low != null && avm?.high != null
-              ? `${fmtMoney(avm.low)} – ${fmtMoney(avm.high)}`
-              : value.source === "assessed"
-                ? "From assessor records"
-                : value.source === "avm"
-                  ? avm?.asOf ?? "Automated estimate"
-                  : "No valuation on record"
+            value.value != null && value.low != null && value.high != null
+              ? `${fmtMoney(value.low)} – ${fmtMoney(value.high)}`
+              : value.label ?? "No valuation on record"
           }
           stale={staleClasses.includes("avm")}
         />
+
 
 
         <IntelCard
@@ -130,6 +127,15 @@ export function HomeIntelPanel() {
           stale={staleClasses.includes("tax")}
         />
       </div>
+
+      {value.value != null && value.reason && (
+        <p className="mt-3 rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-[11px] text-muted-foreground">
+          {value.reason}
+          {value.confidence === "low" && " Treat this as a rough range until we confirm more records."}
+        </p>
+      )}
+
+
 
       {budget?.cacheOnly && (
         <p className="mt-3 text-[11px] text-muted-foreground">
