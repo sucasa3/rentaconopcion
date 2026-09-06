@@ -4,7 +4,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { LenderIntroductionsPanel } from "@/components/lender-introductions-panel";
 import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
-import { LenderAgentSponsorDialog } from "@/components/lender-agent-sponsor-dialog";
 import { LenderCampaignProposalsPanel } from "@/components/lender-campaign-proposals-panel";
 import {
   getLenderNetwork,
