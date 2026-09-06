@@ -19,9 +19,8 @@ export const startPremiumCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { stripeRequest } = await import("./billing.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const admin = supabaseAdmin as any;
 
-    const { data: cfg } = await admin()
+    const { data: cfg } = await (supabaseAdmin as any)
       .from("platform_config")
       .select("value_text")
       .eq("key", "premium_stripe_price_id")
