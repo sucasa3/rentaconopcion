@@ -58,7 +58,7 @@ export function LenderCommandCenter() {
         </div>
         {myBook.books.length > 1 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {myBook.books.map((b) => (
+            {myBook.books.map((b: any) => (
               <Link
                 key={b.id}
                 to={"/lender/portfolio/$id" as never}
@@ -95,7 +95,7 @@ export function LenderCommandCenter() {
           <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
             <p className="text-sm font-semibold">Delivered in the last 30 days</p>
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-              {Object.entries(homeownersServed.delivered).map(([k, n]) => (
+              {Object.entries(homeownersServed.delivered as Record<string, number>).map(([k, n]) => (
                 <li key={k} className="flex justify-between gap-3">
                   <span>{DELIVERY_LABEL[k] ?? k.replace(/_/g, " ")}</span>
                   <span className="font-semibold text-foreground">{n.toLocaleString()}</span>
@@ -113,7 +113,7 @@ export function LenderCommandCenter() {
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {homeownersServed.list.map((m) => (
+            {homeownersServed.list.map((m: any) => (
               <div
                 key={m.id}
                 className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
@@ -148,7 +148,7 @@ export function LenderCommandCenter() {
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              {permissioned.requests.map((r) => (
+              {permissioned.requests.map((r: any) => (
                 <div
                   key={r.id}
                   className="rounded-3xl border border-primary/30 bg-primary/5 p-4 shadow-soft"
@@ -193,7 +193,7 @@ export function LenderCommandCenter() {
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {permissioned.opportunities.map((o) => (
+              {permissioned.opportunities.map((o: any) => (
                 <div
                   key={o.id}
                   className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
