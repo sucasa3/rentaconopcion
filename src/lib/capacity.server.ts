@@ -107,3 +107,20 @@ export async function poolInputFor(orgId: string): Promise<
     agents,
   };
 }
+
+/**
+ * Guard before adding Home Profiles: warn-then-block at the hard limit, with
+ * a message that names the ways out. Never silently trims data.
+ */
+export async function assertCapacityForPortfolio(portfolioId: string, count = 1): Promise<void> {
+  const { data: portfolio } = await admin()
+    .from("lender_portfolios")
+    .select("lender_org_id")
+    .eq("id", portfolioId)
+    .maybeSingle();
+  const orgId = (portfolio as any)?.lender_org_id;
+  if (!orgId) return;
+  const { canAddProfiles } = await import("./profile-pool");
+  const decision = canAddProfiles(await poolInputFor(orgId), count);
+  if (!decision.ok) throw new Error(decision.reason);
+}

@@ -384,6 +384,8 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
     await assertLenderAccess(context.supabase, context.userId);
     const rows = parseClientCsv(data.csv);
     if (rows.length === 0) return { inserted: 0 };
+    const { assertCapacityForPortfolio } = await import("./capacity.server");
+    await assertCapacityForPortfolio(data.portfolioId, rows.length);
 
     const payload = rows.map((r) => ({
       portfolio_id: data.portfolioId,
@@ -423,6 +425,8 @@ export const addPortfolioClient = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AddClientSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
+    const { assertCapacityForPortfolio } = await import("./capacity.server");
+    await assertCapacityForPortfolio(data.portfolioId, 1);
     const { error } = await context.supabase.from("lender_portfolio_clients").insert({
       portfolio_id: data.portfolioId,
       client_name: data.fullName,
