@@ -2513,11 +2513,13 @@ export type Database = {
       }
       lender_orgs: {
         Row: {
+          activated_at: string | null
           active: boolean
           contact_name: string | null
           contact_phone: string | null
           contact_title: string | null
           created_at: string
+          current_period_end: string | null
           id: string
           license_number: string | null
           logo_url: string | null
@@ -2526,19 +2528,25 @@ export type Database = {
           plan: string
           plan_key: string | null
           primary_contact_email: string | null
+          profile_allowance: number
           reply_to_email: string | null
           seat_limit: number | null
           sender_name: string | null
           signoff: string | null
           sponsored_allocation: number
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string
           updated_at: string
         }
         Insert: {
+          activated_at?: string | null
           active?: boolean
           contact_name?: string | null
           contact_phone?: string | null
           contact_title?: string | null
           created_at?: string
+          current_period_end?: string | null
           id?: string
           license_number?: string | null
           logo_url?: string | null
@@ -2547,19 +2555,25 @@ export type Database = {
           plan?: string
           plan_key?: string | null
           primary_contact_email?: string | null
+          profile_allowance?: number
           reply_to_email?: string | null
           seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
           sponsored_allocation?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
           updated_at?: string
         }
         Update: {
+          activated_at?: string | null
           active?: boolean
           contact_name?: string | null
           contact_phone?: string | null
           contact_title?: string | null
           created_at?: string
+          current_period_end?: string | null
           id?: string
           license_number?: string | null
           logo_url?: string | null
@@ -2568,11 +2582,15 @@ export type Database = {
           plan?: string
           plan_key?: string | null
           primary_contact_email?: string | null
+          profile_allowance?: number
           reply_to_email?: string | null
           seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
           sponsored_allocation?: number
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
           updated_at?: string
         }
         Relationships: [
@@ -2992,10 +3010,12 @@ export type Database = {
           name: string
           positioning: string | null
           price_cents: number | null
+          profile_allowance: number | null
           seat_limit: number | null
           sort_order: number
           sponsored_allocation: number | null
           sponsored_seats: number | null
+          stripe_price_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3007,10 +3027,12 @@ export type Database = {
           name: string
           positioning?: string | null
           price_cents?: number | null
+          profile_allowance?: number | null
           seat_limit?: number | null
           sort_order?: number
           sponsored_allocation?: number | null
           sponsored_seats?: number | null
+          stripe_price_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3022,10 +3044,12 @@ export type Database = {
           name?: string
           positioning?: string | null
           price_cents?: number | null
+          profile_allowance?: number | null
           seat_limit?: number | null
           sort_order?: number
           sponsored_allocation?: number | null
           sponsored_seats?: number | null
+          stripe_price_id?: string | null
           updated_at?: string
         }
         Relationships: []

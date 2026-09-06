@@ -40,6 +40,7 @@ import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_
 import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
 import { Route as AuthenticatedLenderFunnelRouteImport } from './routes/_authenticated/lender/funnel'
 import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
+import { Route as AuthenticatedLenderBillingRouteImport } from './routes/_authenticated/lender/billing'
 import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authenticated/agent/tasks'
 import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
@@ -48,6 +49,7 @@ import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authe
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
 import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
 import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
@@ -225,6 +227,12 @@ const AuthenticatedLenderCampaignsRoute =
     path: '/campaigns',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedLenderBillingRoute =
+  AuthenticatedLenderBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
 const AuthenticatedAgentTasksRoute = AuthenticatedAgentTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
@@ -268,6 +276,11 @@ const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
+  id: '/api/public/webhooks/stripe',
+  path: '/api/public/webhooks/stripe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicTOpenRoute = ApiPublicTOpenRouteImport.update({
@@ -376,6 +389,7 @@ export interface FileRoutesByFullPath {
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/agent/tasks': typeof AuthenticatedAgentTasksRoute
+  '/lender/billing': typeof AuthenticatedLenderBillingRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/funnel': typeof AuthenticatedLenderFunnelRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
@@ -394,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -428,6 +443,7 @@ export interface FileRoutesByTo {
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/agent/tasks': typeof AuthenticatedAgentTasksRoute
+  '/lender/billing': typeof AuthenticatedLenderBillingRoute
   '/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/lender/funnel': typeof AuthenticatedLenderFunnelRoute
   '/lender/network': typeof AuthenticatedLenderNetworkRoute
@@ -445,6 +461,7 @@ export interface FileRoutesByTo {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -483,6 +500,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/_authenticated/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/_authenticated/agent/tasks': typeof AuthenticatedAgentTasksRoute
+  '/_authenticated/lender/billing': typeof AuthenticatedLenderBillingRoute
   '/_authenticated/lender/campaigns': typeof AuthenticatedLenderCampaignsRoute
   '/_authenticated/lender/funnel': typeof AuthenticatedLenderFunnelRoute
   '/_authenticated/lender/network': typeof AuthenticatedLenderNetworkRoute
@@ -501,6 +519,7 @@ export interface FileRoutesById {
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -539,6 +558,7 @@ export interface FileRouteTypes {
     | '/agent/network'
     | '/agent/opportunities'
     | '/agent/tasks'
+    | '/lender/billing'
     | '/lender/campaigns'
     | '/lender/funnel'
     | '/lender/network'
@@ -557,6 +577,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -591,6 +612,7 @@ export interface FileRouteTypes {
     | '/agent/network'
     | '/agent/opportunities'
     | '/agent/tasks'
+    | '/lender/billing'
     | '/lender/campaigns'
     | '/lender/funnel'
     | '/lender/network'
@@ -608,6 +630,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -645,6 +668,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/network'
     | '/_authenticated/agent/opportunities'
     | '/_authenticated/agent/tasks'
+    | '/_authenticated/lender/billing'
     | '/_authenticated/lender/campaigns'
     | '/_authenticated/lender/funnel'
     | '/_authenticated/lender/network'
@@ -663,6 +687,7 @@ export interface FileRouteTypes {
     | '/api/public/leads/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -692,6 +717,7 @@ export interface RootRouteChildren {
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
   ApiPublicTClickRoute: typeof ApiPublicTClickRoute
   ApiPublicTOpenRoute: typeof ApiPublicTOpenRoute
+  ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -916,6 +942,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderCampaignsRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
+    '/_authenticated/lender/billing': {
+      id: '/_authenticated/lender/billing'
+      path: '/billing'
+      fullPath: '/lender/billing'
+      preLoaderRoute: typeof AuthenticatedLenderBillingRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
     '/_authenticated/agent/tasks': {
       id: '/_authenticated/agent/tasks'
       path: '/tasks'
@@ -970,6 +1003,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/auth/preview'
       fullPath: '/lovable/email/auth/preview'
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/stripe': {
+      id: '/api/public/webhooks/stripe'
+      path: '/api/public/webhooks/stripe'
+      fullPath: '/api/public/webhooks/stripe'
+      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/t/open': {
@@ -1126,6 +1166,7 @@ const AuthenticatedLenderPortfolioIdRouteWithChildren =
   )
 
 interface AuthenticatedLenderRouteRouteChildren {
+  AuthenticatedLenderBillingRoute: typeof AuthenticatedLenderBillingRoute
   AuthenticatedLenderCampaignsRoute: typeof AuthenticatedLenderCampaignsRoute
   AuthenticatedLenderFunnelRoute: typeof AuthenticatedLenderFunnelRoute
   AuthenticatedLenderNetworkRoute: typeof AuthenticatedLenderNetworkRoute
@@ -1137,6 +1178,7 @@ interface AuthenticatedLenderRouteRouteChildren {
 
 const AuthenticatedLenderRouteRouteChildren: AuthenticatedLenderRouteRouteChildren =
   {
+    AuthenticatedLenderBillingRoute: AuthenticatedLenderBillingRoute,
     AuthenticatedLenderCampaignsRoute: AuthenticatedLenderCampaignsRoute,
     AuthenticatedLenderFunnelRoute: AuthenticatedLenderFunnelRoute,
     AuthenticatedLenderNetworkRoute: AuthenticatedLenderNetworkRoute,
@@ -1206,6 +1248,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
   ApiPublicTClickRoute: ApiPublicTClickRoute,
   ApiPublicTOpenRoute: ApiPublicTOpenRoute,
+  ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,

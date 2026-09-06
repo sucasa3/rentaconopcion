@@ -7,6 +7,7 @@ import {
   Network,
   Home,
   BarChart3,
+  CreditCard,
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
@@ -45,6 +46,13 @@ function navItems(kind: BusinessKind, bookId: string | null, isManager: boolean)
       to: `${base}/funnel`,
       icon: <BarChart3 className="h-5 w-5" />,
     });
+    if (kind === "lender") {
+      items.push({
+        label: "Billing",
+        to: `${base}/billing`,
+        icon: <CreditCard className="h-5 w-5" />,
+      });
+    }
   }
   return items;
 }
