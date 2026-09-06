@@ -185,7 +185,6 @@ function AgentCard({
 }) {
   const connected = agent.status === "connected" && agent.agent_org_id;
   const categories = Object.entries(agent.by_category ?? {}) as [string, number][];
-  const [sponsorOpen, setSponsorOpen] = useState(false);
 
   return (
     <div className="rounded-3xl border border-border bg-card shadow-soft">
