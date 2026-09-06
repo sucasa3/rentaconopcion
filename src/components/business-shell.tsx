@@ -8,6 +8,8 @@ import {
   Home,
   BarChart3,
   CreditCard,
+  Gauge,
+
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
