@@ -276,6 +276,41 @@ export interface ClientSignals {
   permitCount: number;
   /** True when the mailing address differs from the property address. */
   likelyNonOwnerOccupied: boolean;
+
+  // --- Value Engine provenance (the only sanctioned source of value) --------
+  /** which Value Engine method produced valueCents, null when unenriched */
+  valueSource: string | null;
+  valueConfidence: "high" | "medium" | "low" | null;
+  valueMethodology: string | null;
+  /** equity figures are safe enough for a lender to act on */
+  equityActionable: boolean;
+  /** why equity products are withheld, when they are */
+  equitySuppressionReason: string | null;
+  /** provider clearly reports zero open liens */
+  freeAndClear: boolean;
+  /** more than one open recorded loan */
+  multiLien: boolean;
+  /** months since the property last changed hands, from sale records */
+  monthsSinceSale: number | null;
+}
+
+/**
+ * Value + equity facts as resolved by the SuCasa Value Engine and the shared
+ * equity resolver. When absent, the loan-fact heuristic still produces a rough
+ * value for context, but equity-based opportunities stay suppressed.
+ */
+export interface EngineFacts {
+  value: number | null;
+  valueSource: string | null;
+  valueConfidence: "high" | "medium" | "low" | null;
+  valueMethodology: string | null;
+  balance: number | null;
+  equityDollars: number | null;
+  ltvPct: number | null;
+  actionable: boolean;
+  suppressionReason: string | null;
+  freeAndClear: boolean;
+  multiLien: boolean;
 }
 
 export function deriveSignals(input: {
@@ -286,22 +321,35 @@ export function deriveSignals(input: {
   benchmarkRate?: number;
   permitCount?: number;
   likelyNonOwnerOccupied?: boolean;
+  /** resolved value/equity — always preferred over the heuristic */
+  engine?: EngineFacts | null;
+  monthsSinceSale?: number | null;
   now?: Date;
 }): ClientSignals {
   const now = input.now ?? new Date();
   const benchmarkRate = input.benchmarkRate ?? BENCHMARK_RATE_DEFAULT;
   const termMonths = input.termMonths ?? 360;
   const monthsSinceClose = monthsBetween(input.closeDate, now);
-  const balanceCents = remainingBalanceCents(
+  const heuristicBalance = remainingBalanceCents(
     input.loanAtCloseCents,
     input.ratePct,
     termMonths,
     monthsSinceClose,
   );
-  const valueCents = estimatedValueCents(input.loanAtCloseCents, monthsSinceClose);
-  const equityCents = (valueCents ?? 0) - (balanceCents ?? 0);
+
+  const e = input.engine ?? null;
+  const engineValueCents = e?.value != null ? Math.round(e.value * 100) : null;
+  const engineBalanceCents = e?.balance != null ? Math.round(e.balance * 100) : null;
+
+  const valueCents = engineValueCents ?? estimatedValueCents(input.loanAtCloseCents, monthsSinceClose);
+  const balanceCents = engineBalanceCents ?? heuristicBalance;
+  const equityCents =
+    e?.equityDollars != null
+      ? Math.round(e.equityDollars * 100)
+      : (valueCents ?? 0) - (balanceCents ?? 0);
   const ltvPct =
-    valueCents && balanceCents ? Math.round((balanceCents / valueCents) * 1000) / 10 : null;
+    e?.ltvPct ??
+    (valueCents && balanceCents ? Math.round((balanceCents / valueCents) * 1000) / 10 : null);
 
   const p = (balanceCents ?? 0) / 100;
   const pay = (rate: number) => {
@@ -324,8 +372,21 @@ export function deriveSignals(input: {
     savingsPerMonth,
     permitCount: input.permitCount ?? 0,
     likelyNonOwnerOccupied: input.likelyNonOwnerOccupied ?? false,
+    valueSource: e?.valueSource ?? null,
+    valueConfidence: e?.valueConfidence ?? null,
+    valueMethodology: e?.valueMethodology ?? null,
+    equityActionable: e?.actionable ?? false,
+    equitySuppressionReason:
+      e?.suppressionReason ??
+      (e
+        ? null
+        : "This home's records haven't been enriched yet, so equity figures are estimates only."),
+    freeAndClear: e?.freeAndClear ?? false,
+    multiLien: e?.multiLien ?? false,
+    monthsSinceSale: input.monthsSinceSale ?? null,
   };
 }
+
 
 export interface DerivedOpportunity {
   category: OpportunityCategory;
