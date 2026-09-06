@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getBusinessOverview } from "@/lib/business.functions";
-import { listPlans, startCheckout, syncSubscription, getBillingState } from "@/lib/billing.functions";
+import { listPlans, startCheckout, syncSubscription, getBillingState, activateComped } from "@/lib/billing.functions";
 
 export const Route = createFileRoute("/_authenticated/lender/billing")({
   head: () => ({
@@ -83,12 +83,29 @@ function BillingPage() {
     }
   };
 
+  // Platform admins only: activate this organization without payment, for
+  // demo and internal accounts. Non-admins get a clear refusal.
+  const comp = async (planKey: string) => {
+    if (!orgId) return;
+    setBusy(`comp:${planKey}`);
+    try {
+      await compFn({ data: { orgId, planKey } });
+      toast.success("Activated on a complimentary basis.");
+      qc.invalidateQueries({ queryKey: ["billing-state", orgId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not activate");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const status = (state as any)?.subscription_status ?? "none";
   const activeLabel: Record<string, string> = {
     active: "Active",
     trialing: "Trial",
     past_due: "Payment failed — retrying",
     canceled: "Cancelled",
+    comped: "Complimentary",
     none: "No plan yet",
   };
 
