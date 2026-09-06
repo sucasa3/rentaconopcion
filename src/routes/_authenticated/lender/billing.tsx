@@ -40,6 +40,7 @@ function BillingPage() {
   const stateFn = useServerFn(getBillingState);
   const checkoutFn = useServerFn(startCheckout);
   const syncFn = useServerFn(syncSubscription);
+  const compFn = useServerFn(activateComped);
   const [busy, setBusy] = useState<string | null>(null);
 
   const { data: overview } = useQuery({
