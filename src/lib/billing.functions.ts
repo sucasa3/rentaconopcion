@@ -10,15 +10,22 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const listPlans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { priceIdColumn } = await import("./billing.server");
+    const column = priceIdColumn();
     const { data, error } = await context.supabase
       .from("plan_tiers")
       .select(
-        "key, name, audience, price_cents, positioning, seat_limit, sponsored_allocation, profile_allowance, stripe_price_id, sort_order",
+        "key, name, audience, price_cents, positioning, seat_limit, sponsored_allocation, profile_allowance, stripe_price_id, stripe_test_price_id, sort_order",
       )
       .eq("active", true)
       .order("sort_order");
     if (error) throw new Error(error.message);
-    return (data ?? []).map((p: any) => ({ ...p, purchasable: Boolean(p.stripe_price_id) }));
+    return (data ?? []).map((p: any) => ({
+      ...p,
+      stripe_price_id: undefined,
+      stripe_test_price_id: undefined,
+      purchasable: Boolean(p[column]),
+    }));
   });
 
 /** Current subscription state for one organization. */
