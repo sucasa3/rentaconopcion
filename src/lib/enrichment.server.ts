@@ -376,14 +376,14 @@ export async function runEnrichmentTick(opts?: {
           .eq("id", client.id);
         touchedPortfolios.add(client.portfolio_id);
       } else if (bd.status === "error") {
-        out.failed += 1;
+        out.retried += 1;
         await supabaseAdmin
           .from("property_enrichment_queue")
           .update({ status: "failed", attempts, last_result: "batchdata_error", last_error: bd.error })
           .eq("id", item.id);
       } else {
         // No record: keep the address exactly as entered and ask for review.
-        out.failed += 1;
+        out.needsReview += 1;
         out.spentCalls += 1;
         await supabaseAdmin
           .from("property_enrichment_queue")
