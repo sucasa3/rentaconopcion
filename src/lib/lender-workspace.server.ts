@@ -600,3 +600,15 @@ export async function readLenderHomeowner(supabase: any, userId: string, clientI
   if (!ws) return null;
   return ws.book.find((c) => c.id === clientId) ?? null;
 }
+
+/**
+ * Client ids a lender may work individually, used by the shared action queue so
+ * no legacy caller can bypass the gate.
+ */
+export async function permittedLenderClientIds(
+  supabase: any,
+  userId: string,
+): Promise<Set<string>> {
+  const ws = await readLenderWorkspace(supabase, userId);
+  return new Set((ws?.book ?? []).filter((c) => c.access.inQueue).map((c) => c.id));
+}

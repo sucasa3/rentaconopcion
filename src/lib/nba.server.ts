@@ -141,10 +141,23 @@ export async function buildActionQueue(
     )
     .in("portfolio_id", scope.bookIds)
     .is("archived_at", null);
-  const rows = clients ?? [];
+  let rows = clients ?? [];
   if (!rows.length) return empty;
+
+  // Lender access gate: a homeowner may only appear by name in a lender's
+  // queue when the lender has an independent basis. Sponsorship alone and an
+  // agent connection alone never qualify. Applied here so every caller of the
+  // queue — including older screens — passes through the same gate.
+  if (orgType === "lender") {
+    const { permittedLenderClientIds } = await import("@/lib/lender-workspace.server");
+    const permitted = await permittedLenderClientIds(supabase, userId);
+    rows = rows.filter((c: any) => permitted.has(c.id));
+    if (!rows.length) return empty;
+  }
+
   const clientById = new Map<string, any>(rows.map((c: any) => [c.id, c]));
   const clientIds = rows.map((c: any) => c.id);
+
 
   const { data: opps } = await supabase
     .from("homeowner_opportunities")
