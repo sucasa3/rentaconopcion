@@ -91,16 +91,13 @@ export function HomeIntelPanel() {
           label="Estimated value"
           primary={fmtMoney(value.value)}
           secondary={
-            value.source === "avm" && avm?.low != null && avm?.high != null
-              ? `${fmtMoney(avm.low)} – ${fmtMoney(avm.high)}`
-              : value.source === "assessed"
-                ? "From assessor records"
-                : value.source === "avm"
-                  ? avm?.asOf ?? "Automated estimate"
-                  : "No valuation on record"
+            value.value != null && value.low != null && value.high != null
+              ? `${fmtMoney(value.low)} – ${fmtMoney(value.high)}`
+              : value.label ?? "No valuation on record"
           }
           stale={staleClasses.includes("avm")}
         />
+
 
 
         <IntelCard
