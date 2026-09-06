@@ -27,9 +27,17 @@ function AgentHome() {
     staleTime: 60_000,
   });
 
+  const orgId = (data as any)?.org?.id ?? (data as any)?.orgs?.[0]?.id ?? null;
+
   return (
     <BusinessShell kind="agent" bookId={data?.books?.[0]?.id ?? null} isManager={data?.isManager}>
+      {orgId && (
+        <div className="px-4 pt-4 sm:px-5">
+          <AgentContinuationCard orgId={orgId} />
+        </div>
+      )}
       <BusinessDashboard kind="agent" isManager={data?.isManager} />
     </BusinessShell>
   );
 }
+
