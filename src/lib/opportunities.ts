@@ -393,6 +393,16 @@ export interface DerivedOpportunity {
   strength: OpportunityStrength;
   score: number;
   reasons: string[];
+  /** Value Engine confidence behind any dollar figure quoted in reasons. */
+  confidence?: "high" | "medium" | "low" | null;
+  /** Value Engine method behind any dollar figure quoted in reasons. */
+  valueSource?: string | null;
+}
+
+/** An opportunity the rules would have raised but a guardrail withheld. */
+export interface SuppressedOpportunity {
+  category: OpportunityCategory;
+  reason: string;
 }
 
 function usd(cents: number): string {
@@ -412,8 +422,11 @@ function bandStrength(score: number): OpportunityStrength {
  */
 export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
   const out: DerivedOpportunity[] = [];
-  const equity = s.equityCents;
+  // Equity dollars may only drive an opportunity when the Value Engine and the
+  // equity resolver both rate the position safe for lender use.
+  const equity = s.equityActionable ? s.equityCents : 0;
   const seasoned = s.monthsSinceClose >= 12;
+  const prov = { confidence: s.valueConfidence, valueSource: s.valueSource };
 
   // --- Refinance review -----------------------------------------------------
   if (s.ratePct != null && seasoned && s.ratePct - s.benchmarkRate >= 0.5) {
@@ -421,6 +434,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 40 + delta * 25 + (s.savingsPerMonth > 200 ? 15 : 0));
     out.push({
       category: "refinance_review",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -438,6 +452,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 35 + equity / 100 / 10_000);
     out.push({
       category: "equity",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -452,6 +467,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 45 + (65 - s.ltvPct) * 1.5);
     out.push({
       category: "heloc",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -469,6 +485,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 40 + s.monthsSinceClose / 6 + equity / 100 / 20_000);
     out.push({
       category: "move_up",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -483,6 +500,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     const score = Math.min(100, 40 + (s.likelyNonOwnerOccupied ? 25 : 0) + equity / 100 / 25_000);
     out.push({
       category: "investment",
+      ...prov,
       strength: bandStrength(score),
       score: Math.round(score),
       reasons: [
@@ -490,6 +508,63 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
         s.likelyNonOwnerOccupied
           ? "Property records suggest the mailing address differs from the property address"
           : `Long tenure of about ${Math.round(s.monthsSinceClose / 12)} years`,
+      ],
+    });
+  }
+
+  // --- Free and clear -------------------------------------------------------
+  if (s.freeAndClear) {
+    const score = s.equityActionable && s.valueCents ? 80 : 60;
+    out.push({
+      category: "free_and_clear",
+      ...prov,
+      strength: bandStrength(score),
+      score,
+      reasons: [
+        "Public records show no open loan against this home",
+        s.equityActionable && s.valueCents
+          ? `Estimated home value of about ${usd(s.valueCents)}`
+          : "Value shown for context only until records are confirmed",
+      ],
+    });
+  }
+
+  // --- Recent purchase ------------------------------------------------------
+  if (s.monthsSinceSale != null && s.monthsSinceSale <= 12) {
+    out.push({
+      category: "recent_purchase",
+      strength: "moderate",
+      score: 55,
+      reasons: [
+        `Property records show a sale about ${Math.max(1, Math.round(s.monthsSinceSale))} month(s) ago`,
+        "Early contact builds the relationship before it is needed",
+      ],
+    });
+  }
+
+  // --- Permit activity ------------------------------------------------------
+  if (s.permitCount > 0) {
+    const score = Math.min(70, 40 + s.permitCount * 5);
+    out.push({
+      category: "permit_activity",
+      strength: bandStrength(score),
+      score,
+      reasons: [
+        `Property records show ${s.permitCount} recent permit(s)`,
+        "Improvement work can point to plans that need funding",
+      ],
+    });
+  }
+
+  // --- Loan age (no value or equity quoted) ---------------------------------
+  if (s.monthsSinceClose >= 84 && (s.balanceCents ?? 0) > 0) {
+    out.push({
+      category: "mortgage_age",
+      strength: "moderate",
+      score: 45,
+      reasons: [
+        `This loan has been in place about ${Math.round(s.monthsSinceClose / 12)} years`,
+        "Long-held loans are usually worth a review",
       ],
     });
   }
@@ -507,5 +582,28 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     });
   }
 
+  return out;
+}
+
+/**
+ * Opportunities the rules would have raised but a guardrail withheld, so the
+ * dashboard can explain the gap instead of silently showing nothing.
+ */
+export function deriveSuppressed(s: ClientSignals): SuppressedOpportunity[] {
+  const out: SuppressedOpportunity[] = [];
+  if (!s.equityActionable && s.equityCents >= 75_000 * 100) {
+    const reason =
+      s.equitySuppressionReason ??
+      "Equity figures are not confident enough to quote to a homeowner.";
+    for (const category of ["equity", "heloc", "move_up", "investment"] as const) {
+      out.push({ category, reason });
+    }
+  }
+  if (s.multiLien) {
+    out.push({
+      category: "heloc",
+      reason: "More than one loan is recorded — balances are kept separate rather than combined.",
+    });
+  }
   return out;
 }
