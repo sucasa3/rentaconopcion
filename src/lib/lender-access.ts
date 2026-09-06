@@ -274,7 +274,7 @@ export const PROHIBITED_CLAIM_PATTERNS: { code: string; pattern: RegExp; why: st
   { code: "guaranteed_savings", pattern: /\bguarantee\w*\b[^.]{0,40}\b(saving|rate|payment)/i, why: "promises an outcome" },
   { code: "guaranteed", pattern: /\byou (will|can) save\b|\bguaranteed\b/i, why: "promises an outcome" },
   { code: "preferred_lender", pattern: /\b(preferred|recommended|best) lender\b/i, why: "implies a steering endorsement" },
-  { code: "credit_score", pattern: /\bcredit (score|worthiness)\b|\bcreditworthy\b/i, why: "not a credit-decision engine" },
+  { code: "credit_score", pattern: /\bcredit (score|worthiness)\b|\bcreditworth\w*/i, why: "not a credit-decision engine" },
   { code: "underwriting", pattern: /\b(underwrit\w*|likely to be (approved|denied))\b/i, why: "not an underwriting engine" },
   { code: "borrowing_power", pattern: /\byou can borrow\b|\bavailable borrowing power\b/i, why: "states an amount that was never underwritten" },
 ];
