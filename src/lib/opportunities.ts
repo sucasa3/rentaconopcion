@@ -88,7 +88,6 @@ export const CATEGORY_META: Record<OpportunityCategory, CategoryMeta> = {
     blurb: "Recent behavior suggests this homeowner is weighing a move.",
     lenderBlurb: "Activity suggests a move may be under consideration.",
   },
-};
 
   free_and_clear: {
     key: "free_and_clear",
