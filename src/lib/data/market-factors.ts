@@ -32,8 +32,10 @@ export const STATE_ANNUAL_DRIFT: Record<string, number> = {
 export const DEFAULT_ASSESSMENT_RATIO = 0.92;
 
 export const STATE_ASSESSMENT_RATIO: Record<string, number> = {
-  FL: 0.85, // Save Our Homes cap holds assessed values well below market
-  GA: 0.9,
+  // Calibrated 2026-09-06 against 73 stored records that carried both an
+  // assessor value and a provider automated estimate.
+  FL: 0.78, // Save Our Homes cap holds assessed values well below market (n=4)
+  GA: 0.93, // n=69, median assessor/estimate ratio 0.932
   PA: 0.8, // long reassessment cycles
   TX: 0.97,
   CA: 0.7, // Prop 13 caps growth at 2%/yr
