@@ -154,43 +154,20 @@ export async function seatsForAgent(supabase: any, agentOrgId: string) {
   return (data ?? []) as any[];
 }
 
-/** Sponsor one connected agent: creates the seat and grants the credits. */
+/**
+ * RETIRED. A lender may no longer fund an agent's Home Profile capacity.
+ * Existing `sponsored_agent_seats` rows are kept for history and audit only,
+ * and are never reinterpreted as a Premium sponsorship for a homeowner.
+ */
 export async function sponsorAgentSeat(
-  sponsorOrgId: string,
-  agentOrgId: string,
-  credits: number,
-  userId: string,
-) {
-  const { data: existing } = await admin()
-    .from("sponsored_agent_seats")
-    .select("id")
-    .eq("sponsor_org_id", sponsorOrgId)
-    .eq("agent_org_id", agentOrgId)
-    .eq("status", "active")
-    .maybeSingle();
-  if (existing) throw new Error("This agent is already sponsored by your organization");
-
-  const { data: seat, error } = await admin()
-    .from("sponsored_agent_seats")
-    .insert({
-      sponsor_org_id: sponsorOrgId,
-      agent_org_id: agentOrgId,
-      credits_granted: credits,
-      created_by: userId,
-    })
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-
-  const { error: ledgerError } = await admin().from("agent_credit_ledger").insert({
-    org_id: agentOrgId,
-    kind: "sponsor",
-    delta: credits,
-    reason: "Homeowner credits sponsored by a lender partner",
-    event_key: `seat:${seat.id}`,
-  });
-  if (ledgerError) throw new Error(ledgerError.message);
-  return { id: seat.id as string, credits };
+  _sponsorOrgId: string,
+  _agentOrgId: string,
+  _credits: number,
+  _userId: string,
+): Promise<never> {
+  const { assertAgentEntitlementSource } = await import("./entitlements");
+  assertAgentEntitlementSource("lender_sponsorship");
+  throw new Error("Unreachable");
 }
 
 /** Ending a seat stops future grants; credits already spent are never clawed back. */
