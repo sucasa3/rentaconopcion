@@ -128,6 +128,15 @@ export function HomeIntelPanel() {
         />
       </div>
 
+      {value.value != null && value.reason && (
+        <p className="mt-3 rounded-2xl border border-border bg-secondary/40 px-4 py-3 text-[11px] text-muted-foreground">
+          {value.reason}
+          {value.confidence === "low" && " Treat this as a rough range until we confirm more records."}
+        </p>
+      )}
+
+
+
       {budget?.cacheOnly && (
         <p className="mt-3 text-[11px] text-muted-foreground">
           Showing cached data — monthly data budget cap reached.
