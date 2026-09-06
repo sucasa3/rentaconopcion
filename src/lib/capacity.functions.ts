@@ -24,7 +24,8 @@ export const getCapacity = createServerFn({ method: "POST" })
     await assertMember(context.supabase, context.userId, data.orgId);
     const { poolInputFor } = await import("./capacity.server");
     const { summarizePool } = await import("./profile-pool");
-    const input = await poolInputFor(data.orgId);
+    const input = await poolInputFor(data.orgId).catch(() => null);
+    if (!input) return null;
     return {
       summary: summarizePool(input),
       agents: input.agents,
@@ -188,7 +189,8 @@ export const recommendCapacityPlan = createServerFn({ method: "POST" })
     await assertMember(context.supabase, context.userId, data.orgId);
     const { poolInputFor } = await import("./capacity.server");
     const { recommendPlan, summarizePool } = await import("./profile-pool");
-    const input = await poolInputFor(data.orgId);
+    const input = await poolInputFor(data.orgId).catch(() => null);
+    if (!input) return null;
     const summary = summarizePool(input);
     const audience = input.org.org_type === "agent" ? "agent" : "lender";
 
