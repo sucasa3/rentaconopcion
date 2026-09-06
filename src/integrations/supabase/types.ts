@@ -127,6 +127,44 @@ export type Database = {
           },
         ]
       }
+      agent_base_entitlements: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          profile_limit: number
+          reason: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          profile_limit?: number
+          reason?: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          profile_limit?: number
+          reason?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_base_entitlements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_conversations: {
         Row: {
           created_at: string
@@ -1258,6 +1296,144 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_audit_events: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          category: string
+          created_at: string
+          detail: string | null
+          entity_id: string | null
+          entity_type: string | null
+          homeowner_id: string | null
+          id: string
+          metadata: Json
+          org_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          category: string
+          created_at?: string
+          detail?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          homeowner_id?: string | null
+          id?: string
+          metadata?: Json
+          org_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          category?: string
+          created_at?: string
+          detail?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          homeowner_id?: string | null
+          id?: string
+          metadata?: Json
+          org_id?: string | null
+        }
+        Relationships: []
+      }
+      compliance_feature_flags: {
+        Row: {
+          category: string
+          compliance_review_required: boolean
+          created_at: string
+          feature_key: string
+          notes: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          compliance_review_required?: boolean
+          created_at?: string
+          feature_key: string
+          notes?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          compliance_review_required?: boolean
+          created_at?: string
+          feature_key?: string
+          notes?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      consent_records: {
+        Row: {
+          consent_type: string
+          context: Json
+          created_at: string
+          disclosure_version: string
+          granted_at: string
+          homeowner_id: string
+          id: string
+          recipient_kind: string
+          recipient_org_id: string | null
+          revoked_at: string | null
+          scope: string[]
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          consent_type: string
+          context?: Json
+          created_at?: string
+          disclosure_version?: string
+          granted_at?: string
+          homeowner_id: string
+          id?: string
+          recipient_kind?: string
+          recipient_org_id?: string | null
+          revoked_at?: string | null
+          scope?: string[]
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          consent_type?: string
+          context?: Json
+          created_at?: string
+          disclosure_version?: string
+          granted_at?: string
+          homeowner_id?: string
+          id?: string
+          recipient_kind?: string
+          recipient_org_id?: string | null
+          revoked_at?: string | null
+          scope?: string[]
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consent_records_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consent_records_recipient_org_id_fkey"
+            columns: ["recipient_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -2682,6 +2858,7 @@ export type Database = {
           notes: string | null
           portfolio_id: string
           rate_at_close: number | null
+          relationship_basis: string
           state: string | null
           term_months: number | null
           updated_at: string
@@ -2704,6 +2881,7 @@ export type Database = {
           notes?: string | null
           portfolio_id: string
           rate_at_close?: number | null
+          relationship_basis?: string
           state?: string | null
           term_months?: number | null
           updated_at?: string
@@ -2726,6 +2904,7 @@ export type Database = {
           notes?: string | null
           portfolio_id?: string
           rate_at_close?: number | null
+          relationship_basis?: string
           state?: string | null
           term_months?: number | null
           updated_at?: string
@@ -3177,6 +3356,169 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      platform_config: {
+        Row: {
+          created_at: string
+          description: string
+          key: string
+          updated_at: string
+          value_int: number | null
+          value_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          key: string
+          updated_at?: string
+          value_int?: number | null
+          value_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          key?: string
+          updated_at?: string
+          value_int?: number | null
+          value_text?: string | null
+        }
+        Relationships: []
+      }
+      premium_memberships: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          disclosure_version: string
+          ends_at: string | null
+          funding_source: string
+          homeowner_id: string
+          id: string
+          price_cents: number | null
+          sponsorship_id: string | null
+          started_at: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          disclosure_version?: string
+          ends_at?: string | null
+          funding_source: string
+          homeowner_id: string
+          id?: string
+          price_cents?: number | null
+          sponsorship_id?: string | null
+          started_at?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          disclosure_version?: string
+          ends_at?: string | null
+          funding_source?: string
+          homeowner_id?: string
+          id?: string
+          price_cents?: number | null
+          sponsorship_id?: string | null
+          started_at?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_memberships_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_memberships_sponsorship_id_fkey"
+            columns: ["sponsorship_id"]
+            isOneToOne: false
+            referencedRelation: "premium_sponsorships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      premium_sponsorships: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          disclosure_version: string
+          ended_at: string | null
+          homeowner_id: string | null
+          id: string
+          lender_org_id: string
+          notes: string | null
+          portfolio_client_id: string | null
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          disclosure_version?: string
+          ended_at?: string | null
+          homeowner_id?: string | null
+          id?: string
+          lender_org_id: string
+          notes?: string | null
+          portfolio_client_id?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          disclosure_version?: string
+          ended_at?: string | null
+          homeowner_id?: string | null
+          id?: string
+          lender_org_id?: string
+          notes?: string | null
+          portfolio_client_id?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "premium_sponsorships_homeowner_id_fkey"
+            columns: ["homeowner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_sponsorships_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "premium_sponsorships_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pro_coverage: {
         Row: {
@@ -3668,6 +4010,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      service_delivery_events: {
+        Row: {
+          event_type: string
+          homeowner_id: string | null
+          id: string
+          metadata: Json
+          occurred_at: string
+          org_id: string
+          portfolio_client_id: string | null
+          quantity: number
+        }
+        Insert: {
+          event_type: string
+          homeowner_id?: string | null
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          org_id: string
+          portfolio_client_id?: string | null
+          quantity?: number
+        }
+        Update: {
+          event_type?: string
+          homeowner_id?: string | null
+          id?: string
+          metadata?: Json
+          occurred_at?: string
+          org_id?: string
+          portfolio_client_id?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_delivery_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_requests: {
         Row: {
