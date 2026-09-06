@@ -94,6 +94,8 @@ export const startCheckout = createServerFn({ method: "POST" })
       cancel_url: `${data.returnUrl}?checkout=cancelled`,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
+      // A 100%-off pilot code should not demand a card just to test the flow.
+      payment_method_collection: "if_required",
       subscription_data: { metadata: { sucasa_org_id: org.id } },
       metadata: { sucasa_org_id: org.id, plan_key: plan?.key ?? data.planKey },
     });
