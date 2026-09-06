@@ -55,6 +55,11 @@ export interface LenderClientRow {
   channels: { call: boolean; text: boolean; email: boolean };
   channelReasons: Record<string, string>;
   estimatedValueCents: number | null;
+  /** Where the value came from: a cached property record, or a loan-derived estimate. */
+  valueSource: "property_record" | "loan_estimate";
+  /** Plain-language reason when the numbers can't be shown for this record. */
+  dataGap: string | null;
+
   estimatedBalanceCents: number | null;
   estimatedEquityCents: number | null;
   estimatedLtvPct: number | null;
@@ -268,6 +273,28 @@ export async function readLenderWorkspace(
       .map((o) => o.portfolio_client_id),
   );
 
+  // --- Cached property records ----------------------------------------------
+  // The same cache the agent side reads. No provider call is made here, so this
+  // costs nothing extra; it just lets the lender see real value/mortgage facts
+  // instead of a loan-derived estimate.
+  const { normalizeAddress } = await import("@/lib/attom.server");
+  const { extractAvm, extractTax, extractMortgage, estimateLoanBalance } = await import(
+    "@/lib/valuation.server"
+  );
+  const addrKey = (c: any) =>
+    normalizeAddress(
+      [c.address_line1, c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),
+    );
+  const intelByAddress: Record<string, any> = {};
+  const addrKeys = [...new Set(rows.map(addrKey).filter(Boolean))];
+  for (let i = 0; i < addrKeys.length; i += 200) {
+    const { data: hits } = await admin()
+      .from("property_intel")
+      .select("address_normalized, avm, tax, mortgage")
+      .in("address_normalized", addrKeys.slice(i, i + 200));
+    for (const h of (hits ?? []) as any[]) intelByAddress[h.address_normalized] = h;
+  }
+
   // --- Per-homeowner classification + facts ---------------------------------
   const now = new Date();
   const visible: LenderClientRow[] = [];
@@ -298,17 +325,34 @@ export async function readLenderWorkspace(
 
     const months = monthsBetween(c.close_date, now);
     const term = c.term_months ?? 360;
+    const record = intelByAddress[addrKey(c)] ?? null;
+    const recAvm = record?.avm ? extractAvm(record.avm) : null;
+    const recTax = record?.tax ? extractTax(record.tax) : null;
+    const recMortgage = record?.mortgage ? extractMortgage(record.mortgage) : null;
+    const recordValue =
+      recAvm?.estimate ?? recTax?.marketTotal ?? recTax?.assessedTotal ?? null;
+    const recordBalance = recMortgage ? estimateLoanBalance(recMortgage) : null;
+    const valueSource = recordValue != null ? "property_record" : "loan_estimate";
+
     const balance = hasScope(access, "mortgage")
-      ? remainingBalanceCents(c.loan_amount_at_close_cents, c.rate_at_close, term, months)
+      ? (recordBalance ??
+        remainingBalanceCents(c.loan_amount_at_close_cents, c.rate_at_close, term, months))
       : null;
     const value = hasScope(access, "valuation")
-      ? estimatedValueCents(c.loan_amount_at_close_cents, months)
+      ? (recordValue ?? estimatedValueCents(c.loan_amount_at_close_cents, months))
       : null;
     const equity =
       hasScope(access, "equity") && value != null && balance != null ? value - balance : null;
     const ltv = value && balance ? Math.round((balance / value) * 1000) / 10 : null;
     const loanAgeYears = c.close_date ? Math.round((months / 12) * 10) / 10 : null;
     const tenureYears = loanAgeYears;
+    const dataGap =
+      value == null
+        ? c.address_line1
+          ? "No property record on file for this address yet."
+          : "No address on this record yet."
+        : null;
+
 
     const perm = (permByClient.get(c.id) ?? null) as ChannelPermissionRecord | null;
     const engagementLine = hasScope(access, "engagement") ? (engagement.get(c.id) ?? null) : null;
@@ -366,6 +410,9 @@ export async function readLenderWorkspace(
       },
       channelReasons,
       estimatedValueCents: value,
+      valueSource,
+      dataGap,
+
       estimatedBalanceCents: balance,
       estimatedEquityCents: equity,
       estimatedLtvPct: ltv,

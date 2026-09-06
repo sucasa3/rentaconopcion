@@ -39,12 +39,19 @@ export const INTELLIGENCE_SCOPES = [
 ] as const;
 export type IntelligenceScope = (typeof INTELLIGENCE_SCOPES)[number];
 
-/** Baseline for a documented lender-owned relationship with no wider scope on file. */
+/**
+ * Baseline for a documented lender-owned relationship with no wider scope on
+ * file. Mortgage and equity are included because, for the lender's own book,
+ * they derive from that lender's own loan record — not from third-party data.
+ */
 export const BASELINE_OWN_RELATIONSHIP_SCOPE: IntelligenceScope[] = [
   "contact",
   "property_snapshot",
   "valuation",
+  "mortgage",
+  "equity",
 ];
+
 
 export interface AccessInput {
   /** Documented basis on the book record, e.g. "lender_upload", "existing_customer". */
@@ -67,13 +74,19 @@ export interface AccessInput {
 /** Relationship bases that establish the lender's own, independent relationship. */
 const OWN_RELATIONSHIP_BASES = new Set([
   "lender_upload",
+  "org_uploaded",
+  "uploaded",
+  "csv_import",
   "existing_customer",
   "existing_relationship",
   "own_relationship",
   "servicing",
   "past_borrower",
+  "borrower",
+  "client",
   "import",
 ]);
+
 
 export interface LenderAccess {
   category: LenderAccessCategory;
