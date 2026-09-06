@@ -48,11 +48,17 @@ function navItems(kind: BusinessKind, bookId: string | null, isManager: boolean)
     });
     if (kind === "lender") {
       items.push({
+        label: "Capacity",
+        to: `${base}/capacity`,
+        icon: <Gauge className="h-5 w-5" />,
+      });
+      items.push({
         label: "Billing",
         to: `${base}/billing`,
         icon: <CreditCard className="h-5 w-5" />,
       });
     }
+
   }
   return items;
 }
