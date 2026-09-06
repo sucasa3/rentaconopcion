@@ -15,6 +15,15 @@ function stripeKey(): string {
   return key;
 }
 
+/**
+ * Which price column to use: test-mode keys read stripe_test_price_id,
+ * live keys read stripe_price_id. Preview runs on a test key, so it can
+ * never charge a real card.
+ */
+export function priceIdColumn(): "stripe_price_id" | "stripe_test_price_id" {
+  return stripeKey().startsWith("sk_test_") ? "stripe_test_price_id" : "stripe_price_id";
+}
+
 /** Flatten a nested object into Stripe's form-encoded parameter syntax. */
 function encode(obj: Record<string, unknown>, prefix = ""): string[] {
   const out: string[] = [];
@@ -91,11 +100,13 @@ export async function applySubscription(
 ): Promise<{ orgId: string | null; planKey: string | null; status: string }> {
   const priceId = subscription.items?.data?.[0]?.price?.id ?? null;
 
+  // Match the incoming price id against either the live or test column, so
+  // test-mode subscriptions activate plans exactly like live ones.
   const { data: plan } = priceId
     ? await supabaseAdmin
         .from("plan_tiers")
         .select("key, profile_allowance, sponsored_allocation, seat_limit")
-        .eq("stripe_price_id", priceId)
+        .or(`stripe_price_id.eq.${priceId},stripe_test_price_id.eq.${priceId}`)
         .maybeSingle()
     : { data: null };
 
