@@ -16,14 +16,23 @@ export const getLenderWorkspace = createServerFn({ method: "POST" })
     return readLenderWorkspace(context.supabase, context.userId, { orgId: data.orgId ?? null });
   });
 
-/** One homeowner's lender-side detail view, or null when not permitted. */
+/** One homeowner's lender-side detail view, or an explanation when blocked. */
 export const getLenderHomeowner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ clientId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { readLenderHomeowner } = await import("./lender-workspace.server");
-    return readLenderHomeowner(context.supabase, context.userId, data.clientId);
+    const person = await readLenderHomeowner(context.supabase, context.userId, data.clientId);
+    if (!person)
+      return {
+        ok: false as const,
+        reason:
+          "This homeowner isn't in your own book, so their individual details can't be shown here.",
+        person: null,
+      };
+    return { ok: true as const, reason: null, person };
   });
+
 
 /** Record channel permissions and suppression flags for a homeowner record. */
 export const setOutreachPermissions = createServerFn({ method: "POST" })
