@@ -48,7 +48,8 @@ const INCLUDED = [
   "Lender action dashboard",
   "AI reasons to reach out",
   "AI outreach suggestions",
-  "Sponsored agent accounts",
+  "Homeowner Premium memberships you can sponsor",
+  "Agent collaboration network",
   "Agent dashboards",
   "Homeowner dashboards",
   "Bulk homeowner upload",
@@ -94,7 +95,7 @@ function PricingPage() {
               <CardContent className="space-y-3 text-sm">
                 <ul className="space-y-1 text-muted-foreground">
                   <li>{p.profiles} Home Profiles</li>
-                  <li>Up to {p.agents} sponsored agents</li>
+                  <li>Up to {p.agents} agent collaborations</li>
                 </ul>
                 <Button asChild className="w-full">
                   <Link to="/auth">Get started</Link>
@@ -108,8 +109,8 @@ function PricingPage() {
       <section className="mt-12">
         <h2 className="text-lg font-semibold">For agents</h2>
         <p className="text-sm text-muted-foreground">
-          Sponsored by a lender? Your account is covered. These plans are for agents who want to
-          run SuCasa on their own.
+          Every agent gets a free SuCasa account with 100 Home Profiles, provided by SuCasa — no
+          lender relationship needed. These plans are for agents who want more room.
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {AGENT_PLANS.map((p) => (
@@ -141,8 +142,8 @@ function PricingPage() {
             <span className="font-medium text-foreground">+500 Home Profiles</span> — $49/month
           </p>
           <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">+5 Sponsored Agents</span> — $29/month
-            (lender plans)
+            <span className="font-medium text-foreground">+5 Agent Collaborations</span> —
+            $29/month (lender plans)
           </p>
         </div>
       </section>
