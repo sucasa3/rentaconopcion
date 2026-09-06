@@ -44,9 +44,14 @@ export function categoryIcon(category: string) {
 export function BusinessDashboard({
   kind,
   isManager = false,
+  showQueue = true,
+  showHeader = true,
 }: {
   kind: "agent" | "lender";
   isManager?: boolean;
+  /** Lender pages render their own gated queue and header above this block. */
+  showQueue?: boolean;
+  showHeader?: boolean;
 }) {
   const overviewFn = useServerFn(getBusinessOverview);
   const { data, isLoading } = useQuery({
@@ -88,6 +93,7 @@ export function BusinessDashboard({
 
   return (
     <div className="space-y-8 px-4 py-6 sm:px-6">
+      {showHeader && (<>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">{orgName}</p>
@@ -149,6 +155,7 @@ export function BusinessDashboard({
           hash="work-queue"
         />
       </div>
+      </>)}
 
       {book && (
         <CopilotSearch
@@ -162,6 +169,7 @@ export function BusinessDashboard({
       )}
 
 
+      {showQueue && (
       <section id="work-queue" className="scroll-mt-6 space-y-3">
         <SectionHeader title="Who to contact today" />
         <p className="-mt-1 text-sm text-muted-foreground">
@@ -169,6 +177,7 @@ export function BusinessDashboard({
         </p>
         <ActionQueue kind={kind} />
       </section>
+      )}
 
       {isManager && (
         <section className="space-y-3">

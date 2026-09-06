@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BusinessShell } from "@/components/business-shell";
 import { BusinessDashboard } from "@/components/business-dashboard";
+import { LenderToday } from "@/components/lender-today";
+import { LenderBook } from "@/components/lender-book";
 import { LenderCommandCenter } from "@/components/lender-command-center";
 import { getBusinessOverview } from "@/lib/business.functions";
 
@@ -12,7 +14,8 @@ export const Route = createFileRoute("/_authenticated/lender/")({
       { title: "Lender Dashboard — SuCasa" },
       {
         name: "description",
-        content: "Your clients, today's opportunities and live campaigns in one view.",
+        content:
+          "Who to contact today, why now, and what to say — for the homeowners you have a relationship with.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -30,8 +33,11 @@ function LenderHome() {
 
   return (
     <BusinessShell kind="lender" bookId={data?.books?.[0]?.id ?? null} isManager={data?.isManager}>
+      <LenderToday />
+      <LenderBook />
       <LenderCommandCenter />
-      <BusinessDashboard kind="lender" isManager={data?.isManager} />
+      <BusinessDashboard kind="lender" isManager={data?.isManager} showQueue={false} showHeader={false} />
     </BusinessShell>
   );
 }
+
