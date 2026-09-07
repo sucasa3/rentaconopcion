@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ShieldCheck, Sparkles, Quote } from "lucide-react";
+import { ShieldCheck, Sparkles, Quote, Mail, Phone } from "lucide-react";
 import {
   generateHomeownerReviewBrief,
   getLenderQuickBrief,
@@ -45,10 +45,18 @@ const QUICK_OUTCOMES = [
 export function LenderBriefDialog({
   clientId,
   name,
+  subtitle: subtitleLine,
+  email,
+  phone,
   onClose,
 }: {
   clientId: string | null;
   name: string | null;
+  /** Optional line under the title, e.g. the property address. */
+  subtitle?: string | null;
+  /** Optional quick-contact rows shown above the brief. */
+  email?: string | null;
+  phone?: string | null;
   onClose: () => void;
 }) {
   const isMobile = useIsMobile();
@@ -63,15 +71,21 @@ export function LenderBriefDialog({
   };
 
   const title = `30-second brief${name ? `: ${name}` : ""}`;
-  const subtitle = "Everything you need to start the conversation, based on the information on file.";
+  const subtitle =
+    subtitleLine ||
+    "Everything you need to start the conversation, based on the information on file.";
   const body = (
-    <BriefBody
-      clientId={clientId}
-      showFull={showFull}
-      onShowFull={() => setShowFull(true)}
-      onClose={onClose}
-    />
+    <>
+      <QuickContact name={name} email={email ?? null} phone={phone ?? null} />
+      <BriefBody
+        clientId={clientId}
+        showFull={showFull}
+        onShowFull={() => setShowFull(true)}
+        onClose={onClose}
+      />
+    </>
   );
+
 
   if (isMobile) {
     return (
@@ -326,5 +340,52 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </h4>
       <div className="mt-1.5">{children}</div>
     </section>
+  );
+}
+
+/** Tap-to-email / tap-to-call rows, shown when the caller passes details. */
+function QuickContact({
+  name,
+  email,
+  phone,
+}: {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}) {
+  if (!email && !phone) return null;
+  const first = (name ?? "").trim().split(/\s+/)[0] || "there";
+  const mailHref = email
+    ? `mailto:${email}?subject=${encodeURIComponent("Following up on your home")}&body=${encodeURIComponent(`Hi ${first},\n\n`)}`
+    : null;
+  const telHref = phone ? `tel:${phone.replace(/[^0-9+]/g, "")}` : null;
+
+  return (
+    <div className="mb-4 space-y-2">
+      {mailHref && (
+        <a
+          href={mailHref}
+          className="flex min-h-[44px] items-center justify-between rounded-2xl border border-border bg-card px-4 py-2.5 text-sm transition hover:border-primary"
+        >
+          <span className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-primary" />
+            <span className="font-medium">{email}</span>
+          </span>
+          <span className="text-xs text-primary">Email</span>
+        </a>
+      )}
+      {telHref && (
+        <a
+          href={telHref}
+          className="flex min-h-[44px] items-center justify-between rounded-2xl border border-border bg-card px-4 py-2.5 text-sm transition hover:border-primary"
+        >
+          <span className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-primary" />
+            <span className="font-medium">{phone}</span>
+          </span>
+          <span className="text-xs text-primary">Call</span>
+        </a>
+      )}
+    </div>
   );
 }

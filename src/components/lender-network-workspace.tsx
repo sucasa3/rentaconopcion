@@ -44,11 +44,16 @@ export function LenderNetworkWorkspace() {
 
   const invite = useMutation({
     mutationFn: () => inviteFn({ data: { lenderOrgId: activeOrgId, email: inviteEmail } }),
-    onSuccess: () => {
-      toast.success("Invitation sent");
+    onSuccess: (res: any) => {
+      if (res?.emailed) toast.success("Invitation sent by email");
+      else
+        toast.success(
+          `Invitation saved${res?.emailError ? " — but the email couldn't be delivered" : ""}`,
+        );
       setInviteEmail("");
       qc.invalidateQueries({ queryKey: ["lender-network", activeOrgId] });
     },
+
     onError: (e: any) => toast.error(e.message),
   });
 
