@@ -12,7 +12,7 @@ import {
   channelDecision,
   allowedChannels,
   hasScope,
-  priorityBand,
+  
   REVIEW_TYPES,
   supportsReview,
   type ChannelPermissionRecord,
@@ -21,6 +21,24 @@ import {
   type ReviewType,
 } from "@/lib/lender-access";
 import { monthsBetween, remainingBalanceCents, estimatedValueCents } from "@/lib/opportunities";
+import {
+  centsFromCents,
+  centsFromDollars,
+  formatMoney,
+  subtractCents,
+  type Cents,
+} from "@/lib/money";
+import {
+  compareDaily,
+  nextStepFor,
+  objectiveFor,
+  openerFor,
+  SUPPRESSED_STAGES,
+  urgencyFor,
+  rankScore as dailyRankScore,
+  type OutcomeStage,
+  type Temperature,
+} from "@/lib/lender-daily";
 
 const admin = () => supabaseAdmin as any;
 const DAY = 864e5;
@@ -54,14 +72,15 @@ export interface LenderClientRow {
   permissions: ChannelPermissionRecord | null;
   channels: { call: boolean; text: boolean; email: boolean };
   channelReasons: Record<string, string>;
-  estimatedValueCents: number | null;
+  /** Canonical cents. Normalized at the source adapter — never re-scaled downstream. */
+  estimatedValueCents: Cents | null;
   /** Where the value came from: a cached property record, or a loan-derived estimate. */
   valueSource: "property_record" | "loan_estimate";
   /** Plain-language reason when the numbers can't be shown for this record. */
   dataGap: string | null;
 
-  estimatedBalanceCents: number | null;
-  estimatedEquityCents: number | null;
+  estimatedBalanceCents: Cents | null;
+  estimatedEquityCents: Cents | null;
   estimatedLtvPct: number | null;
   loanAgeYears: number | null;
   tenureYears: number | null;
@@ -72,7 +91,27 @@ export interface LenderClientRow {
   annualReviewDue: boolean;
   reviews: ReviewCard[];
   priority: number;
-  band: "hot" | "warm" | "nurture";
+  band: Temperature;
+
+  // --- Daily workflow -------------------------------------------------------
+  /** Urgency label. Explains the recommendation; never reorders the list. */
+  temperature: Temperature;
+  urgencyReason: string;
+  /** Where the existing priority engine places them, after contactability. */
+  rank: number;
+  contactable: boolean;
+  /** One line: why this person, why today. */
+  whyToday: string;
+  /** What this outreach is for. */
+  objective: string;
+  /** What SuCasa recommends doing. */
+  recommendedAction: string;
+  /** What to say first. */
+  opener: string;
+  /** Administrative step SuCasa scheduled after the last recorded outcome. */
+  openNextStep: { label: string; dueAt: string | null; overdueDays: number | null } | null;
+  lastOutcome: { stage: string; occurredAt: string } | null;
+  cadence: "active" | "in_process" | "post_close" | "paused";
 }
 
 export interface ReviewCard {
@@ -224,7 +263,7 @@ export async function readLenderWorkspace(
       clientIds.length
         ? admin()
             .from("opportunity_outcomes")
-            .select("portfolio_client_id, stage, occurred_at")
+            .select("portfolio_client_id, stage, occurred_at, next_step, next_step_due_at")
             .in("portfolio_client_id", clientIds)
             .order("occurred_at", { ascending: false })
             .limit(1000)
@@ -272,6 +311,13 @@ export async function readLenderWorkspace(
       .filter((o) => o.stage === "closed" || o.stage === "not_interested")
       .map((o) => o.portfolio_client_id),
   );
+  // Latest recorded outcome per homeowner drives cadence, prospecting
+  // suppression and the open administrative follow-up.
+  const lastOutcomeByClient = new Map<string, any>();
+  for (const o of (outcomes ?? []) as any[]) {
+    if (!lastOutcomeByClient.has(o.portfolio_client_id))
+      lastOutcomeByClient.set(o.portfolio_client_id, o);
+  }
 
   // --- Cached property records ----------------------------------------------
   // The same cache the agent side reads. No provider call is made here, so this
@@ -325,24 +371,33 @@ export async function readLenderWorkspace(
 
     const months = monthsBetween(c.close_date, now);
     const term = c.term_months ?? 360;
+
+    // --- Money normalization, at the source adapter --------------------------
+    // Saved property records are whole dollars. Uploaded loan columns and the
+    // opportunity helpers are already cents. Each is converted once, here, and
+    // everything downstream works in canonical `Cents`.
     const record = intelByAddress[addrKey(c)] ?? null;
     const recAvm = record?.avm ? extractAvm(record.avm) : null;
     const recTax = record?.tax ? extractTax(record.tax) : null;
     const recMortgage = record?.mortgage ? extractMortgage(record.mortgage) : null;
-    const recordValue =
-      recAvm?.estimate ?? recTax?.marketTotal ?? recTax?.assessedTotal ?? null;
-    const recordBalance = recMortgage ? estimateLoanBalance(recMortgage) : null;
+    const recordValue = centsFromDollars(
+      recAvm?.estimate ?? recTax?.marketTotal ?? recTax?.assessedTotal ?? null,
+    );
+    const recordBalance = centsFromDollars(
+      recMortgage ? estimateLoanBalance(recMortgage) : null,
+    );
     const valueSource = recordValue != null ? "property_record" : "loan_estimate";
 
     const balance = hasScope(access, "mortgage")
       ? (recordBalance ??
-        remainingBalanceCents(c.loan_amount_at_close_cents, c.rate_at_close, term, months))
+        centsFromCents(
+          remainingBalanceCents(c.loan_amount_at_close_cents, c.rate_at_close, term, months),
+        ))
       : null;
     const value = hasScope(access, "valuation")
-      ? (recordValue ?? estimatedValueCents(c.loan_amount_at_close_cents, months))
+      ? (recordValue ?? centsFromCents(estimatedValueCents(c.loan_amount_at_close_cents, months)))
       : null;
-    const equity =
-      hasScope(access, "equity") && value != null && balance != null ? value - balance : null;
+    const equity = hasScope(access, "equity") ? subtractCents(value, balance) : null;
     const ltv = value && balance ? Math.round((balance / value) * 1000) / 10 : null;
     const loanAgeYears = c.close_date ? Math.round((months / 12) * 10) / 10 : null;
     const tenureYears = loanAgeYears;
@@ -391,6 +446,41 @@ export async function readLenderWorkspace(
       channelReasons[ch] = channelDecision(ch, perm, access).reason;
     }
 
+    // --- Daily workflow ------------------------------------------------------
+    const askedToConnect = access.category === "asked_to_connect";
+    const contactable = channels.length > 0;
+    const annualReviewDue = lastAt
+      ? Date.now() - new Date(lastAt).getTime() > 365 * DAY
+      : Boolean(c.close_date);
+
+    const last = lastOutcomeByClient.get(c.id) ?? null;
+    const lastStage = (last?.stage ?? null) as OutcomeStage | null;
+    const plan = lastStage ? nextStepFor(lastStage) : null;
+    const dueAt: string | null = last?.next_step_due_at ?? null;
+    const overdueDays =
+      dueAt && Date.now() > new Date(dueAt).getTime()
+        ? Math.floor((Date.now() - new Date(dueAt).getTime()) / DAY)
+        : null;
+    const openNextStep =
+      last && (last.next_step || plan)
+        ? { label: last.next_step ?? plan!.nextStep, dueAt, overdueDays }
+        : null;
+
+    const { temperature, urgencyReason } = urgencyFor({
+      askedToConnect,
+      priority,
+      daysSinceContact: facts.days_since_contact as number | null,
+      followUpOverdueDays: overdueDays,
+      annualReviewDue,
+      engagedRecently: Boolean(engagementLine),
+      hasReview: reviews.length > 0,
+    });
+
+    const topReview = reviews[0] ?? null;
+    const whyToday = askedToConnect
+      ? "They asked to connect through SuCasa."
+      : (topReview?.why?.[0] ?? urgencyReason);
+
     visible.push({
       id: c.id,
       portfolioId: c.portfolio_id,
@@ -421,15 +511,31 @@ export async function readLenderWorkspace(
       lastContactAt: lastAt,
       engagedRecently: Boolean(engagementLine),
       engagementLine,
-      askedToConnect: access.category === "asked_to_connect",
-      annualReviewDue: lastAt ? Date.now() - new Date(lastAt).getTime() > 365 * DAY : Boolean(c.close_date),
+      askedToConnect,
+      annualReviewDue,
       reviews,
       priority,
-      band: priorityBand(priority, access.category === "asked_to_connect"),
+      band: temperature,
+
+      temperature,
+      urgencyReason,
+      rank: dailyRankScore({ askedToConnect, contactable, priority }),
+      contactable,
+      whyToday,
+      objective: objectiveFor(topReview?.type),
+      recommendedAction: openNextStep?.label ?? topReview?.action ?? "Send their home update",
+      opener: openerFor({
+        firstName: (c.client_name ?? "").split(" ")[0] ?? "",
+        askedToConnect,
+        reviewType: topReview?.type ?? null,
+      }),
+      openNextStep,
+      lastOutcome: last ? { stage: last.stage, occurredAt: last.occurred_at } : null,
+      cadence: plan?.cadence ?? "active",
     });
   }
 
-  visible.sort((a, b) => Number(b.askedToConnect) - Number(a.askedToConnect) || b.priority - a.priority);
+  visible.sort(compareDaily);
 
   const askedToConnect = visible
     .filter((v) => v.askedToConnect)
@@ -453,7 +559,22 @@ export async function readLenderWorkspace(
     deliveryCounts[e.event_type] = (deliveryCounts[e.event_type] ?? 0) + (e.quantity ?? 1);
   }
 
-  const queue = visible.filter((v) => v.access.inQueue && !closedOrDeclined.has(v.id) && v.reviews.length > 0);
+  // Prospecting is suppressed once a relationship is in a live workflow, but a
+  // scheduled administrative step still surfaces — that is real work, not a pitch.
+  const dueNow = (v: LenderClientRow) =>
+    Boolean(v.openNextStep?.dueAt && new Date(v.openNextStep.dueAt).getTime() <= Date.now());
+  const prospectingSuppressed = (v: LenderClientRow) =>
+    Boolean(v.lastOutcome && SUPPRESSED_STAGES.includes(v.lastOutcome.stage as OutcomeStage));
+
+  const queue = visible.filter(
+    (v) =>
+      v.access.inQueue &&
+      !closedOrDeclined.has(v.id) &&
+      (v.reviews.length > 0 || v.openNextStep) &&
+      (!prospectingSuppressed(v) || dueNow(v)),
+  );
+  const daily = queue.slice(0, 10);
+  const followUpsDue = visible.filter(dueNow).length;
 
   return {
     org: { id: scope.orgId, name: scope.orgName, isManager: scope.isManager },
@@ -464,6 +585,8 @@ export async function readLenderWorkspace(
       reviewOpportunities: queue.length,
       askedToConnect: askedToConnect.length,
       engagedThisMonth: visible.filter((v) => v.engagedRecently).length,
+      followUpsDue,
+      needsAttentionToday: daily.length,
       archived: archivedCount,
     },
     counts: {
@@ -471,12 +594,36 @@ export async function readLenderWorkspace(
       warm: queue.filter((v) => v.band === "warm").length,
       nurture: queue.filter((v) => v.band === "nurture").length,
     },
+    take: buildTake(daily, askedToConnect.length, queue.length),
     aggregateOnly: aggregate,
     serviceDelivery: deliveryCounts,
     askedToConnectList: askedToConnect,
+    daily,
+    dailyTotal: queue.length,
     queue,
     book: visible,
   };
+}
+
+/**
+ * SuCasa's Take — a short read of today's list, assembled only from facts
+ * already permitted for this lender. No claim is added that isn't on a card.
+ */
+function buildTake(daily: LenderClientRow[], requests: number, total: number): string {
+  if (!daily.length)
+    return "Your book is quiet today. Nothing needs a call — SuCasa keeps watching for changes.";
+  const parts: string[] = [];
+  if (requests > 0)
+    parts.push(
+      `${requests} homeowner${requests === 1 ? "" : "s"} asked to hear from you — start there.`,
+    );
+  const names = daily.slice(0, 3).map((d) => d.name.split(" ")[0]).filter(Boolean);
+  parts.push(
+    `I reviewed your book and put ${Math.min(daily.length, 10)} of ${total} homeowners in front of you today, starting with ${names.join(", ")}.`,
+  );
+  const lead = daily[0];
+  if (lead) parts.push(`${lead.name.split(" ")[0]}: ${lead.whyToday}`);
+  return parts.join(" ");
 }
 
 /**
@@ -636,9 +783,9 @@ function contactPriority(
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
+/** Canonical cents in, one display string out. Shared with every lender card. */
 function dollars(cents: number | null) {
-  if (cents == null) return "an unknown amount";
-  return `$${Math.round(cents / 100).toLocaleString()}`;
+  return formatMoney(centsFromCents(cents), "an unknown amount");
 }
 
 /** Fetch one homeowner through the gate; returns null when not permitted. */

@@ -3093,6 +3093,8 @@ export type Database = {
           actor_user_id: string | null
           created_at: string
           id: string
+          next_step: string | null
+          next_step_due_at: string | null
           note: string | null
           occurred_at: string
           opportunity_id: string | null
@@ -3105,6 +3107,8 @@ export type Database = {
           actor_user_id?: string | null
           created_at?: string
           id?: string
+          next_step?: string | null
+          next_step_due_at?: string | null
           note?: string | null
           occurred_at?: string
           opportunity_id?: string | null
@@ -3117,6 +3121,8 @@ export type Database = {
           actor_user_id?: string | null
           created_at?: string
           id?: string
+          next_step?: string | null
+          next_step_due_at?: string | null
           note?: string | null
           occurred_at?: string
           opportunity_id?: string | null

@@ -33,6 +33,67 @@ export const getLenderHomeowner = createServerFn({ method: "POST" })
     return { ok: true as const, reason: null, person };
   });
 
+/**
+ * 30-Second Brief — everything needed to start the call, with no AI wait and
+ * no raw property data to interpret. Built only from permitted facts.
+ */
+export const getLenderQuickBrief = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ clientId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { readLenderHomeowner } = await import("./lender-workspace.server");
+    const person = await readLenderHomeowner(context.supabase, context.userId, data.clientId);
+    if (!person)
+      return {
+        ok: false as const,
+        reason: "This homeowner isn't in your own book, so a brief can't be prepared here.",
+        brief: null,
+      };
+
+    const { formatMoney } = await import("./money");
+    const facts: string[] = [];
+    if (person.estimatedValueCents != null)
+      facts.push(`Estimated home value ${formatMoney(person.estimatedValueCents)}`);
+    if (person.estimatedEquityCents != null)
+      facts.push(
+        `Estimated equity ${formatMoney(person.estimatedEquityCents)}${
+          person.estimatedLtvPct != null ? ` (estimated LTV ${person.estimatedLtvPct}%)` : ""
+        }`,
+      );
+    if (person.loanAgeYears != null) facts.push(`Mortgage is about ${person.loanAgeYears} years old`);
+    if (person.dataGap) facts.push(person.dataGap);
+
+    const relationship = person.lastContactAt
+      ? `Last contact ${new Date(person.lastContactAt).toLocaleDateString()}`
+      : "No recorded contact yet";
+
+    return {
+      ok: true as const,
+      reason: null,
+      brief: {
+        name: person.name,
+        whyHere: person.whyToday,
+        whyToday: person.urgencyReason,
+        facts: facts.slice(0, 3),
+        relationship: person.engagementLine
+          ? `${relationship} · ${person.engagementLine}`
+          : relationship,
+        objective: person.objective,
+        recommendedAction: person.recommendedAction,
+        opener: person.opener,
+        questions: [
+          "Have your plans for the home changed at all this year?",
+          "Is there a project or expense coming up you're thinking about?",
+          "Would a walk-through of your current mortgage and estimated equity be useful?",
+        ],
+        channels: person.channels,
+        channelReasons: person.channelReasons,
+      },
+    };
+  });
+
+
+
 
 /** Record channel permissions and suppression flags for a homeowner record. */
 export const setOutreachPermissions = createServerFn({ method: "POST" })
@@ -105,7 +166,8 @@ export const generateHomeownerReviewBrief = createServerFn({ method: "POST" })
       };
 
 
-    const money = (c: number | null) => (c == null ? null : Math.round(c / 100));
+    // Canonical cents in, whole dollars out — the AI never sees a raw unit.
+    const { toDollars: money } = await import("./money");
     const facts = {
       homeowner: person.name,
       property: person.address,
@@ -270,6 +332,7 @@ export const logLenderOutcome = createServerFn({ method: "POST" })
           "follow_up",
         ]),
         note: z.string().max(500).optional(),
+        followUpDays: z.number().int().min(1).max(365).optional(),
       })
       .parse(i),
   )
@@ -279,13 +342,28 @@ export const logLenderOutcome = createServerFn({ method: "POST" })
     const person = ws?.book.find((c) => c.id === data.clientId);
     if (!ws || !person) throw new Error("Not permitted");
 
+    // Administrative orchestration only. SuCasa schedules the follow-up,
+    // updates prioritisation and moves the relationship cadence — it never
+    // sends a message, text or call on the lender's behalf.
+    const { nextStepFor } = await import("./lender-daily");
+    const plan = nextStepFor(data.stage, { followUpDays: data.followUpDays });
+    const dueAt = new Date(Date.now() + plan.dueInDays * 864e5).toISOString();
+
     const { error } = await context.supabase.from("opportunity_outcomes").insert({
       org_id: ws.org.id,
       portfolio_client_id: data.clientId,
       stage: data.stage,
       note: data.note ?? null,
       actor_user_id: context.userId,
+      next_step: plan.nextStep,
+      next_step_due_at: dueAt,
     });
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return {
+      ok: true,
+      nextStep: plan.nextStep,
+      dueAt,
+      cadence: plan.cadence,
+      confirmation: plan.confirmation,
+    };
   });
