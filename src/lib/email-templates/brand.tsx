@@ -41,7 +41,11 @@ const TEXT_MUTED = '#7A8290'
 
 export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
   <Html lang="en" dir="ltr">
-    <Head />
+    <Head>
+      {/* Keep clients from auto-inverting the charcoal wordmark in dark mode. */}
+      <meta name="color-scheme" content="light" />
+      <meta name="supported-color-schemes" content="light" />
+    </Head>
     <Preview>{preview}</Preview>
     <Body style={main}>
       <Container style={container}>
