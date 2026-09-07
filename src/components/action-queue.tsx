@@ -33,6 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ChannelActions } from "@/components/channel-actions";
 
 type Item = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
