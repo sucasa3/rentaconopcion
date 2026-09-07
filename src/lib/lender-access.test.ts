@@ -145,12 +145,39 @@ describe("outreach channel gate", () => {
     expect(channelDecision("email", { do_not_email: true }, access).allowed).toBe(false);
   });
 
-  it("visibility alone does not open a channel", () => {
+  it("allows a manual touch to the lender's own customer, but never automated sending", () => {
     const access = classifyLenderAccess(uploaded);
-    expect(channelDecision("text", null, access).allowed).toBe(false);
-    expect(channelDecision("text", { sms_allowed: true }, access).allowed).toBe(true);
+    const d = channelDecision("text", null, access);
+    expect(d.allowed).toBe(true);
+    expect(d.automatedAllowed).toBe(false);
+    expect(channelDecision("text", { sms_allowed: true, automated_contact_allowed: true }, access)
+      .automatedAllowed).toBe(true);
+  });
+
+  it("does not open a channel for a homeowner the lender has no basis for", () => {
+    const access = classifyLenderAccess({ relationshipBasis: null, isSponsored: true });
+    expect(channelDecision("text", { sms_allowed: true }, access).allowed).toBe(false);
+    expect(channelDecision("email", null, access).allowed).toBe(false);
+  });
+
+  it("says 'no detail on file' rather than 'no permission' when contact data is missing", () => {
+    const access = classifyLenderAccess(uploaded);
+    const d = channelDecision("call", null, access, { hasPhone: false, hasEmail: true });
+    expect(d.allowed).toBe(false);
+    expect(d.reason).toMatch(/no phone number/i);
+    expect(channelDecision("email", null, access, { hasPhone: false, hasEmail: true }).allowed).toBe(
+      true,
+    );
+  });
+
+  it("suppression still wins over the existing-relationship default", () => {
+    const access = classifyLenderAccess(uploaded);
+    expect(
+      channelDecision("call", { do_not_call: true }, access, { hasPhone: true }).allowed,
+    ).toBe(false);
   });
 });
+
 
 describe("importer relationship labels", () => {
   it("treats org_uploaded as the lender's own relationship with baseline scopes", () => {

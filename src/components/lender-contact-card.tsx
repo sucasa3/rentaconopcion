@@ -11,7 +11,11 @@ import {
   Phone,
   CheckCircle2,
 } from "lucide-react";
-import { getLenderWorkspace, logLenderOutcome } from "@/lib/lender-workspace.functions";
+import {
+  getLenderWorkspace,
+  logLenderOutcome,
+  setOutreachPermissions,
+} from "@/lib/lender-workspace.functions";
 import { PRIORITY_LABEL } from "@/lib/lender-access";
 import { StatusPill } from "@/components/ui-kit";
 import { formatMoney } from "@/lib/money";
@@ -56,7 +60,19 @@ export function LenderContactCard({
   const [logging, setLogging] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
+  const permissionFn = useServerFn(setOutreachPermissions);
+  const permission = useMutation({
+    mutationFn: (fields: Record<string, unknown>) =>
+      permissionFn({ data: { clientId: person.id, ...fields } as never }),
+    onSuccess: () => {
+      toast.success("Permission recorded");
+      qc.invalidateQueries({ queryKey: ["lender-workspace"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const outcome = useMutation({
+
     mutationFn: (stage: string) => outcomeFn({ data: { clientId: person.id, stage: stage as never } }),
     onSuccess: (res: any) => {
       setDone(res?.confirmation ?? "Logged.");
@@ -196,6 +212,47 @@ export function LenderContactCard({
               {new Date(person.openNextStep.dueAt).toLocaleDateString()}
             </p>
           )}
+          <div className="rounded-2xl border border-border/60 p-3">
+            <p className="text-xs font-semibold">Record what this homeowner agreed to</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Recorded permission also allows campaign sending. Without it, contact stays manual and
+              one to one.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {(
+                [
+                  ["phone_allowed", "Calls OK"],
+                  ["sms_allowed", "Texts OK"],
+                  ["email_allowed", "Emails OK"],
+                  ["do_not_call", "Do not call"],
+                  ["do_not_text", "Do not text"],
+                  ["do_not_email", "Do not email"],
+                ] as const
+              ).map(([field, label]) => (
+                <button
+                  key={field}
+                  type="button"
+                  disabled={permission.isPending}
+                  onClick={() =>
+                    permission.mutate({
+                      [field]: true,
+                      ...(field.startsWith("do_not")
+                        ? {}
+                        : { consent_basis: "recorded by the loan officer" }),
+                    })
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-medium",
+                    field.startsWith("do_not")
+                      ? "border-border/70 text-muted-foreground"
+                      : "border-primary/40 text-primary",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="text-xs text-muted-foreground">
             {PRIORITY_LABEL}: {person.priority} · not a credit, approval or qualification score
           </p>
@@ -206,6 +263,7 @@ export function LenderContactCard({
           >
             <FileText className="h-4 w-4" /> 30-second brief
           </button>
+
         </div>
       )}
     </li>
@@ -229,12 +287,15 @@ function Channel({
     return (
       <span
         title={reason}
-        className="inline-flex min-h-[40px] cursor-not-allowed items-center gap-1.5 rounded-full border border-dashed border-border px-4 text-sm font-medium text-muted-foreground"
+        className="inline-flex min-h-[40px] max-w-full items-center gap-1.5 rounded-full border border-dashed border-border px-4 py-1 text-xs font-medium text-muted-foreground"
       >
-        <Lock className="h-3.5 w-3.5" /> {label}
+        <Lock className="h-3.5 w-3.5 shrink-0" />
+        <span className="font-semibold">{label}</span>
+        <span className="truncate">· {!href && allowed ? "No contact detail on file." : reason}</span>
       </span>
     );
   }
+
   return (
     <a
       href={href}

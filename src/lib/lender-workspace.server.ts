@@ -440,11 +440,16 @@ export async function readLenderWorkspace(
     });
 
     const priority = reviews[0]?.priority ?? (access.category === "asked_to_connect" ? 95 : 20);
-    const channels = allowedChannels(perm, access);
+    const contactDetail = {
+      hasPhone: Boolean((c.client_phone ?? "").trim()),
+      hasEmail: Boolean((c.client_email ?? "").trim()),
+    };
+    const channels = allowedChannels(perm, access, contactDetail);
     const channelReasons: Record<string, string> = {};
     for (const ch of ["call", "text", "email"] as const) {
-      channelReasons[ch] = channelDecision(ch, perm, access).reason;
+      channelReasons[ch] = channelDecision(ch, perm, access, contactDetail).reason;
     }
+
 
     // --- Daily workflow ------------------------------------------------------
     const askedToConnect = access.category === "asked_to_connect";
