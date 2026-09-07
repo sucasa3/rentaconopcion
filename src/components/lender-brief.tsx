@@ -45,10 +45,18 @@ const QUICK_OUTCOMES = [
 export function LenderBriefDialog({
   clientId,
   name,
+  subtitle: subtitleLine,
+  email,
+  phone,
   onClose,
 }: {
   clientId: string | null;
   name: string | null;
+  /** Optional line under the title, e.g. the property address. */
+  subtitle?: string | null;
+  /** Optional quick-contact rows shown above the brief. */
+  email?: string | null;
+  phone?: string | null;
   onClose: () => void;
 }) {
   const isMobile = useIsMobile();
@@ -63,15 +71,21 @@ export function LenderBriefDialog({
   };
 
   const title = `30-second brief${name ? `: ${name}` : ""}`;
-  const subtitle = "Everything you need to start the conversation, based on the information on file.";
+  const subtitle =
+    subtitleLine ||
+    "Everything you need to start the conversation, based on the information on file.";
   const body = (
-    <BriefBody
-      clientId={clientId}
-      showFull={showFull}
-      onShowFull={() => setShowFull(true)}
-      onClose={onClose}
-    />
+    <>
+      <QuickContact name={name} email={email ?? null} phone={phone ?? null} />
+      <BriefBody
+        clientId={clientId}
+        showFull={showFull}
+        onShowFull={() => setShowFull(true)}
+        onClose={onClose}
+      />
+    </>
   );
+
 
   if (isMobile) {
     return (
