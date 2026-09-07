@@ -229,12 +229,15 @@ function Channel({
     return (
       <span
         title={reason}
-        className="inline-flex min-h-[40px] cursor-not-allowed items-center gap-1.5 rounded-full border border-dashed border-border px-4 text-sm font-medium text-muted-foreground"
+        className="inline-flex min-h-[40px] max-w-full items-center gap-1.5 rounded-full border border-dashed border-border px-4 py-1 text-xs font-medium text-muted-foreground"
       >
-        <Lock className="h-3.5 w-3.5" /> {label}
+        <Lock className="h-3.5 w-3.5 shrink-0" />
+        <span className="font-semibold">{label}</span>
+        <span className="truncate">· {!href && allowed ? "No contact detail on file." : reason}</span>
       </span>
     );
   }
+
   return (
     <a
       href={href}
