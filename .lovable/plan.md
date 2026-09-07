@@ -1,32 +1,51 @@
-# Why some clients only show "Write email"
+# Agent communication channels: recommendation vs. permission
 
-## What's happening
+## Why some clients only show "Write email"
 
-On the agent side, a card shows only the *one* channel SuCasa recommends for that person, not every channel you're allowed to use.
+Two separate causes, both confirmed in the code:
 
-Two separate causes, confirmed in the code:
+1. The agent card offers a channel only if it is the single channel SuCasa recommends. Ana ("send a home value update") therefore shows email only; Miguel ("offer a trusted pro") shows Text plus email. Call and Text are being hidden purely because they aren't the recommendation.
+2. Agent-side availability is currently inferred from nothing more than "is there a phone/email on the record". That is the wrong test in the other direction too: contact data is not permission.
 
-1. The agent card offers Call only if the recommended action is a call, Text only if the recommended action is a text, and email only if the recommendation is email. So Ana Sepulveda ("send a home value update") gets email only, while Miguel Luna ("offer a trusted pro") gets Text plus email.
-2. Many imported homeowners have no phone number on file at all — email is the only thing that could ever be offered for them.
+The lender side already separates these properly: it evaluates each of Call, Text and Email independently against relationship, recorded permission, suppression flags and contact data, and returns a reason when a channel is unavailable.
 
-The lender side already works the way you describe: it evaluates each channel independently against permission plus available contact details, and shows all permitted ones.
+## What we'll build
 
-## The fix
+**One shared channel-eligibility model, role-correct policy underneath.**
 
-Bring the agent card in line with the lender card, without changing who is contactable.
+A single interface used by every professional surface:
 
-1. Show every channel the person's contact details and permissions actually allow — Call, Text and Email — instead of only the recommended one.
-2. Keep the recommendation visible: the recommended channel stays the filled primary button, the others render as secondary. The advice is still there, it just no longer hides the alternatives.
-3. When a channel isn't available, say why in plain words: "No phone number on file" is different from "no permission recorded". No silent hiding.
-4. No change to permission rules, ranking, outcome logging, or the lender experience. A channel never appears unless the existing rules already permit it.
+```text
+getAvailableContactChannels({ role, access, permissions, contact, recommended })
+  -> { call:  { available, recommended, unavailableReason },
+       text:  { available, recommended, unavailableReason },
+       email: { available, recommended, unavailableReason } }
+```
+
+- The shape and the UX are identical for agents and lenders.
+- The policy behind each channel stays role-specific. Agent rules are not replaced with lender rules, and agent access is not widened to match.
+- Recommendation only sets emphasis. Availability comes from permission plus contact data.
+
+**Agent channel policy (centralised, not invented):** for each channel, in order — homeowner opt-out wins; then the relationship must permit named individual contact; then the required contact detail must exist; then an explicit recorded permission, or the agent's own documented client relationship, permits a manual one-to-one touch. Automated/campaign sending still requires explicit recorded permission, unchanged. This mirrors the structure already proven on the lender side while reading the agent's own relationship and consent records.
+
+**On the card:** the recommended channel is the filled primary button; other eligible channels sit beside it as secondary. Unavailable channels are not spelled out in three disabled buttons — the card stays clean, with a small, tappable "Why?" affordance revealing the specific reason ("Phone number not available", "Text permission not available", "Homeowner opted out of texts"). When nothing is available, a single polished line replaces the action row instead of an empty area.
+
+**Outcome logging is unchanged.** Call records a call attempt, Text a text attempt, Email an email activity — exactly as today. Ranking and recommendation semantics are untouched.
+
+**Applied everywhere on the agent side** in the same change: Your Best Move, Next Up, Who to contact today, contact cards, opportunity drawers, listing opportunity detail, suggested outreach, generated briefs with actions, and the first-run walkthrough when it uses a real homeowner.
 
 ## Technical notes
 
-- `src/lib/agent-daily.ts` — `availableChannels()` stops gating on `item.channel` and instead returns each channel supported by contact data, plus a `recommended` marker and per-channel unavailability reason. Update `src/lib/agent-daily.test.ts` accordingly.
-- `src/components/action-queue.tsx` and `src/components/agent-today.tsx` — render the full permitted channel set, recommended one styled primary; unavailable channels show the reason instead of disappearing.
-- Outcome logging on tap (attempted / emailed) stays exactly as-is.
-- No schema change, no server-function change, no lender-side change.
+- New `src/lib/contact-channels.ts` — the shared, pure, client-safe model above, with a role-dispatched policy. Lender policy delegates to the existing `channelDecision`/`allowedChannels` in `src/lib/lender-access.ts` (no behavior change, no duplicate rules). Agent policy is a sibling function reading the agent org's relationship basis and `outreach_channel_permissions` rows (already org-scoped, so agent orgs are supported with no schema change).
+- `src/lib/nba.server.ts` — the queue item gains permission/suppression fields and contact-detail flags alongside the existing recommended `channel`, so the client can evaluate all three channels without a second round trip. Ranking untouched.
+- `src/lib/agent-daily.ts` — `availableChannels()` is replaced by a call into the shared model; the current "phone exists therefore callable" logic is removed.
+- `src/components/action-queue.tsx`, `src/components/agent-today.tsx`, agent opportunity drawer/detail and brief action rows — render the shared model: primary = recommended, secondary = other eligible, subtle "Why?" for the rest.
+- `src/components/lender-contact-card.tsx` moves onto the same rendering model with identical resulting permissions.
+- Tests: new `src/lib/contact-channels.test.ts` covering cases A–I (all eligible; phone only; email only; phone present but text not permitted; opt-out; recommended-email with call/text eligible; recommended-text with all eligible; no usable channel; same homeowner seen by agent vs lender giving role-correct results). Existing `lender-access.test.ts` and `agent-daily.test.ts` stay green to prove no rule drift.
+- No schema change expected.
 
-## Open item
+## Explicitly not doing
 
-Agent cards currently derive contact permission only from the presence of phone/email. If you want agent contact to run through the same explicit permission engine the lender side uses (`lender-access.ts`), that's a separate follow-up — say the word and I'll fold it in.
+- Not weakening any agent access rule to match the lender's.
+- Not creating a second permission system — the existing gate is centralised, not copied.
+- Not enabling any automatic outbound communication.
