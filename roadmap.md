@@ -13,3 +13,5 @@
 - [ ] "Home Profiles Activated" label + microcopy
 - [x] Keep Tasks and Opportunities workspaces intact (no redirects)
 - [x] QA: full journey + mobile + email clients
+
+- [x] Agent contact channels: server-authoritative Call/Text/Email eligibility (shared contact-channels model, role-specific policy)
