@@ -55,17 +55,52 @@ export const inviteAgent = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     await assertMember(context.supabase, context.userId, data.lenderOrgId);
-    const { error } = await context.supabase.from("agent_lender_connections").insert({
-      lender_org_id: data.lenderOrgId,
-      invited_email: data.email.toLowerCase(),
-      invited_name: data.name ?? null,
-      message: data.message ?? null,
-      status: "invited",
-      invited_by: context.userId,
-    });
+    const { data: row, error } = await context.supabase
+      .from("agent_lender_connections")
+      .insert({
+        lender_org_id: data.lenderOrgId,
+        invited_email: data.email.toLowerCase(),
+        invited_name: data.name ?? null,
+        message: data.message ?? null,
+        status: "invited",
+        invited_by: context.userId,
+      })
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { ok: true };
+
+    // The invitation is recorded regardless of whether the email goes out.
+    let emailed = false;
+    let emailError: string | null = null;
+    try {
+      const { data: org } = await context.supabase
+        .from("lender_orgs")
+        .select("name, contact_name, reply_to_email")
+        .eq("id", data.lenderOrgId)
+        .maybeSingle();
+      const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      const siteUrl = process.env["SITE_URL"] ?? "https://rentaconopcion.lovable.app";
+      const res = await sendTemplateEmail("agent-invite", data.email.toLowerCase(), {
+        fromName: org?.name ?? "SuCasa",
+        replyTo: org?.reply_to_email ?? undefined,
+        idempotencyKey: `agent-invite-${row?.id ?? data.email.toLowerCase()}`,
+        templateData: {
+          agentName: data.name ?? null,
+          lenderName: org?.name ?? "A lender on SuCasa",
+          inviterName: org?.contact_name ?? null,
+          message: data.message ?? null,
+          acceptUrl: `${siteUrl}/agent/network`,
+        },
+      });
+      emailed = res.sent;
+      if (!res.sent) emailError = "This address is on the do-not-contact list.";
+    } catch (e) {
+      emailError = (e as Error).message.slice(0, 300);
+    }
+
+    return { ok: true, emailed, emailError };
   });
+
 
 /** Agent view: pending invitations addressed to the caller, plus lender partners. */
 export const getAgentNetwork = createServerFn({ method: "POST" })
