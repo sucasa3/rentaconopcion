@@ -19,25 +19,11 @@ export interface DailyItemLike {
 }
 
 /**
- * Which channels may be offered for a homeowner.
- *
- * A channel is available only when the engine's own decision allows it and the
- * contact detail required for it exists. This mirrors the permission engine —
- * it never widens it.
+ * Channel eligibility is decided server-side and delivered on the queue item
+ * (see src/lib/contact-channels.ts). Nothing in this module may re-derive it.
  */
-export function availableChannels(item: DailyItemLike): Channel[] {
-  const out: Channel[] = [];
-  if (item.phone) {
-    if (item.channel === "call") out.push("call");
-    if (item.channel === "text") out.push("text");
-  }
-  if (item.email && item.channel === "email") out.push("email");
-  return out;
-}
-
-/** True when nothing can be sent or dialed for this homeowner. */
-export function hasNoContactRoute(item: DailyItemLike): boolean {
-  return availableChannels(item).length === 0;
+export function hasNoContactRoute(item: { channels?: { available: boolean }[] | null }): boolean {
+  return !(item.channels ?? []).some((c) => c.available);
 }
 
 export function firstName(name: string | null | undefined): string {
