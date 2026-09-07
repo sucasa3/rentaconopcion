@@ -20,7 +20,6 @@ import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
 import { OUTCOME_STAGES, TEMPERATURE_META, outcomeLabel, type OutcomeStage } from "@/lib/next-best-action";
 import {
-  availableChannels,
   buildSummary,
   firstName,
   firstRunMode,
@@ -28,6 +27,7 @@ import {
   outcomeAcknowledgement,
 } from "@/lib/agent-daily";
 import { ActionQueue } from "@/components/action-queue";
+import { ChannelActions } from "@/components/channel-actions";
 import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
 
@@ -242,7 +242,6 @@ function BestMove({
   pending: boolean;
 }) {
   const meta = TEMPERATURE_META[item.temperature];
-  const channels = availableChannels(item);
   const opener = item.draftBody?.trim() || item.headline;
 
   return (
@@ -286,36 +285,20 @@ function BestMove({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          {channels.includes("call") && item.phone && (
-            <a
-              href={`tel:${item.phone}`}
-              onClick={() => onOutcome("attempted", "Tapped call")}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-            >
-              <Phone className="h-4 w-4" /> Call
-            </a>
-          )}
-          {channels.includes("text") && item.phone && (
-            <a
-              href={`sms:${item.phone}`}
-              onClick={() => onOutcome("attempted", "Tapped text")}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-            >
-              <MessageSquare className="h-4 w-4" /> Text
-            </a>
-          )}
-          {channels.includes("email") && item.email && (
-            <a
-              href={`mailto:${item.email}?subject=${encodeURIComponent(
-                item.draftSubject ?? "",
-              )}&body=${encodeURIComponent(item.draftBody ?? "")}`}
-              onClick={() => onOutcome("attempted", "Tapped email")}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground"
-            >
-              <Mail className="h-4 w-4" /> Email
-            </a>
-          )}
+        <ChannelActions
+          options={item.channels ?? []}
+          phone={item.phone}
+          email={item.email}
+          onAct={(channel) =>
+            onOutcome(
+              "attempted",
+              channel === "call" ? "Tapped call" : channel === "text" ? "Tapped text" : "Tapped email",
+            )
+          }
+          emailHref={`mailto:${item.email ?? ""}?subject=${encodeURIComponent(
+            item.draftSubject ?? "",
+          )}&body=${encodeURIComponent(item.draftBody ?? "")}`}
+        >
           {item.portfolioId && (
             <Link
               to="/agent/portfolio/$id"
@@ -326,14 +309,7 @@ function BestMove({
               View homeowner
             </Link>
           )}
-        </div>
-
-        {channels.length === 0 && (
-          <p className="text-xs text-muted-foreground">
-            No permitted contact route on file yet — add contact details on the homeowner's
-            record to reach out.
-          </p>
-        )}
+        </ChannelActions>
 
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-3">
           <span className="text-xs text-muted-foreground">What happened?</span>
