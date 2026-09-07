@@ -51,12 +51,7 @@ export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
       <Container style={container}>
         <Section style={header}>
           <Link href={SITE_URL} style={logoLink}>
-            <Img
-              src={LOGO_URL}
-              width="112"
-              alt="SuCasa"
-              style={logoImg}
-            />
+            <Img src={LOGO_URL} width="112" height="24" alt="SuCasa" style={logoImg} />
           </Link>
         </Section>
 
