@@ -1,91 +1,47 @@
-# Lender experience: from dashboard to daily operating system
+# Why Call, Text and Email are locked — and how to unlock them safely
 
-A refinement of the existing lender product. No architecture rewrite: the access classifier, permission gates, sponsored-homeowner anonymity, compliance rewriting, CRM sync, outcome history and billing all stay exactly as they are.
+## What is happening
 
-## Answers to your pre-implementation questions
+The buttons are locked because SuCasa has no recorded contact permission for these homeowners.
 
-**Is the equity discrepancy a display issue or a data issue?**
-Neither exactly — it is a **unit mismatch in one place in the lender code**, not bad stored data and not a formatting trick.
+Confirmed from the data:
 
-Two different sources feed the same lender fields:
-- Uploaded loan figures are stored in cents.
-- Saved property records (value, tax, mortgage) are stored in whole dollars.
+- The contact-permission table is completely empty (0 rows for 1,088 homeowners).
+- Every imported homeowner carries `contact_marketing_permission = unknown` and relationship `org_uploaded`.
+- Only 152 of 1,088 homeowners have a phone number on file at all (all 1,088 have an email).
 
-The lender read treats both as cents and the card divides by 100, so a real $163,043 of equity prints as about $1,590. The "why now" line on the same card comes from the opportunity engine, which already speaks in dollars, so it prints the correct $163,043. Same homeowner, two numbers, one wrong. The stored records are fine; the fix is a single conversion at the point the property record is read, plus tests that lock the units.
+The gate works like this today: a channel unlocks only if (a) an explicit permission is on file for that channel, or (b) the homeowner personally asked this lender to connect. Imported book records meet neither, so all three buttons show as locked with "No contact permission recorded for this channel." That is correct behavior against the current rules — the rules just have no way to reflect "this is my own existing customer."
 
-**Schema changes required:** none for P0/P1. The weekly recap (P2) reads existing outcome and event rows only.
+## The fix
 
-**Reused rather than newly built:** the whole server layer (`lender-workspace.server.ts`, `lender-access.ts`, `lender-workspace.functions.ts`), the shared UI kit (`StatCard`, `SectionHeader`, `StatusPill`, `EmptyState`), the existing brief generator and its compliance rewriting, the existing outcome vocabulary and logging function, existing filters in My Book, and the existing opportunity/next-step engine. New files are limited to a compact contact card and the short brief builder.
+Recognize an existing customer relationship as a basis for a manual, one-to-one touch, while keeping everything else strict.
 
-**Risk to access/compliance behaviour:** low and contained. No change to `classifyLenderAccess`, scope checks, channel decisions, prohibited-language patterns or ranking-input audits. The one behavioural change near the gate is ordering — contactable records rank above uncontactable ones — which filters presentation only, never widens access. Existing access/privacy/compliance tests must pass unchanged.
+1. Existing-relationship default
+   - For homeowners in the lender's own book (uploaded/borrower/client records), allow manual Call, Text and Email.
+   - Automated/campaign sending stays locked — it still requires explicit recorded permission.
+   - Do-not-call / do-not-text / do-not-email suppression always wins, unchanged.
+   - Sponsored and agent-connected homeowners keep today's stricter rules — no change.
 
-## P0 — one number per homeowner (blocking)
+2. Honest reason text
+   - Unlocked buttons explain the basis: "Your existing customer — manual, one-to-one contact only."
+   - A channel with no phone or email on file shows "No phone number on file" instead of a permission message, so the lender knows the difference between "not allowed" and "no data." This alone fixes ~86% of the locked Call/Text buttons, which are missing a phone number, not permission.
 
-- Convert property-record values (value, tax value, mortgage balance) to cents at the single point they enter the lender read, so every downstream field is cents.
-- Route every lender-facing financial field through one resolver so value, equity, equity %, LTV, balance, loan age, modelled savings and opportunity text all come from the same computed object — Today, My Book, cards, filters, briefs, detail view.
-- Add regression tests: a homeowner whose figures come from a property record and one whose figures come from uploaded loan data both produce identical numbers in the card fields and in the "why now" text; a mixed-source homeowner never produces two different equity values.
+3. Record permission per homeowner
+   - Add a small control on the homeowner record to log what the homeowner agreed to (channel, basis, date), writing a real permission row.
+   - Once recorded, that explicit permission takes over from the relationship default and can also enable campaign sending.
 
-## P1 — Today becomes Your Daily 10
+4. Marketing-permission field
+   - Where a lender's import supplies a real marketing-permission value, it seeds the permission record instead of staying `unknown`.
 
-- Compact metric strip at the top (monitored, needs attention today, requesting contact, follow-ups due, conversations this month). Changes detected stays but is phrased as "of which N deserve action".
-- **SuCasa's Take**: 1–3 sentences generated from permitted facts only, naming the top three homeowners and the strongest reason. No invented facts.
-- **Connection requests**: zero requests collapses to a single line ("No homeowner requests waiting"); one or more moves above the Daily 10 as an urgent block.
-- **Your Daily 10**: max 10 cards with "View more". Order: asked to connect, contactable Hot, Warm, Nurture. A homeowner with no permitted channel does not displace a contactable one unless their priority is far higher.
+## Technical notes
 
-## P1 — compact contact card
+- `src/lib/lender-access.ts` — `channelDecision()` gains an existing-relationship branch (manual only, `automatedAllowed: false`), plus a distinct "no contact detail on file" outcome.
+- `src/lib/lender-workspace.server.ts` — pass whether phone/email exist into the channel decision so reasons are accurate.
+- `src/components/lender-contact-card.tsx` — show the reason on locked chips; no layout change.
+- Homeowner detail view — permission-recording control calling a new gated server function that writes `outreach_channel_permissions`.
+- Tests in `src/lib/lender-access.test.ts` — suppression still wins, sponsored/agent-connected unchanged, automated stays gated, missing-contact-detail reason.
+- No schema change; `outreach_channel_permissions` already has the needed columns.
 
-Collapsed card (target: 2–3 per phone screen):
+## Compliance stance preserved
 
-```text
-[temp] [reason]                    #3
-Gilberto Ramirez
-Annual review due · last touch 11 mo
-Next: schedule an annual review call
-"Hi Gilberto — your latest update is ready…"
-[ Call ]  [ Text ]  [ Email ]   Log outcome
-More intelligence ▾
-```
-
-Primary contact buttons are visually dominant; "Generate review brief" moves inside the expandable section. Locked channels keep their existing locked treatment and reason tooltip.
-
-## P1 — agentic outcomes
-
-Same eight outcomes, behind one "Log outcome" control revealed after an outreach action. After logging, SuCasa proposes and creates the next step using the existing task/follow-up and CRM sync paths: no answer creates a permitted retry, talked asks for an optional note plus next step, review scheduled creates the follow-up task, follow up later asks for timing, application/in-process suppresses prospecting prompts, closed moves the relationship to a post-close cadence rather than removing them.
-
-## P1 — temperature calibration
-
-Audit why every homeowner currently lands in Warm (likely a single threshold band over a narrow priority spread). Separate the two ideas: priority orders the list, temperature describes urgency, driven by explicit request, recency of a meaningful change, follow-up overdue and review timing. Document the rules in code and cover them with tests. No artificial distribution.
-
-## P1 — 30-second brief
-
-New first layer in the existing brief dialog: why they are on today's list, up to three facts, relationship context, objective, opener, two or three questions. "View full review brief" expands to today's brief unchanged, with all existing compliance rewriting.
-
-## P1 — My Book
-
-- Rename the lender homeowners surface to **My Book** with "[X] homeowner relationships monitored".
-- Replace the refinance-rate hero with a cross-opportunity "What to do now" recommendation; refinance appears as one supporting signal with modelled-savings wording, never as the page's identity, and the benchmark rate is no longer a headline.
-- Filters: needs attention, follow-up due, asked to connect, annual review due, recently engaged, equity change, mortgage age, tenure, move planning, refinance opportunity, agent relationship, temperature. Existing filters retained; nothing added that we lack data for.
-
-## P1 — homeowner record
-
-Reorder the existing detail view into: next best action, why now, relationship, home intelligence, opportunities, timeline, permissions. Reuses current components and data.
-
-## P2 — weekly recap foundation
-
-A server-side aggregate ("Your SuCasa week") over existing outcome and event rows, surfaced as one compact strip. No new tables, no reporting build-out.
-
-## Files expected to change
-
-- `src/lib/lender-workspace.server.ts` — unit fix, single financial resolver, temperature calibration, contactability in ordering, daily-take inputs, weekly aggregate
-- `src/lib/lender-workspace.functions.ts` — short brief, outcome → next-step orchestration
-- `src/lib/lender-access.ts` — unchanged logic; read-only reference
-- `src/components/lender-today.tsx` — Daily 10, take, compact metrics, collapsed request line
-- `src/components/lender-contact-card.tsx` *(new)* — compact card extracted from today
-- `src/components/lender-brief.tsx` *(new)* — 30-second layer wrapping the existing brief
-- `src/components/lender-book.tsx`, `src/components/lender-command-center.tsx` — My Book naming, filters, cross-opportunity hero
-- `src/routes/_authenticated/lender/portfolio.$id.index.tsx` — de-emphasise the refi-rate hero, reorder the homeowner record
-- `src/lib/lender-workspace.test.ts` *(new)* + existing `src/lib/lender-access.test.ts` — unit/consistency and temperature tests
-
-## Verification
-
-Run the existing access/privacy/compliance suite plus the new consistency and temperature tests, then walk the mobile lender flow at 420px against the 14 acceptance checks.
+Visibility still does not imply permission; suppression lists still override everything; automated outreach still needs explicit consent; sponsored-homeowner anonymity and all existing access categories are untouched.
