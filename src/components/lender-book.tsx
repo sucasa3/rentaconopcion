@@ -56,10 +56,7 @@ const FILTERS: { key: FilterKey; label: string; test: (p: Person) => boolean }[]
   { key: "no_recent_contact", label: "No recent contact", test: (p) => !p.lastContactAt },
 ];
 
-function money(cents: number | null | undefined) {
-  if (cents == null) return "—";
-  return `$${Math.round(cents / 100).toLocaleString()}`;
-}
+const TEMP_LABEL = { hot: "🔥 Hot", warm: "🟡 Warm", nurture: "🔵 Nurture" } as const;
 
 /** My Book: monitor the homeowners this lender already knows. */
 export function LenderBook() {
@@ -71,14 +68,24 @@ export function LenderBook() {
   });
   const [filter, setFilter] = useState<FilterKey>("all");
   const [type, setType] = useState<ReviewType | "any">("any");
+  const [q, setQ] = useState("");
 
   const rows = useMemo(() => {
     const all = data?.book ?? [];
     const f = FILTERS.find((x) => x.key === filter)!;
+    const needle = q.trim().toLowerCase();
     return all
       .filter(f.test)
-      .filter((p) => type === "any" || p.reviews.some((r) => r.type === type));
-  }, [data, filter, type]);
+      .filter((p) => type === "any" || p.reviews.some((r) => r.type === type))
+      .filter(
+        (p) =>
+          !needle ||
+          p.name.toLowerCase().includes(needle) ||
+          (p.address ?? "").toLowerCase().includes(needle),
+      )
+      .slice()
+      .sort((a, b) => b.priority - a.priority);
+  }, [data, filter, type, q]);
 
   if (!data) return null;
 
