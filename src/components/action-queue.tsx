@@ -33,6 +33,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ChannelActions } from "@/components/channel-actions";
 
 type Item = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
@@ -111,6 +112,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
         {data.items.map((item) => {
           const meta = TEMPERATURE_META[item.temperature];
           const Icon = channelIcon[item.channel];
+          const decided = item.channels ?? null;
           return (
             <li
               key={item.opportunityId}
@@ -150,46 +152,69 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
 
               <p className="mt-3 text-sm font-medium">{item.headline}</p>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.channel === "call" && item.phone && (
-                  <a
-                    href={`tel:${item.phone}`}
-                    onClick={() =>
+              <div className="mt-3">
+                {decided ? (
+                  <ChannelActions
+                    options={decided}
+                    phone={item.phone}
+                    email={item.email}
+                    size="sm"
+                    onAct={(channel) =>
                       outcome.mutate({
                         opportunityId: item.opportunityId,
                         stage: "attempted",
-                        note: "Tapped call",
+                        note:
+                          channel === "call"
+                            ? "Tapped call"
+                            : channel === "text"
+                              ? "Tapped text"
+                              : "Tapped email",
                       })
                     }
-                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                  >
-                    <Phone className="h-4 w-4" /> Call
-                  </a>
+                    onEmail={() => setComposing(item)}
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {item.channel === "call" && item.phone && (
+                      <a
+                        href={`tel:${item.phone}`}
+                        onClick={() =>
+                          outcome.mutate({
+                            opportunityId: item.opportunityId,
+                            stage: "attempted",
+                            note: "Tapped call",
+                          })
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      >
+                        <Phone className="h-4 w-4" /> Call
+                      </a>
+                    )}
+                    {item.channel === "text" && item.phone && (
+                      <a
+                        href={`sms:${item.phone}`}
+                        onClick={() =>
+                          outcome.mutate({
+                            opportunityId: item.opportunityId,
+                            stage: "attempted",
+                            note: "Tapped text",
+                          })
+                        }
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      >
+                        <MessageSquare className="h-4 w-4" /> Text
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setComposing(item)}
+                      disabled={!item.email}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                    >
+                      <Icon className="h-4 w-4" /> {item.email ? "Write email" : "No email on file"}
+                    </button>
+                  </div>
                 )}
-                {item.channel === "text" && item.phone && (
-                  <a
-                    href={`sms:${item.phone}`}
-                    onClick={() =>
-                      outcome.mutate({
-                        opportunityId: item.opportunityId,
-                        stage: "attempted",
-                        note: "Tapped text",
-                      })
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                  >
-                    <MessageSquare className="h-4 w-4" /> Text
-                  </a>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setComposing(item)}
-                  disabled={!item.email}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-2 text-sm font-semibold disabled:opacity-50"
-                >
-                  <Icon className="h-4 w-4" /> {item.email ? "Write email" : "No email on file"}
-                </button>
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">

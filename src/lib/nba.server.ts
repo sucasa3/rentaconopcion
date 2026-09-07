@@ -16,6 +16,7 @@ import {
   type OutcomeStage,
 } from "@/lib/next-best-action";
 import { categoryLabel } from "@/lib/opportunities";
+import { evaluateAgentChannels, type ChannelOption } from "@/lib/contact-channels";
 import { MODEL_LIGHT } from "@/lib/documents-ai.server";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
@@ -100,6 +101,11 @@ export interface QueueItem {
   engagementLine: string | null;
   lastContactAt: string | null;
   lastOutcome: OutcomeStage | null;
+  /**
+   * Server-authoritative channel decisions. The client renders these and never
+   * re-derives permission. Null for audiences that keep their own channel UI.
+   */
+  channels: ChannelOption[] | null;
   draftSubject: string | null;
   draftBody: string | null;
   shared: boolean;
@@ -137,7 +143,7 @@ export async function buildActionQueue(
   const { data: clients } = await supabase
     .from("lender_portfolio_clients")
     .select(
-      "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, homeowner_id",
+      "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, homeowner_id, relationship_basis",
     )
     .in("portfolio_id", scope.bookIds)
     .is("archived_at", null);
@@ -158,6 +164,18 @@ export async function buildActionQueue(
   const clientById = new Map<string, any>(rows.map((c: any) => [c.id, c]));
   const clientIds = rows.map((c: any) => c.id);
 
+
+  // Channel permission + suppression records. Consent metadata stays on the
+  // server; only the resulting decision is sent to the client.
+  const { data: channelPerms } = await supabase
+    .from("outreach_channel_permissions")
+    .select(
+      "portfolio_client_id, email_allowed, sms_allowed, phone_allowed, automated_contact_allowed, do_not_call, do_not_text, do_not_email, consent_source, consent_basis, consent_at",
+    )
+    .in("portfolio_client_id", clientIds);
+  const permByClient = new Map<string, any>(
+    (channelPerms ?? []).map((p: any) => [p.portfolio_client_id, p]),
+  );
 
   const { data: opps } = await supabase
     .from("homeowner_opportunities")
@@ -281,6 +299,16 @@ export async function buildActionQueue(
       engagementLine,
       lastContactAt: lastAt,
       lastOutcome: lastOutcomeByOpp.get(o.id) ?? null,
+      channels:
+        orgType === "agent"
+          ? evaluateAgentChannels({
+              relationshipBasis: c.relationship_basis ?? null,
+              hasPhone: Boolean(c.client_phone),
+              hasEmail: Boolean(c.client_email),
+              permission: permByClient.get(c.id) ?? null,
+              recommended: recipe.channel,
+            })
+          : null,
       draftSubject: draft?.draft_subject ?? null,
       draftBody: draft?.draft_body ?? null,
       shared: sharedClients.has(c.id),

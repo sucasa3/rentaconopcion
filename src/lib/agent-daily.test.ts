@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  availableChannels,
   buildSummary,
   firstName,
   firstRunMode,
@@ -18,16 +17,14 @@ const base = {
 };
 
 describe("communication affordances", () => {
-  it("offers only the channel the engine decided on", () => {
-    expect(availableChannels(base)).toEqual(["call"]);
-    expect(availableChannels({ ...base, channel: "email" })).toEqual(["email"]);
-    expect(availableChannels({ ...base, channel: "text" })).toEqual(["text"]);
-  });
-
-  it("never offers a channel without the contact detail it needs", () => {
-    expect(availableChannels({ ...base, phone: null })).toEqual([]);
-    expect(availableChannels({ ...base, channel: "email", email: null })).toEqual([]);
-    expect(hasNoContactRoute({ ...base, phone: null, email: null })).toBe(true);
+  it("reflects the server decision and never re-derives it", () => {
+    expect(hasNoContactRoute({ ...base, channels: [] })).toBe(true);
+    expect(
+      hasNoContactRoute({
+        ...base,
+        channels: [{ available: false }, { available: true }],
+      }),
+    ).toBe(false);
   });
 });
 
