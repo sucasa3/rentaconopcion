@@ -207,14 +207,26 @@ export interface ChannelDecision {
 }
 
 /**
+ * Which contact details exist on the record. Missing data is not the same as
+ * missing permission, and the UI must be able to say which one it is.
+ */
+export interface ContactDetailAvailability {
+  hasPhone?: boolean;
+  hasEmail?: boolean;
+}
+
+/**
  * A homeowner who asked this lender to contact them has given an affirmative,
- * channel-appropriate invitation for a manual reply; everything else needs a
- * recorded permission. Suppression flags always win.
+ * channel-appropriate invitation for a manual reply. The lender's own existing
+ * customer may also be contacted manually, one to one. Everything wider —
+ * automated or campaign sending — still needs a recorded permission, and
+ * suppression flags always win.
  */
 export function channelDecision(
   channel: OutreachChannel,
   perm: ChannelPermissionRecord | null | undefined,
   access: LenderAccess,
+  contact?: ContactDetailAvailability,
 ): ChannelDecision {
   const suppressed =
     (channel === "call" && perm?.do_not_call) ||
@@ -230,6 +242,20 @@ export function channelDecision(
   }
   if (!access.named) {
     return { allowed: false, automatedAllowed: false, reason: access.reason };
+  }
+
+  if (contact) {
+    const present = channel === "email" ? contact.hasEmail : contact.hasPhone;
+    if (!present) {
+      return {
+        allowed: false,
+        automatedAllowed: false,
+        reason:
+          channel === "email"
+            ? "No email address on file for this homeowner."
+            : "No phone number on file for this homeowner.",
+      };
+    }
   }
 
   const explicit =
@@ -255,6 +281,14 @@ export function channelDecision(
     };
   }
 
+  if (access.category === "own_relationship") {
+    return {
+      allowed: true,
+      automatedAllowed: false,
+      reason: "Your existing customer — manual, one-to-one contact only.",
+    };
+  }
+
   return {
     allowed: false,
     automatedAllowed: false,
@@ -265,11 +299,13 @@ export function channelDecision(
 export function allowedChannels(
   perm: ChannelPermissionRecord | null | undefined,
   access: LenderAccess,
+  contact?: ContactDetailAvailability,
 ): OutreachChannel[] {
   return (["call", "text", "email"] as OutreachChannel[]).filter(
-    (c) => channelDecision(c, perm, access).allowed,
+    (c) => channelDecision(c, perm, access, contact).allowed,
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // 3. Compliance vocabulary
