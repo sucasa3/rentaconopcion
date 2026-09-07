@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BusinessShell } from "@/components/business-shell";
-import { BusinessDashboard } from "@/components/business-dashboard";
+import { AgentToday } from "@/components/agent-today";
 import { AgentContinuationCard } from "@/components/agent-continuation-card";
 
 import { getBusinessOverview } from "@/lib/business.functions";
@@ -10,10 +10,11 @@ import { getBusinessOverview } from "@/lib/business.functions";
 export const Route = createFileRoute("/_authenticated/agent/")({
   head: () => ({
     meta: [
-      { title: "Agent Dashboard — SuCasa" },
+      { title: "Today — SuCasa for agents" },
       {
         name: "description",
-        content: "Your homeowners, today's opportunities and live campaigns in one view.",
+        content:
+          "Who deserves your attention today, why now, and what to say — from your own book of homeowners.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -38,7 +39,7 @@ function AgentHome() {
           <AgentContinuationCard orgId={orgId} />
         </div>
       )}
-      <BusinessDashboard kind="agent" isManager={data?.isManager} />
+      <AgentToday />
     </BusinessShell>
   );
 }

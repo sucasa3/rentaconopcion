@@ -75,11 +75,14 @@ export const inviteAgent = createServerFn({ method: "POST" })
     try {
       const { data: org } = await context.supabase
         .from("lender_orgs")
-        .select("name, contact_name, reply_to_email")
+        .select("name, contact_name, reply_to_email, sponsored_allocation")
         .eq("id", data.lenderOrgId)
         .maybeSingle();
       const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      const { signInviteToken } = await import("@/lib/invite-token.server");
       const siteUrl = process.env["SITE_URL"] ?? "https://rentaconopcion.lovable.app";
+      // Signed, expiring link — a bare connection id is never a credential.
+      const token = row?.id ? signInviteToken(row.id, data.email.toLowerCase()) : null;
       const res = await sendTemplateEmail("agent-invite", data.email.toLowerCase(), {
         fromName: org?.name ?? "SuCasa",
         replyTo: org?.reply_to_email ?? undefined,
@@ -89,7 +92,10 @@ export const inviteAgent = createServerFn({ method: "POST" })
           lenderName: org?.name ?? "A lender on SuCasa",
           inviterName: org?.contact_name ?? null,
           message: data.message ?? null,
-          acceptUrl: `${siteUrl}/agent/network`,
+          sponsored: Number((org as any)?.sponsored_allocation ?? 0) > 0,
+          acceptUrl: token
+            ? `${siteUrl}/agent-invite?t=${encodeURIComponent(token)}`
+            : `${siteUrl}/agent/network`,
         },
       });
       emailed = res.sent;
