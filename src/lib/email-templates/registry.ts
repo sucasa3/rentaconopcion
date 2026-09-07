@@ -1,5 +1,8 @@
 import type { ComponentType } from 'react'
 import { template as campaignUpdateTemplate } from './campaign-update'
+import { template as agentInviteTemplate } from './agent-invite'
+
+
 
 
 export interface TemplateEntry {
