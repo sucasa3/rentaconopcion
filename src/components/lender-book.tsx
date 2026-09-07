@@ -6,6 +6,7 @@ import { BookOpen } from "lucide-react";
 import { getLenderWorkspace } from "@/lib/lender-workspace.functions";
 import { PRIORITY_LABEL, REVIEW_TYPES, type ReviewType } from "@/lib/lender-access";
 import { SectionHeader, EmptyState, StatusPill } from "@/components/ui-kit";
+import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 type Workspace = NonNullable<Awaited<ReturnType<typeof getLenderWorkspace>>>;
@@ -28,7 +29,7 @@ type FilterKey =
 const FILTERS: { key: FilterKey; label: string; test: (p: Person) => boolean }[] = [
   { key: "all", label: "Everyone", test: () => true },
   { key: "asked", label: "Asked to connect", test: (p) => p.askedToConnect },
-  { key: "hot", label: `High ${PRIORITY_LABEL.toLowerCase()}`, test: (p) => p.band === "hot" },
+  { key: "hot", label: "Needs attention", test: (p) => p.temperature === "hot" },
   {
     key: "equity",
     label: "Equity change",
@@ -97,6 +98,13 @@ export function LenderBook() {
         {data.book.length === 1 ? "" : "s"} you have a documented relationship with.
       </p>
 
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search by name or address"
+        className="min-h-[44px] w-full rounded-full border border-border bg-card px-4 text-sm"
+      />
+
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
@@ -162,18 +170,17 @@ export function LenderBook() {
                 {p.askedToConnect ? (
                   <StatusPill tone="attention">Requested contact</StatusPill>
                 ) : (
-                  <StatusPill tone="muted">{p.reviews[0]?.label ?? "Monitored"}</StatusPill>
+                  <StatusPill tone="muted">{TEMP_LABEL[p.temperature ?? "nurture"]}</StatusPill>
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Est. equity {money(p.estimatedEquityCents)}
+                Est. equity {formatMoney(p.estimatedEquityCents)}
                 {p.estimatedLtvPct != null ? ` · Est. LTV ${p.estimatedLtvPct}%` : ""}
               </p>
-              {p.reviews[0]?.why?.[0] && (
-                <p className="mt-2 text-sm">{p.reviews[0].why[0]}</p>
-              )}
+              <p className="mt-2 text-sm">{p.whyToday}</p>
+              <p className="mt-1 text-sm font-medium">Next: {p.recommendedAction}</p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {PRIORITY_LABEL}: {p.priority}
+                {PRIORITY_LABEL}: {p.priority} · {p.reviews[0]?.label ?? "Monitored"}
               </p>
             </Link>
           ))}
