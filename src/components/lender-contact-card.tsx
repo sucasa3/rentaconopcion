@@ -11,7 +11,11 @@ import {
   Phone,
   CheckCircle2,
 } from "lucide-react";
-import { getLenderWorkspace, logLenderOutcome } from "@/lib/lender-workspace.functions";
+import {
+  getLenderWorkspace,
+  logLenderOutcome,
+  setOutreachPermissions,
+} from "@/lib/lender-workspace.functions";
 import { PRIORITY_LABEL } from "@/lib/lender-access";
 import { StatusPill } from "@/components/ui-kit";
 import { formatMoney } from "@/lib/money";
@@ -56,7 +60,19 @@ export function LenderContactCard({
   const [logging, setLogging] = useState(false);
   const [done, setDone] = useState<string | null>(null);
 
+  const permissionFn = useServerFn(setOutreachPermissions);
+  const permission = useMutation({
+    mutationFn: (fields: Record<string, unknown>) =>
+      permissionFn({ data: { clientId: person.id, ...fields } as never }),
+    onSuccess: () => {
+      toast.success("Permission recorded");
+      qc.invalidateQueries({ queryKey: ["lender-workspace"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const outcome = useMutation({
+
     mutationFn: (stage: string) => outcomeFn({ data: { clientId: person.id, stage: stage as never } }),
     onSuccess: (res: any) => {
       setDone(res?.confirmation ?? "Logged.");
