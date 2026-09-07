@@ -4,11 +4,13 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
   Text,
 } from '@react-email/components'
+import logoAsset from '@/assets/sucasa-logo.png.asset.json'
 
 interface EmailBrandProps {
   preview: string
@@ -19,11 +21,23 @@ const SITE_NAME = 'SuCasa'
 const ROOT_DOMAIN = 'sucasa.com'
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
-// SuCasa brand colors (approximate hex equivalents of design tokens)
-const DEEP_BLUE = '#1e3a5f'
-const GROWTH_GREEN = '#10b981'
-const SOFT_GRAY = '#f8fafc'
-const TEXT_MUTED = '#64748b'
+/**
+ * Emails cannot resolve relative asset paths, so the hosted logo is pinned to
+ * an absolute origin. Alt text carries the brand when images are blocked.
+ */
+const ASSET_ORIGIN =
+  process.env['SITE_URL'] ?? 'https://rentaconopcion.lovable.app'
+export const LOGO_URL = logoAsset.url.startsWith('http')
+  ? logoAsset.url
+  : `${ASSET_ORIGIN}${logoAsset.url}`
+
+// SuCasa brand (email-safe hex equivalents of the app design tokens)
+const NAVY = '#1E3A5F'
+const CHARCOAL = '#1F2937'
+const WARM_BG = '#FAF8F5'
+const HAIRLINE = '#ECE7E1'
+const TEXT_BODY = '#3F4550'
+const TEXT_MUTED = '#7A8290'
 
 export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
   <Html lang="en" dir="ltr">
@@ -33,30 +47,12 @@ export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
       <Container style={container}>
         <Section style={header}>
           <Link href={SITE_URL} style={logoLink}>
-            <span style={logoIcon} aria-hidden="true">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                style={{ display: 'block' }}
-              >
-                <path
-                  d="M3 9.75L12 3l9 6.75V21a.75.75 0 01-.75.75h-6a.75.75 0 01-.75-.75v-5.25h-3V21a.75.75 0 01-.75.75h-6a.75.75 0 01-.75-.75V9.75z"
-                  fill={GROWTH_GREEN}
-                />
-                <path
-                  d="M12 3L3 9.75V21a.75.75 0 00.75.75h6a.75.75 0 00.75-.75v-5.25h3V21a.75.75 0 00.75.75h6A.75.75 0 0021 21V9.75L12 3z"
-                  stroke={DEEP_BLUE}
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  fill="none"
-                />
-              </svg>
-            </span>
-            <span style={logoText}>{SITE_NAME}</span>
+            <Img
+              src={LOGO_URL}
+              width="112"
+              alt="SuCasa"
+              style={logoImg}
+            />
           </Link>
         </Section>
 
@@ -77,8 +73,8 @@ export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
             </Link>
           </Text>
           <Text style={footerAddress}>
-            © {new Date().getFullYear()} SuCasa. The trusted operating system
-            for homeownership.
+            © {new Date().getFullYear()} {SITE_NAME}. The trusted operating
+            system for homeownership.
           </Text>
         </Section>
       </Container>
@@ -87,50 +83,41 @@ export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
 )
 
 const main = {
-  backgroundColor: SOFT_GRAY,
+  backgroundColor: WARM_BG,
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   margin: '0',
-  padding: '32px 16px',
+  padding: '24px 12px',
 }
 
 const container = {
   backgroundColor: '#ffffff',
-  borderRadius: '16px',
-  boxShadow: '0 4px 24px rgba(30, 58, 95, 0.08)',
+  border: `1px solid ${HAIRLINE}`,
+  borderRadius: '14px',
   margin: '0 auto',
-  maxWidth: '480px',
+  maxWidth: '520px',
   overflow: 'hidden',
   padding: '0',
 }
 
 const header = {
-  backgroundColor: DEEP_BLUE,
-  padding: '24px 32px',
+  backgroundColor: '#ffffff',
+  borderBottom: `1px solid ${HAIRLINE}`,
+  padding: '22px 32px',
 }
 
 const logoLink = {
-  color: '#ffffff',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '10px',
+  color: CHARCOAL,
   textDecoration: 'none',
-}
-
-const logoIcon = {
-  display: 'inline-block',
-  width: '28px',
-  height: '28px',
-  backgroundColor: '#ffffff',
-  borderRadius: '8px',
-  padding: '4px',
-  boxSizing: 'border-box' as const,
-}
-
-const logoText = {
-  fontSize: '20px',
+  fontSize: '18px',
   fontWeight: '700',
   letterSpacing: '-0.02em',
+}
+
+const logoImg = {
+  display: 'block',
+  height: 'auto',
+  maxWidth: '112px',
 }
 
 const content = {
@@ -138,8 +125,9 @@ const content = {
 }
 
 const footer = {
-  backgroundColor: SOFT_GRAY,
-  padding: '24px 32px',
+  backgroundColor: WARM_BG,
+  borderTop: `1px solid ${HAIRLINE}`,
+  padding: '22px 32px',
   textAlign: 'center' as const,
 }
 
@@ -147,49 +135,50 @@ const footerText = {
   fontSize: '12px',
   color: TEXT_MUTED,
   lineHeight: '1.5',
-  margin: '0 0 12px',
+  margin: '0 0 10px',
 }
 
 const footerLinks = {
   fontSize: '12px',
   color: TEXT_MUTED,
-  margin: '0 0 12px',
+  margin: '0 0 10px',
 }
 
 const footerLink = {
-  color: DEEP_BLUE,
+  color: NAVY,
   fontWeight: '600',
   textDecoration: 'none',
 }
 
 const footerAddress = {
   fontSize: '11px',
-  color: '#94a3b8',
+  color: '#A0A7B2',
   margin: '0',
 }
 
 export const heading = {
-  fontSize: '24px',
+  fontSize: '26px',
   fontWeight: '700',
-  color: DEEP_BLUE,
-  lineHeight: '1.25',
+  color: CHARCOAL,
+  lineHeight: '1.22',
+  letterSpacing: '-0.02em',
   margin: '0 0 16px',
 }
 
 export const bodyText = {
-  fontSize: '15px',
-  color: '#334155',
-  lineHeight: '1.6',
+  fontSize: '16px',
+  color: TEXT_BODY,
+  lineHeight: '1.65',
   margin: '0 0 20px',
 }
 
 export const primaryButton = {
-  backgroundColor: GROWTH_GREEN,
+  backgroundColor: NAVY,
   color: '#ffffff',
-  fontSize: '15px',
+  fontSize: '16px',
   fontWeight: '600',
   borderRadius: '10px',
-  padding: '14px 28px',
+  padding: '15px 30px',
   textDecoration: 'none',
   display: 'inline-block',
 }
@@ -197,26 +186,43 @@ export const primaryButton = {
 export const mutedText = {
   fontSize: '13px',
   color: TEXT_MUTED,
-  lineHeight: '1.5',
+  lineHeight: '1.6',
   margin: '24px 0 0',
 }
 
 export const inlineLink = {
-  color: DEEP_BLUE,
+  color: NAVY,
   fontWeight: '600',
   textDecoration: 'underline',
 }
 
+export const hairlineRule = {
+  border: 'none',
+  borderTop: `1px solid ${HAIRLINE}`,
+  margin: '28px 0',
+}
+
+export const eyebrow = {
+  fontSize: '12px',
+  fontWeight: '700',
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase' as const,
+  color: TEXT_MUTED,
+  margin: '0 0 10px',
+}
+
 export const codeBox = {
-  backgroundColor: SOFT_GRAY,
-  border: `1px solid #e2e8f0`,
+  backgroundColor: WARM_BG,
+  border: `1px solid ${HAIRLINE}`,
   borderRadius: '10px',
   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   fontSize: '22px',
   fontWeight: '700',
-  color: DEEP_BLUE,
+  color: CHARCOAL,
   letterSpacing: '0.15em',
   padding: '16px 24px',
   textAlign: 'center' as const,
   margin: '8px 0 24px',
 }
+
+export const brandColors = { NAVY, CHARCOAL, WARM_BG, HAIRLINE, TEXT_BODY, TEXT_MUTED }

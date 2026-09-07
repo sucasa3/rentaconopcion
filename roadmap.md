@@ -1,18 +1,15 @@
 # Roadmap
 
-## Capacity, plans and allocation
-- [x] Plan lineup: MLO/MLO Growth/Branch/Branch Pro/Network + Agent/Agent Growth
-- [x] Add-ons: +500 profiles $49, +5 sponsored agents $29 (config only, no Stripe prices yet)
-- [x] Shared Home Profile pool engine (total / lender used / agent allocated / agent used / available)
-- [x] Lender allocation screen (presets 50/100/250/custom, change allocation, add agent)
-- [x] Archive semantics: archived profiles inactive and freed from capacity
-- [x] Capacity warnings then hard block with upgrade/add-capacity/archive options
-- [x] Sponsorship ending: agent keeps data, capacity released, 14-day grace, re-sponsor path
-- [x] Agent continuation plan recommender (cheapest valid combo)
-- [x] Upgrades immediate, downgrades next cycle with blocked-downgrade explanation
-- [x] Pricing page with launch copy + 90-day commitment note
+## SuCasa Agent Experience: Invitation → Activation → Daily Operating System (approved)
 
-## Pending business/setup
-- [ ] Create Stripe products/prices for the 5 lender + 2 agent plans and 2 add-ons (after review)
-- [ ] STRIPE_WEBHOOK_SECRET configuration
-- [ ] Self-serve add-on checkout
+- [ ] Email brand redesign (real logo, warm/light, navy accents) + QA notes
+- [ ] Premium agent invitation email
+- [ ] Signed, expiring invitation token + public preview endpoint (minimum-safe fields)
+- [ ] Public invitation landing page `/agent-invite`
+- [ ] Agent workspace provisioning (org + owner + book + lender connection), idempotent
+- [ ] Agent Today command center (Best Move → Next up → Who to contact today)
+- [ ] Adaptive first run: real homeowner aha / empty state / preparing state
+- [ ] Outcome logging advances the queue (Apple-style state changes)
+- [ ] "Home Profiles Activated" label + microcopy
+- [ ] Keep Tasks and Opportunities workspaces intact (no redirects)
+- [ ] QA: full journey + mobile + email clients
