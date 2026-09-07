@@ -196,6 +196,47 @@ export function LenderContactCard({
               {new Date(person.openNextStep.dueAt).toLocaleDateString()}
             </p>
           )}
+          <div className="rounded-2xl border border-border/60 p-3">
+            <p className="text-xs font-semibold">Record what this homeowner agreed to</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Recorded permission also allows campaign sending. Without it, contact stays manual and
+              one to one.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {(
+                [
+                  ["phone_allowed", "Calls OK"],
+                  ["sms_allowed", "Texts OK"],
+                  ["email_allowed", "Emails OK"],
+                  ["do_not_call", "Do not call"],
+                  ["do_not_text", "Do not text"],
+                  ["do_not_email", "Do not email"],
+                ] as const
+              ).map(([field, label]) => (
+                <button
+                  key={field}
+                  type="button"
+                  disabled={permission.isPending}
+                  onClick={() =>
+                    permission.mutate({
+                      [field]: true,
+                      ...(field.startsWith("do_not")
+                        ? {}
+                        : { consent_basis: "recorded by the loan officer" }),
+                    })
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-xs font-medium",
+                    field.startsWith("do_not")
+                      ? "border-border/70 text-muted-foreground"
+                      : "border-primary/40 text-primary",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="text-xs text-muted-foreground">
             {PRIORITY_LABEL}: {person.priority} · not a credit, approval or qualification score
           </p>
@@ -206,6 +247,7 @@ export function LenderContactCard({
           >
             <FileText className="h-4 w-4" /> 30-second brief
           </button>
+
         </div>
       )}
     </li>
