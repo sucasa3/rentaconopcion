@@ -8,6 +8,7 @@ import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
 import { CopilotSearch } from "@/components/copilot-search";
 import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { LenderBriefDialog } from "@/components/lender-brief";
 import { cn } from "@/lib/utils";
 
 
@@ -613,3 +614,49 @@ function PortfolioDetail() {
   );
 }
 
+
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <p className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+function SegChip({
+  label,
+  active,
+  tone,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  tone: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+        active ? tone : "border-border bg-background text-muted-foreground hover:border-foreground/30"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ConsentPill({ state }: { state: string }) {
+  if (state === "granted")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-growth/15 px-2 py-0.5 text-[10px] font-medium text-growth">
+        <CheckCircle2 className="h-3 w-3" /> Granted
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+      <Lock className="h-3 w-3" /> {state === "cold-lead" ? "Cold lead" : "Pending"}
+    </span>
+  );
+}
