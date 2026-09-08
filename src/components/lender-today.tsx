@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   ChevronDown,
   HandHeart,
-  Inbox,
   Sparkles,
   ShieldCheck,
 } from "lucide-react";
@@ -369,5 +368,3 @@ function TodaySkeleton() {
     </div>
   );
 }
-
-export { HandHeart };
