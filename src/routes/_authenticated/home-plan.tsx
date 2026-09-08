@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   CalendarCheck,
@@ -138,7 +139,14 @@ function HomePlanPage() {
       return next;
     });
     setState({ data: { itemKey, state: s } })
-      .then(() => queryClient.invalidateQueries({ queryKey: ["home-plan-cloud"] }))
+      .then(() => {
+        // Quiet, real acknowledgement — the plan itself is the record, so there
+        // are no points or streaks here.
+        if (s === "done") {
+          toast.success(t("plan.done_toast"), { description: t("plan.done_toast_sub") });
+        }
+        return queryClient.invalidateQueries({ queryKey: ["home-plan-cloud"] });
+      })
       .catch(() => {
         setLocalState((prev) => {
           const next = { ...prev };
