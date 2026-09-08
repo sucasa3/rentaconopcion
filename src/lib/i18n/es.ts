@@ -38,7 +38,7 @@ export const es: Dictionary = {
     "Todavía no he subido el informe de inspección de mi casa — ¿qué haría SuCasa con él y por qué vale la pena?",
 
 
-  "timeline.title": "El historial de tu casa",
+  "timeline.title": "La historia de tu casa",
   "timeline.subtitle": "Todo lo que ha pasado en esta casa y lo que viene.",
   "timeline.empty_title": "La historia de tu casa empieza aquí",
   "timeline.empty_body":
@@ -453,7 +453,7 @@ export const es: Dictionary = {
   "value.status.resolved": "",
 
   // -------------------------------------------------------------- asistente
-  "assistant.title": "Asistente del Hogar",
+  "assistant.title": "Pregúntale a SuCasa sobre tu casa",
   "assistant.beta": "Beta",
   "assistant.ask_anything": "Pregunta lo que quieras sobre tu casa",
   "assistant.example": "«¿Cuándo debo darle mantenimiento a la climatización?»",

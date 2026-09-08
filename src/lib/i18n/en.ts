@@ -44,7 +44,7 @@ export const en = {
 
 
   // --------------------------------------------------------------- timeline
-  "timeline.title": "Your home's history",
+  "timeline.title": "Your home's story",
   "timeline.subtitle": "Everything that has happened to this home, and what's coming.",
   "timeline.empty_title": "Your home's story starts here",
   "timeline.empty_body":
@@ -428,7 +428,7 @@ export const en = {
   "value.status.resolved": "",
 
   // -------------------------------------------------------------- assistant
-  "assistant.title": "Home Assistant",
+  "assistant.title": "Ask SuCasa about your home",
   "assistant.beta": "Beta",
   "assistant.ask_anything": "Ask anything about your home",
   "assistant.example": "\"When should I service my HVAC?\"",
