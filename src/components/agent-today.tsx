@@ -457,41 +457,53 @@ function BestMove({
   );
 }
 
-/** Supporting context — deliberately quieter than the action content. */
+/**
+ * Proof that SuCasa is working between logins. Each tile is an existing real
+ * metric; signal, opportunity and relationship counts stay labelled apart.
+ */
 function MetricStrip({
   people,
   activated,
   opportunities,
+  engaged,
+  worthAttention,
   tasksDue,
   bookId,
 }: {
   people: number;
   activated: number;
   opportunities: number;
+  engaged: number;
+  worthAttention: number;
   tasksDue: number;
   bookId: string | null;
 }) {
   const tiles = [
-    { label: "Homeowners", value: people },
+    { label: "Homeowners monitored", value: people },
     { label: "Home Profiles Activated", value: activated },
-    { label: "Opportunities", value: opportunities },
-    { label: "Tasks due", value: tasksDue },
+    { label: "Relationships worth attention", value: worthAttention },
+    { label: "Homeowners engaged recently", value: engaged },
+    // Open opportunity records, not signals and not guaranteed transactions.
+    { label: "Opportunities developing", value: opportunities },
+    { label: "Follow-ups due", value: tasksDue },
   ];
   return (
-    <section className="space-y-2">
+    <section className="space-y-2.5">
+      <SectionHeader title="SuCasa working for you" />
       <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         {tiles.map((t) => (
           <div
             key={t.label}
-            className="min-w-[8.5rem] shrink-0 snap-start rounded-2xl border border-border/60 bg-card px-3.5 py-3"
+            className="min-w-[9.5rem] shrink-0 snap-start rounded-2xl border border-border/60 bg-card px-3.5 py-3"
           >
-            <p className="text-lg font-semibold leading-none">{t.value}</p>
+            <p className="text-lg font-semibold leading-none">{t.value.toLocaleString()}</p>
             <p className="mt-1.5 text-xs leading-snug text-muted-foreground">{t.label}</p>
           </div>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs leading-relaxed text-muted-foreground">
         Home Profiles Activated: homeowners who have activated their SuCasa Home Profile.
+        Opportunities are homeowner moments worth a conversation, not confirmed transactions.
       </p>
       <div className="flex flex-wrap gap-3 pt-1 text-sm font-semibold text-primary">
         <Link to="/agent/opportunities" className="inline-flex items-center gap-1">
