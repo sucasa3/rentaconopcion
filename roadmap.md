@@ -30,3 +30,11 @@
 - [x] "What are you thinking about?" navigation-only, no intent capture
 - [x] No new Premium query on dashboard
 - [x] Reframe wording: home vault, home's story, ask SuCasa, home health
+
+## Homeowner mobile visual correction
+- [x] Compact greeting keeps HomeHero in the first mobile viewport
+- [x] Move setup/request actions out of the mobile greeting
+- [x] Remove repeated financial card, large health card, and thinking chips
+- [x] Compact What SuCasa sees and preserve one primary Coming Up card
+- [x] Group secondary destinations into Your Home Profile rows
+- [x] Verify 393×526 mobile fold, desktop layout, tests, and runtime console

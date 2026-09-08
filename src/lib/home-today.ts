@@ -64,13 +64,6 @@ export function whatSuCasaSees(f: HomeFacts): Line[] {
     });
   }
 
-  if (lines.length < 3 && f.equityPct != null) {
-    lines.push({
-      key: "home.sees.equity",
-      params: { pct: Math.round(f.equityPct * 100) },
-    });
-  }
-
   if (lines.length === 0) lines.push({ key: "home.sees.steady" });
   return lines.slice(0, 3);
 }
