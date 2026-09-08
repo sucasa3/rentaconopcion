@@ -112,7 +112,7 @@ export const en = {
 
   // --------------------------------------------------------------- sections
   "page.care.title": "Home care",
-  "page.docs.title": "Your documents",
+  "page.docs.title": "Your home vault",
   "page.money.title": "Value & equity",
   "page.assistant.title": "Home Assistant",
 
