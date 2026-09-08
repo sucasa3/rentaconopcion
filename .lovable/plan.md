@@ -1,112 +1,138 @@
-# Agent Daily Intelligence — implementation plan
+# Homeowner Home Intelligence — implementation plan
 
-Presentation and orchestration only. No change to ranking, opportunity detection,
-channel eligibility, permissions, entitlements or outcome logic.
+Goal: turn `/dashboard` from a stack of equal-weight cards into one coherent
+"Your Home Today" experience. Presentation and composition only. No changes to
+valuation, equity, Home Score, Home Plan generation, maintenance, documents,
+assistant, Premium or consent logic.
 
-## A. Components that change
+## What changes (and what does not)
 
-- `src/components/agent-today.tsx` — restructured (the main work).
-- `src/lib/agent-daily.ts` — add pure helpers: daily-read builder, "handled today"
-  counter, service-language phrasing for the recommended play. Existing helpers stay.
-- `src/lib/agent-daily.test.ts` — extend for the new pure helpers.
-- `src/components/action-queue.tsx` — small additions only: accept an optional
-  `excludeOpportunityIds` and `hideCounts` prop so the queue below Start Here does not
-  repeat the same homeowner or repeat the temperature tiles. Ranking, cards, compose
-  dialog, channel rendering and outcome logging untouched.
-- `src/lib/nba.server.ts` — one small additive field (see D).
-- `src/components/channel-actions.tsx` — unchanged.
+Changed files:
 
-## B. Existing data reused (nothing new invented)
+- `src/routes/_authenticated/dashboard.tsx` — rebuilt hierarchy, same data reads.
+- New `src/lib/home-today.ts` — pure presentation helpers (what SuCasa sees,
+  recent updates, home-health phrasing, completeness invitations) with tests.
+- New small presentational components under `src/components/home-today/`
+  (intelligence summary, coming-up card, compact destination rows).
+- `src/components/home-plan-*` completion feedback: a calm "Taken care of —
+  your Home Plan has been updated" confirmation on the existing mark-done path.
+- Timeline, documents, assistant and home-care pages: heading/label wording
+  only ("Your home's story", "Your home vault", "Ask SuCasa about your home"),
+  through the existing i18n keys. No behavior change.
 
-From `getActionQueue`: `items[]` with `name`, `why`, `headline`, `ask`,
-`categoryLabel`, `temperature`, `engagedRecently`, `engagementLine`, `channels`
-(server-decided), `draftSubject`/`draftBody`, `phone`, `email`, `portfolioId`,
-`clientId`, `lastOutcome`; plus `counts.hot/warm/nurture/engaged` and `yesterday`.
+Untouched: `HomeHero`, `use-home-record`, `use-home-intel`, `home-plan.ts`,
+`home-plan.functions.ts`, maintenance engine, inspection/document functions,
+alerts engine, Premium/sponsorship logic, consent boundaries.
 
-From `getBusinessOverview`: `counts.people`, `counts.activated`,
-`counts.opportunities`, `books[0]`.
+## Data that drives "What SuCasa sees"
 
-From `getMyBusinessTasks`: `openCount`.
+All already loaded on the dashboard today, so no new queries:
 
-## C. Best Move becomes "Start here"
+- `report.signals` (Home Alerts engine) — leading signal, strength.
+- `record.physical.timeline` statuses — `overdue`, `due_soon` counts.
+- `planCounts(homePlan)` — `next90Days`, `total`, `top` item and cost band.
+- `okIntel.value.value`, `okIntel.equity.equityDollars`, `equityPct`.
+- `listInspectionFindings()` — count of saved findings.
+- `listHomeDocuments()` — count, and whether an inspection exists.
+- `homeScore.score` / `zones`.
 
-Same object, same index: `items[cursor]`, cursor still starts at 0 and still advances
-after an outcome. Ranking untouched — this is a heading, layout and copy change:
-WHO / WHY NOW / HOW TO BE USEFUL (the existing agent recipe `headline` + `ask`) /
-WHAT TO SAY (existing `draftBody` or headline) / permitted channels / outcome row.
+The summary is deterministic sentence assembly from these counts — no new AI
+call, no assessment the data does not support. Priority order: overdue care →
+strong alert → items due in 90 days → missing inspection → steady state.
 
-## D. Removing duplication
+## "What changed" — what can be proven today
 
-Today currently shows the same person in Best Move, Next up and the full ActionQueue.
-New hierarchy, each person appearing once:
+Truthfully detectable, because each row carries a real timestamp:
 
-1. Greeting + Daily Intelligence summary
-2. SuCasa Daily Read
-3. Start here (`items[cursor]`)
-4. Next relationships — lightweight rows for `items` after the cursor (name, category,
-   why, suggested play, permitted channel buttons, View homeowner)
-5. Copilot search
-6. SuCasa working for you (metrics + links to Opportunities / Tasks / My book)
+- Estimated value moved — `home_value_snapshots.captured_on` + value; compare
+  the newest snapshot to the most recent earlier one.
+- New document added — `home_documents.created_at`.
+- New inspection findings — findings `created_at`.
+- Care item now due soon/overdue — derived from the current timeline status.
 
-The heavy `ActionQueue` block is no longer rendered a second time on Today; the
-component keeps working and stays in use on the Opportunities workspace. Its new
-`excludeOpportunityIds`/`hideCounts` props exist for that reuse. "Next relationships"
-renders from the same query data, so no extra request.
+Not detectable: "since your last visit" and "overnight". There is no
+last-seen-dashboard timestamp and value snapshots are captured only on visit,
+so gaps are irregular. Therefore the section is labelled **Worth knowing now**,
+with a "Recent updates" list limited to items timestamped in the last 30 days
+and each row stating its own date ("Value updated Sep 2"). No wording implies
+change since yesterday.
 
-## E. "Relationships handled today", truthfully
+## Section-by-section
 
-`buildActionQueue` already loads `opportunity_outcomes` (client id, stage, occurred_at)
-for exactly this agent's visible clients. Additive change: return
-`recentOutcomes: { clientId, occurredAt }[]` for the last 48 hours — no new table,
-no new query.
+1. **Greeting** — real first name from `profiles.full_name`; time-of-day
+   greeting; one honest state line ("Your home is in good shape." / "A few
+   things are worth knowing about your home."), plus a monitoring line naming
+   only what is actually watched.
+2. **HomeHero** — unchanged component, kept directly under the greeting as the
+   identity anchor with address, estimated value, equity, equity %, Home Score
+   and existing estimate disclosures. It is the only large visual block.
+3. **What SuCasa sees** — 2–3 sentence intelligence summary integrated
+   immediately beneath the hero, followed by the existing `HomeAlerts` row when
+   a real signal exists, then "Worth knowing now" recent updates when any exist.
+4. **Coming up for your home** — one prominent card: count in the next 90 days,
+   the top plan item title, its existing cost band, and a link to `/home-plan`.
+   It shows a summary only; all plan interaction (done, dismiss, request help,
+   horizons, why) stays on `/home-plan` so nothing is duplicated.
+5. **Home health** — compact row derived from existing timeline statuses:
+   "Everything looks on track" / "1 thing coming up soon" / "2 items need
+   attention". Links to `/home-care`. No manufactured urgency.
+6. **Your home's financial picture** — estimated value and estimated equity
+   with the existing labels, plus one plain translation ("You've built about
+   38% equity in your home."). No refinance, borrowing or unlock language on
+   the dashboard; lender/agent actions stay on `/money` and stay
+   permission-based.
+7. **Make SuCasa smarter about your home** — the existing `profileCompleteness`
+   missing list rendered as invitations with the benefit stated, not a percent
+   bar and no points or streaks. Hidden entirely when nothing is missing.
+8. **Compact destination rows** — Home vault (documents; surfaces "SuCasa found
+   N items in your inspection report" only when findings exist), Ask SuCasa
+   about your home, Your home's story (timeline), Get help with your home
+   (`/request`, framed as homeowner-initiated). These become quiet single-line
+   rows rather than full cards.
 
-The count of distinct clients whose `occurredAt` falls on today is computed in the
-browser using the signed-in user's own device timezone, so no server-local-midnight
-assumption is made. It counts across the book, not the current queue, so someone
-correctly leaving the queue after being worked still counts.
+## SellerIntentCard
 
-Presented as two separate honest numbers, never "4 of 10":
+The current card leads with "Thinking about your next move?" and submits a
+selling-interest signal, so it stays on `/money` and is not surfaced on Home
+Today. Instead the dashboard offers a neutral, homeowner-first "What are you
+thinking about?" row (Staying put / Improving this home / Curious about my
+value / Thinking about moving / Not sure yet) that only links to the matching
+existing destination for the choice the homeowner makes. No intent score is
+computed, stored or displayed on the homeowner surface, and nothing is shared
+with a professional without the homeowner's explicit request.
 
-- `4 relationships handled today`
-- `6 relationships currently worth your attention`
+## Quiet-home state
 
-## F. Metrics that can honestly back "SuCasa working for you"
+When there are no overdue or due-soon items, no non-low signals and no plan
+items in 90 days: the hero stays, the summary reads "Your home looks good
+today — nothing needs immediate attention", and the coming-up and health
+sections collapse into calm one-liners. Recent updates and invitations still
+appear if truthful. Nothing is invented to fill space.
 
-- Homeowners monitored — `counts.people`
-- Home Profiles activated — `counts.activated`
-- Relationships worth attention today — distinct homeowners in the queue (the queue is
-  already deduplicated to one item per homeowner)
-- Homeowners engaged recently — `queue.counts.engaged`
-- Signals detected — `counts.opportunities`, labelled as signals, never as listings
-- Follow-ups due — tasks `openCount`
+## Card fatigue
 
-Signal counts and relationship counts get separate labels.
+One hero, one intelligence summary, one primary "coming up" card, everything
+else as quiet rows or a compact two-up strip. `SummaryCard` remains available
+but is used at most twice on this page.
 
-## G. Channels
+## Premium
 
-Untouched. `item.channels` from the server is passed straight to `ChannelActions`,
-which already renders every available channel, emphasises the recommended one and
-explains unavailable ones. Start Here and Next relationships both use it.
+Premium state is read through the existing `getMyPremium` and shown as a subtle
+membership line describing benefits the product actually delivers. No new
+Premium-only feature, no pricing change, and sponsored Premium copy continues
+to state that the sponsor does not receive the homeowner's data.
 
-## H. How this stays different from the lender page
+## Things the current data cannot honestly support
 
-Warmer language throughout ("worth your attention", "good reason to reconnect", "be
-useful by"), the recommendation is expressed as a homeowner-service play from the
-existing agent recipes, Hot/Warm/Nurture is de-emphasised to a small quiet label, and
-the page keeps agent-only elements: Copilot search, Home Profiles activated, the
-import/preparing/aha first-run states. No financial-institution framing, no equity
-dollar hero, no compliance disclosure panel.
+- "Since your last visit" / "overnight" change detection.
+- Value change between arbitrary dates (snapshots exist only for visited days).
+- Condition change over time (Home Score is computed fresh, not versioned).
+- Improvement ROI or "value added by your maintenance".
 
-## I. Preserved as-is
+These are stated as absent rather than approximated.
 
-Empty-book import state, preparing state, first-run "aha" moment, cursor advance,
-outcome toasts and existing acknowledgement copy (upgraded visually to an inline
-"✓ [Name] is handled for today" + real next-person line), Copilot search, all links.
+## Verification
 
-## J. What the data cannot honestly support
-
-- "Overnight" / "since yesterday" changes — no per-day change timestamps exist, so the
-  copy says "monitoring" instead.
-- "4 of today's 10 completed" — the queue is rebuilt dynamically with no stored daily
-  cohort; two separate counts are used instead.
-- Any likelihood-to-list or seller-intent number — not created.
+`bunx tsgo --noEmit`, unit tests for the new pure helpers (summary priority,
+recent-update windowing, quiet state, completeness invitations), and an
+authenticated browser check of `/dashboard` in both languages.
