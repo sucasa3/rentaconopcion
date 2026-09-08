@@ -1,138 +1,89 @@
-# Homeowner Home Intelligence — implementation plan
+# Homeowner mobile visual correction
 
-Goal: turn `/dashboard` from a stack of equal-weight cards into one coherent
-"Your Home Today" experience. Presentation and composition only. No changes to
-valuation, equity, Home Score, Home Plan generation, maintenance, documents,
-assistant, Premium or consent logic.
+## Scope
 
-## What changes (and what does not)
+Refine only the presentation and composition of `/dashboard`. Keep all existing homeowner data reads, `HomeHero`, Home Record, Home Plan, valuation/equity, maintenance, documents, assistant, Premium, permissions, consent, alerts, onboarding behavior, and destination routes unchanged.
 
-Changed files:
+## Mobile first viewport
 
-- `src/routes/_authenticated/dashboard.tsx` — rebuilt hierarchy, same data reads.
-- New `src/lib/home-today.ts` — pure presentation helpers (what SuCasa sees,
-  recent updates, home-health phrasing, completeness invitations) with tests.
-- New small presentational components under `src/components/home-today/`
-  (intelligence summary, coming-up card, compact destination rows).
-- `src/components/home-plan-*` completion feedback: a calm "Taken care of —
-  your Home Plan has been updated" confirmation on the existing mark-done path.
-- Timeline, documents, assistant and home-care pages: heading/label wording
-  only ("Your home's story", "Your home vault", "Ask SuCasa about your home"),
-  through the existing i18n keys. No behavior change.
+- Reduce the intro below the mobile top bar to roughly **90–120px total**.
+- Remove the eyebrow, the large two-line state headline, and the longer monitoring paragraph from the mobile intro.
+- Show one compact H1: **“Good evening, Neil.”** at approximately 24px, followed by one small line: **“Here’s what matters with your home today.”**
+- Remove Setup Guide and Request from the mobile greeting row so the copy keeps the full width and does not wrap into a tall column.
+- Render the unchanged `HomeHero` immediately after this compact intro, with tighter page spacing. At the current 393×526 viewport, the greeting and a meaningful upper portion of the home photograph should be visible before the first swipe.
+- Desktop may retain a wider intro/action arrangement, but it will use the same shorter copy and keep the hero near the top.
 
-Untouched: `HomeHero`, `use-home-record`, `use-home-intel`, `home-plan.ts`,
-`home-plan.functions.ts`, maintenance engine, inspection/document functions,
-alerts engine, Premium/sponsorship logic, consent boundaries.
+## Actions outside the greeting
 
-## Data that drives "What SuCasa sees"
+- Preserve Setup Guide and Request behavior, but move them out of the mobile headline area.
+- Request remains directly available through the existing fixed bottom navigation and also appears as a small secondary action later on the page.
+- Setup Guide moves to the same compact utility area after the primary Home Plan content; neither control competes with the home photograph.
 
-All already loaded on the dashboard today, so no new queries:
+## Page hierarchy
 
-- `report.signals` (Home Alerts engine) — leading signal, strength.
-- `record.physical.timeline` statuses — `overdue`, `due_soon` counts.
-- `planCounts(homePlan)` — `next90Days`, `total`, `top` item and cost band.
-- `okIntel.value.value`, `okIntel.equity.equityDollars`, `equityPct`.
-- `listInspectionFindings()` — count of saved findings.
-- `listHomeDocuments()` — count, and whether an inspection exists.
-- `homeScore.score` / `zones`.
+1. Compact greeting
+2. Existing `HomeHero`, completely unchanged
+3. Compact **What SuCasa sees** intelligence panel
+4. One prominent **Coming up for your home** card, or the existing calm quiet-home alternative
+5. Compact **Your Home Profile** destination rows
+6. Small **Make SuCasa smarter** module only when useful
+7. Compact utility actions for Setup Guide and Request
 
-The summary is deterministic sentence assembly from these counts — no new AI
-call, no assessment the data does not support. Priority order: overdue care →
-strong alert → items due in 90 days → missing inspection → steady state.
+This restores the sequence: **beautiful home first, intelligence second, action third**.
 
-## "What changed" — what can be proven today
+## Remove duplication
 
-Truthfully detectable, because each row carries a real timestamp:
+- Remove the separate large **Your home's financial picture** card and its repeated value/equity figures. Add **Value & equity — Explore your home's financial picture** as a compact row linking to `/money`.
+- Remove the standalone large **Home Health** card. Preserve its current status text as the first compact row linking to `/home-care`.
+- Remove **What are you thinking about?** and all five chips from Home Today only. Existing homeowner routes and flows remain intact.
+- Keep missing inspection/profile details in one primary place: **Make SuCasa smarter**. Do not also repeat the missing-inspection invitation in What SuCasa sees or another callout.
+- Let What SuCasa sees state the overall care/plan condition once; let the Coming Up card contain the specific next item. Do not repeat the same maintenance message again in Home Health.
 
-- Estimated value moved — `home_value_snapshots.captured_on` + value; compare
-  the newest snapshot to the most recent earlier one.
-- New document added — `home_documents.created_at`.
-- New inspection findings — findings `created_at`.
-- Care item now due soon/overdue — derived from the current timeline status.
+## Compact “What SuCasa sees”
 
-Not detectable: "since your last visit" and "overnight". There is no
-last-seen-dashboard timestamp and value snapshots are captured only on visit,
-so gaps are irregular. Therefore the section is labelled **Worth knowing now**,
-with a "Recent updates" list limited to items timestamped in the last 30 days
-and each row stating its own date ("Value updated Sep 2"). No wording implies
-change since yesterday.
+- Keep the current deterministic Home Intelligence helper and truthful timestamp rules; change only selection and presentation.
+- Limit the panel to **2–3 short, high-value observations**.
+- Use a subtle brand-tinted band with modest padding, smaller radius, no heavy floating-card treatment, and concise bullet rows.
+- Prefer distinct facts: overall care state, near-term Home Plan count, and a genuinely new timestamped update when available.
+- Exclude observations already expressed by the Coming Up card and exclude missing-profile invitations that belong in Make SuCasa smarter.
+- Keep genuine `HomeAlerts` behavior, but present an alert compactly and avoid restating the same fact in the summary.
 
-## Section-by-section
+## One primary next action
 
-1. **Greeting** — real first name from `profiles.full_name`; time-of-day
-   greeting; one honest state line ("Your home is in good shape." / "A few
-   things are worth knowing about your home."), plus a monitoring line naming
-   only what is actually watched.
-2. **HomeHero** — unchanged component, kept directly under the greeting as the
-   identity anchor with address, estimated value, equity, equity %, Home Score
-   and existing estimate disclosures. It is the only large visual block.
-3. **What SuCasa sees** — 2–3 sentence intelligence summary integrated
-   immediately beneath the hero, followed by the existing `HomeAlerts` row when
-   a real signal exists, then "Worth knowing now" recent updates when any exist.
-4. **Coming up for your home** — one prominent card: count in the next 90 days,
-   the top plan item title, its existing cost band, and a link to `/home-plan`.
-   It shows a summary only; all plan interaction (done, dismiss, request help,
-   horizons, why) stays on `/home-plan` so nothing is duplicated.
-5. **Home health** — compact row derived from existing timeline statuses:
-   "Everything looks on track" / "1 thing coming up soon" / "2 items need
-   attention". Links to `/home-care`. No manufactured urgency.
-6. **Your home's financial picture** — estimated value and estimated equity
-   with the existing labels, plus one plain translation ("You've built about
-   38% equity in your home."). No refinance, borrowing or unlock language on
-   the dashboard; lender/agent actions stay on `/money` and stay
-   permission-based.
-7. **Make SuCasa smarter about your home** — the existing `profileCompleteness`
-   missing list rendered as invitations with the benefit stated, not a percent
-   bar and no points or streaks. Hidden entirely when nothing is missing.
-8. **Compact destination rows** — Home vault (documents; surfaces "SuCasa found
-   N items in your inspection report" only when findings exist), Ask SuCasa
-   about your home, Your home's story (timeline), Get help with your home
-   (`/request`, framed as homeowner-initiated). These become quiet single-line
-   rows rather than full cards.
+- Keep one visually prominent **Coming up for your home** card using the existing top Home Plan item, reason, cost band, and route.
+- Simplify its internal nesting so it reads as one action rather than a card inside a card.
+- Do not follow it with another large care card. On a quiet day, retain the calm reassurance and Home Plan link without inventing urgency.
 
-## SellerIntentCard
+## Compact lower dashboard
 
-The current card leads with "Thinking about your next move?" and submits a
-selling-interest signal, so it stays on `/money` and is not surfaced on Home
-Today. Instead the dashboard offers a neutral, homeowner-first "What are you
-thinking about?" row (Staying put / Improving this home / Curious about my
-value / Thinking about moving / Not sure yet) that only links to the matching
-existing destination for the choice the homeowner makes. No intent score is
-computed, stored or displayed on the homeowner surface, and nothing is shared
-with a professional without the homeowner's explicit request.
+Create one restrained **Your Home Profile** group with dividers and icon/title/supporting-line/chevron rows:
 
-## Quiet-home state
+- Home health — current truthful status
+- Home vault — documents, warranties and inspection reports
+- Ask SuCasa — ask anything about your home
+- Your home's story — property and care history
+- Value & equity — explore your home's financial picture
+- Get help — you decide when to ask a professional
 
-When there are no overdue or due-soon items, no non-low signals and no plan
-items in 90 days: the hero stays, the summary reads "Your home looks good
-today — nothing needs immediate attention", and the coming-up and health
-sections collapse into calm one-liners. Recent updates and invitations still
-appear if truthful. Nothing is invented to fill space.
+These rows replace separate large cards. Use whitespace, typography, dividers, and subtle surface changes rather than repeating large 28–30px rounded rectangles.
 
-## Card fatigue
+## Make SuCasa smarter
 
-One hero, one intelligence summary, one primary "coming up" card, everything
-else as quiet rows or a compact two-up strip. `SummaryCard` remains available
-but is used at most twice on this page.
+- Keep the existing completeness inputs and links, with no new query or scoring behavior.
+- Render only meaningful missing items, capped to a short list, with inspection shown only here when missing.
+- Use a small inline module and hide it completely when there is nothing useful to add.
 
-## Premium
+## Responsive and safe-area behavior
 
-Premium state is read through the existing `getMyPremium` and shown as a subtle
-membership line describing benefits the product actually delivers. No new
-Premium-only feature, no pricing change, and sponsored Premium copy continues
-to state that the sponsor does not receive the homeowner's data.
-
-## Things the current data cannot honestly support
-
-- "Since your last visit" / "overnight" change detection.
-- Value change between arbitrary dates (snapshots exist only for visited days).
-- Condition change over time (Home Score is computed fresh, not versioned).
-- Improvement ROI or "value added by your maintenance".
-
-These are stated as absent rather than approximated.
+- Mobile spacing and type are the priority; headings stay single-line where practical and no fixed action narrows the greeting column.
+- Desktop retains the centered content width and may place compact utility actions alongside the greeting when enough width exists.
+- Preserve the existing bottom navigation height and `pb-24`/safe-area clearance so the final rows are never covered.
+- Do not modify `HomeHero` dimensions, controls, photography, data, or interaction logic.
 
 ## Verification
 
-`bunx tsgo --noEmit`, unit tests for the new pure helpers (summary priority,
-recent-update windowing, quiet state, completeness invitations), and an
-authenticated browser check of `/dashboard` in both languages.
+- Check `/dashboard` at **393×526**: header, compact greeting, and a meaningful portion of HomeHero are visible without a full swipe.
+- Check that the first two mobile screens include the home, Home Score/value/equity, What SuCasa sees, and the primary Coming Up item.
+- Check no repeated value/equity card, no repeated inspection invitation, no large Home Health card, and no thinking chips remain.
+- Check Setup Guide, Request, all six destination rows, alerts, quiet state, address-completion state, and bilingual copy remain accessible and truthful.
+- Check desktop layout remains balanced, and run the existing type and focused dashboard/helper tests.
