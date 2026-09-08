@@ -371,14 +371,12 @@ function BestMove({
   const opener = item.draftBody?.trim() || item.headline;
 
   return (
-    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-soft">
+    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-primary/25 bg-card shadow-soft ring-1 ring-primary/10">
       <div className="border-b border-border/60 px-5 py-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          Your best move
-        </p>
-        <h2 className="mt-1 text-xl font-semibold tracking-tight">{item.name}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {meta.label} · {item.categoryLabel}
+        <p className="text-xs text-muted-foreground">{item.categoryLabel}</p>
+        <h2 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight">{item.name}</h2>
+        <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/70">
+          {meta.label}
         </p>
       </div>
 
@@ -395,10 +393,12 @@ function BestMove({
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            What SuCasa suggests
+            How to be useful
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed">{item.headline}</p>
+          <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{item.ask}</p>
         </div>
+
 
         {opener && (
           <div>
