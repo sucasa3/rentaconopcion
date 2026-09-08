@@ -491,6 +491,7 @@ export const es: Dictionary = {
   "home.today.morning": "Buenos días",
   "home.today.afternoon": "Buenas tardes",
   "home.today.evening": "Buenas noches",
+  "home.today.summary": "Esto es lo importante de tu casa hoy.",
   "home.today.eyebrow": "Tu casa hoy",
   "home.today.state_good": "Tu casa está en buen estado.",
   "home.today.state_attention": "Hay algunas cosas que vale la pena saber sobre tu casa.",
@@ -534,6 +535,10 @@ export const es: Dictionary = {
   "home.health.attention_one": "1 tarea necesita atención",
   "home.health.start": "Creemos tu plan de cuidado",
   "home.health.cta": "Abrir cuidado del hogar",
+  "home.profile.label": "El perfil de tu casa",
+  "home.value.row": "Valor y plusvalía",
+  "home.value.row_sub": "Explora el panorama financiero de tu casa",
+  "home.setup.label": "Guía de configuración",
 
   "home.money.label": "El panorama financiero de tu casa",
   "home.money.value": "Valor estimado",

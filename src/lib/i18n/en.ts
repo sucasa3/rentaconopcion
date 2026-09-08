@@ -466,6 +466,7 @@ export const en = {
   "home.today.morning": "Good morning",
   "home.today.afternoon": "Good afternoon",
   "home.today.evening": "Good evening",
+  "home.today.summary": "Here’s what matters with your home today.",
   "home.today.eyebrow": "Your home today",
   "home.today.state_good": "Your home is in good shape.",
   "home.today.state_attention": "A few things are worth knowing about your home.",
@@ -509,6 +510,10 @@ export const en = {
   "home.health.attention_one": "1 item needs attention",
   "home.health.start": "Let's build your home care plan",
   "home.health.cta": "Open home care",
+  "home.profile.label": "Your Home Profile",
+  "home.value.row": "Value & equity",
+  "home.value.row_sub": "Explore your home's financial picture",
+  "home.setup.label": "Setup guide",
 
   "home.money.label": "Your home's financial picture",
   "home.money.value": "Estimated value",

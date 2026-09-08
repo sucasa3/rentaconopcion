@@ -35,9 +35,9 @@ describe("whatSuCasaSees", () => {
     expect(lines).toHaveLength(3);
   });
 
-  it("invites an inspection when none is on file", () => {
+  it("leaves missing inspection to the single smarter-profile invitation", () => {
     const lines = whatSuCasaSees({ ...base, hasInspection: false });
-    expect(lines.map((l) => l.key)).toContain("home.sees.no_inspection");
+    expect(lines.map((l) => l.key)).not.toContain("home.sees.no_inspection");
   });
 
   it("stays calm when nothing needs attention", () => {
