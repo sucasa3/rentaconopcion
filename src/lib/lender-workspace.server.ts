@@ -605,15 +605,21 @@ export async function readLenderWorkspace(
 
   return {
     org: { id: scope.orgId, name: scope.orgName, isManager: scope.isManager },
+    lender: { firstName: lenderFirstName },
     books: scope.books,
     metrics: {
       homeownersMonitored: rows.length,
+      /** Number of signals/review opportunities — NOT a count of people. */
       changesDetected: visible.reduce((n, v) => n + v.reviews.length, 0),
+      /** Distinct homeowners carrying at least one signal. */
+      relationshipsWithSignals: visible.filter((v) => v.reviews.length > 0).length,
       reviewOpportunities: queue.length,
       askedToConnect: askedToConnect.length,
       engagedThisMonth: visible.filter((v) => v.engagedRecently).length,
       followUpsDue,
       needsAttentionToday: daily.length,
+      /** Distinct named homeowners with an outcome recorded today, book-wide. */
+      relationshipsHandledToday: handledIds.size,
       archived: archivedCount,
     },
     counts: {
