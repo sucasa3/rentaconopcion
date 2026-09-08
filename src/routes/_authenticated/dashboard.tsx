@@ -20,7 +20,6 @@ import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { type HomeHeroView } from "@/lib/home-hero-data";
 import { useHomeRecord } from "@/hooks/use-home-record";
-import { OnboardingWalkthrough } from "@/components/onboarding-walkthrough";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 
 import { CompleteAddressCard } from "@/components/complete-address-card";
@@ -291,7 +290,8 @@ function Dashboard() {
             )}
           </section>
 
-          <HomeAlerts report={report} hasInspection={hasInspection} />
+          {/* Missing inspection is invited once in "Make SuCasa smarter" below. */}
+          <HomeAlerts report={report} hasInspection />
 
           {/* ------------------------------------------ coming up / quiet day */}
           {planSummary && planSummary.next90Days > 0 && topPlanItem ? (
@@ -410,7 +410,7 @@ function Dashboard() {
             </section>
           )}
 
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          <div className="flex items-center justify-center pt-1 sm:hidden">
             <GuidedOnboarding
               role="homeowner"
               userId={userId}
@@ -426,13 +426,6 @@ function Dashboard() {
               triggerLabel={t("home.setup.label")}
               autoOpen={false}
             />
-            <OnboardingWalkthrough triggerLabel={t("dash.take_tour")} />
-            <Link
-              to="/request"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium"
-            >
-              <Wrench className="h-3.5 w-3.5 text-primary" /> {t("dash.request")}
-            </Link>
           </div>
         </div>
       </main>
