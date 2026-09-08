@@ -1,38 +1,112 @@
-# Lender Today → Daily Intelligence
+# Agent Daily Intelligence — implementation plan
 
-A presentation and hierarchy upgrade to the lender Today screen. No changes to access classification, permissions, ranking, compliance language, briefs, outcomes or sponsorship privacy.
+Presentation and orchestration only. No change to ranking, opportunity detection,
+channel eligibility, permissions, entitlements or outcome logic.
 
-## What changes
+## A. Components that change
 
-**Modified components**
-- `src/components/lender-today.tsx` — the bulk of the work: greeting + intelligence statement, new hero summary, restructured SuCasa Daily Read, new "Start here" spotlight, progress loop, quiet-day state, renamed proof-of-value section.
-- `src/components/lender-contact-card.tsx` — a lighter collapsed card (rank · name · review type · why now · recommended action · Prepare me + permitted channel buttons), with property metrics and permission detail behind existing disclosure.
-- `src/components/lender-brief.tsx` — CTA/framing only ("Prepare me" / "30-second relationship brief"), plus a richer post-outcome success state built from the server's real `confirmation`, `nextStep` and `dueAt`. Brief content and logic untouched.
+- `src/components/agent-today.tsx` — restructured (the main work).
+- `src/lib/agent-daily.ts` — add pure helpers: daily-read builder, "handled today"
+  counter, service-language phrasing for the recommended play. Existing helpers stay.
+- `src/lib/agent-daily.test.ts` — extend for the new pure helpers.
+- `src/components/action-queue.tsx` — small additions only: accept an optional
+  `excludeOpportunityIds` and `hideCounts` prop so the queue below Start Here does not
+  repeat the same homeowner or repeat the temperature tiles. Ranking, cards, compose
+  dialog, channel rendering and outcome logging untouched.
+- `src/lib/nba.server.ts` — one small additive field (see D).
+- `src/components/channel-actions.tsx` — unchanged.
 
-**Server (small, additive)**
-- `src/lib/lender-workspace.server.ts` — add two derived fields to the existing return:
-  - `metrics.handledToday`: count of today's queue clients that already have an `opportunity_outcomes` row with `occurred_at` on the current day. Outcomes are already loaded in the same query; this is a count, not a new read.
-  - `lender.firstName`: from the signed-in user's existing profile record, used only for the greeting. Omitted (and the greeting drops the name) if unavailable.
-- No schema change. No new server function. `getLenderWorkspace` stays the single source.
+## B. Existing data reused (nothing new invented)
 
-## Reused, unchanged
-`metrics` (needsAttentionToday, askedToConnect, followUpsDue, engagedThisMonth, homeownersMonitored, changesDetected, reviewOpportunities), `counts`, `take`, `daily` / `dailyTotal` / `queue`, `askedToConnectList`, `serviceDelivery`, `aggregateOnly`, plus `getLenderQuickBrief`, `generateHomeownerReviewBrief`, `logLenderOutcome`, `lender-daily.ts`, `lender-access.ts`, `contact-channels.ts`, `money.ts`.
+From `getActionQueue`: `items[]` with `name`, `why`, `headline`, `ask`,
+`categoryLabel`, `temperature`, `engagedRecently`, `engagementLine`, `channels`
+(server-decided), `draftSubject`/`draftBody`, `phone`, `email`, `portfolioId`,
+`clientId`, `lastOutcome`; plus `counts.hot/warm/nurture/engaged` and `yesterday`.
 
-## Key decisions
+From `getBusinessOverview`: `counts.people`, `counts.activated`,
+`counts.opportunities`, `books[0]`.
 
-**"Handled today"** — counted only from real `opportunity_outcomes` rows dated today for clients in today's queue. Nothing inferred from views, opens or drawer interactions. Progress reads "3 of 10 handled"; after an outcome the workspace query invalidates and the number moves.
+From `getMyBusinessTasks`: `openCount`.
 
-**"Start here"** — `daily[0]` exactly as the existing ranking already ordered it. Presentation only; `compareDaily` / priority engine untouched, and no score is shown or invented.
+## C. Best Move becomes "Start here"
 
-**Sponsored-only anonymity** — the spotlight and all cards render only from `daily`/`queue`, which the access gate already restricts to named-permitted homeowners. Sponsored-only homeowners continue to appear solely inside `aggregateOnly` / `serviceDelivery` counts in "SuCasa working for you", never named, with the existing caption that sponsorship does not grant individual access.
+Same object, same index: `items[cursor]`, cursor still starts at 0 and still advances
+after an outcome. Ranking untouched — this is a heading, layout and copy change:
+WHO / WHY NOW / HOW TO BE USEFUL (the existing agent recipe `headline` + `ask`) /
+WHAT TO SAY (existing `draftBody` or headline) / permitted channels / outcome row.
 
-**Mobile** — single column, one primary action per card, spotlight full-width above the list, hero as one featured number with supporting lines rather than a 2×2 KPI grid, tap targets ≥44px, disclosure instead of density. Wider screens get the same order with more breathing room.
+## D. Removing duplication
 
-## Honesty limits (statements we will NOT make)
-- No "overnight" or "since yesterday" changes. Review detection has no per-day changed-since timestamp, so the intelligence line says "SuCasa reviewed 847 homeowners and found 6 relationships worth your attention today" — never "changed overnight".
-- "3 relationships showed meaningful signals" maps to real review counts on today's list; if a metric is zero its line is omitted rather than padded.
-- "Good morning" adapts to local time of day; the name appears only when the profile actually has one.
-- Quiet day: "Your book is in good shape today — nothing needs immediate attention. SuCasa is monitoring N homeowners and will surface the next meaningful moment." N is `homeownersMonitored`.
+Today currently shows the same person in Best Move, Next up and the full ActionQueue.
+New hierarchy, each person appearing once:
 
-## Explicitly not done
-No ranking change, no new scores, no gamification/streaks/confetti, no widened visibility, no automatic outbound contact, no new design system — existing SuCasa tokens only.
+1. Greeting + Daily Intelligence summary
+2. SuCasa Daily Read
+3. Start here (`items[cursor]`)
+4. Next relationships — lightweight rows for `items` after the cursor (name, category,
+   why, suggested play, permitted channel buttons, View homeowner)
+5. Copilot search
+6. SuCasa working for you (metrics + links to Opportunities / Tasks / My book)
+
+The heavy `ActionQueue` block is no longer rendered a second time on Today; the
+component keeps working and stays in use on the Opportunities workspace. Its new
+`excludeOpportunityIds`/`hideCounts` props exist for that reuse. "Next relationships"
+renders from the same query data, so no extra request.
+
+## E. "Relationships handled today", truthfully
+
+`buildActionQueue` already loads `opportunity_outcomes` (client id, stage, occurred_at)
+for exactly this agent's visible clients. Additive change: return
+`recentOutcomes: { clientId, occurredAt }[]` for the last 48 hours — no new table,
+no new query.
+
+The count of distinct clients whose `occurredAt` falls on today is computed in the
+browser using the signed-in user's own device timezone, so no server-local-midnight
+assumption is made. It counts across the book, not the current queue, so someone
+correctly leaving the queue after being worked still counts.
+
+Presented as two separate honest numbers, never "4 of 10":
+
+- `4 relationships handled today`
+- `6 relationships currently worth your attention`
+
+## F. Metrics that can honestly back "SuCasa working for you"
+
+- Homeowners monitored — `counts.people`
+- Home Profiles activated — `counts.activated`
+- Relationships worth attention today — distinct homeowners in the queue (the queue is
+  already deduplicated to one item per homeowner)
+- Homeowners engaged recently — `queue.counts.engaged`
+- Signals detected — `counts.opportunities`, labelled as signals, never as listings
+- Follow-ups due — tasks `openCount`
+
+Signal counts and relationship counts get separate labels.
+
+## G. Channels
+
+Untouched. `item.channels` from the server is passed straight to `ChannelActions`,
+which already renders every available channel, emphasises the recommended one and
+explains unavailable ones. Start Here and Next relationships both use it.
+
+## H. How this stays different from the lender page
+
+Warmer language throughout ("worth your attention", "good reason to reconnect", "be
+useful by"), the recommendation is expressed as a homeowner-service play from the
+existing agent recipes, Hot/Warm/Nurture is de-emphasised to a small quiet label, and
+the page keeps agent-only elements: Copilot search, Home Profiles activated, the
+import/preparing/aha first-run states. No financial-institution framing, no equity
+dollar hero, no compliance disclosure panel.
+
+## I. Preserved as-is
+
+Empty-book import state, preparing state, first-run "aha" moment, cursor advance,
+outcome toasts and existing acknowledgement copy (upgraded visually to an inline
+"✓ [Name] is handled for today" + real next-person line), Copilot search, all links.
+
+## J. What the data cannot honestly support
+
+- "Overnight" / "since yesterday" changes — no per-day change timestamps exist, so the
+  copy says "monitoring" instead.
+- "4 of today's 10 completed" — the queue is rebuilt dynamically with no stored daily
+  cohort; two separate counts are used instead.
+- Any likelihood-to-list or seller-intent number — not created.
