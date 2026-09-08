@@ -17,8 +17,8 @@
 - [x] Agent contact channels: server-authoritative Call/Text/Email eligibility (shared contact-channels model, role-specific policy)
 
 ## Agent Daily Intelligence (Today)
-- [ ] Additive recentOutcomes field on action queue
-- [ ] agent-daily helpers: daily read, handled-today, service phrasing
-- [ ] Rebuild agent-today.tsx hierarchy (no duplicate homeowners, next 5 + link)
-- [ ] Label opportunities accurately (Opportunities developing)
-- [ ] Tests + typecheck
+- [x] Additive recentOutcomes field on action queue
+- [x] agent-daily helpers: daily read, handled-today, service phrasing
+- [x] Rebuild agent-today.tsx hierarchy (no duplicate homeowners, next 5 + link)
+- [x] Label opportunities accurately (Opportunities developing)
+- [x] Tests + typecheck
