@@ -141,6 +141,7 @@ export async function buildActionQueue(
     items: [],
     counts: { hot: 0, warm: 0, nurture: 0, engaged: 0, readyToContact: 0 },
     yesterday: { sent: 0, opened: 0, clicked: 0, replied: 0 },
+    recentOutcomes: [],
   };
 
   const scope = await resolveScope(supabase, userId, orgType);
@@ -332,6 +333,7 @@ export async function buildActionQueue(
     .sort((a, b) => b.rank - a.rank);
 
   const dayStart = new Date(Date.now() - DAY).toISOString();
+  const recentSince = new Date(Date.now() - 2 * DAY).toISOString();
   const y = { sent: 0, opened: 0, clicked: 0, replied: 0 };
   for (const e of events ?? []) {
     if (e.occurred_at < dayStart) continue;
@@ -351,6 +353,9 @@ export async function buildActionQueue(
       readyToContact: deduped.filter((i) => i.temperature === "hot" && !i.lastOutcome).length,
     },
     yesterday: y,
+    recentOutcomes: (outcomes ?? [])
+      .filter((o: any) => o.occurred_at && o.occurred_at >= recentSince)
+      .map((o: any) => ({ clientId: o.portfolio_client_id, occurredAt: o.occurred_at })),
   };
 }
 
