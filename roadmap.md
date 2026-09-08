@@ -22,3 +22,11 @@
 - [x] Rebuild agent-today.tsx hierarchy (no duplicate homeowners, next 5 + link)
 - [x] Label opportunities accurately (Opportunities developing)
 - [x] Tests + typecheck
+
+## Homeowner Home Intelligence (Home Today)
+- [ ] home-today.ts pure helpers + tests (what SuCasa sees, recent updates, health, invitations)
+- [ ] Rebuild /dashboard hierarchy (hero anchor, one coming-up card, quiet rows)
+- [ ] Recent updates only from real timestamps (docs, findings, value snapshots)
+- [ ] "What are you thinking about?" navigation-only, no intent capture
+- [ ] No new Premium query on dashboard
+- [ ] Reframe wording: home vault, home's story, ask SuCasa, home health
