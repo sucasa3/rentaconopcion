@@ -127,16 +127,53 @@ export function AgentToday() {
   }
 
   const best = items[cursor] ?? null;
-  const upNext = items.slice(cursor + 1, cursor + 4);
+  const upNext = items.slice(cursor + 1, cursor + 6);
+  const read = buildDailyRead(items.slice(cursor));
+  const handled = handledToday(queue?.recentOutcomes ?? []);
+  const monitored = clientCount;
+  const engagedCount = queue?.counts?.engaged ?? 0;
+  const lines = intelligenceLines({
+    monitored,
+    engaged: engagedCount,
+    worthAttention: items.length,
+    tasksDue,
+  });
+  const quiet = items.length === 0;
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const me = firstName(overview?.orgs?.[0]?.name ?? null);
 
   return (
-    <div className="space-y-8 px-4 pb-10 pt-5 sm:px-6">
+    <div className="space-y-9 px-4 pb-12 pt-6 sm:px-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Today</p>
-        <h1 className="mt-1.5 text-[1.75rem] font-semibold leading-tight tracking-tight sm:text-3xl">
-          {summary.headline}
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          Daily Intelligence
+        </p>
+        <h1 className="mt-2 text-[30px] font-semibold leading-[1.12] tracking-tight sm:text-[36px]">
+          {greeting}.
+          <span className="block text-muted-foreground">
+            {quiet ? "Your book is steady today." : "Your relationships are moving."}
+          </span>
         </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">{summary.supporting}</p>
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+          {quiet
+            ? `Nothing needs immediate attention. SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and will surface the next useful moment.`
+            : `SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and found ${items.length} relationship${items.length === 1 ? "" : "s"} worth your attention today.`}
+        </p>
+        <ul className="mt-4 space-y-1.5">
+          {lines.map((l) => (
+            <li key={l} className="flex gap-2 text-[13.5px] text-muted-foreground">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+              {l}
+            </li>
+          ))}
+        </ul>
+        {handled > 0 && (
+          <p className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-primary">
+            <CheckCircle2 className="h-4 w-4" /> {handled} relationship
+            {handled === 1 ? "" : "s"} handled today
+          </p>
+        )}
       </header>
 
       {mode === "aha" && best && (
@@ -158,46 +195,74 @@ export function AgentToday() {
         </div>
       )}
 
+      {!quiet && (
+        <section className="rounded-[28px] border border-primary/20 bg-primary/[0.05] p-5 shadow-soft sm:p-6">
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <Sparkles className="h-3.5 w-3.5" /> SuCasa daily read
+          </p>
+          <p className="mt-2.5 text-[16px] font-medium leading-relaxed">{read.sentence}</p>
+          <dl className="mt-5 space-y-3 border-t border-primary/15 pt-4">
+            {read.startHere && <Read label="Start here" value={read.startHere} strong />}
+            {read.why && <Read label="Why" value={read.why} />}
+            {read.beUsefulBy && <Read label="Be useful by" value={read.beUsefulBy} />}
+          </dl>
+        </section>
+      )}
+
       {best ? (
-        <BestMove
-          item={best}
-          onOutcome={(stage, note) =>
-            outcome.mutate({ opportunityId: best.opportunityId, stage, note })
-          }
-          pending={outcome.isPending}
-        />
+        <section className="space-y-2.5">
+          <SectionHeader title="Start here" />
+          <BestMove
+            item={best}
+            onOutcome={(stage, note) =>
+              outcome.mutate({ opportunityId: best.opportunityId, stage, note })
+            }
+            pending={outcome.isPending}
+          />
+        </section>
       ) : (
-        <div className="rounded-3xl border border-border/70 bg-card p-6 text-center shadow-soft">
+        <div className="rounded-3xl border border-primary/25 bg-primary/[0.05] p-6 text-center shadow-soft">
           <CheckCircle2 className="mx-auto h-7 w-7 text-primary" />
-          <p className="mt-2 font-semibold">You've worked today's list</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            SuCasa keeps watching your book and will surface the next moment.
+          <p className="mt-2 font-semibold">Your relationships are in good shape today</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            Nothing needs immediate attention. SuCasa is still monitoring{" "}
+            {monitored.toLocaleString()} homeowner{monitored === 1 ? "" : "s"} and will surface the
+            next useful moment.
           </p>
         </div>
       )}
 
       {upNext.length > 0 && (
         <section className="space-y-2.5">
-          <SectionHeader title="Next up" />
-          <ul className="space-y-2">
+          <SectionHeader title="Next relationships" />
+          <ul className="space-y-2.5">
             {upNext.map((item, i) => (
-              <li key={item.opportunityId}>
-                <button
-                  type="button"
-                  onClick={() => setCursor(cursor + 1 + i)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card px-4 py-3 text-left shadow-soft transition active:scale-[0.99]"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{item.name}</span>
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                      {item.why}
-                    </span>
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                </button>
-              </li>
+              <NextRelationship
+                key={item.opportunityId}
+                item={item}
+                rank={i + 2}
+                onFocus={() => setCursor(cursor + 1 + i)}
+                onAct={(channel) =>
+                  outcome.mutate({
+                    opportunityId: item.opportunityId,
+                    stage: "attempted",
+                    note:
+                      channel === "call"
+                        ? "Tapped call"
+                        : channel === "text"
+                          ? "Tapped text"
+                          : "Tapped email",
+                  })
+                }
+              />
             ))}
           </ul>
+          <Link
+            to="/agent/opportunities"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
+          >
+            View all relationships worth attention <ArrowRight className="h-4 w-4" />
+          </Link>
         </section>
       )}
 
@@ -212,22 +277,82 @@ export function AgentToday() {
         />
       )}
 
-      <section id="work-queue" className="scroll-mt-6 space-y-3">
-        <SectionHeader title="Who to contact today" />
-        <p className="-mt-1 text-sm text-muted-foreground">
-          Ranked by who's most ready to hear from you. Reach out, then tap what happened.
-        </p>
-        <ActionQueue kind="agent" />
-      </section>
-
       <MetricStrip
         people={clientCount}
         activated={overview?.counts?.activated ?? 0}
         opportunities={overview?.counts?.opportunities ?? 0}
+        engaged={engagedCount}
+        worthAttention={items.length}
         tasksDue={tasksDue}
         bookId={book?.id ?? null}
       />
     </div>
+  );
+}
+
+/** A single label/value line in the daily read. */
+function Read({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <div>
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        {label}
+      </dt>
+      <dd className={strong ? "mt-0.5 text-[17px] font-semibold" : "mt-0.5 text-[14px] leading-snug"}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+/**
+ * A lighter row for the relationships after Start Here: who, why now, the
+ * suggested play and the channels the server already permitted.
+ */
+function NextRelationship({
+  item,
+  rank,
+  onFocus,
+  onAct,
+}: {
+  item: QueueItem;
+  rank: number;
+  onFocus: () => void;
+  onAct: (channel: "call" | "text" | "email") => void;
+}) {
+  return (
+    <li className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
+      <button type="button" onClick={onFocus} className="w-full text-left">
+        <p className="text-xs text-muted-foreground">
+          #{rank} · {item.categoryLabel}
+        </p>
+        <p className="mt-1 truncate text-[17px] font-semibold tracking-tight">{item.name}</p>
+        <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{item.why}</p>
+        <p className="mt-2 text-sm font-medium">Suggested: {item.headline}</p>
+      </button>
+      <div className="mt-3">
+        <ChannelActions
+          options={item.channels ?? []}
+          phone={item.phone}
+          email={item.email}
+          size="sm"
+          onAct={onAct}
+          emailHref={`mailto:${item.email ?? ""}?subject=${encodeURIComponent(
+            item.draftSubject ?? "",
+          )}&body=${encodeURIComponent(item.draftBody ?? "")}`}
+        >
+          {item.portfolioId && (
+            <Link
+              to="/agent/portfolio/$id"
+              params={{ id: item.portfolioId }}
+              search={{ client: item.clientId } as never}
+              className="inline-flex min-h-[38px] items-center rounded-full border border-border/70 px-4 text-sm font-semibold"
+            >
+              View homeowner
+            </Link>
+          )}
+        </ChannelActions>
+      </div>
+    </li>
   );
 }
 
