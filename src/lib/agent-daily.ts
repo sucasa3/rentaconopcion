@@ -101,3 +101,91 @@ export function nextMovePrompt(nextName: string | null): string {
     ? `${firstName(nextName)} is your next best move.`
     : "That's your list for today.";
 }
+
+/**
+ * Distinct homeowners with a recorded touch that falls on today, evaluated in
+ * the viewer's own timezone. Counted across the whole book, so a homeowner who
+ * correctly leaves the queue after being worked still counts.
+ */
+export function handledToday(
+  outcomes: { clientId: string; occurredAt: string }[],
+  now: Date = new Date(),
+): number {
+  const sameDay = (iso: string) => {
+    const d = new Date(iso);
+    return (
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate()
+    );
+  };
+  const ids = new Set<string>();
+  for (const o of outcomes) if (o.occurredAt && sameDay(o.occurredAt)) ids.add(o.clientId);
+  return ids.size;
+}
+
+export interface DailyRead {
+  /** One calm sentence naming who to start with and, when present, who follows. */
+  sentence: string;
+  startHere: string | null;
+  /** Real reason from the engine — never generated here. */
+  why: string | null;
+  /** The existing agent play, phrased as a service to the homeowner. */
+  beUsefulBy: string | null;
+}
+
+/**
+ * The daily read is assembled only from fields the engine already produced.
+ * Nothing about the homeowner is invented or inferred here.
+ */
+export function buildDailyRead(
+  items: {
+    name: string;
+    why: string;
+    headline: string;
+    engagementLine?: string | null;
+  }[],
+): DailyRead {
+  const first = items[0];
+  if (!first) {
+    return {
+      sentence: "Nothing needs you right now. SuCasa keeps watching your relationships.",
+      startHere: null,
+      why: null,
+      beUsefulBy: null,
+    };
+  }
+  const second = items[1];
+  const sentence = second
+    ? `Your book is active today. Start with ${firstName(first.name)}, then ${firstName(second.name)}.`
+    : `Your book is active today. Start with ${firstName(first.name)}.`;
+  const why = [first.why, first.engagementLine].filter(Boolean).join(" · ");
+  return { sentence, startHere: first.name, why: why || first.why, beUsefulBy: first.headline };
+}
+
+/**
+ * The supporting intelligence lines under the greeting. Every line is dropped
+ * unless the underlying number is real and non-zero.
+ */
+export function intelligenceLines(args: {
+  monitored: number;
+  engaged: number;
+  worthAttention: number;
+  tasksDue: number;
+}): string[] {
+  const lines: string[] = [];
+  if (args.engaged > 0)
+    lines.push(`${args.engaged} homeowner${args.engaged === 1 ? "" : "s"} engaged recently`);
+  if (args.worthAttention > 0)
+    lines.push(
+      `${args.worthAttention} relationship${args.worthAttention === 1 ? "" : "s"} worth your attention`,
+    );
+  if (args.tasksDue > 0)
+    lines.push(
+      `${args.tasksDue} follow-up${args.tasksDue === 1 ? "" : "s"} ${args.tasksDue === 1 ? "is" : "are"} due`,
+    );
+  lines.push(
+    `${args.monitored.toLocaleString()} homeowner${args.monitored === 1 ? "" : "s"} being monitored`,
+  );
+  return lines;
+}
