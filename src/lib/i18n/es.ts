@@ -106,7 +106,7 @@ export const es: Dictionary = {
 
   // --------------------------------------------------------------- sections
   "page.care.title": "Cuidado del hogar",
-  "page.docs.title": "Tus documentos",
+  "page.docs.title": "La bóveda de tu casa",
   "page.money.title": "Valor y plusvalía",
   "page.assistant.title": "Asistente del Hogar",
 
