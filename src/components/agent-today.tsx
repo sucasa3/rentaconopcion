@@ -90,7 +90,6 @@ export function AgentToday() {
   const book = overview?.books?.[0] ?? null;
   const clientCount = overview?.counts?.people ?? 0;
   const tasksDue = tasks?.openCount ?? 0;
-  const summary = buildSummary(items, tasksDue);
 
   const outcomeFn = useServerFn(logOutcome);
   const outcome = useMutation({
