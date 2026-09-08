@@ -57,23 +57,28 @@ const OUTCOMES = [
 ] as const;
 
 /**
- * One homeowner, one screenful of decision. Collapsed it answers who, why now,
- * what to do and what to say; everything else lives behind the disclosure.
+ * One homeowner, one screenful of decision. Collapsed it answers who, why now
+ * and what to do; the opener, facts and permissions live behind disclosure.
+ *
+ * `spotlight` is the "Start here" presentation — same data, more room. It never
+ * changes ranking; the caller decides who is first.
  */
 export function LenderContactCard({
   person,
   rank,
   onBrief,
+  spotlight = false,
 }: {
   person: Person;
   rank: number;
   onBrief: () => void;
+  spotlight?: boolean;
 }) {
   const qc = useQueryClient();
   const outcomeFn = useServerFn(logLenderOutcome);
   const [open, setOpen] = useState(false);
   const [logging, setLogging] = useState(false);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<{ text: string; nextStep?: string | null } | null>(null);
 
   const permissionFn = useServerFn(setOutreachPermissions);
   const permission = useMutation({
@@ -90,9 +95,15 @@ export function LenderContactCard({
     mutationFn: (stage: string) =>
       outcomeFn({ data: { clientId: person.id, stage: stage as never } }),
     onSuccess: (res: any) => {
-      setDone(res?.confirmation ?? "Logged.");
+      setDone({
+        text: res?.confirmation ?? "Outcome recorded.",
+        nextStep:
+          res?.nextStep && res?.dueAt
+            ? `${res.nextStep} · due ${new Date(res.dueAt).toLocaleDateString()}`
+            : null,
+      });
       setLogging(false);
-      toast.success(res?.confirmation ?? "Logged");
+      toast.success(res?.confirmation ?? "Outcome recorded");
       qc.invalidateQueries({ queryKey: ["lender-workspace"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -116,9 +127,10 @@ export function LenderContactCard({
       className={cn(
         "overflow-hidden rounded-[28px] border bg-card shadow-soft transition duration-200 active:scale-[0.995]",
         t.card,
+        spotlight && "border-primary/25 ring-1 ring-primary/10",
       )}
     >
-      <div className="p-5">
+      <div className={cn("p-5", spotlight && "sm:p-6")}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
             <span
@@ -139,28 +151,35 @@ export function LenderContactCard({
           </span>
         </div>
 
-        <h3 className="mt-3 text-[22px] font-semibold leading-tight tracking-tight">
+        <h3
+          className={cn(
+            "mt-3 font-semibold leading-tight tracking-tight",
+            spotlight ? "text-[28px]" : "text-[21px]",
+          )}
+        >
           {person.name}
         </h3>
         <p className="mt-1 text-[15px] leading-snug text-muted-foreground">
           {person.whyToday} {person.urgencyReason}
         </p>
 
-        <div className="mt-4 rounded-2xl bg-secondary/50 p-3.5">
+        <div className={cn("rounded-2xl bg-secondary/50 p-3.5", spotlight ? "mt-4" : "mt-3")}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Next best action
+            Recommended
           </p>
           <p className="mt-0.5 text-[15px] font-semibold leading-snug">
             {person.recommendedAction}
           </p>
         </div>
 
-        <div className="mt-3 rounded-2xl border border-border/60 bg-background/60 p-3.5">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            <Quote className="h-3 w-3" /> Suggested opener
-          </p>
-          <p className="mt-1 text-[15px] leading-relaxed">{person.opener}</p>
-        </div>
+        {spotlight && (
+          <div className="mt-3 rounded-2xl border border-border/60 bg-background/60 p-3.5">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <Quote className="h-3 w-3" /> Suggested opener
+            </p>
+            <p className="mt-1 text-[15px] leading-relaxed">{person.opener}</p>
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Channel
@@ -193,23 +212,36 @@ export function LenderContactCard({
           <button
             type="button"
             onClick={onBrief}
-            className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-full border border-primary/30 bg-primary/8 px-4 text-sm font-semibold text-primary transition active:scale-[0.98]"
+            className="inline-flex min-h-[44px] flex-1 flex-col items-center justify-center rounded-2xl border border-primary/30 bg-primary/8 px-4 py-1.5 text-primary transition active:scale-[0.98]"
           >
-            <FileText className="h-4 w-4" /> 30-second brief
+            <span className="flex items-center gap-1.5 text-sm font-semibold">
+              <FileText className="h-4 w-4" /> Prepare me
+            </span>
+            <span className="text-[11px] font-medium text-primary/70">
+              30-second relationship brief
+            </span>
           </button>
           <button
             type="button"
             onClick={() => setLogging((v) => !v)}
-            className="min-h-[42px] rounded-full border border-border px-4 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]"
+            className="min-h-[44px] rounded-2xl border border-border px-4 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]"
           >
             Log outcome
           </button>
         </div>
 
         {done && (
-          <p className="mt-3 flex items-start gap-1.5 text-sm text-growth">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> {done}
-          </p>
+          <div className="mt-3 rounded-2xl border border-growth/30 bg-growth/8 p-3.5">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-growth">
+              <CheckCircle2 className="h-4 w-4 shrink-0" /> Relationship handled
+            </p>
+            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{done.text}</p>
+            {done.nextStep && (
+              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+                {done.nextStep}
+              </p>
+            )}
+          </div>
         )}
 
         {logging && (

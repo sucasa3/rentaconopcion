@@ -564,6 +564,28 @@ export async function readLenderWorkspace(
     deliveryCounts[e.event_type] = (deliveryCounts[e.event_type] ?? 0) + (e.quantity ?? 1);
   }
 
+  // Relationships handled today: distinct named homeowners with a recorded
+  // outcome dated today. Counted across the whole book, never only the current
+  // queue — logging an outcome legitimately removes someone from the queue and
+  // that must not erase the fact that they were handled.
+  const visibleIds = new Set(visible.map((v) => v.id));
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const handledIds = new Set<string>();
+  for (const o of (outcomes ?? []) as any[]) {
+    if (!o.occurred_at || !visibleIds.has(o.portfolio_client_id)) continue;
+    if (new Date(o.occurred_at).getTime() >= startOfDay.getTime())
+      handledIds.add(o.portfolio_client_id);
+  }
+
+  // Greeting name only — nothing else about the signed-in user is returned.
+  const { data: me } = await admin()
+    .from("profiles")
+    .select("full_name")
+    .eq("id", userId)
+    .maybeSingle();
+  const lenderFirstName = ((me as any)?.full_name ?? "").trim().split(/\s+/)[0] || null;
+
   // Prospecting is suppressed once a relationship is in a live workflow, but a
   // scheduled administrative step still surfaces — that is real work, not a pitch.
   const dueNow = (v: LenderClientRow) =>
@@ -583,15 +605,21 @@ export async function readLenderWorkspace(
 
   return {
     org: { id: scope.orgId, name: scope.orgName, isManager: scope.isManager },
+    lender: { firstName: lenderFirstName },
     books: scope.books,
     metrics: {
       homeownersMonitored: rows.length,
+      /** Number of signals/review opportunities — NOT a count of people. */
       changesDetected: visible.reduce((n, v) => n + v.reviews.length, 0),
+      /** Distinct homeowners carrying at least one signal. */
+      relationshipsWithSignals: visible.filter((v) => v.reviews.length > 0).length,
       reviewOpportunities: queue.length,
       askedToConnect: askedToConnect.length,
       engagedThisMonth: visible.filter((v) => v.engagedRecently).length,
       followUpsDue,
       needsAttentionToday: daily.length,
+      /** Distinct named homeowners with an outcome recorded today, book-wide. */
+      relationshipsHandledToday: handledIds.size,
       archived: archivedCount,
     },
     counts: {
