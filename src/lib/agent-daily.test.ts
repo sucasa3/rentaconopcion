@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDailyRead,
   buildSummary,
   firstName,
   firstRunMode,
+  handledToday,
   hasNoContactRoute,
+  intelligenceLines,
   nextMovePrompt,
 } from "./agent-daily";
 
@@ -80,5 +83,56 @@ describe("copy helpers", () => {
   it("hands off to the next person", () => {
     expect(nextMovePrompt("Ana Ruiz")).toBe("Ana is your next best move.");
     expect(nextMovePrompt(null)).toBe("That's your list for today.");
+  });
+});
+
+describe("handledToday", () => {
+  it("counts distinct homeowners touched today in the viewer's timezone", () => {
+    const now = new Date("2026-09-08T22:00:00");
+    const iso = (d: string) => new Date(d).toISOString();
+    expect(
+      handledToday(
+        [
+          { clientId: "a", occurredAt: iso("2026-09-08T09:00:00") },
+          { clientId: "a", occurredAt: iso("2026-09-08T15:00:00") },
+          { clientId: "b", occurredAt: iso("2026-09-08T11:00:00") },
+          { clientId: "c", occurredAt: iso("2026-09-07T11:00:00") },
+        ],
+        now,
+      ),
+    ).toBe(2);
+  });
+
+  it("is zero with no touches", () => {
+    expect(handledToday([])).toBe(0);
+  });
+});
+
+describe("buildDailyRead", () => {
+  it("names the first two people and reuses engine copy only", () => {
+    const r = buildDailyRead([
+      { name: "Maria Rodriguez", why: "Equity milestone", headline: "Send a market + equity update", engagementLine: "Opened your last email" },
+      { name: "David Hernandez", why: "Permit activity", headline: "Ask about the project" },
+    ]);
+    expect(r.sentence).toContain("Maria");
+    expect(r.sentence).toContain("David");
+    expect(r.beUsefulBy).toBe("Send a market + equity update");
+    expect(r.why).toContain("Opened your last email");
+  });
+
+  it("stays calm when nothing is queued", () => {
+    const r = buildDailyRead([]);
+    expect(r.startHere).toBeNull();
+    expect(r.sentence).toContain("keeps watching");
+  });
+});
+
+describe("intelligenceLines", () => {
+  it("drops zero metrics and always states what is monitored", () => {
+    const lines = intelligenceLines({ monitored: 426, engaged: 0, worthAttention: 8, tasksDue: 1 });
+    expect(lines.some((l) => l.includes("engaged"))).toBe(false);
+    expect(lines).toContain("8 relationships worth your attention");
+    expect(lines).toContain("1 follow-up is due");
+    expect(lines[lines.length - 1]).toContain("426 homeowners being monitored");
   });
 });

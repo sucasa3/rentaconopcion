@@ -15,3 +15,10 @@
 - [x] QA: full journey + mobile + email clients
 
 - [x] Agent contact channels: server-authoritative Call/Text/Email eligibility (shared contact-channels model, role-specific policy)
+
+## Agent Daily Intelligence (Today)
+- [x] Additive recentOutcomes field on action queue
+- [x] agent-daily helpers: daily read, handled-today, service phrasing
+- [x] Rebuild agent-today.tsx hierarchy (no duplicate homeowners, next 5 + link)
+- [x] Label opportunities accurately (Opportunities developing)
+- [x] Tests + typecheck
