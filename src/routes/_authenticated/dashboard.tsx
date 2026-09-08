@@ -46,7 +46,7 @@ import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
 import { listValueSnapshots } from "@/lib/home-timeline.functions";
 import { useHomeIntel } from "@/hooks/use-home-intel";
-import { useT, useLocale } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -81,8 +81,7 @@ function money(n: number | null | undefined): string {
 function Dashboard() {
   useLogOnMount("value_viewed");
   const navigate = useNavigate();
-  const t = useT();
-  const locale = useLocale();
+  const { t, language } = useLanguage();
 
   const [userId, setUserId] = useState<string | null | undefined>(undefined);
   const [profileAddr, setProfileAddr] = useState<string | null>(null);
@@ -296,7 +295,7 @@ function Dashboard() {
                       className="flex flex-wrap items-baseline gap-x-2 text-[14px] text-muted-foreground"
                     >
                       <span className="text-foreground">{line(u.line)}</span>
-                      <span className="text-[12px]">{updateDate(u.at, locale)}</span>
+                      <span className="text-[12px]">{updateDate(u.at, language)}</span>
                     </li>
                   ))}
                 </ul>
@@ -428,7 +427,7 @@ function Dashboard() {
               </p>
               <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold text-primary">
                 <Link to="/documents">{t("dash.docs.action_add")}</Link>
-                <Link to="/account">{t("nav.account")}</Link>
+                <Link to="/home-care">{t("home.health.cta")}</Link>
               </div>
             </section>
           )}
