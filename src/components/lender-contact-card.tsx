@@ -95,9 +95,15 @@ export function LenderContactCard({
     mutationFn: (stage: string) =>
       outcomeFn({ data: { clientId: person.id, stage: stage as never } }),
     onSuccess: (res: any) => {
-      setDone(res?.confirmation ?? "Logged.");
+      setDone({
+        text: res?.confirmation ?? "Outcome recorded.",
+        nextStep:
+          res?.nextStep && res?.dueAt
+            ? `${res.nextStep} · due ${new Date(res.dueAt).toLocaleDateString()}`
+            : null,
+      });
       setLogging(false);
-      toast.success(res?.confirmation ?? "Logged");
+      toast.success(res?.confirmation ?? "Outcome recorded");
       qc.invalidateQueries({ queryKey: ["lender-workspace"] });
     },
     onError: (e: Error) => toast.error(e.message),
