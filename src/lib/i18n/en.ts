@@ -540,6 +540,8 @@ export const en = {
   "home.thinking.value": "Curious about my value",
   "home.thinking.moving": "Thinking about moving",
   "home.thinking.unsure": "Not sure yet",
+  "plan.done_toast": "Taken care of",
+  "plan.done_toast_sub": "Your Home Plan has been updated.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

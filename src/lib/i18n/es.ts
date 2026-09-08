@@ -565,4 +565,6 @@ export const es: Dictionary = {
   "home.thinking.value": "Curiosidad por mi valor",
   "home.thinking.moving": "Pensando en mudarme",
   "home.thinking.unsure": "Aún no lo sé",
+  "plan.done_toast": "Atendido",
+  "plan.done_toast_sub": "Tu Plan de Casa se ha actualizado.",
 };
