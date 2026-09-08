@@ -69,6 +69,7 @@ export function AgentToday() {
   });
 
   const [cursor, setCursor] = useState(0);
+  const [handledNote, setHandledNote] = useState<{ name: string; next: string } | null>(null);
   const [seen, setSeen] = useState(true);
   useEffect(() => {
     try {
@@ -100,6 +101,10 @@ export function AgentToday() {
       const next = items[cursor + 1] ?? null;
       toast.success(outcomeAcknowledgement(done?.name ?? "", outcomeLabel(v.stage, "agent")), {
         description: nextMovePrompt(next?.name ?? null),
+      });
+      setHandledNote({
+        name: firstName(done?.name ?? ""),
+        next: nextMovePrompt(next?.name ?? null),
       });
       setCursor((c) => Math.min(c + 1, Math.max(items.length - 1, 0)));
       qc.invalidateQueries({ queryKey: ["action-queue", "agent"] });
@@ -142,7 +147,6 @@ export function AgentToday() {
   const quiet = items.length === 0;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const me = firstName(overview?.orgs?.[0]?.name ?? null);
 
   return (
     <div className="space-y-9 px-4 pb-12 pt-6 sm:px-6">
@@ -208,6 +212,18 @@ export function AgentToday() {
             {read.beUsefulBy && <Read label="Be useful by" value={read.beUsefulBy} />}
           </dl>
         </section>
+      )}
+
+      {handledNote && (
+        <div className="animate-in fade-in rounded-3xl border border-primary/30 bg-primary/[0.06] p-4">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+            <CheckCircle2 className="h-4 w-4" /> {handledNote.name} is handled for today
+          </p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            Your touch was recorded. SuCasa keeps monitoring the relationship and will surface it
+            again when another meaningful moment develops. {handledNote.next}
+          </p>
+        </div>
       )}
 
       {best ? (
