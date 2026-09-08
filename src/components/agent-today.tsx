@@ -20,9 +20,11 @@ import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
 import { OUTCOME_STAGES, TEMPERATURE_META, outcomeLabel, type OutcomeStage } from "@/lib/next-best-action";
 import {
-  buildSummary,
+  buildDailyRead,
   firstName,
   firstRunMode,
+  handledToday,
+  intelligenceLines,
   nextMovePrompt,
   outcomeAcknowledgement,
 } from "@/lib/agent-daily";
