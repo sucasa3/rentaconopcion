@@ -1,51 +1,45 @@
-# Agent communication channels: recommendation vs. permission
+# Homepage: serve all three audiences — homeowner, lender (#1 customer), agent
 
-## Why some clients only show "Write email"
+## The problem with today's homepage
 
-Two separate causes, both confirmed in the code:
+Every section speaks only to the homeowner. Lenders — the primary paying customer — have no presence above the fold or anywhere on the page. Real estate agents appear only as a generic "Are you a pro?" card mixed in with plumbers and HVAC. The homepage sells a home-organization app, not the relationship-intelligence network lenders and agents actually pay for.
 
-1. The agent card offers a channel only if it is the single channel SuCasa recommends. Ana ("send a home value update") therefore shows email only; Miguel ("offer a trusted pro") shows Text plus email. Call and Text are being hidden purely because they aren't the recommendation.
-2. Agent-side availability is currently inferred from nothing more than "is there a phone/email on the record". That is the wrong test in the other direction too: contact data is not permission.
+## Approach
 
-The lender side already separates these properly: it evaluates each of Call, Text and Email independently against relationship, recorded permission, suppression flags and contact data, and returns a reason when a channel is unavailable.
+Keep the homeowner value story (homeowners activate Home Records — that's the asset lenders and agents pay to serve), but restructure the page so each of the three audiences immediately sees their path. No new backend, no changes to app logic — presentation and routing only. Existing `/lenders`, `/agents`, and `/partner` pages remain the destinations; the homepage becomes the front door for all three.
 
-## What we'll build
+## Changes (all in `src/routes/index.tsx` + header nav)
 
-**One shared channel-eligibility model, role-correct policy underneath.**
+### 1. Hero — broaden the promise, add audience paths
+- Keep the homeowner headline and primary CTA ("Create Free Home Profile") — homeowner activation is still the top-of-funnel.
+- Add a secondary audience row directly under the CTAs: three quiet text links — "For lenders →", "For agents →", "For service pros →" linking to `/lenders`, `/agents`, `/partner`.
+- Adjust the subheadline one notch: from "manage your home…" to "the trusted record of your home — connecting you with the professionals who help you own it with confidence." Signals the network without losing the homeowner.
 
-A single interface used by every professional surface:
+### 2. New section: "One home. Three relationships." (after How It Works)
+A three-column audience section — the core of the fix:
+- **Homeowners** — "Know your home." Value, equity, care, documents, trusted pros. CTA: Create Free Home Profile.
+- **Lenders** — "Know your book." Who to contact today, why now, what to say — with homeowner-permissioned intelligence. CTA: See SuCasa for lenders → `/lenders`.
+- **Agents** — "Know your clients." Signals when someone in your book is ready to move — before they call a portal. CTA: See SuCasa for agents → `/agents`.
+- Lender card is visually primary (brand gradient or featured treatment) since lenders are the #1 revenue customer; homeowner and agent flank it.
 
-```text
-getAvailableContactChannels({ role, access, permissions, contact, recommended })
-  -> { call:  { available, recommended, unavailableReason },
-       text:  { available, recommended, unavailableReason },
-       email: { available, recommended, unavailableReason } }
-```
+### 3. Reframe the Intelligence Preview
+Today it shows generic $482,300/$186,000/$14.8k tiles. Keep the tiles but add one line of copy framing them as "the Home Record every party works from" — reinforcing the shared-record positioning rather than a consumer gadget.
 
-- The shape and the UX are identical for agents and lenders.
-- The policy behind each channel stays role-specific. Agent rules are not replaced with lender rules, and agent access is not widened to match.
-- Recommendation only sets emphasis. Availability comes from permission plus contact data.
+### 4. Fix the Pro Network card
+Split the current single "Are you a pro?" card so real estate agents are no longer lumped with service pros: service pros keep the founding-partner card (`/partner`); agents get their own line pointing to `/agents`.
 
-**Agent channel policy (centralised, not invented):** for each channel, in order — homeowner opt-out wins; then the relationship must permit named individual contact; then the required contact detail must exist; then an explicit recorded permission, or the agent's own documented client relationship, permits a manual one-to-one touch. Automated/campaign sending still requires explicit recorded permission, unchanged. This mirrors the structure already proven on the lender side while reading the agent's own relationship and consent records.
+### 5. Header nav
+Add "Lenders" and "Agents" links to the site header so the two paying audiences are one tap away from anywhere on the site (desktop nav + mobile menu).
 
-**On the card:** the recommended channel is the filled primary button; other eligible channels sit beside it as secondary. Unavailable channels are not spelled out in three disabled buttons — the card stays clean, with a small, tappable "Why?" affordance revealing the specific reason ("Phone number not available", "Text permission not available", "Homeowner opted out of texts"). When nothing is available, a single polished line replaces the action row instead of an empty area.
+### 6. Final CTA
+Keep homeowner-focused ("Start your free Home Profile") but add a small secondary line: "Lender or agent? Talk to us →" linking to `/lenders`.
 
-**Outcome logging is unchanged.** Call records a call attempt, Text a text attempt, Email an email activity — exactly as today. Ranking and recommendation semantics are untouched.
-
-**Applied everywhere on the agent side** in the same change: Your Best Move, Next Up, Who to contact today, contact cards, opportunity drawers, listing opportunity detail, suggested outreach, generated briefs with actions, and the first-run walkthrough when it uses a real homeowner.
+## What stays the same
+- Hero visual (`HomeHero`), How It Works cards, Benefits grid, Services grid, Testimonials — content and styling unchanged.
+- No changes to `/lenders`, `/agents`, `/partner` page content in this pass (they already exist as destinations).
+- No changes to any app logic, permissions, or data.
 
 ## Technical notes
-
-- New `src/lib/contact-channels.ts` — the shared, pure, client-safe model above, with a role-dispatched policy. Lender policy delegates to the existing `channelDecision`/`allowedChannels` in `src/lib/lender-access.ts` (no behavior change, no duplicate rules). Agent policy is a sibling function reading the agent org's relationship basis and `outreach_channel_permissions` rows (already org-scoped, so agent orgs are supported with no schema change).
-- `src/lib/nba.server.ts` — the queue item gains permission/suppression fields and contact-detail flags alongside the existing recommended `channel`, so the client can evaluate all three channels without a second round trip. Ranking untouched.
-- `src/lib/agent-daily.ts` — `availableChannels()` is replaced by a call into the shared model; the current "phone exists therefore callable" logic is removed.
-- `src/components/action-queue.tsx`, `src/components/agent-today.tsx`, agent opportunity drawer/detail and brief action rows — render the shared model: primary = recommended, secondary = other eligible, subtle "Why?" for the rest.
-- `src/components/lender-contact-card.tsx` moves onto the same rendering model with identical resulting permissions.
-- Tests: new `src/lib/contact-channels.test.ts` covering cases A–I (all eligible; phone only; email only; phone present but text not permitted; opt-out; recommended-email with call/text eligible; recommended-text with all eligible; no usable channel; same homeowner seen by agent vs lender giving role-correct results). Existing `lender-access.test.ts` and `agent-daily.test.ts` stay green to prove no rule drift.
-- No schema change expected.
-
-## Explicitly not doing
-
-- Not weakening any agent access rule to match the lender's.
-- Not creating a second permission system — the existing gate is centralised, not copied.
-- Not enabling any automatic outbound communication.
+- All edits confined to `src/routes/index.tsx` and `src/components/site-header.tsx`.
+- Semantic tokens only (`primary`, `growth`, `gradient-brand`, `shadow-elevated`); mobile-first, staggered fade-in consistent with existing sections.
+- Update index `head()` title/description to reflect the multi-audience positioning (e.g. "SuCasa — The trusted record of every home" / description mentioning homeowners, lenders, and agents) while staying under SEO limits.
