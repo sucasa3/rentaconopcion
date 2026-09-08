@@ -121,6 +121,12 @@ export interface QueueResult {
     readyToContact: number;
   };
   yesterday: { sent: number; opened: number; clicked: number; replied: number };
+  /**
+   * Recorded touches from the last 48 hours, for this professional's own
+   * visible homeowners. The client turns these into a "handled today" count in
+   * the viewer's own timezone — no server-local midnight is assumed.
+   */
+  recentOutcomes: { clientId: string; occurredAt: string }[];
 }
 
 const DAY = 24 * 60 * 60 * 1000;
