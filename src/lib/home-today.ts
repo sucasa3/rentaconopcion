@@ -62,15 +62,6 @@ export function whatSuCasaSees(f: HomeFacts): Line[] {
       key: f.findings === 1 ? "home.sees.findings_one" : "home.sees.findings",
       params: { count: f.findings },
     });
-  } else if (!f.hasInspection) {
-    lines.push({ key: "home.sees.no_inspection" });
-  }
-
-  if (lines.length < 3 && f.equityPct != null) {
-    lines.push({
-      key: "home.sees.equity",
-      params: { pct: Math.round(f.equityPct * 100) },
-    });
   }
 
   if (lines.length === 0) lines.push({ key: "home.sees.steady" });
