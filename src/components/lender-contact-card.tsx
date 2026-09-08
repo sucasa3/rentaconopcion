@@ -57,23 +57,28 @@ const OUTCOMES = [
 ] as const;
 
 /**
- * One homeowner, one screenful of decision. Collapsed it answers who, why now,
- * what to do and what to say; everything else lives behind the disclosure.
+ * One homeowner, one screenful of decision. Collapsed it answers who, why now
+ * and what to do; the opener, facts and permissions live behind disclosure.
+ *
+ * `spotlight` is the "Start here" presentation — same data, more room. It never
+ * changes ranking; the caller decides who is first.
  */
 export function LenderContactCard({
   person,
   rank,
   onBrief,
+  spotlight = false,
 }: {
   person: Person;
   rank: number;
   onBrief: () => void;
+  spotlight?: boolean;
 }) {
   const qc = useQueryClient();
   const outcomeFn = useServerFn(logLenderOutcome);
   const [open, setOpen] = useState(false);
   const [logging, setLogging] = useState(false);
-  const [done, setDone] = useState<string | null>(null);
+  const [done, setDone] = useState<{ text: string; nextStep?: string | null } | null>(null);
 
   const permissionFn = useServerFn(setOutreachPermissions);
   const permission = useMutation({
