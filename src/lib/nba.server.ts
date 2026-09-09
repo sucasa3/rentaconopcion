@@ -18,6 +18,9 @@ import {
 import { categoryLabel } from "@/lib/opportunities";
 import { evaluateAgentChannels, type ChannelOption } from "@/lib/contact-channels";
 import { MODEL_LIGHT } from "@/lib/documents-ai.server";
+import { clientFactsFor } from "@/lib/client-facts.server";
+import { emptyClientFacts, type ClientFacts } from "@/lib/client-facts";
+import { buildNarrative, narrativeFactSheet, type Narrative } from "@/lib/opportunity-narrative";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
