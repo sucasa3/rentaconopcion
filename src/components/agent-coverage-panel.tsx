@@ -25,7 +25,7 @@ type Filter = "all" | "complete" | "partial" | "missing" | "no_address";
 
 const STATUS_META: Record<string, { label: string; tone: string }> = {
   complete: { label: "Complete", tone: "bg-growth/15 text-growth border-growth/40" },
-  partial: { label: "Partial", tone: "bg-amber-500/10 text-amber-700 border-amber-500/40" },
+  partial: { label: "Partial", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
   missing: { label: "Not pulled", tone: "bg-secondary text-muted-foreground border-border" },
   no_address: { label: "No address", tone: "bg-destructive/10 text-destructive border-destructive/30" },
 };
@@ -267,7 +267,7 @@ export function AgentCoveragePanel({ portfolioId }: { portfolioId: string }) {
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${
                         budget.cacheOnly || budget.pct >= budget.softCapPct
-                          ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                          ? "border-status-attention/40 bg-status-attention/10 text-status-attention"
                           : "border-border bg-secondary text-muted-foreground"
                       }`}
                       title="Property-records lookups included in this month's plan"

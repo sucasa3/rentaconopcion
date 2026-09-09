@@ -135,7 +135,7 @@ export function NextStepCard({
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
               {pro.rating != null && (
                 <>
-                  <Star className="h-3 w-3 fill-current text-amber-500" />
+                  <Star className="h-3 w-3 fill-current text-status-attention" />
                   {pro.rating} · {t("next.pro.reviews", { count: pro.reviewsCount ?? 0 })} ·{" "}
                 </>
               )}
