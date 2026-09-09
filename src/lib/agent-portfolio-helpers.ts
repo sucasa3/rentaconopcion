@@ -89,13 +89,13 @@ export function computeMoveScore(input: MoveScoreInput): MoveScore {
   const tenure = input.tenureYears;
   if (tenure != null) {
     let w = tenure >= 12 ? 22 : tenure >= 8 ? 16 : tenure >= 6 ? 10 : tenure >= 4 ? 5 : 0;
-    if (w > 0) signals.push({ kind: "tenure", label: `${Math.round(tenure)} yrs in home`, detail: tenure >= 8 ? "Past the typical 7–9 year move window for this market." : "Approaching the typical move window.", weight: w, tone: tenure >= 8 ? "warm" : "info" });
+    if (w > 0) signals.push({ kind: "tenure", label: `${Math.round(tenure)} yrs in home`, detail: tenure >= 8 ? "Past the typical 7–9 year window when owners often reassess. Worth a check-in, not a conclusion." : "Approaching the window when owners often reassess.", weight: w, tone: tenure >= 8 ? "warm" : "info" });
     score += w;
   }
   const eq = input.equityPct;
   if (eq != null) {
     const w = eq >= 0.6 ? 22 : eq >= 0.45 ? 16 : eq >= 0.3 ? 9 : 0;
-    if (w > 0) signals.push({ kind: "equity", label: `${Math.round(eq * 100)}% equity`, detail: input.equityDollars ? `About $${Math.round(input.equityDollars).toLocaleString()} of move-up down payment sitting in the house.` : "Enough equity to fund a move-up purchase.", weight: w, tone: eq >= 0.45 ? "warm" : "info" });
+    if (w > 0) signals.push({ kind: "equity", label: `${Math.round(eq * 100)}% equity`, detail: input.equityDollars ? `About $${Math.round(input.equityDollars).toLocaleString()} in estimated equity. Useful context for a home-value conversation.` : "Meaningful estimated equity — useful context for a home-value conversation.", weight: w, tone: eq >= 0.45 ? "warm" : "info" });
     score += w;
   }
   const permitYears = yearsSince(input.lastPermitDate);
@@ -117,7 +117,7 @@ export function computeMoveScore(input: MoveScoreInput): MoveScore {
   if (input.beds != null && input.livingSqft != null && input.beds <= 3 && input.livingSqft < 1500 && (tenure ?? 0) >= 6) {
     const w = 6;
     score += w;
-    signals.push({ kind: "outgrown", label: "Likely outgrown", detail: `${input.beds} bd / ${input.livingSqft.toLocaleString()} sqft after ${Math.round(tenure ?? 0)} years.`, weight: w, tone: "info" });
+    signals.push({ kind: "outgrown", label: "Possible move-up signal", detail: `${input.beds} bd / ${input.livingSqft.toLocaleString()} sqft after ${Math.round(tenure ?? 0)} years. May be worth a future-plans conversation.`, weight: w, tone: "info" });
   }
   score = Math.max(0, Math.min(100, Math.round(score)));
   const band: MoveScore["band"] = score >= 60 ? "hot" : score >= 38 ? "warm" : score >= 18 ? "nurture" : "hold";
@@ -159,8 +159,8 @@ export function draftOpener(name: string | null, score: MoveScore): string {
     case "listed_elsewhere": return `No outreach — ${first}'s home is represented. Keep sending value-only updates.`;
     case "expired_listing": return `Hi ${first} — I pulled the public record on your home and put together a short read on why it may not have sold, plus what the last 90 days of sales nearby suggest about pricing. Want me to send it over?`;
     case "renovation": return `Hi ${first} — I noticed the permitted work on your place. Most owners underprice that in a valuation. I ran an updated number for you.`;
-    case "equity": return `Hi ${first} — your equity position has moved a lot. I mapped what it would buy in a move-up right now. Interested in the one-pager?`;
-    case "tenure": return `Hi ${first} — you've been in the home a while and the block has repriced. Here's what your neighbors actually closed at.`;
+    case "equity": return `Hi ${first} — you\u2019ve built meaningful equity in the home. I thought you might be curious what it could be worth today. Want me to send a quick update?`;
+    case "tenure": return `Hi ${first} — you\u2019ve been in the home a while and the block has repriced. Want me to send what your neighbors actually closed at, and what that means for your options?`;
     default: return `Hi ${first} — here's your quarterly home value update with what sold nearby.`;
   }
 }

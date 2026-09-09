@@ -18,6 +18,9 @@ import {
 import { categoryLabel } from "@/lib/opportunities";
 import { evaluateAgentChannels, type ChannelOption } from "@/lib/contact-channels";
 import { MODEL_LIGHT } from "@/lib/documents-ai.server";
+import { clientFactsFor } from "@/lib/client-facts.server";
+import { emptyClientFacts, type ClientFacts } from "@/lib/client-facts";
+import { buildNarrative, narrativeFactSheet, type Narrative } from "@/lib/opportunity-narrative";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -109,6 +112,10 @@ export interface QueueItem {
   draftSubject: string | null;
   draftBody: string | null;
   shared: boolean;
+  /** Canonical fact snapshot — the only numbers any surface may display. */
+  facts: ClientFacts;
+  /** The one role-correct story for this homeowner. */
+  narrative: Narrative;
 }
 
 export interface QueueResult {
@@ -263,6 +270,19 @@ export async function buildActionQueue(
     (cachedActions ?? []).map((a: any) => [a.opportunity_id, a]),
   );
 
+  // Canonical facts for every homeowner in the queue. One read, one source —
+  // no surface below recomputes value, balance, equity, LTV or tenure.
+  const factsByClient = await clientFactsFor(supabase, rows as any[]);
+
+  // Every open category for a homeowner, so the narrative can pick ONE story
+  // instead of showing competing ones. Stored categories are untouched.
+  const categoriesByClient = new Map<string, string[]>();
+  for (const o of opps ?? []) {
+    const list = categoriesByClient.get(o.portfolio_client_id) ?? [];
+    if (!list.includes(o.category)) list.push(o.category);
+    categoriesByClient.set(o.portfolio_client_id, list);
+  }
+
   const items: QueueItem[] = [];
   for (const o of opps ?? []) {
     const c = clientById.get(o.portfolio_client_id);
@@ -281,7 +301,17 @@ export async function buildActionQueue(
     };
     const recipe = recipeFor(o.category, orgType);
     const draft = draftByOpp.get(o.id);
+    const facts = factsByClient.get(c.id) ?? emptyClientFacts(c.id);
+    const narrative = buildNarrative({
+      role: orgType === "agent" ? "agent" : "lender",
+      facts,
+      categories: categoriesByClient.get(c.id) ?? [o.category],
+      firstName: String(c.client_name ?? "").trim().split(/\s+/)[0] ?? null,
+      engagementLine,
+    });
     items.push({
+      facts,
+      narrative,
       opportunityId: o.id,
       orgId: o.org_id ?? scope.orgByBook.get(c.portfolio_id) ?? scope.orgIds[0]!,
       clientId: c.id,
@@ -291,17 +321,19 @@ export async function buildActionQueue(
       phone: c.client_phone ?? null,
       address: [c.address_line1, c.city, c.state].filter(Boolean).join(", ") || null,
       activated: Boolean(c.homeowner_id),
+      // Raw stored category is preserved; only the label shown to this role
+      // changes, so an agent never reads "HELOC opportunity".
       category: o.category,
-      categoryLabel: categoryLabel(o.category),
+      categoryLabel: narrative.headline,
       score: o.score ?? 0,
       strength: o.strength ?? "emerging",
       reasons: o.reasons ?? [],
       temperature: temperatureFor(rankInput),
       rank: rankScore(rankInput),
       channel: recipe.channel,
-      headline: recipe.headline,
-      ask: recipe.ask,
-      why: whyLine(o.reasons, recipe.ask),
+      headline: narrative.headline,
+      ask: narrative.howToBeUseful,
+      why: narrative.whyNow,
       engagedRecently: Boolean(engagementLine),
       engagementLine,
       lastContactAt: lastAt,
@@ -367,7 +399,10 @@ const DRAFT_SYSTEM = `You write short, warm outreach messages for a real-estate 
 
 Hard rules:
 - Never say the homeowner qualifies for, is eligible for, is approved for, or needs anything. Only suggest a conversation.
-- Never invent numbers. Use only the facts given.
+- Never invent, recompute or estimate a number. Use ONLY the facts given, exactly as given. You may round them conversationally. If a fact is missing, leave it out.
+- Never derive a new equity figure, loan-to-value or value. Never introduce a financial fact that is not listed.
+- Keep the recommendation you are given. Do not swap it for a different topic.
+- A real estate agent never recommends, describes or implies a loan product (HELOC, cash-out, refinance). If financing comes up, they suggest a licensed mortgage professional.
 - No pressure, no hype, no exclamation marks, no emoji.
 - 60-110 words for email, under 40 words for text.
 - Plain language a fifth grader can read.
@@ -382,6 +417,10 @@ export async function generateDraft(input: {
   reasons: string[];
   senderName: string | null;
   address: string | null;
+  /** Canonical snapshot — the only numbers the model may use. */
+  facts?: ClientFacts | null;
+  /** The decided story. The model paraphrases the seed; it never re-decides. */
+  narrative?: Narrative | null;
 }): Promise<{
   subject: string;
   body: string;
@@ -397,8 +436,20 @@ export async function generateDraft(input: {
     `Sender name: ${input.senderName ?? "their agent"}`,
     `Homeowner first name: ${firstName}`,
     input.address ? `Property: ${input.address}` : "",
-    `Conversation topic: ${categoryLabel(input.category)}`,
-    `Facts we may reference: ${input.reasons.slice(0, 3).join("; ") || "none"}`,
+    `Conversation topic: ${input.narrative?.headline ?? categoryLabel(input.category)}`,
+    input.narrative ? `Why now: ${input.narrative.whyNow}` : "",
+    input.narrative ? `How to be useful: ${input.narrative.howToBeUseful}` : "",
+    input.narrative
+      ? `Rewrite this opener naturally, keeping its meaning and every number exactly: ${input.narrative.openerSeed}`
+      : "",
+    input.facts
+      ? `The ONLY facts you may state: ${
+          Object.entries(narrativeFactSheet(input.facts))
+            .map(([k, v]) => `${k}: ${v}`)
+            .join("; ") || "none"
+        }`
+      : `Facts we may reference: ${input.reasons.slice(0, 3).join("; ") || "none"}`,
+    input.narrative?.complianceNote ? `Compliance: ${input.narrative.complianceNote}` : "",
   ]
     .filter(Boolean)
     .join("\n");

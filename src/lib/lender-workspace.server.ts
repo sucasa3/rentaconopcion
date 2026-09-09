@@ -323,23 +323,9 @@ export async function readLenderWorkspace(
   // The same cache the agent side reads. No provider call is made here, so this
   // costs nothing extra; it just lets the lender see real value/mortgage facts
   // instead of a loan-derived estimate.
-  const { normalizeAddress } = await import("@/lib/attom.server");
-  const { extractAvm, extractTax, extractMortgage, estimateLoanBalance } = await import(
-    "@/lib/valuation.server"
-  );
-  const addrKey = (c: any) =>
-    normalizeAddress(
-      [c.address_line1, c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),
-    );
-  const intelByAddress: Record<string, any> = {};
-  const addrKeys = [...new Set(rows.map(addrKey).filter(Boolean))];
-  for (let i = 0; i < addrKeys.length; i += 200) {
-    const { data: hits } = await admin()
-      .from("property_intel")
-      .select("address_normalized, avm, tax, mortgage")
-      .in("address_normalized", addrKeys.slice(i, i + 200));
-    for (const h of (hits ?? []) as any[]) intelByAddress[h.address_normalized] = h;
-  }
+  // Canonical facts — the same snapshot the agent side and every draft use.
+  const { clientFactsFor } = await import("@/lib/client-facts.server");
+  const factsByClient = await clientFactsFor(admin(), rows as any[]);
 
   // --- Per-homeowner classification + facts ---------------------------------
   const now = new Date();
@@ -376,16 +362,9 @@ export async function readLenderWorkspace(
     // Saved property records are whole dollars. Uploaded loan columns and the
     // opportunity helpers are already cents. Each is converted once, here, and
     // everything downstream works in canonical `Cents`.
-    const record = intelByAddress[addrKey(c)] ?? null;
-    const recAvm = record?.avm ? extractAvm(record.avm) : null;
-    const recTax = record?.tax ? extractTax(record.tax) : null;
-    const recMortgage = record?.mortgage ? extractMortgage(record.mortgage) : null;
-    const recordValue = centsFromDollars(
-      recAvm?.estimate ?? recTax?.marketTotal ?? recTax?.assessedTotal ?? null,
-    );
-    const recordBalance = centsFromDollars(
-      recMortgage ? estimateLoanBalance(recMortgage) : null,
-    );
+    const canonical = factsByClient.get(c.id) ?? null;
+    const recordValue = centsFromDollars(canonical?.value ?? null);
+    const recordBalance = centsFromDollars(canonical?.loanBalance ?? null);
     const valueSource = recordValue != null ? "property_record" : "loan_estimate";
 
     const balance = hasScope(access, "mortgage")
@@ -397,8 +376,19 @@ export async function readLenderWorkspace(
     const value = hasScope(access, "valuation")
       ? (recordValue ?? centsFromCents(estimatedValueCents(c.loan_amount_at_close_cents, months)))
       : null;
-    const equity = hasScope(access, "equity") ? subtractCents(value, balance) : null;
-    const ltv = value && balance ? Math.round((balance / value) * 1000) / 10 : null;
+    // Equity and LTV come from the canonical snapshot when we have a property
+    // record; the loan-derived fallback only fills in when we do not. Access
+    // scope gating is unchanged.
+    const canonicalEquity = centsFromDollars(canonical?.equityDollars ?? null);
+    const equity = hasScope(access, "equity")
+      ? (canonicalEquity ?? subtractCents(value, balance))
+      : null;
+    const ltv =
+      canonical?.ltvPct != null && recordValue != null
+        ? canonical.ltvPct
+        : value && balance
+          ? Math.round((balance / value) * 1000) / 10
+          : null;
     const loanAgeYears = c.close_date ? Math.round((months / 12) * 10) / 10 : null;
     const tenureYears = loanAgeYears;
     const dataGap =

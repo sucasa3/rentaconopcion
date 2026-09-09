@@ -324,8 +324,8 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       draftOpener,
     } = await import("@/lib/agent.server");
     const { computeEngagement, combineIntent } = await import("@/lib/engagement");
-    const { extractAvm, extractSales, extractMortgage, extractPermits, extractTax, estimateLoanBalance } =
-      await import("@/lib/valuation.server");
+    const { extractSales, extractPermits } = await import("@/lib/valuation.server");
+    const { factsFromRecord } = await import("@/lib/client-facts.server");
     const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
       "@/lib/maintenance-rules"
     );
@@ -349,35 +349,30 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
 
     const enriched = (clients ?? []).map((c: any) => {
       const intel = intelByAddr[addrKey(c)] ?? null;
-      const avm = intel?.avm ? extractAvm(intel.avm) : null;
       const sales = intel?.sales ? extractSales(intel.sales) : null;
-      const mortgage = intel?.mortgage ? extractMortgage(intel.mortgage) : null;
       const permits = intel?.permits ? extractPermits(intel.permits) : null;
-      const owner = intel?.owner ? extractOwnership(intel.owner) : null;
       const chars = intel?.detail ? extractCharacteristics(intel.detail) : null;
-      const assessedSummary = intel?.tax ? extractTax(intel.tax) : null;
-      const value =
-        avm?.estimate ?? assessedSummary?.marketTotal ?? assessedSummary?.assessedTotal ?? null;
-      const tax = intel?.tax ? extractTaxTrend(intel.tax, value) : null;
 
-      const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-      const equityDollars = value != null && balance != null ? value - balance : null;
-      const equityPct = value && equityDollars != null ? Math.max(0, equityDollars / value) : null;
+      // Canonical snapshot — value, balance, equity, LTV, tenure, size and tax
+      // are read from here and never recomputed on this surface.
+      const f = factsFromRecord(c, intel);
+      const value = f.value;
+      const balance = f.loanBalance;
+      const equityDollars = f.equityDollars;
+      const equityPct = f.equityPct;
+      const tenureYears = f.tenureYears;
+      const tax = { latestTaxAmount: f.taxAmount, taxChangePct: f.taxChangePct };
 
-      const lastSaleDate = sales?.lastSale?.date ?? c.close_date ?? null;
-      const tenureYears = lastSaleDate
-        ? (Date.now() - new Date(lastSaleDate).getTime()) / (365.25 * 24 * 3600 * 1000)
-        : null;
 
       const listing = listings[c.id] ?? null;
       const score = computeMoveScore({
         tenureYears,
         equityPct,
         equityDollars,
-        ownerOccupied: owner?.ownerOccupied ?? null,
-        lastPermitDate: permits?.lastPermitDate ?? null,
-        permitTotalValue: permits?.totalValue ?? null,
-        taxChangePct: tax?.taxChangePct ?? null,
+        ownerOccupied: f.ownerOccupied,
+        lastPermitDate: f.lastPermitDate,
+        permitTotalValue: f.permitTotalValue,
+        taxChangePct: f.taxChangePct,
         listing: listing
           ? {
               status: listing.status,
@@ -389,8 +384,8 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
               source: listing.source,
             }
           : null,
-        livingSqft: chars?.livingSqft ?? null,
-        beds: chars?.beds ?? null,
+        livingSqft: f.sqft,
+        beds: f.beds,
       });
 
       // Behavior layer: what the homeowner actually did lately.
@@ -401,8 +396,8 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         estimatedValue: value,
         loanBalance: balance,
         sellCostPct,
-        yearBuilt: chars?.yearBuilt ?? null,
-        lastPermitDate: permits?.lastPermitDate ?? null,
+        yearBuilt: f.yearBuilt,
+        lastPermitDate: f.lastPermitDate,
         tenureYears,
         hasIntel: !!intel,
         listing: listing as any,
@@ -477,15 +472,15 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         equity_dollars: equityDollars,
         equity_pct: equityPct,
         tenure_years: tenureYears,
-        last_sale_price: sales?.lastSale?.amount ?? null,
-        last_sale_date: sales?.lastSale?.date ?? null,
-        beds: chars?.beds ?? null,
-        baths: chars?.baths ?? null,
-        sqft: chars?.livingSqft ?? null,
-        year_built: chars?.yearBuilt ?? null,
-        owner_occupied: owner?.ownerOccupied ?? null,
-        permit_total_value: permits?.totalValue ?? null,
-        last_permit_date: permits?.lastPermitDate ?? null,
+        last_sale_price: f.lastSalePrice,
+        last_sale_date: f.lastSaleDate,
+        beds: f.beds,
+        baths: f.baths,
+        sqft: f.sqft,
+        year_built: f.yearBuilt,
+        owner_occupied: f.ownerOccupied,
+        permit_total_value: f.permitTotalValue,
+        last_permit_date: f.lastPermitDate,
         tax_amount: tax?.latestTaxAmount ?? null,
         tax_change_pct: tax?.taxChangePct ?? null,
         listing,
@@ -823,72 +818,79 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
       .eq("portfolio_client_id", data.clientId)
       .maybeSingle();
 
-    const {
-      extractOwnership,
-      extractCharacteristics,
-      extractTaxTrend,
-      computeMoveScore,
-    } = await import("@/lib/agent.server");
-    const { extractAvm, extractSales, extractMortgage, extractPermits, extractTax, estimateLoanBalance } =
-      await import("@/lib/valuation.server");
-    const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
-      "@/lib/maintenance-rules"
-    );
+    const { computeMoveScore } = await import("@/lib/agent.server");
+    const { extractSales, extractPermits } = await import("@/lib/valuation.server");
+    const { factsFromRecord } = await import("@/lib/client-facts.server");
+    const { narrativeFactSheet, buildNarrative } = await import("@/lib/opportunity-narrative");
 
-    const avm = intel?.avm ? extractAvm(intel.avm) : null;
     const sales = intel?.sales ? extractSales(intel.sales) : null;
-    const mortgage = intel?.mortgage ? extractMortgage(intel.mortgage) : null;
     const permits = intel?.permits ? extractPermits(intel.permits) : null;
-    const owner = intel?.owner ? extractOwnership(intel.owner) : null;
-    const chars = intel?.detail ? extractCharacteristics(intel.detail) : null;
-    const assessedSummary = intel?.tax ? extractTax(intel.tax) : null;
-    const value =
-      avm?.estimate ?? assessedSummary?.marketTotal ?? assessedSummary?.assessedTotal ?? null;
-    const tax = intel?.tax ? extractTaxTrend(intel.tax, value) : null;
-    const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-    const equity = value != null && balance != null ? value - balance : null;
-    const lastSaleDate = sales?.lastSale?.date ?? client.close_date ?? null;
-    const tenureYears = lastSaleDate
-      ? (Date.now() - new Date(lastSaleDate).getTime()) / (365.25 * 24 * 3600 * 1000)
-      : null;
+
+    // Canonical snapshot — identical to the roster, the Today card and every
+    // draft. This brief never derives its own value, equity or tenure.
+    const f = factsFromRecord(client as any, intel);
 
     const score = computeMoveScore({
-      tenureYears,
-      equityPct: value && equity != null ? equity / value : null,
-      equityDollars: equity,
-      ownerOccupied: owner?.ownerOccupied ?? null,
-      lastPermitDate: permits?.lastPermitDate ?? null,
-      permitTotalValue: permits?.totalValue ?? null,
-      taxChangePct: tax?.taxChangePct ?? null,
+      tenureYears: f.tenureYears,
+      equityPct: f.equityPct,
+      equityDollars: f.equityDollars,
+      ownerOccupied: f.ownerOccupied,
+      lastPermitDate: f.lastPermitDate,
+      permitTotalValue: f.permitTotalValue,
+      taxChangePct: f.taxChangePct,
       listing: listing as any,
-      livingSqft: chars?.livingSqft ?? null,
-      beds: chars?.beds ?? null,
+      livingSqft: f.sqft,
+      beds: f.beds,
+    });
+
+    // The one role-correct story, decided before any AI generation.
+    const { data: openOpps } = await context.supabase
+      .from("homeowner_opportunities")
+      .select("category")
+      .eq("portfolio_client_id", data.clientId)
+      .eq("state", "open");
+    const narrative = buildNarrative({
+      role: "agent",
+      facts: f,
+      categories: [...new Set((openOpps ?? []).map((o: any) => o.category))],
+      firstName: String(client.client_name ?? "").trim().split(/\s+/)[0] ?? null,
     });
 
     const facts = {
       owner: client.client_name,
       address: full,
-      estimatedValue: value,
+      primaryOpportunity: narrative.headline,
+      whyNow: narrative.whyNow,
+      whyItMatters: narrative.whyItMatters,
+      howToBeUseful: narrative.howToBeUseful,
+      supportingSignals: narrative.supportingSignals,
+      secondarySignals: narrative.secondarySignals,
+      openerSeed: narrative.openerSeed,
+      canonicalFacts: narrativeFactSheet(f),
       lastSale: sales?.lastSale ?? null,
-      tenureYears: tenureYears ? Math.round(tenureYears * 10) / 10 : null,
-      equity,
-      characteristics: chars,
       permits: permits?.events?.slice(0, 5) ?? [],
-      tax,
       listing: listing ?? null,
-      moveScore: score.score,
-      signals: score.signals.map((s: { label: string; detail: string }) => `${s.label}: ${s.detail}`),
     };
 
+    // Deterministic fallback: the decided story, no AI required.
+    const fallback = [
+      narrative.headline,
+      narrative.whyNow,
+      narrative.whyItMatters,
+      ...narrative.supportingSignals.map((s) => `• ${s}`),
+      ...narrative.secondarySignals.map((s) => `• ${s}`),
+      narrative.openerSeed,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) {
-      return { brief: score.signals.map((s: { label: string; detail: string }) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
-    }
+    if (!apiKey) return { brief: fallback, ai: false };
 
     const sys =
       data.language === "es"
-        ? "Eres un coach de ventas para agentes inmobiliarios. Responde en español, conciso, sin inventar datos."
-        : "You are a listing coach for a residential real estate agent. Be concise, specific, and never invent data that is not in the facts.";
+        ? "Eres un coach para agentes inmobiliarios. Responde en español, conciso. Nunca inventes ni recalcules cifras, y nunca recomiendes un producto de financiamiento."
+        : "You are a coach for a residential real estate agent. Be concise and specific. Never invent, recompute or estimate a number — use only the canonical facts given. An agent never recommends a loan product; if financing comes up, suggest a licensed mortgage professional.";
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -899,12 +901,13 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
           { role: "system", content: sys },
           {
             role: "user",
-            content: `Write a listing brief for this homeowner using ONLY these facts.
+            content: `Write a short client brief using ONLY these facts. The primary opportunity is already decided — keep it, do not substitute a different one.
 Sections:
-1) Why now (2 sentences)
-2) Three data-backed talking points (bullets, cite the numbers)
-3) One suggested outreach message (under 60 words, warm, no pressure)
-If the property is listed with another agent, say only that outreach must stay value-only.
+1) Why now (2 sentences, based on whyNow and whyItMatters)
+2) Three talking points drawn from supportingSignals and canonicalFacts (quote the numbers exactly as given; round only conversationally)
+3) One suggested outreach message (under 60 words, warm, no pressure) — a natural rewrite of openerSeed
+Mention any secondary signal briefly and separately, never as the main recommendation.
+Never recommend or describe a loan product. If the property is listed with another agent, say only that outreach must stay value-only.
 
 FACTS:
 ${JSON.stringify(facts, null, 2)}`,
@@ -912,9 +915,7 @@ ${JSON.stringify(facts, null, 2)}`,
         ],
       }),
     });
-    if (!res.ok) {
-      return { brief: score.signals.map((s: { label: string; detail: string }) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
-    }
+    if (!res.ok) return { brief: fallback, ai: false };
     const json: any = await res.json();
     return { brief: json?.choices?.[0]?.message?.content ?? "", ai: true, score: score.score };
   });

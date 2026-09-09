@@ -384,7 +384,8 @@ function BestMove({
   pending: boolean;
 }) {
   const meta = TEMPERATURE_META[item.temperature];
-  const opener = item.draftBody?.trim() || item.headline;
+  const n = item.narrative;
+  const opener = item.draftBody?.trim() || n?.openerSeed || item.headline;
 
   return (
     <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-primary/25 bg-card shadow-soft ring-1 ring-primary/10">
@@ -402,18 +403,49 @@ function BestMove({
             Why now
           </p>
           <p className="mt-1 text-sm leading-relaxed">{item.why}</p>
+          {n?.whyItMatters && (
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{n.whyItMatters}</p>
+          )}
           {item.engagementLine && (
             <p className="mt-1 text-sm font-medium text-primary">{item.engagementLine}</p>
           )}
         </div>
 
+        {n?.supportingSignals?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {n.supportingSignals.map((s) => (
+              <span
+                key={s}
+                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground"
+              >
+                {s}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             How to be useful
           </p>
-          <p className="mt-1 text-sm font-medium leading-relaxed">{item.headline}</p>
-          <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{item.ask}</p>
+          <p className="mt-1 text-sm font-medium leading-relaxed">{n?.howToBeUseful ?? item.ask}</p>
+          {n?.cta && (
+            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{n.cta}</p>
+          )}
         </div>
+
+        {n?.secondarySignals?.length ? (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Also worth knowing
+            </p>
+            {n.secondarySignals.map((s) => (
+              <p key={s} className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                {s}
+              </p>
+            ))}
+          </div>
+        ) : null}
 
 
         {opener && (
