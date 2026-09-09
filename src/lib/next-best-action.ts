@@ -16,13 +16,48 @@ export type Audience = "agent" | "lender";
 export type Channel = "call" | "text" | "email";
 export type Temperature = "hot" | "warm" | "nurture";
 
+/**
+ * Temperature is supporting metadata, never the loudest thing on a card.
+ * `tone` maps to the semantic system: opportunity (brand orange) for a live
+ * relationship moment, attention (amber) for this week, nurture (neutral
+ * blue-gray) for steady contact. `dot` is a small marker class, `text` the
+ * label colour — no filled pills, no traffic-light red/green.
+ */
 export const TEMPERATURE_META: Record<
   Temperature,
-  { label: string; hint: string; emoji: string; tone: "attention" | "growth" | "info" }
+  {
+    label: string;
+    hint: string;
+    emoji: string;
+    tone: "opportunity" | "attention" | "nurture";
+    dot: string;
+    text: string;
+  }
 > = {
-  hot: { label: "Hot", hint: "Contact today", emoji: "🔥", tone: "attention" },
-  warm: { label: "Warm", hint: "Contact this week", emoji: "🟡", tone: "growth" },
-  nurture: { label: "Nurture", hint: "Stay in the relationship", emoji: "🔵", tone: "info" },
+  hot: {
+    label: "Hot",
+    hint: "Contact today",
+    emoji: "",
+    tone: "opportunity",
+    dot: "bg-sucasa-orange",
+    text: "text-status-opportunity",
+  },
+  warm: {
+    label: "Warm",
+    hint: "Contact this week",
+    emoji: "",
+    tone: "attention",
+    dot: "bg-status-attention",
+    text: "text-status-attention",
+  },
+  nurture: {
+    label: "Nurture",
+    hint: "Stay in the relationship",
+    emoji: "",
+    tone: "nurture",
+    dot: "bg-status-nurture/60",
+    text: "text-status-nurture",
+  },
 };
 
 /** Statuses a person picks by hand after a touch. */
