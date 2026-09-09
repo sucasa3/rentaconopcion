@@ -149,32 +149,32 @@ export function AgentToday() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="space-y-9 px-4 pb-12 pt-6 sm:px-6">
-      <header>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-          Daily Intelligence
+    <div className="space-y-9 bg-surface-base px-4 pb-12 pt-6 sm:px-6">
+      <header className="-mx-4 rounded-b-[28px] border-b border-surface-warm-border bg-surface-warm px-4 pb-6 pt-1 sm:-mx-6 sm:px-6">
+        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          <OpportunityDot /> Daily Intelligence
         </p>
         <h1 className="mt-2 text-[30px] font-semibold leading-[1.12] tracking-tight sm:text-[36px]">
           {greeting}.
-          <span className="block text-muted-foreground">
+          <span className="block text-text-secondary">
             {quiet ? "Your book is steady today." : "Your relationships are moving."}
           </span>
         </h1>
-        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-text-secondary">
           {quiet
             ? `Nothing needs immediate attention. SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and will surface the next useful moment.`
             : `SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and found ${items.length} relationship${items.length === 1 ? "" : "s"} worth your attention today.`}
         </p>
         <ul className="mt-4 space-y-1.5">
           {lines.map((l) => (
-            <li key={l} className="flex gap-2 text-[13.5px] text-muted-foreground">
-              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+            <li key={l} className="flex gap-2 text-[13.5px] text-text-secondary">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-text-secondary/50" />
               {l}
             </li>
           ))}
         </ul>
         {handled > 0 && (
-          <p className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-primary">
+          <p className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" /> {handled} relationship
             {handled === 1 ? "" : "s"} handled today
           </p>
@@ -182,11 +182,11 @@ export function AgentToday() {
       </header>
 
       {mode === "aha" && best && (
-        <div className="animate-in fade-in slide-in-from-top-1 rounded-3xl border border-primary/30 bg-primary/5 p-4">
-          <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+        <IntelligenceSurface compact className="animate-in fade-in slide-in-from-top-1">
+          <p className="flex items-center gap-2 text-sm font-semibold text-surface-intelligence-foreground">
             <Sparkles className="h-4 w-4" /> SuCasa found someone worth your attention
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-text-secondary">
             Here's {firstName(best.name)} — why now, what we noticed, and a way to open the
             conversation.
           </p>
@@ -197,29 +197,26 @@ export function AgentToday() {
           >
             Got it
           </button>
-        </div>
+        </IntelligenceSurface>
       )}
 
       {!quiet && (
-        <section className="rounded-[28px] border border-primary/20 bg-primary/[0.05] p-5 shadow-soft sm:p-6">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-            <Sparkles className="h-3.5 w-3.5" /> SuCasa daily read
-          </p>
-          <p className="mt-2.5 text-[16px] font-medium leading-relaxed">{read.sentence}</p>
-          <dl className="mt-5 space-y-3 border-t border-primary/15 pt-4">
+        <IntelligenceSurface label="SuCasa daily read">
+          <p className="text-[16px] font-medium leading-relaxed">{read.sentence}</p>
+          <dl className="mt-5 space-y-3 border-t border-surface-intelligence-border pt-4">
             {read.startHere && <Read label="Start here" value={read.startHere} strong />}
             {read.why && <Read label="Why" value={read.why} />}
             {read.beUsefulBy && <Read label="Be useful by" value={read.beUsefulBy} />}
           </dl>
-        </section>
+        </IntelligenceSurface>
       )}
 
       {handledNote && (
-        <div className="animate-in fade-in rounded-3xl border border-primary/30 bg-primary/[0.06] p-4">
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+        <div className="animate-in fade-in rounded-3xl border border-status-positive/25 bg-status-positive/[0.06] p-4">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" /> {handledNote.name} is handled for today
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-sm leading-relaxed text-text-secondary">
             Your touch was recorded. SuCasa keeps monitoring the relationship and will surface it
             again when another meaningful moment develops. {handledNote.next}
           </p>
@@ -238,10 +235,10 @@ export function AgentToday() {
           />
         </section>
       ) : (
-        <div className="rounded-3xl border border-primary/25 bg-primary/[0.05] p-6 text-center shadow-soft">
-          <CheckCircle2 className="mx-auto h-7 w-7 text-primary" />
+        <div className="rounded-3xl border border-surface-warm-border bg-surface-warm p-6 text-center">
+          <CheckCircle2 className="mx-auto h-7 w-7 text-status-positive" />
           <p className="mt-2 font-semibold">Your relationships are in good shape today</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
             Nothing needs immediate attention. SuCasa is still monitoring{" "}
             {monitored.toLocaleString()} homeowner{monitored === 1 ? "" : "s"} and will surface the
             next useful moment.
