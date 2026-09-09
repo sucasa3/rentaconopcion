@@ -320,6 +320,7 @@ export async function buildActionQueue(
         `${draft?.draft_subject ?? ""} ${draft?.draft_body ?? ""}`,
         facts,
         orgType === "agent" ? "agent" : "lender",
+        { address: [c.address_line1, c.city, c.state].filter(Boolean).join(", ") || null },
       ).ok;
     items.push({
       facts,
@@ -523,7 +524,6 @@ export async function generateDraft(input: {
       { address: input.address },
     );
     if (!check.ok) {
-      if (process.env["NBA_DRAFT_DEBUG"]) console.log("[draft rejected]", check.violations, body);
       subject = input.channel === "text" ? "" : input.narrative.headline;
       body = input.narrative.openerSeed;
     }
