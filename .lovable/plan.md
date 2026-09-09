@@ -1,118 +1,89 @@
-# Role-aware opportunity messaging (agent vs lender)
+# SuCasa Visual Color System Refinement
 
-One engine, one set of facts, two ways of speaking. Agents get relationship and property reasons to reconnect. Lenders get financing reasons. Nothing about detection, permissions, access gates, ranking, consent or outcomes changes.
+A visual-system refinement only. No change to navigation, workflows, data, opportunity logic, permissions, access gates, ranking, or component hierarchy.
 
-## What is wrong today (verified in the code)
+---
 
-1. **Two different equity calculations exist.**
-   - The opportunity engine (`src/lib/opportunities.server.ts`) resolves value and equity through the Value Engine + equity resolver, with confidence and suppression rules.
-   - The agent roster and the agent listing brief (`src/lib/agent.functions.ts`, in `getAgentPortfolio` and `generateAgentBrief`) each recompute their own value and equity from raw property records (`avm ?? tax market ?? assessed` minus an amortization estimate).
-   This is why one screen can say ~$58K and a generated message can say ~$216K for the same person.
+## 1. What I found today
 
-2. **Agents are shown lender plays.** Detected categories include `heloc`, `refinance_review`, `mortgage_age`, `equity`. The card takes the raw category label straight from `CATEGORY_META` ("HELOC opportunity"), so an agent sees a financing recommendation as the headline even though the agent recipe underneath is a relationship play.
+**The brand orange is not in the design system at all.** The SuCasa logo is orange (`#DA5431`), but there is no orange token anywhere in the theme and no screen uses it. Every "brand" surface is navy. That is the single biggest reason the product does not feel unmistakably SuCasa.
 
-3. **Overclaiming copy.** `computeMoveScore` in `src/lib/agent-portfolio-helpers.ts` emits a signal literally labeled "Likely outgrown", and the equity signal is worded as "move-up down payment sitting in the house". The listing-brief prompt also asks the model to "cite the numbers" from a fact set it was handed separately from the canonical one.
+**Everything neutral is cold or near-identical.** The theme has `--surface`, `--secondary`, `--muted`, `--card` and `--border`. `--secondary` and `--muted` are the exact same value, `--card` and `--surface-elevated` are both pure white, and `--surface` is a cold blue-gray. So there is no warm surface available and no meaningful difference between a card, a chip and a panel — which produces the "white card / thin gray border / gray pill" rhythm on every page.
 
-4. **Each surface writes its own narrative.** Today, the roster, the opportunity card, the AI brief and the email/text draft each assemble their own "why now" text from different inputs.
+**No intelligence surface exists.** `--info` is a mid-saturation blue meant for text/badges; there is no light blue background token. Suggested Opener, Daily Read and AI summaries currently render on the same white or `bg-secondary` as everything else, so AI interpretation is visually indistinguishable from raw data.
 
-## The fix, in five pieces
+**Temperature uses traffic-light semantics.** `TEMPERATURE_META` maps Hot → attention (amber), Warm → growth (green), Nurture → info (blue), and carries emojis (🔥 🟡 🔵). Hot reads as a warning and Warm reads as a success, which is backwards from the intended meaning.
 
-### 1. One canonical fact snapshot per homeowner (highest priority)
+**Hard-coded palette colors bypass tokens.** The agent homeowner detail route (`agent/portfolio.$id.tsx`) has eight separate hard-coded `amber-500` / `amber-700` treatments for warm status, prep-needed, timeline dots and priority pills. The inspection findings panel hard-codes its own condition scale. Roughly a dozen other files hard-code one or two Tailwind palette colors.
 
-Add `clientFactsFor()` to `src/lib/opportunities.server.ts`, built from the existing `propertyRecords` + `engineFactsFor` + `recordForClient` path already used to derive opportunities. It returns the single sanctioned snapshot:
+**Red is over-applied to maintenance.** Home-care items escalate on age alone and inherit destructive styling, so ordinary aging upkeep reads as an emergency.
 
-```text
-value, valueConfidence, valueSource, loanBalance, equityDollars, equityPct,
-ltvPct, ratePct, tenureYears, lastSaleDate, beds, baths, sqft, yearBuilt,
-taxAmount, permitCount, equityActionable, suppressionReason
-```
+Unverified until implementation: exact per-screen contrast on a warm surface — I will check contrast ratios as I apply the tokens.
 
-Then remove the duplicate math:
-- `getAgentPortfolio` (the block that computes `value`, `balance`, `equityDollars`, `equityPct`)
-- `generateAgentBrief` (the same block again)
-- the lender brief path already reads the workspace snapshot; it will read the same helper so all three agree.
+---
 
-Rule enforced in code and in every AI prompt: **no surface computes value, equity, LTV, balance, years owned or square footage.** They format what the snapshot gives them.
+## 2. Proposed semantic palette
 
-### 2. One role-aware narrative builder
+Derived from the existing logo and current theme. Navy, green, amber and red keep their current hues; orange and the warm/intelligence surfaces are new.
 
-New pure, client-safe module `src/lib/opportunity-narrative.ts`:
-
-```text
-buildNarrative({ audience, category, strength, reasons, facts, engagement })
-  -> {
-       primary:   { type, whyNow, whyItMatters, howToBeUseful, ctaLabel },
-       signals:   [ short factual chips ],
-       secondary: [ { label, helper } ],
-       openerSeed: { topic, facts, tone }
-     }
-```
-
-Role mapping (presentation only — stored opportunity rows are untouched):
-
-| Detected | Agent primary becomes | Lender primary stays |
+| Token | Meaning | Value |
 |---|---|---|
-| equity, heloc, mortgage_age, refinance_review, mortgage_review | Home-value & future-plans conversation (or move-up when tenure/size support it) | Equity review, HELOC/cash-out, refinance review, annual mortgage review |
-| move_up | Possible move-up conversation | Purchase-financing conversation |
-| home_condition, permit_activity | Property condition / project conversation | Renovation financing (informational) |
-| market_timing, recent_purchase, free_and_clear | Check-in, milestone, future plans | Financing check-in |
+| `--sucasa-navy` (existing `--primary`) | act, primary CTA, selected nav, strong emphasis | `oklch(0.36 0.13 255)` |
+| `--sucasa-orange` | relationship opportunity, human moment, brand accent | `oklch(0.618 0.175 35.5)` — from the logo, `#DA5431` |
+| `--surface-base` | default page ground | near-white, neutral |
+| `--surface-warm` | human / relationship / homeowner context | very light cream, `oklch(0.985 0.008 65)` |
+| `--surface-intelligence` | SuCasa interpretation | soft blue, `oklch(0.972 0.018 250)` with a `0.90 0.03 250` border |
+| `--text-primary` / `--text-secondary` | body hierarchy | existing foreground / muted-foreground, contrast-checked on warm and blue surfaces |
+| `--border-subtle` | quieter hairlines | existing border, lowered opacity in use |
+| `--status-opportunity` | orange | relationship opportunity |
+| `--status-attention` | amber | due, aging, follow-up |
+| `--status-positive` | green | completed, gain, successful outcome |
+| `--status-risk` | red | genuine urgency or risk only |
+| `--status-nurture` | neutral blue-gray | steady relationship |
+| `--action-primary` / `--action-secondary` | navy filled / outlined neutral | CTAs |
 
-For agents, any financing-flavoured detection appears **only** in `secondary` as:
-"Additional signal: meaningful equity" + "If financing comes up, consider involving a licensed mortgage professional."
-Financing may still be primary for an agent in exactly one case: the homeowner explicitly asked for financing help.
+Ratio target stays 80–85% neutral, 10–15% navy/intelligence blue, 5% accents. Dark mode gets a matching set.
 
-Language guardrails baked into the builder: "possible", "may be worth", "could be a natural time", "subject to qualification". Banned strings ("likely outgrown", "prime candidate", "needs to", "should get") are removed at the source in `agent-portfolio-helpers.ts` — "Likely outgrown" becomes "Possible move-up signal", and the equity signal is reworded for agents as ownership context rather than down-payment financing.
+---
 
-### 3. Openers and drafts read the snapshot only
+## 3. What changes
 
-- `generateDraft` in `src/lib/nba.server.ts` receives `facts` (the canonical snapshot) plus the role narrative instead of a free-text reason list, with a hard prompt rule: use only these numbers, rounded as given, or none at all.
-- `generateAgentBrief` in `src/lib/agent.functions.ts` is rebuilt on the same snapshot and narrative, so brief, card and email cannot disagree.
-- Lender brief keeps its existing gating and structure; it takes the narrative for the "why now" section.
+**Theme**
+- `src/styles.css` — add the semantic tokens above plus `@theme inline` color mappings so they become real utilities (`bg-surface-warm`, `text-status-opportunity`, and so on), light and dark.
 
-### 4. Card presentation
+**Shared primitives**
+- `src/components/ui-kit/index.tsx` — the two tone maps and StatCard tones move onto semantic tokens; add an `opportunity` tone.
+- `src/lib/next-best-action.ts` — `TEMPERATURE_META` tones become Hot → opportunity (orange), Warm → attention (soft amber), Nurture → nurture (neutral blue-gray); emojis drop in favor of a text label plus a small marker so status is never color-only.
 
-`src/components/action-queue.tsx`, `src/components/agent-today.tsx`, `src/components/opportunities-board.tsx` and the lender contact card render the same block order, no competing narratives:
+**Today pages**
+- `src/components/agent-today.tsx`, `src/components/lender-today.tsx` — three-layer treatment (below).
 
-```text
-OPPORTUNITY TYPE   Possible move-up conversation
-WHY NOW            21 years in a 1-bedroom home
-WHY IT MATTERS     one soft sentence
-SIGNALS            21.6 yrs owned · 625 sq ft · 1 bed · ~46% equity
-HOW TO BE USEFUL   one line
-SUGGESTED OPENER   2-4 human sentences
-PRIMARY CTA        Prepare home update
-SECONDARY          Call · Text · Email · View homeowner
-```
+**Opportunity surfaces**
+- `src/components/action-queue.tsx`, `src/components/opportunities-board.tsx`, `src/components/lender-contact-card.tsx`, `src/components/lender-brief.tsx`, `src/components/next-step-card.tsx`, `src/components/next-step-hero.tsx`, `src/components/predicted-actions-card.tsx`, `src/components/seller-intent-card.tsx`.
 
-Channel eligibility, permission gates and blocked reasons are rendered exactly as they are today.
+**Detail pages**
+- `src/routes/_authenticated/agent/portfolio.$id.tsx` — replace all eight hard-coded amber treatments with tokens; warm accents on tenure, history and milestones.
+- `src/routes/_authenticated/lender/portfolio.$id.index.tsx` — navy/intelligence lean.
 
-### 5. Kevin DeJesus audit
+**Maintenance and homeowner context**
+- `src/components/home-care-panel.tsx`, `src/components/home-alerts.tsx`, `src/components/inspection-findings-panel.tsx`, `src/components/recommended-pros-card.tsx` — routine stays neutral, due-soon amber, real risk red, completed green. Presentation only: no change to how urgency is computed, only to which visual weight each existing urgency level receives.
 
-Before shipping, run a read-only check of his record: the canonical snapshot, what the roster shows, what the brief generates, and what the queue card says. Expected outcome after the change — one agent narrative:
+**Untouched:** bottom navigation stays navy-only and calm; `business-shell.tsx` active state is unchanged.
 
-- Primary: possible move-up / future-plans conversation
-- Supporting: long tenure, 1 bed / 625 sq ft, meaningful equity
-- Action: offer a home-value update and ask about future plans
-- Financing intelligence preserved as a secondary signal for the agent, and available as a primary opportunity to a lender with an independent right to see him
+---
 
-## Files to change
+## 4. How three screens will feel different
 
-| File | Change |
-|---|---|
-| `src/lib/opportunities.server.ts` | export `clientFactsFor()` canonical snapshot |
-| `src/lib/opportunity-narrative.ts` | new: role-aware primary/secondary/signals/opener seed |
-| `src/lib/opportunity-narrative.test.ts` | new: role separation, no financing primary for agents, fact-consistency, softened language |
-| `src/lib/next-best-action.ts` | recipes gain objective / why-it-matters / CTA label; agent recipes stay relationship-first |
-| `src/lib/agent-portfolio-helpers.ts` | soften "Likely outgrown" and the equity signal wording |
-| `src/lib/agent.functions.ts` | roster + listing brief read the canonical snapshot and narrative |
-| `src/lib/nba.server.ts` | queue items carry the narrative; drafts use snapshot-only prompts |
-| `src/components/action-queue.tsx`, `agent-today.tsx`, `opportunities-board.tsx`, `lender-contact-card.tsx`, `lender-brief.tsx` | render the shared card structure |
+**Agent Today.** Today the greeting, the Daily Read, the Start Here card and the five relationship rows are all white cards with the same hairline border, so the eye has no entry point. After: the greeting sits on a warm off-white ground with navy type and one small orange mark; the Daily Read becomes a soft blue panel with a blue hairline and a small intelligence icon, so it visibly reads as SuCasa interpreting rather than reporting; Start Here becomes a warm-white card with real elevation, a thin orange accent at its edge, a navy CTA, and the Suggested Opener nested inside it on the same blue intelligence surface. The five rows below stay deliberately quiet.
 
-No database, schema, permission, consent, ranking or outcome changes.
+**Agent homeowner detail (a long-tenure client such as Kevin).** Today "Warm" is an amber pill, timeline dots are amber, and priority pills are amber — amber appears in four unrelated meanings on one screen. After: "Warm" becomes a soft amber accent, the relationship and tenure moments carry small orange markers, the equity and value figures stay neutral navy typography rather than green (green is reserved for an actual gain), and only a genuine risk item can be red.
 
-## Verification
+**Lender Today.** Same structure, leaning navy and intelligence-blue rather than warm: the Daily Read and Mortgage Review Brief share the blue intelligence surface, review-due items are amber, completed outcomes green, and orange appears only where a homeowner has actually asked to connect — a small, high-value signal.
 
-- Unit tests: same facts + agent vs lender produce different primaries and identical numbers.
-- A test asserting no agent-facing surface can emit a HELOC/refinance/qualification recommendation as primary.
-- A fact-consistency test: card, opener, brief and email all format from one snapshot object.
-- Typecheck, full library test run, and a signed-in pass over agent Today, agent homeowner detail, lender Today and lender detail for Kevin.
+---
+
+## 5. Notes
+
+- Status keeps its text label and icon everywhere; color is never the only signal.
+- Contrast is checked for secondary text on the warm and blue surfaces; if muted gray fails on cream, that text moves a step darker.
+- No gradients, glass, neon, or new animation.
