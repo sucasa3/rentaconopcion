@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildNarrative, narrativeFactSheet } from "./opportunity-narrative";
+import {
+  buildNarrative,
+  copyAgreesWithFacts,
+  narrativeFactSheet,
+  safeOpener,
+} from "./opportunity-narrative";
 import { assertFactsConsistent, emptyClientFacts, type ClientFacts } from "./client-facts";
 
 /** Kevin-shaped facts: long tenure, small home, meaningful equity. */
