@@ -15,6 +15,7 @@ import {
   Upload,
   UserPlus,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-surface";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
