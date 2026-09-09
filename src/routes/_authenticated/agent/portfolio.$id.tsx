@@ -96,15 +96,15 @@ const moneyCompact = (n: number | null | undefined) => {
 };
 
 const BAND_META: Record<string, { label: string; tone: string }> = {
-  high: { label: "High intent", tone: "bg-destructive/10 text-destructive border-destructive/40" },
-  hot: { label: "Hot", tone: "bg-growth/15 text-growth border-growth/40" },
+  high: { label: "High intent", tone: "bg-sucasa-orange/12 text-status-opportunity border-sucasa-orange/40" },
+  hot: { label: "Hot", tone: "bg-sucasa-orange/10 text-status-opportunity border-sucasa-orange/30" },
   warm: { label: "Warm", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
-  nurture: { label: "Nurture", tone: "bg-primary/10 text-primary border-primary/40" },
+  nurture: { label: "Nurture", tone: "bg-status-nurture/10 text-status-nurture border-status-nurture/30" },
   hold: { label: "Hold", tone: "bg-secondary text-muted-foreground border-border" },
 };
 
 const READINESS_META: Record<string, { label: string; tone: string }> = {
-  "list-ready": { label: "List-ready", tone: "bg-growth/15 text-growth" },
+  "list-ready": { label: "List-ready", tone: "bg-status-positive/12 text-status-positive" },
   "prep-needed": { label: "Prep needed", tone: "bg-status-attention/10 text-status-attention" },
   "not-ready": { label: "Not ready", tone: "bg-secondary text-muted-foreground" },
 };
@@ -205,13 +205,13 @@ function IntentInfo() {
               <span
                 className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
                   k === "high"
-                    ? "bg-destructive"
+                    ? "bg-sucasa-orange"
                     : k === "hot"
-                    ? "bg-growth"
+                    ? "bg-sucasa-orange/70"
                     : k === "warm"
                       ? "bg-status-attention"
                       : k === "nurture"
-                        ? "bg-primary"
+                        ? "bg-status-nurture"
                         : "bg-muted-foreground/40"
                 }`}
               />
