@@ -43,6 +43,38 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
 
+  /* ---------------------------------------------------------------------
+   * SuCasa semantic color system. One meaning per color:
+   *   navy        = act / primary emphasis
+   *   orange      = relationship opportunity / human moment (kept small)
+   *   intelligence= SuCasa is interpreting something for you
+   *   positive    = completed / real gain
+   *   attention   = due / aging
+   *   risk        = genuine problem
+   *   nurture     = steady, low-priority context
+   *   warm        = human / relationship context surfaces
+   * ------------------------------------------------------------------- */
+  --color-sucasa-navy: var(--sucasa-navy);
+  --color-sucasa-orange: var(--sucasa-orange);
+  --color-sucasa-orange-foreground: var(--sucasa-orange-foreground);
+  --color-surface-base: var(--surface-base);
+  --color-surface-warm: var(--surface-warm);
+  --color-surface-warm-border: var(--surface-warm-border);
+  --color-surface-intelligence: var(--surface-intelligence);
+  --color-surface-intelligence-border: var(--surface-intelligence-border);
+  --color-surface-intelligence-foreground: var(--surface-intelligence-foreground);
+  --color-text-primary: var(--foreground);
+  --color-text-secondary: var(--text-secondary);
+  --color-border-subtle: var(--border-subtle);
+  --color-status-opportunity: var(--status-opportunity);
+  --color-status-attention: var(--status-attention);
+  --color-status-positive: var(--status-positive);
+  --color-status-risk: var(--status-risk);
+  --color-status-nurture: var(--status-nurture);
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-foreground: var(--action-primary-foreground);
+
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
