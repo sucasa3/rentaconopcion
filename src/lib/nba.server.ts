@@ -270,6 +270,19 @@ export async function buildActionQueue(
     (cachedActions ?? []).map((a: any) => [a.opportunity_id, a]),
   );
 
+  // Canonical facts for every homeowner in the queue. One read, one source —
+  // no surface below recomputes value, balance, equity, LTV or tenure.
+  const factsByClient = await clientFactsFor(supabase, rows as any[]);
+
+  // Every open category for a homeowner, so the narrative can pick ONE story
+  // instead of showing competing ones. Stored categories are untouched.
+  const categoriesByClient = new Map<string, string[]>();
+  for (const o of opps ?? []) {
+    const list = categoriesByClient.get(o.portfolio_client_id) ?? [];
+    if (!list.includes(o.category)) list.push(o.category);
+    categoriesByClient.set(o.portfolio_client_id, list);
+  }
+
   const items: QueueItem[] = [];
   for (const o of opps ?? []) {
     const c = clientById.get(o.portfolio_client_id);
