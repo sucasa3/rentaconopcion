@@ -17,11 +17,12 @@ const URGENCY_LABEL: Record<string, string> = {
   monitor: "Monitor",
 };
 
+/** Tinted surface + accent text, so only genuine end-of-life reads as risk. */
 const CONDITION_STYLE: Record<string, string> = {
-  good: "bg-status-positive text-status-positive",
-  fair: "bg-status-attention text-status-attention",
-  poor: "bg-status-attention text-status-attention",
-  end_of_life: "bg-status-risk text-status-risk",
+  good: "bg-status-positive/10 text-status-positive",
+  fair: "bg-status-attention/10 text-status-attention",
+  poor: "bg-status-attention/15 text-status-attention",
+  end_of_life: "bg-status-risk/10 text-status-risk",
 };
 
 function urgencyIcon(u: string | null) {
