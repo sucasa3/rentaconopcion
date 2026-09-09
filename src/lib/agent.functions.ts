@@ -901,12 +901,13 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
           { role: "system", content: sys },
           {
             role: "user",
-            content: `Write a listing brief for this homeowner using ONLY these facts.
+            content: `Write a short client brief using ONLY these facts. The primary opportunity is already decided — keep it, do not substitute a different one.
 Sections:
-1) Why now (2 sentences)
-2) Three data-backed talking points (bullets, cite the numbers)
-3) One suggested outreach message (under 60 words, warm, no pressure)
-If the property is listed with another agent, say only that outreach must stay value-only.
+1) Why now (2 sentences, based on whyNow and whyItMatters)
+2) Three talking points drawn from supportingSignals and canonicalFacts (quote the numbers exactly as given; round only conversationally)
+3) One suggested outreach message (under 60 words, warm, no pressure) — a natural rewrite of openerSeed
+Mention any secondary signal briefly and separately, never as the main recommendation.
+Never recommend or describe a loan product. If the property is listed with another agent, say only that outreach must stay value-only.
 
 FACTS:
 ${JSON.stringify(facts, null, 2)}`,
@@ -914,9 +915,7 @@ ${JSON.stringify(facts, null, 2)}`,
         ],
       }),
     });
-    if (!res.ok) {
-      return { brief: score.signals.map((s: { label: string; detail: string }) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
-    }
+    if (!res.ok) return { brief: fallback, ai: false };
     const json: any = await res.json();
     return { brief: json?.choices?.[0]?.message?.content ?? "", ai: true, score: score.score };
   });
