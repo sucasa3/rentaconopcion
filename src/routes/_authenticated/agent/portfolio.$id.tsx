@@ -98,14 +98,14 @@ const moneyCompact = (n: number | null | undefined) => {
 const BAND_META: Record<string, { label: string; tone: string }> = {
   high: { label: "High intent", tone: "bg-destructive/10 text-destructive border-destructive/40" },
   hot: { label: "Hot", tone: "bg-growth/15 text-growth border-growth/40" },
-  warm: { label: "Warm", tone: "bg-amber-500/10 text-amber-700 border-amber-500/40" },
+  warm: { label: "Warm", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
   nurture: { label: "Nurture", tone: "bg-primary/10 text-primary border-primary/40" },
   hold: { label: "Hold", tone: "bg-secondary text-muted-foreground border-border" },
 };
 
 const READINESS_META: Record<string, { label: string; tone: string }> = {
   "list-ready": { label: "List-ready", tone: "bg-growth/15 text-growth" },
-  "prep-needed": { label: "Prep needed", tone: "bg-amber-500/10 text-amber-700" },
+  "prep-needed": { label: "Prep needed", tone: "bg-status-attention/10 text-status-attention" },
   "not-ready": { label: "Not ready", tone: "bg-secondary text-muted-foreground" },
 };
 
@@ -145,7 +145,7 @@ function ReadinessInfo() {
                   k === "list-ready"
                     ? "bg-growth"
                     : k === "prep-needed"
-                      ? "bg-amber-500"
+                      ? "bg-status-attention"
                       : "bg-muted-foreground/40"
                 }`}
               />
@@ -209,7 +209,7 @@ function IntentInfo() {
                     : k === "hot"
                     ? "bg-growth"
                     : k === "warm"
-                      ? "bg-amber-500"
+                      ? "bg-status-attention"
                       : k === "nurture"
                         ? "bg-primary"
                         : "bg-muted-foreground/40"
@@ -765,7 +765,7 @@ function AgentPortfolio() {
                                 k === "list-ready"
                                   ? "bg-growth"
                                   : k === "prep-needed"
-                                    ? "bg-amber-500"
+                                    ? "bg-status-attention"
                                     : "bg-muted-foreground/40"
                               }`}
                               style={{ width: `${pct}%` }}
@@ -917,7 +917,7 @@ function AgentPortfolio() {
                                   r.urgency === "high"
                                     ? "border-destructive/40 bg-destructive/10 text-destructive"
                                     : r.urgency === "medium"
-                                      ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                                      ? "border-status-attention/40 bg-status-attention/10 text-status-attention"
                                       : "border-border bg-secondary text-muted-foreground"
                                 }`}
                               >
@@ -1338,7 +1338,7 @@ function ReadinessBar({ score, label }: { score: number; label: string }) {
             label === "list-ready"
               ? "bg-growth"
               : label === "prep-needed"
-                ? "bg-amber-500"
+                ? "bg-status-attention"
                 : "bg-muted-foreground/40"
           }`}
           style={{ width: `${score}%` }}
@@ -1534,7 +1534,7 @@ function ClientDrawer({
                           r.urgency === "high"
                             ? "border-destructive/40 bg-destructive/10 text-destructive"
                             : r.urgency === "medium"
-                              ? "border-amber-500/40 bg-amber-500/10 text-amber-700"
+                              ? "border-status-attention/40 bg-status-attention/10 text-status-attention"
                               : "border-border bg-secondary text-muted-foreground"
                         }`}
                       >

@@ -314,8 +314,8 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     open: { label: "Open", cls: "bg-primary/10 text-primary" },
     claimed: { label: "Claimed", cls: "bg-primary/10 text-primary" },
-    scheduled: { label: "Scheduled", cls: "bg-blue-500/10 text-blue-600" },
-    in_progress: { label: "In progress", cls: "bg-amber-500/10 text-amber-600" },
+    scheduled: { label: "Scheduled", cls: "bg-primary/10 text-primary" },
+    in_progress: { label: "In progress", cls: "bg-status-attention/10 text-status-attention" },
     completed: { label: "Completed", cls: "bg-growth/15 text-growth" },
     cancelled: { label: "Cancelled", cls: "bg-destructive/10 text-destructive" },
   };
