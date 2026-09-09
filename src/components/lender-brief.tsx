@@ -222,7 +222,7 @@ function BriefBody({
       </Section>
 
       <Section title="Recommended action">
-        <p className="rounded-2xl bg-primary/8 px-3.5 py-3 text-[15px] font-semibold leading-snug text-primary">
+        <p className="rounded-2xl border border-surface-intelligence-border bg-surface-intelligence px-3.5 py-3 text-[15px] font-semibold leading-snug text-surface-intelligence-foreground">
           {b.recommendedAction}
         </p>
       </Section>
