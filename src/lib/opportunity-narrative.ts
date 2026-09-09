@@ -404,3 +404,106 @@ export function narrativeFactSheet(f: ClientFacts): Record<string, string> {
   add("approximate equity", roughMoney(f.equityActionable ? f.equityDollars : null));
   return sheet;
 }
+
+// ---------------------------------------------------------------------------
+// Copy safety — nothing reaches a professional surface unless it agrees with
+// the canonical snapshot and with the role's language rules.
+// ---------------------------------------------------------------------------
+
+/** Financing product language an agent must never produce. */
+const AGENT_FORBIDDEN: { re: RegExp; code: string }[] = [
+  { re: /\bhelocs?\b/i, code: "heloc" },
+  { re: /home\s+equity\s+(line|loan)/i, code: "home_equity_product" },
+  { re: /\bcash[-\s]?out\b/i, code: "cash_out" },
+  { re: /\brefinanc\w*\b/i, code: "refinance" },
+  { re: /\brefi\b/i, code: "refinance" },
+  { re: /\bltv\b/i, code: "ltv" },
+  { re: /loan[-\s]?to[-\s]?value/i, code: "ltv" },
+  { re: /\bloan balance\b/i, code: "loan_balance" },
+  { re: /\bmortgage rate\b/i, code: "rate" },
+  { re: /\bqualif\w*\b/i, code: "qualification" },
+];
+
+function allowedNumbers(f: ClientFacts, role: NarrativeRole): number[] {
+  const nums: (number | null)[] = [
+    f.value,
+    f.sqft,
+    f.beds,
+    f.baths,
+    f.yearBuilt,
+    f.taxAmount,
+    f.assessedTotal,
+    f.lastSalePrice,
+    f.tenureYears,
+    f.tenureYears != null ? Math.round(f.tenureYears) : null,
+    f.permitCount,
+  ];
+  if (f.equityActionable) {
+    nums.push(f.equityDollars, f.equityPct != null ? f.equityPct * 100 : null);
+  }
+  if (role === "lender") {
+    nums.push(f.loanBalance, f.ltvPct, f.ratePct);
+  }
+  return nums.filter((n): n is number => n != null && Number.isFinite(n));
+}
+
+const NUM_RE = /\$?\s?([\d][\d,]*(?:\.\d+)?)\s?(k|m|%)?/gi;
+
+/**
+ * True when a generated line only states numbers that exist in the canonical
+ * snapshot and uses language permitted for the role. Rejected copy is replaced
+ * by the deterministic opener seed — never patched word by word.
+ */
+export function copyAgreesWithFacts(
+  text: string | null | undefined,
+  facts: ClientFacts,
+  role: NarrativeRole,
+  opts?: { address?: string | null },
+): { ok: boolean; violations: string[] } {
+  const violations: string[] = [];
+  const t = (text ?? "").trim();
+  if (!t) return { ok: false, violations: ["empty"] };
+
+  if (role === "agent") {
+    for (const rule of AGENT_FORBIDDEN)
+      if (rule.re.test(t) && !violations.includes(rule.code)) violations.push(rule.code);
+  }
+
+  const allowed = allowedNumbers(facts, role);
+  // Street numbers and ZIPs from the property address are not claims.
+  const addressNumbers = new Set(
+    (opts?.address ?? "").match(/\d[\d,]*/g)?.map((x) => x.replace(/,/g, "")) ?? [],
+  );
+  const matches = [...t.matchAll(NUM_RE)];
+  for (const m of matches) {
+    const raw = m[1]!.replace(/,/g, "");
+    let n = Number(raw);
+    if (!Number.isFinite(n)) continue;
+    const suffix = (m[2] ?? "").toLowerCase();
+    if (suffix === "k") n *= 1_000;
+    if (suffix === "m") n *= 1_000_000;
+    // Small standalone integers (counts, "3 bedrooms", years, dates) are not
+    // financial claims and are checked loosely.
+    const financial = m[0]!.includes("$") || suffix !== "" || n >= 1000;
+    if (!financial) continue;
+    if (!m[0]!.includes("$") && !suffix && addressNumbers.has(raw)) continue;
+    const near = allowed.some((a) => {
+      const tol = Math.max(1, Math.abs(a) * (suffix ? 0.1 : 0.02));
+      return Math.abs(a - n) <= tol;
+    });
+    if (!near) violations.push(`unsupported number ${m[0]!.trim()}`);
+  }
+
+  return { ok: violations.length === 0, violations };
+}
+
+/** The opener a role-facing surface should show: validated copy, or the seed. */
+export function safeOpener(
+  candidate: string | null | undefined,
+  narrative: Narrative,
+  facts: ClientFacts,
+  role: NarrativeRole,
+): string {
+  if (candidate && copyAgreesWithFacts(candidate, facts, role).ok) return candidate.trim();
+  return narrative.openerSeed;
+}

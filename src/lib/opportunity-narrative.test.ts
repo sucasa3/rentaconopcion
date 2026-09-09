@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildNarrative, narrativeFactSheet } from "./opportunity-narrative";
+import {
+  buildNarrative,
+  copyAgreesWithFacts,
+  narrativeFactSheet,
+  safeOpener,
+} from "./opportunity-narrative";
 import { assertFactsConsistent, emptyClientFacts, type ClientFacts } from "./client-facts";
 
 /** Kevin-shaped facts: long tenure, small home, meaningful equity. */
@@ -138,5 +143,51 @@ describe("canonical facts", () => {
   it("fails loudly when a surface renders a different number", () => {
     expect(() => assertFactsConsistent("test card", kevin, { equityDollars: 216_000 })).toThrow();
     expect(() => assertFactsConsistent("test card", kevin, { equityDollars: 122_000 })).not.toThrow();
+  });
+});
+
+describe("copyAgreesWithFacts", () => {
+  const facts = {
+    ...emptyClientFacts("c1"),
+    value: 126_919,
+    loanBalance: 68_536,
+    equityDollars: 58_383,
+    equityPct: 0.46,
+    ltvPct: 54,
+    tenureYears: 22,
+    equityActionable: true,
+  };
+
+  it("rejects a legacy agent opener with financing language and a stale number", () => {
+    const r = copyAgreesWithFacts(
+      "You have $216,020 in equity and 23.7% LTV — consider a HELOC.",
+      facts,
+      "agent",
+    );
+    expect(r.ok).toBe(false);
+    expect(r.violations).toContain("heloc");
+    expect(r.violations).toContain("ltv");
+  });
+
+  it("accepts a relationship-first agent opener using canonical numbers", () => {
+    const r = copyAgreesWithFacts(
+      "Hi Kevin — you've been there 22 years and built about $58K in estimated equity. Want a value update?",
+      facts,
+      "agent",
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it("lets a lender state balance and LTV but still blocks invented numbers", () => {
+    expect(copyAgreesWithFacts("Estimated LTV 54% on a $68,536 balance.", facts, "lender").ok).toBe(
+      true,
+    );
+    expect(copyAgreesWithFacts("Estimated equity of $216,020.", facts, "lender").ok).toBe(false);
+  });
+
+  it("falls back to the deterministic seed when copy fails", () => {
+    const n = buildNarrative({ role: "agent", facts, categories: ["heloc"], firstName: "Kevin" });
+    expect(safeOpener("Consider a cash-out refinance.", n, facts, "agent")).toBe(n.openerSeed);
+    expect(safeOpener(null, n, facts, "agent")).toBe(n.openerSeed);
   });
 });

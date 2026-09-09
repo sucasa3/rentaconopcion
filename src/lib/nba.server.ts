@@ -20,7 +20,12 @@ import { evaluateAgentChannels, type ChannelOption } from "@/lib/contact-channel
 import { MODEL_LIGHT } from "@/lib/documents-ai.server";
 import { clientFactsFor } from "@/lib/client-facts.server";
 import { emptyClientFacts, type ClientFacts } from "@/lib/client-facts";
-import { buildNarrative, narrativeFactSheet, type Narrative } from "@/lib/opportunity-narrative";
+import {
+  buildNarrative,
+  copyAgreesWithFacts,
+  narrativeFactSheet,
+  type Narrative,
+} from "@/lib/opportunity-narrative";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -309,6 +314,14 @@ export async function buildActionQueue(
       firstName: String(c.client_name ?? "").trim().split(/\s+/)[0] ?? null,
       engagementLine,
     });
+    const draftOk =
+      Boolean(draft?.draft_body) &&
+      copyAgreesWithFacts(
+        `${draft?.draft_subject ?? ""} ${draft?.draft_body ?? ""}`,
+        facts,
+        orgType === "agent" ? "agent" : "lender",
+        { address: [c.address_line1, c.city, c.state].filter(Boolean).join(", ") || null },
+      ).ok;
     items.push({
       facts,
       narrative,
@@ -348,8 +361,11 @@ export async function buildActionQueue(
               recommended: recipe.channel,
             })
           : null,
-      draftSubject: draft?.draft_subject ?? null,
-      draftBody: draft?.draft_body ?? null,
+      // A cached draft is only shown when it still agrees with the canonical
+      // snapshot and with this role's language rules. Legacy drafts written
+      // before the canonical refactor are dropped, never displayed.
+      draftSubject: draftOk ? draft?.draft_subject ?? null : null,
+      draftBody: draftOk ? draft?.draft_body ?? null : null,
       shared: sharedClients.has(c.id),
     });
   }
@@ -494,9 +510,28 @@ export async function generateDraft(input: {
     parsed = m ? JSON.parse(m[0]) : {};
   }
   const u = json?.usage ?? {};
+  let subject = String(parsed.subject ?? "").slice(0, 160);
+  let body = String(parsed.body ?? "").slice(0, 2000);
+
+  // The model may only paraphrase. If it introduced a number that is not in
+  // the canonical snapshot, or financing language an agent may not use, the
+  // whole draft is replaced by the deterministic seed rather than edited.
+  if (input.facts && input.narrative) {
+    const check = copyAgreesWithFacts(
+      `${subject} ${body}`,
+      input.facts,
+      input.audience === "agent" ? "agent" : "lender",
+      { address: input.address },
+    );
+    if (!check.ok) {
+      subject = input.channel === "text" ? "" : input.narrative.headline;
+      body = input.narrative.openerSeed;
+    }
+  }
+
   return {
-    subject: String(parsed.subject ?? "").slice(0, 160),
-    body: String(parsed.body ?? "").slice(0, 2000),
+    subject,
+    body,
     usage: {
       prompt: Number(u.prompt_tokens ?? 0),
       completion: Number(u.completion_tokens ?? 0),

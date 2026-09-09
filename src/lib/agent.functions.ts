@@ -313,6 +313,33 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
     }
 
 
+    // Open opportunity categories per homeowner — the same raw categories the
+    // narrative engine reads elsewhere. Stored categories are untouched.
+    const categoriesByClient: Record<string, string[]> = {};
+    if (ids.length) {
+      const { data: openOpps } = await context.supabase
+        .from("homeowner_opportunities")
+        .select("portfolio_client_id, category")
+        .in("portfolio_client_id", ids)
+        .eq("state", "open");
+      for (const o of openOpps ?? []) {
+        const list = (categoriesByClient[o.portfolio_client_id] ??= []);
+        if (!list.includes(o.category)) list.push(o.category);
+      }
+    }
+    const { buildNarrative: buildRosterNarrative } = await import("@/lib/opportunity-narrative");
+    const rosterOpener = (
+      clientId: string,
+      f: import("@/lib/client-facts").ClientFacts,
+      name: string | null,
+    ) =>
+      buildRosterNarrative({
+        role: "agent",
+        facts: f,
+        categories: categoriesByClient[clientId] ?? [],
+        firstName: String(name ?? "").trim().split(/\s+/)[0] ?? null,
+      }).openerSeed;
+
     const { normalizeAddress } = await import("@/lib/attom.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const {
@@ -321,7 +348,6 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       extractTaxTrend,
       computeMoveScore,
       computeListingReadiness,
-      draftOpener,
     } = await import("@/lib/agent.server");
     const { computeEngagement, combineIntent } = await import("@/lib/engagement");
     const { extractSales, extractPermits } = await import("@/lib/valuation.server");
@@ -502,7 +528,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
           })),
           ...score.signals,
         ],
-        opener: draftOpener(c.client_name, score),
+        opener: rosterOpener(c.id, f, c.client_name),
         readiness_score: readiness.score,
         readiness_label: readiness.label,
         readiness_checks: readiness.checks,
@@ -917,7 +943,13 @@ ${JSON.stringify(facts, null, 2)}`,
     });
     if (!res.ok) return { brief: fallback, ai: false };
     const json: any = await res.json();
-    return { brief: json?.choices?.[0]?.message?.content ?? "", ai: true, score: score.score };
+    const text: string = json?.choices?.[0]?.message?.content ?? "";
+    // Paraphrase only: any unsupported number or financing recommendation
+    // sends the whole brief back to the deterministic version.
+    const { copyAgreesWithFacts } = await import("@/lib/opportunity-narrative");
+    if (!text.trim() || !copyAgreesWithFacts(text, f, "agent", { address: full }).ok)
+      return { brief: fallback, ai: false, score: score.score };
+    return { brief: text, ai: true, score: score.score };
   });
 
 // ---------------------------------------------------------------------------
