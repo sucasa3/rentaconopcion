@@ -55,6 +55,8 @@ export const draftOutreach = createServerFn({ method: "POST" })
       reasons: item.reasons,
       senderName: profile?.contact_name ?? profile?.sender_name ?? null,
       address: item.address,
+      facts: item.facts,
+      narrative: item.narrative,
     });
 
     await logAiUsage({
