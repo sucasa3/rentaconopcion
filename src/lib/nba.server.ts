@@ -321,8 +321,10 @@ export async function buildActionQueue(
       phone: c.client_phone ?? null,
       address: [c.address_line1, c.city, c.state].filter(Boolean).join(", ") || null,
       activated: Boolean(c.homeowner_id),
+      // Raw stored category is preserved; only the label shown to this role
+      // changes, so an agent never reads "HELOC opportunity".
       category: o.category,
-      categoryLabel: categoryLabel(o.category),
+      categoryLabel: narrative.headline,
       score: o.score ?? 0,
       strength: o.strength ?? "emerging",
       reasons: o.reasons ?? [],
