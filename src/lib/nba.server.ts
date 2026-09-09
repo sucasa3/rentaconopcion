@@ -399,7 +399,10 @@ const DRAFT_SYSTEM = `You write short, warm outreach messages for a real-estate 
 
 Hard rules:
 - Never say the homeowner qualifies for, is eligible for, is approved for, or needs anything. Only suggest a conversation.
-- Never invent numbers. Use only the facts given.
+- Never invent, recompute or estimate a number. Use ONLY the facts given, exactly as given. You may round them conversationally. If a fact is missing, leave it out.
+- Never derive a new equity figure, loan-to-value or value. Never introduce a financial fact that is not listed.
+- Keep the recommendation you are given. Do not swap it for a different topic.
+- A real estate agent never recommends, describes or implies a loan product (HELOC, cash-out, refinance). If financing comes up, they suggest a licensed mortgage professional.
 - No pressure, no hype, no exclamation marks, no emoji.
 - 60-110 words for email, under 40 words for text.
 - Plain language a fifth grader can read.
@@ -414,6 +417,10 @@ export async function generateDraft(input: {
   reasons: string[];
   senderName: string | null;
   address: string | null;
+  /** Canonical snapshot — the only numbers the model may use. */
+  facts?: ClientFacts | null;
+  /** The decided story. The model paraphrases the seed; it never re-decides. */
+  narrative?: Narrative | null;
 }): Promise<{
   subject: string;
   body: string;
