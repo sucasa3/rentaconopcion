@@ -25,24 +25,25 @@ import { IntelligenceSurface } from "@/components/intelligence-surface";
 type Workspace = NonNullable<Awaited<ReturnType<typeof getLenderWorkspace>>>;
 export type Person = Workspace["book"][number];
 
+/** Temperature is quiet supporting metadata: a small dot and a light chip. */
 const TEMP = {
   hot: {
     label: "Hot",
-    dot: "bg-attention",
-    chip: "bg-attention/15 text-attention-foreground",
-    card: "border-attention/35",
+    dot: "bg-sucasa-orange",
+    chip: "bg-sucasa-orange/12 text-status-opportunity",
+    card: "border-border-subtle",
   },
   warm: {
     label: "Warm",
-    dot: "bg-growth",
-    chip: "bg-growth/12 text-growth",
-    card: "border-growth/30",
+    dot: "bg-status-attention",
+    chip: "bg-status-attention/12 text-status-attention",
+    card: "border-border-subtle",
   },
   nurture: {
     label: "Nurture",
-    dot: "bg-muted-foreground/50",
-    chip: "bg-secondary text-muted-foreground",
-    card: "border-border/70",
+    dot: "bg-status-nurture/60",
+    chip: "bg-secondary text-status-nurture",
+    card: "border-border-subtle",
   },
 } as const;
 
