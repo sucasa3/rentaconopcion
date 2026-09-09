@@ -436,8 +436,20 @@ export async function generateDraft(input: {
     `Sender name: ${input.senderName ?? "their agent"}`,
     `Homeowner first name: ${firstName}`,
     input.address ? `Property: ${input.address}` : "",
-    `Conversation topic: ${categoryLabel(input.category)}`,
-    `Facts we may reference: ${input.reasons.slice(0, 3).join("; ") || "none"}`,
+    `Conversation topic: ${input.narrative?.headline ?? categoryLabel(input.category)}`,
+    input.narrative ? `Why now: ${input.narrative.whyNow}` : "",
+    input.narrative ? `How to be useful: ${input.narrative.howToBeUseful}` : "",
+    input.narrative
+      ? `Rewrite this opener naturally, keeping its meaning and every number exactly: ${input.narrative.openerSeed}`
+      : "",
+    input.facts
+      ? `The ONLY facts you may state: ${
+          Object.entries(narrativeFactSheet(input.facts))
+            .map(([k, v]) => `${k}: ${v}`)
+            .join("; ") || "none"
+        }`
+      : `Facts we may reference: ${input.reasons.slice(0, 3).join("; ") || "none"}`,
+    input.narrative?.complianceNote ? `Compliance: ${input.narrative.complianceNote}` : "",
   ]
     .filter(Boolean)
     .join("\n");
