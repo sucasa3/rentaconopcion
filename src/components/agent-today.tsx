@@ -384,7 +384,8 @@ function BestMove({
   pending: boolean;
 }) {
   const meta = TEMPERATURE_META[item.temperature];
-  const opener = item.draftBody?.trim() || item.headline;
+  const n = item.narrative;
+  const opener = item.draftBody?.trim() || n?.openerSeed || item.headline;
 
   return (
     <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-primary/25 bg-card shadow-soft ring-1 ring-primary/10">
