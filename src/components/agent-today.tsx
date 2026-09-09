@@ -335,13 +335,13 @@ function NextRelationship({
   onAct: (channel: "call" | "text" | "email") => void;
 }) {
   return (
-    <li className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
+    <li className="rounded-3xl border border-border-subtle bg-card p-4">
       <button type="button" onClick={onFocus} className="w-full text-left">
-        <p className="text-xs text-muted-foreground">
-          #{rank} · {item.categoryLabel}
+        <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+          <OpportunityDot /> #{rank} · {item.categoryLabel}
         </p>
         <p className="mt-1 truncate text-[17px] font-semibold tracking-tight">{item.name}</p>
-        <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{item.why}</p>
+        <p className="mt-0.5 text-sm leading-snug text-text-secondary">{item.why}</p>
         <p className="mt-2 text-sm font-medium">Suggested: {item.headline}</p>
       </button>
       <div className="mt-3">
@@ -360,7 +360,7 @@ function NextRelationship({
               to="/agent/portfolio/$id"
               params={{ id: item.portfolioId }}
               search={{ client: item.clientId } as never}
-              className="inline-flex min-h-[38px] items-center rounded-full border border-border/70 px-4 text-sm font-semibold"
+              className="inline-flex min-h-[38px] items-center rounded-full border border-border-subtle px-4 text-sm font-semibold"
             >
               View homeowner
             </Link>
@@ -386,23 +386,28 @@ function BestMove({
   const opener = item.draftBody?.trim() || n?.openerSeed || item.headline;
 
   return (
-    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-primary/25 bg-card shadow-soft ring-1 ring-primary/10">
-      <div className="border-b border-border/60 px-5 py-4">
-        <p className="text-xs text-muted-foreground">{item.categoryLabel}</p>
+    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-border-subtle bg-card shadow-elevated">
+      {/* 3px brand line — the only large-format orange on the page. */}
+      <div className="h-[3px] w-full bg-sucasa-orange" aria-hidden />
+      <div className="border-b border-border-subtle bg-surface-warm px-5 py-4">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-status-opportunity">
+          <OpportunityDot /> {item.categoryLabel}
+        </p>
         <h2 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight">{item.name}</h2>
-        <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/70">
+        <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em]", meta.text)}>
+          <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
           {meta.label}
         </p>
       </div>
 
       <div className="space-y-4 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             Why now
           </p>
-          <p className="mt-1 text-sm leading-relaxed">{item.why}</p>
+          <p className="mt-1 text-sm font-medium leading-relaxed text-primary">{item.why}</p>
           {n?.whyItMatters && (
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{n.whyItMatters}</p>
+            <p className="mt-1 text-sm leading-relaxed text-text-secondary">{n.whyItMatters}</p>
           )}
           {item.engagementLine && (
             <p className="mt-1 text-sm font-medium text-primary">{item.engagementLine}</p>
@@ -414,7 +419,7 @@ function BestMove({
             {n.supportingSignals.map((s) => (
               <span
                 key={s}
-                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground"
+                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-text-secondary"
               >
                 {s}
               </span>
@@ -423,22 +428,20 @@ function BestMove({
         ) : null}
 
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             How to be useful
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed">{n?.howToBeUseful ?? item.ask}</p>
-          {n?.cta && (
-            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{n.cta}</p>
-          )}
+          {n?.cta && <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">{n.cta}</p>}
         </div>
 
         {n?.secondarySignals?.length ? (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
               Also worth knowing
             </p>
             {n.secondarySignals.map((s) => (
-              <p key={s} className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              <p key={s} className="mt-1 text-sm leading-relaxed text-text-secondary">
                 {s}
               </p>
             ))}
@@ -447,14 +450,9 @@ function BestMove({
 
 
         {opener && (
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              What to say
-            </p>
-            <p className="mt-1 rounded-2xl bg-secondary/60 p-3 text-sm leading-relaxed text-muted-foreground">
-              {opener}
-            </p>
-          </div>
+          <IntelligenceSurface label="Suggested opener" compact>
+            <p className="text-sm leading-relaxed">{opener}</p>
+          </IntelligenceSurface>
         )}
 
         <ChannelActions
@@ -476,7 +474,7 @@ function BestMove({
               to="/agent/portfolio/$id"
               params={{ id: item.portfolioId }}
               search={{ client: item.clientId } as never}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border/70 px-5 text-sm font-semibold"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border-subtle px-5 text-sm font-semibold"
             >
               View homeowner
             </Link>
