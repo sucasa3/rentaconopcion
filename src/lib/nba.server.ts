@@ -301,7 +301,17 @@ export async function buildActionQueue(
     };
     const recipe = recipeFor(o.category, orgType);
     const draft = draftByOpp.get(o.id);
+    const facts = factsByClient.get(c.id) ?? emptyClientFacts(c.id);
+    const narrative = buildNarrative({
+      role: orgType === "agent" ? "agent" : "lender",
+      facts,
+      categories: categoriesByClient.get(c.id) ?? [o.category],
+      firstName: String(c.client_name ?? "").trim().split(/\s+/)[0] ?? null,
+      engagementLine,
+    });
     items.push({
+      facts,
+      narrative,
       opportunityId: o.id,
       orgId: o.org_id ?? scope.orgByBook.get(c.portfolio_id) ?? scope.orgIds[0]!,
       clientId: c.id,
