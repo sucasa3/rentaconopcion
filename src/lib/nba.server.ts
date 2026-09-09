@@ -516,7 +516,12 @@ export async function generateDraft(input: {
   // the canonical snapshot, or financing language an agent may not use, the
   // whole draft is replaced by the deterministic seed rather than edited.
   if (input.facts && input.narrative) {
-    const check = copyAgreesWithFacts(`${subject} ${body}`, input.facts, input.audience === "agent" ? "agent" : "lender");
+    const check = copyAgreesWithFacts(
+      `${subject} ${body}`,
+      input.facts,
+      input.audience === "agent" ? "agent" : "lender",
+      { address: input.address },
+    );
     if (!check.ok) {
       if (process.env["NBA_DRAFT_DEBUG"]) console.log("[draft rejected]", check.violations, body);
       subject = input.channel === "text" ? "" : input.narrative.headline;

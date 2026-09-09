@@ -458,6 +458,7 @@ export function copyAgreesWithFacts(
   text: string | null | undefined,
   facts: ClientFacts,
   role: NarrativeRole,
+  opts?: { address?: string | null },
 ): { ok: boolean; violations: string[] } {
   const violations: string[] = [];
   const t = (text ?? "").trim();
@@ -469,6 +470,10 @@ export function copyAgreesWithFacts(
   }
 
   const allowed = allowedNumbers(facts, role);
+  // Street numbers and ZIPs from the property address are not claims.
+  const addressNumbers = new Set(
+    (opts?.address ?? "").match(/\d[\d,]*/g)?.map((x) => x.replace(/,/g, "")) ?? [],
+  );
   const matches = [...t.matchAll(NUM_RE)];
   for (const m of matches) {
     const raw = m[1]!.replace(/,/g, "");
@@ -481,6 +486,7 @@ export function copyAgreesWithFacts(
     // financial claims and are checked loosely.
     const financial = m[0]!.includes("$") || suffix !== "" || n >= 1000;
     if (!financial) continue;
+    if (!m[0]!.includes("$") && !suffix && addressNumbers.has(raw)) continue;
     const near = allowed.some((a) => {
       const tol = Math.max(1, Math.abs(a) * (suffix ? 0.1 : 0.02));
       return Math.abs(a - n) <= tol;
