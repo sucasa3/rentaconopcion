@@ -324,8 +324,8 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       draftOpener,
     } = await import("@/lib/agent.server");
     const { computeEngagement, combineIntent } = await import("@/lib/engagement");
-    const { extractAvm, extractSales, extractMortgage, extractPermits, extractTax, estimateLoanBalance } =
-      await import("@/lib/valuation.server");
+    const { extractSales, extractPermits } = await import("@/lib/valuation.server");
+    const { factsFromRecord } = await import("@/lib/client-facts.server");
     const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
       "@/lib/maintenance-rules"
     );
