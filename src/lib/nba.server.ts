@@ -112,6 +112,10 @@ export interface QueueItem {
   draftSubject: string | null;
   draftBody: string | null;
   shared: boolean;
+  /** Canonical fact snapshot — the only numbers any surface may display. */
+  facts: ClientFacts;
+  /** The one role-correct story for this homeowner. */
+  narrative: Narrative;
 }
 
 export interface QueueResult {
