@@ -348,8 +348,11 @@ export async function buildActionQueue(
               recommended: recipe.channel,
             })
           : null,
-      draftSubject: draft?.draft_subject ?? null,
-      draftBody: draft?.draft_body ?? null,
+      // A cached draft is only shown when it still agrees with the canonical
+      // snapshot and with this role's language rules. Legacy drafts written
+      // before the canonical refactor are dropped, never displayed.
+      draftSubject: draftOk ? draft?.draft_subject ?? null : null,
+      draftBody: draftOk ? draft?.draft_body ?? null : null,
       shared: sharedClients.has(c.id),
     });
   }
