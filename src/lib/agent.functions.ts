@@ -349,25 +349,20 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
 
     const enriched = (clients ?? []).map((c: any) => {
       const intel = intelByAddr[addrKey(c)] ?? null;
-      const avm = intel?.avm ? extractAvm(intel.avm) : null;
       const sales = intel?.sales ? extractSales(intel.sales) : null;
-      const mortgage = intel?.mortgage ? extractMortgage(intel.mortgage) : null;
       const permits = intel?.permits ? extractPermits(intel.permits) : null;
-      const owner = intel?.owner ? extractOwnership(intel.owner) : null;
       const chars = intel?.detail ? extractCharacteristics(intel.detail) : null;
-      const assessedSummary = intel?.tax ? extractTax(intel.tax) : null;
-      const value =
-        avm?.estimate ?? assessedSummary?.marketTotal ?? assessedSummary?.assessedTotal ?? null;
-      const tax = intel?.tax ? extractTaxTrend(intel.tax, value) : null;
 
-      const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-      const equityDollars = value != null && balance != null ? value - balance : null;
-      const equityPct = value && equityDollars != null ? Math.max(0, equityDollars / value) : null;
+      // Canonical snapshot — value, balance, equity, LTV, tenure, size and tax
+      // are read from here and never recomputed on this surface.
+      const f = factsFromRecord(c, intel);
+      const value = f.value;
+      const balance = f.loanBalance;
+      const equityDollars = f.equityDollars;
+      const equityPct = f.equityPct;
+      const tenureYears = f.tenureYears;
+      const tax = { latestTaxAmount: f.taxAmount, taxChangePct: f.taxChangePct };
 
-      const lastSaleDate = sales?.lastSale?.date ?? c.close_date ?? null;
-      const tenureYears = lastSaleDate
-        ? (Date.now() - new Date(lastSaleDate).getTime()) / (365.25 * 24 * 3600 * 1000)
-        : null;
 
       const listing = listings[c.id] ?? null;
       const score = computeMoveScore({
