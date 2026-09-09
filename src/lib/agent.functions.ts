@@ -818,61 +818,58 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
       .eq("portfolio_client_id", data.clientId)
       .maybeSingle();
 
-    const {
-      extractOwnership,
-      extractCharacteristics,
-      extractTaxTrend,
-      computeMoveScore,
-    } = await import("@/lib/agent.server");
-    const { extractAvm, extractSales, extractMortgage, extractPermits, extractTax, estimateLoanBalance } =
-      await import("@/lib/valuation.server");
-    const { buildMaintenanceTimeline, needsFromTimeline, recentImprovementNeeds } = await import(
-      "@/lib/maintenance-rules"
-    );
+    const { computeMoveScore } = await import("@/lib/agent.server");
+    const { extractSales, extractPermits } = await import("@/lib/valuation.server");
+    const { factsFromRecord } = await import("@/lib/client-facts.server");
+    const { narrativeFactSheet, buildNarrative } = await import("@/lib/opportunity-narrative");
 
-    const avm = intel?.avm ? extractAvm(intel.avm) : null;
     const sales = intel?.sales ? extractSales(intel.sales) : null;
-    const mortgage = intel?.mortgage ? extractMortgage(intel.mortgage) : null;
     const permits = intel?.permits ? extractPermits(intel.permits) : null;
-    const owner = intel?.owner ? extractOwnership(intel.owner) : null;
-    const chars = intel?.detail ? extractCharacteristics(intel.detail) : null;
-    const assessedSummary = intel?.tax ? extractTax(intel.tax) : null;
-    const value =
-      avm?.estimate ?? assessedSummary?.marketTotal ?? assessedSummary?.assessedTotal ?? null;
-    const tax = intel?.tax ? extractTaxTrend(intel.tax, value) : null;
-    const balance = mortgage ? estimateLoanBalance(mortgage) : null;
-    const equity = value != null && balance != null ? value - balance : null;
-    const lastSaleDate = sales?.lastSale?.date ?? client.close_date ?? null;
-    const tenureYears = lastSaleDate
-      ? (Date.now() - new Date(lastSaleDate).getTime()) / (365.25 * 24 * 3600 * 1000)
-      : null;
+
+    // Canonical snapshot — identical to the roster, the Today card and every
+    // draft. This brief never derives its own value, equity or tenure.
+    const f = factsFromRecord(client as any, intel);
 
     const score = computeMoveScore({
-      tenureYears,
-      equityPct: value && equity != null ? equity / value : null,
-      equityDollars: equity,
-      ownerOccupied: owner?.ownerOccupied ?? null,
-      lastPermitDate: permits?.lastPermitDate ?? null,
-      permitTotalValue: permits?.totalValue ?? null,
-      taxChangePct: tax?.taxChangePct ?? null,
+      tenureYears: f.tenureYears,
+      equityPct: f.equityPct,
+      equityDollars: f.equityDollars,
+      ownerOccupied: f.ownerOccupied,
+      lastPermitDate: f.lastPermitDate,
+      permitTotalValue: f.permitTotalValue,
+      taxChangePct: f.taxChangePct,
       listing: listing as any,
-      livingSqft: chars?.livingSqft ?? null,
-      beds: chars?.beds ?? null,
+      livingSqft: f.sqft,
+      beds: f.beds,
+    });
+
+    // The one role-correct story, decided before any AI generation.
+    const { data: openOpps } = await context.supabase
+      .from("homeowner_opportunities")
+      .select("category")
+      .eq("portfolio_client_id", data.clientId)
+      .eq("state", "open");
+    const narrative = buildNarrative({
+      role: "agent",
+      facts: f,
+      categories: [...new Set((openOpps ?? []).map((o: any) => o.category))],
+      firstName: String(client.client_name ?? "").trim().split(/\s+/)[0] ?? null,
     });
 
     const facts = {
       owner: client.client_name,
       address: full,
-      estimatedValue: value,
+      primaryOpportunity: narrative.headline,
+      whyNow: narrative.whyNow,
+      whyItMatters: narrative.whyItMatters,
+      howToBeUseful: narrative.howToBeUseful,
+      supportingSignals: narrative.supportingSignals,
+      secondarySignals: narrative.secondarySignals,
+      openerSeed: narrative.openerSeed,
+      canonicalFacts: narrativeFactSheet(f),
       lastSale: sales?.lastSale ?? null,
-      tenureYears: tenureYears ? Math.round(tenureYears * 10) / 10 : null,
-      equity,
-      characteristics: chars,
       permits: permits?.events?.slice(0, 5) ?? [],
-      tax,
       listing: listing ?? null,
-      moveScore: score.score,
-      signals: score.signals.map((s: { label: string; detail: string }) => `${s.label}: ${s.detail}`),
     };
 
     const apiKey = process.env["LOVABLE_API_KEY"];
