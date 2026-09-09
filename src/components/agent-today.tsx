@@ -15,6 +15,7 @@ import {
   Upload,
   UserPlus,
 } from "lucide-react";
+import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-surface";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
