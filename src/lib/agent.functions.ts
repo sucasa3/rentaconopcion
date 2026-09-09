@@ -943,7 +943,13 @@ ${JSON.stringify(facts, null, 2)}`,
     });
     if (!res.ok) return { brief: fallback, ai: false };
     const json: any = await res.json();
-    return { brief: json?.choices?.[0]?.message?.content ?? "", ai: true, score: score.score };
+    const text: string = json?.choices?.[0]?.message?.content ?? "";
+    // Paraphrase only: any unsupported number or financing recommendation
+    // sends the whole brief back to the deterministic version.
+    const { copyAgreesWithFacts } = await import("@/lib/opportunity-narrative");
+    if (!text.trim() || !copyAgreesWithFacts(text, f, "agent").ok)
+      return { brief: fallback, ai: false, score: score.score };
+    return { brief: text, ai: true, score: score.score };
   });
 
 // ---------------------------------------------------------------------------
