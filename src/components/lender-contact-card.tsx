@@ -20,28 +20,30 @@ import {
 import { PRIORITY_LABEL } from "@/lib/lender-access";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { IntelligenceSurface } from "@/components/intelligence-surface";
 
 type Workspace = NonNullable<Awaited<ReturnType<typeof getLenderWorkspace>>>;
 export type Person = Workspace["book"][number];
 
+/** Temperature is quiet supporting metadata: a small dot and a light chip. */
 const TEMP = {
   hot: {
     label: "Hot",
-    dot: "bg-attention",
-    chip: "bg-attention/15 text-attention-foreground",
-    card: "border-attention/35",
+    dot: "bg-sucasa-orange",
+    chip: "bg-sucasa-orange/12 text-status-opportunity",
+    card: "border-border-subtle",
   },
   warm: {
     label: "Warm",
-    dot: "bg-growth",
-    chip: "bg-growth/12 text-growth",
-    card: "border-growth/30",
+    dot: "bg-status-attention",
+    chip: "bg-status-attention/12 text-status-attention",
+    card: "border-border-subtle",
   },
   nurture: {
     label: "Nurture",
-    dot: "bg-muted-foreground/50",
-    chip: "bg-secondary text-muted-foreground",
-    card: "border-border/70",
+    dot: "bg-status-nurture/60",
+    chip: "bg-secondary text-status-nurture",
+    card: "border-border-subtle",
   },
 } as const;
 
@@ -127,7 +129,7 @@ export function LenderContactCard({
       className={cn(
         "overflow-hidden rounded-[28px] border bg-card shadow-soft transition duration-200 active:scale-[0.995]",
         t.card,
-        spotlight && "border-primary/25 ring-1 ring-primary/10",
+        spotlight && "border-border-subtle shadow-elevated",
       )}
     >
       <div className={cn("p-5", spotlight && "sm:p-6")}>
@@ -173,12 +175,14 @@ export function LenderContactCard({
         </div>
 
         {spotlight && (
-          <div className="mt-3 rounded-2xl border border-border/60 bg-background/60 p-3.5">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-              <Quote className="h-3 w-3" /> Suggested opener
-            </p>
-            <p className="mt-1 text-[15px] leading-relaxed">{person.opener}</p>
-          </div>
+          <IntelligenceSurface
+            label="Suggested opener"
+            icon={<Quote className="h-3 w-3" />}
+            compact
+            className="mt-3"
+          >
+            <p className="text-[15px] leading-relaxed">{person.opener}</p>
+          </IntelligenceSurface>
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -212,7 +216,7 @@ export function LenderContactCard({
           <button
             type="button"
             onClick={onBrief}
-            className="inline-flex min-h-[44px] flex-1 flex-col items-center justify-center rounded-2xl border border-primary/30 bg-primary/8 px-4 py-1.5 text-primary transition active:scale-[0.98]"
+            className="inline-flex min-h-[44px] flex-1 flex-col items-center justify-center rounded-2xl border border-action-primary/30 bg-action-primary/8 px-4 py-1.5 text-action-primary transition active:scale-[0.98]"
           >
             <span className="flex items-center gap-1.5 text-sm font-semibold">
               <FileText className="h-4 w-4" /> Prepare me

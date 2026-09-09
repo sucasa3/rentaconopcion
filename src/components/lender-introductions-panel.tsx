@@ -174,9 +174,9 @@ function IntroRow({ row, orgId }: { row: any; orgId: string }) {
 function StatusPill({ status }: { status: string }) {
   const tone =
     status === "approved"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+      ? "border-status-positive/30 bg-status-positive/10 text-status-positive"
       : status === "pending"
-        ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
+        ? "border-status-attention/30 bg-status-attention/10 text-status-attention"
         : "border-border bg-muted text-muted-foreground";
   return (
     <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${tone}`}>

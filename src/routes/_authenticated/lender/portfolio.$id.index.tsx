@@ -60,7 +60,7 @@ const SEGMENT_META: Record<Exclude<Segment, "all">, { label: string; tone: strin
   },
   "cash-out": {
     label: "Cash-out",
-    tone: "bg-amber-500/10 text-amber-700 border-amber-500/30",
+    tone: "bg-status-attention/10 text-status-attention border-status-attention/30",
   },
   watchlist: {
     label: "Watchlist",

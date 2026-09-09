@@ -121,7 +121,7 @@ export function CapacityWorkspace({ orgId }: { orgId: string }) {
       </div>
 
       {(summary.atLimit || summary.approachingLimit) && (
-        <Card className={cn(summary.atLimit ? "border-destructive/40" : "border-amber-500/40")}>
+        <Card className={cn(summary.atLimit ? "border-destructive/40" : "border-status-attention/40")}>
           <CardContent className="flex flex-wrap items-center gap-3 p-4 text-sm">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>

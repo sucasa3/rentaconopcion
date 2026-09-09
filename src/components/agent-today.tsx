@@ -15,6 +15,8 @@ import {
   Upload,
   UserPlus,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-surface";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
@@ -149,32 +151,32 @@ export function AgentToday() {
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="space-y-9 px-4 pb-12 pt-6 sm:px-6">
-      <header>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-          Daily Intelligence
+    <div className="space-y-9 bg-surface-base px-4 pb-12 pt-6 sm:px-6">
+      <header className="-mx-4 rounded-b-[28px] border-b border-surface-warm-border bg-surface-warm px-4 pb-6 pt-1 sm:-mx-6 sm:px-6">
+        <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
+          <OpportunityDot /> Daily Intelligence
         </p>
         <h1 className="mt-2 text-[30px] font-semibold leading-[1.12] tracking-tight sm:text-[36px]">
           {greeting}.
-          <span className="block text-muted-foreground">
+          <span className="block text-text-secondary">
             {quiet ? "Your book is steady today." : "Your relationships are moving."}
           </span>
         </h1>
-        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-text-secondary">
           {quiet
             ? `Nothing needs immediate attention. SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and will surface the next useful moment.`
             : `SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and found ${items.length} relationship${items.length === 1 ? "" : "s"} worth your attention today.`}
         </p>
         <ul className="mt-4 space-y-1.5">
           {lines.map((l) => (
-            <li key={l} className="flex gap-2 text-[13.5px] text-muted-foreground">
-              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-muted-foreground/50" />
+            <li key={l} className="flex gap-2 text-[13.5px] text-text-secondary">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-text-secondary/50" />
               {l}
             </li>
           ))}
         </ul>
         {handled > 0 && (
-          <p className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-primary">
+          <p className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" /> {handled} relationship
             {handled === 1 ? "" : "s"} handled today
           </p>
@@ -182,11 +184,11 @@ export function AgentToday() {
       </header>
 
       {mode === "aha" && best && (
-        <div className="animate-in fade-in slide-in-from-top-1 rounded-3xl border border-primary/30 bg-primary/5 p-4">
-          <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+        <IntelligenceSurface compact className="animate-in fade-in slide-in-from-top-1">
+          <p className="flex items-center gap-2 text-sm font-semibold text-surface-intelligence-foreground">
             <Sparkles className="h-4 w-4" /> SuCasa found someone worth your attention
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-text-secondary">
             Here's {firstName(best.name)} — why now, what we noticed, and a way to open the
             conversation.
           </p>
@@ -197,29 +199,26 @@ export function AgentToday() {
           >
             Got it
           </button>
-        </div>
+        </IntelligenceSurface>
       )}
 
       {!quiet && (
-        <section className="rounded-[28px] border border-primary/20 bg-primary/[0.05] p-5 shadow-soft sm:p-6">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-            <Sparkles className="h-3.5 w-3.5" /> SuCasa daily read
-          </p>
-          <p className="mt-2.5 text-[16px] font-medium leading-relaxed">{read.sentence}</p>
-          <dl className="mt-5 space-y-3 border-t border-primary/15 pt-4">
+        <IntelligenceSurface label="SuCasa daily read">
+          <p className="text-[16px] font-medium leading-relaxed">{read.sentence}</p>
+          <dl className="mt-5 space-y-3 border-t border-surface-intelligence-border pt-4">
             {read.startHere && <Read label="Start here" value={read.startHere} strong />}
             {read.why && <Read label="Why" value={read.why} />}
             {read.beUsefulBy && <Read label="Be useful by" value={read.beUsefulBy} />}
           </dl>
-        </section>
+        </IntelligenceSurface>
       )}
 
       {handledNote && (
-        <div className="animate-in fade-in rounded-3xl border border-primary/30 bg-primary/[0.06] p-4">
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+        <div className="animate-in fade-in rounded-3xl border border-status-positive/25 bg-status-positive/[0.06] p-4">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" /> {handledNote.name} is handled for today
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1 text-sm leading-relaxed text-text-secondary">
             Your touch was recorded. SuCasa keeps monitoring the relationship and will surface it
             again when another meaningful moment develops. {handledNote.next}
           </p>
@@ -238,10 +237,10 @@ export function AgentToday() {
           />
         </section>
       ) : (
-        <div className="rounded-3xl border border-primary/25 bg-primary/[0.05] p-6 text-center shadow-soft">
-          <CheckCircle2 className="mx-auto h-7 w-7 text-primary" />
+        <div className="rounded-3xl border border-surface-warm-border bg-surface-warm p-6 text-center">
+          <CheckCircle2 className="mx-auto h-7 w-7 text-status-positive" />
           <p className="mt-2 font-semibold">Your relationships are in good shape today</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
             Nothing needs immediate attention. SuCasa is still monitoring{" "}
             {monitored.toLocaleString()} homeowner{monitored === 1 ? "" : "s"} and will surface the
             next useful moment.
@@ -337,13 +336,13 @@ function NextRelationship({
   onAct: (channel: "call" | "text" | "email") => void;
 }) {
   return (
-    <li className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
+    <li className="rounded-3xl border border-border-subtle bg-card p-4">
       <button type="button" onClick={onFocus} className="w-full text-left">
-        <p className="text-xs text-muted-foreground">
-          #{rank} · {item.categoryLabel}
+        <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+          <OpportunityDot /> #{rank} · {item.categoryLabel}
         </p>
         <p className="mt-1 truncate text-[17px] font-semibold tracking-tight">{item.name}</p>
-        <p className="mt-0.5 text-sm leading-snug text-muted-foreground">{item.why}</p>
+        <p className="mt-0.5 text-sm leading-snug text-text-secondary">{item.why}</p>
         <p className="mt-2 text-sm font-medium">Suggested: {item.headline}</p>
       </button>
       <div className="mt-3">
@@ -362,7 +361,7 @@ function NextRelationship({
               to="/agent/portfolio/$id"
               params={{ id: item.portfolioId }}
               search={{ client: item.clientId } as never}
-              className="inline-flex min-h-[38px] items-center rounded-full border border-border/70 px-4 text-sm font-semibold"
+              className="inline-flex min-h-[38px] items-center rounded-full border border-border-subtle px-4 text-sm font-semibold"
             >
               View homeowner
             </Link>
@@ -388,23 +387,28 @@ function BestMove({
   const opener = item.draftBody?.trim() || n?.openerSeed || item.headline;
 
   return (
-    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-primary/25 bg-card shadow-soft ring-1 ring-primary/10">
-      <div className="border-b border-border/60 px-5 py-4">
-        <p className="text-xs text-muted-foreground">{item.categoryLabel}</p>
+    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-border-subtle bg-card shadow-elevated">
+      {/* 3px brand line — the only large-format orange on the page. */}
+      <div className="h-[3px] w-full bg-sucasa-orange" aria-hidden />
+      <div className="border-b border-border-subtle bg-surface-warm px-5 py-4">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-status-opportunity">
+          <OpportunityDot /> {item.categoryLabel}
+        </p>
         <h2 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight">{item.name}</h2>
-        <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/70">
+        <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em]", meta.text)}>
+          <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
           {meta.label}
         </p>
       </div>
 
       <div className="space-y-4 px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             Why now
           </p>
-          <p className="mt-1 text-sm leading-relaxed">{item.why}</p>
+          <p className="mt-1 text-sm font-medium leading-relaxed text-primary">{item.why}</p>
           {n?.whyItMatters && (
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{n.whyItMatters}</p>
+            <p className="mt-1 text-sm leading-relaxed text-text-secondary">{n.whyItMatters}</p>
           )}
           {item.engagementLine && (
             <p className="mt-1 text-sm font-medium text-primary">{item.engagementLine}</p>
@@ -416,7 +420,7 @@ function BestMove({
             {n.supportingSignals.map((s) => (
               <span
                 key={s}
-                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-muted-foreground"
+                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-text-secondary"
               >
                 {s}
               </span>
@@ -425,22 +429,20 @@ function BestMove({
         ) : null}
 
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             How to be useful
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed">{n?.howToBeUseful ?? item.ask}</p>
-          {n?.cta && (
-            <p className="mt-0.5 text-sm leading-relaxed text-muted-foreground">{n.cta}</p>
-          )}
+          {n?.cta && <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">{n.cta}</p>}
         </div>
 
         {n?.secondarySignals?.length ? (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
               Also worth knowing
             </p>
             {n.secondarySignals.map((s) => (
-              <p key={s} className="mt-1 text-sm leading-relaxed text-muted-foreground">
+              <p key={s} className="mt-1 text-sm leading-relaxed text-text-secondary">
                 {s}
               </p>
             ))}
@@ -449,14 +451,9 @@ function BestMove({
 
 
         {opener && (
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              What to say
-            </p>
-            <p className="mt-1 rounded-2xl bg-secondary/60 p-3 text-sm leading-relaxed text-muted-foreground">
-              {opener}
-            </p>
-          </div>
+          <IntelligenceSurface label="Suggested opener" compact>
+            <p className="text-sm leading-relaxed">{opener}</p>
+          </IntelligenceSurface>
         )}
 
         <ChannelActions
@@ -478,7 +475,7 @@ function BestMove({
               to="/agent/portfolio/$id"
               params={{ id: item.portfolioId }}
               search={{ client: item.clientId } as never}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border/70 px-5 text-sm font-semibold"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border-subtle px-5 text-sm font-semibold"
             >
               View homeowner
             </Link>

@@ -27,7 +27,7 @@ const URGENCY_LABEL: Record<string, string> = {
 
 const DOT: Record<string, string> = {
   immediate: "bg-destructive",
-  "12_months": "bg-amber-500",
+  "12_months": "bg-status-attention",
   "1_3_years": "bg-primary",
   monitor: "bg-muted-foreground",
 };

@@ -43,6 +43,38 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
 
+  /* ---------------------------------------------------------------------
+   * SuCasa semantic color system. One meaning per color:
+   *   navy        = act / primary emphasis
+   *   orange      = relationship opportunity / human moment (kept small)
+   *   intelligence= SuCasa is interpreting something for you
+   *   positive    = completed / real gain
+   *   attention   = due / aging
+   *   risk        = genuine problem
+   *   nurture     = steady, low-priority context
+   *   warm        = human / relationship context surfaces
+   * ------------------------------------------------------------------- */
+  --color-sucasa-navy: var(--sucasa-navy);
+  --color-sucasa-orange: var(--sucasa-orange);
+  --color-sucasa-orange-foreground: var(--sucasa-orange-foreground);
+  --color-surface-base: var(--surface-base);
+  --color-surface-warm: var(--surface-warm);
+  --color-surface-warm-border: var(--surface-warm-border);
+  --color-surface-intelligence: var(--surface-intelligence);
+  --color-surface-intelligence-border: var(--surface-intelligence-border);
+  --color-surface-intelligence-foreground: var(--surface-intelligence-foreground);
+  --color-text-primary: var(--foreground);
+  --color-text-secondary: var(--text-secondary);
+  --color-border-subtle: var(--border-subtle);
+  --color-status-opportunity: var(--status-opportunity);
+  --color-status-attention: var(--status-attention);
+  --color-status-positive: var(--status-positive);
+  --color-status-risk: var(--status-risk);
+  --color-status-nurture: var(--status-nurture);
+  --color-action-primary: var(--action-primary);
+  --color-action-primary-foreground: var(--action-primary-foreground);
+
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -92,6 +124,30 @@
   --info: oklch(0.62 0.13 250);
   --info-foreground: oklch(0.99 0 0);
 
+  /* SuCasa semantic system — light */
+  --sucasa-navy: oklch(0.36 0.13 255);
+  /* Logo orange #DA5431. Brand anchor: bars, dots, icons, tiny markers. */
+  --sucasa-orange: oklch(0.618 0.175 35.5);
+  --sucasa-orange-foreground: oklch(0.99 0 0);
+  --surface-base: oklch(1 0 0);
+  --surface-warm: oklch(0.985 0.009 65);
+  --surface-warm-border: oklch(0.915 0.016 65);
+  --surface-intelligence: oklch(0.972 0.018 250);
+  --surface-intelligence-border: oklch(0.9 0.035 250);
+  --surface-intelligence-foreground: oklch(0.32 0.09 255);
+  /* Secondary text is a step darker than --muted-foreground so it stays
+     legible on the warm and intelligence surfaces, not only on white. */
+  --text-secondary: oklch(0.45 0.03 255);
+  --border-subtle: oklch(0.93 0.012 70);
+  /* Text-safe orange; the brand orange above is for non-text marks. */
+  --status-opportunity: oklch(0.52 0.16 36);
+  --status-attention: oklch(0.52 0.11 75);
+  --status-positive: oklch(0.5 0.13 155);
+  --status-risk: oklch(0.52 0.2 25);
+  --status-nurture: oklch(0.5 0.03 255);
+  --action-primary: oklch(0.36 0.13 255);
+  --action-primary-foreground: oklch(0.99 0 0);
+
   --surface-elevated: oklch(1 0 0);
   --chart-1: oklch(0.5 0.15 255);
   --chart-2: oklch(0.62 0.15 155);
@@ -137,6 +193,27 @@
   --attention-foreground: oklch(0.2 0.05 75);
   --info: oklch(0.7 0.13 250);
   --info-foreground: oklch(0.15 0.02 255);
+
+  /* SuCasa semantic system — dark. Accents lift in lightness so they keep
+     4.5:1+ against the dark card, and surfaces stay tonal, not black. */
+  --sucasa-navy: oklch(0.7 0.14 255);
+  --sucasa-orange: oklch(0.72 0.16 38);
+  --sucasa-orange-foreground: oklch(0.16 0.03 38);
+  --surface-base: oklch(0.15 0.02 255);
+  --surface-warm: oklch(0.21 0.014 60);
+  --surface-warm-border: oklch(0.32 0.018 60);
+  --surface-intelligence: oklch(0.24 0.035 255);
+  --surface-intelligence-border: oklch(0.36 0.06 255);
+  --surface-intelligence-foreground: oklch(0.9 0.05 250);
+  --text-secondary: oklch(0.74 0.02 250);
+  --border-subtle: oklch(1 0 0 / 12%);
+  --status-opportunity: oklch(0.76 0.15 40);
+  --status-attention: oklch(0.82 0.14 80);
+  --status-positive: oklch(0.76 0.15 155);
+  --status-risk: oklch(0.72 0.18 25);
+  --status-nurture: oklch(0.72 0.03 250);
+  --action-primary: oklch(0.7 0.14 255);
+  --action-primary-foreground: oklch(0.15 0.02 255);
 
   --surface-elevated: oklch(0.22 0.03 255);
   --sidebar: oklch(0.2 0.03 255);

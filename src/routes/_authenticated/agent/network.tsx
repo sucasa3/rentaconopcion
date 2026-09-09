@@ -192,9 +192,9 @@ function Empty({ icon: Icon, title, hint }: { icon: any; title: string; hint: st
 function StatusPill({ status }: { status: string }) {
   const tone =
     status === "approved" || status === "connected"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+      ? "border-status-positive/30 bg-status-positive/10 text-status-positive"
       : status === "pending" || status === "invited" || status === "proposed"
-        ? "border-amber-500/30 bg-amber-500/10 text-amber-700"
+        ? "border-status-attention/30 bg-status-attention/10 text-status-attention"
         : "border-border bg-muted text-muted-foreground";
   return (
     <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${tone}`}>
@@ -372,7 +372,7 @@ function CampaignApprovals({ orgId }: { orgId: string }) {
           </p>
           {r.note && <p className="mt-2 text-sm">{r.note}</p>}
           {r.status === "approved" && (
-            <p className="mt-2 text-xs text-emerald-700">
+            <p className="mt-2 text-xs text-status-positive">
               Approved for {r.approved_count} client{r.approved_count === 1 ? "" : "s"}.
             </p>
           )}

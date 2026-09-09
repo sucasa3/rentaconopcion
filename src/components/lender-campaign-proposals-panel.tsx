@@ -190,12 +190,12 @@ function StatusPill({ status }: { status: string }) {
   const map: Record<string, { icon: any; className: string; label: string }> = {
     pending: {
       icon: Clock,
-      className: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+      className: "border-status-attention/30 bg-status-attention/10 text-status-attention",
       label: "Awaiting agent",
     },
     approved: {
       icon: CheckCircle2,
-      className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+      className: "border-status-positive/30 bg-status-positive/10 text-status-positive",
       label: "Approved",
     },
     declined: {

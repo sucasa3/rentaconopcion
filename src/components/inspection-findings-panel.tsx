@@ -17,17 +17,18 @@ const URGENCY_LABEL: Record<string, string> = {
   monitor: "Monitor",
 };
 
+/** Tinted surface + accent text, so only genuine end-of-life reads as risk. */
 const CONDITION_STYLE: Record<string, string> = {
-  good: "bg-emerald-100 text-emerald-800",
-  fair: "bg-amber-100 text-amber-800",
-  poor: "bg-orange-100 text-orange-800",
-  end_of_life: "bg-red-100 text-red-800",
+  good: "bg-status-positive/10 text-status-positive",
+  fair: "bg-status-attention/10 text-status-attention",
+  poor: "bg-status-attention/15 text-status-attention",
+  end_of_life: "bg-status-risk/10 text-status-risk",
 };
 
 function urgencyIcon(u: string | null) {
-  if (u === "immediate") return <AlertTriangle className="h-3.5 w-3.5 text-red-600" />;
-  if (u === "12_months") return <Clock className="h-3.5 w-3.5 text-amber-600" />;
-  return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />;
+  if (u === "immediate") return <AlertTriangle className="h-3.5 w-3.5 text-status-risk" />;
+  if (u === "12_months") return <Clock className="h-3.5 w-3.5 text-status-attention" />;
+  return <CheckCircle2 className="h-3.5 w-3.5 text-status-positive" />;
 }
 
 type Props = { userId?: string; onRequestService?: (category: string) => void };

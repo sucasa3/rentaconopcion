@@ -387,8 +387,8 @@ function ClaimedJobCard(props: {
 function StatusChip({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     claimed: { label: "Claimed", cls: "bg-primary/10 text-primary" },
-    scheduled: { label: "Scheduled", cls: "bg-blue-500/10 text-blue-600" },
-    in_progress: { label: "In progress", cls: "bg-amber-500/10 text-amber-600" },
+    scheduled: { label: "Scheduled", cls: "bg-primary/10 text-primary" },
+    in_progress: { label: "In progress", cls: "bg-status-attention/10 text-status-attention" },
     completed: { label: "Completed", cls: "bg-growth/15 text-growth" },
   };
   const m = map[status] ?? map.claimed;
