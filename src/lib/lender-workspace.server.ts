@@ -376,8 +376,19 @@ export async function readLenderWorkspace(
     const value = hasScope(access, "valuation")
       ? (recordValue ?? centsFromCents(estimatedValueCents(c.loan_amount_at_close_cents, months)))
       : null;
-    const equity = hasScope(access, "equity") ? subtractCents(value, balance) : null;
-    const ltv = value && balance ? Math.round((balance / value) * 1000) / 10 : null;
+    // Equity and LTV come from the canonical snapshot when we have a property
+    // record; the loan-derived fallback only fills in when we do not. Access
+    // scope gating is unchanged.
+    const canonicalEquity = centsFromDollars(canonical?.equityDollars ?? null);
+    const equity = hasScope(access, "equity")
+      ? (canonicalEquity ?? subtractCents(value, balance))
+      : null;
+    const ltv =
+      canonical?.ltvPct != null && recordValue != null
+        ? canonical.ltvPct
+        : value && balance
+          ? Math.round((balance / value) * 1000) / 10
+          : null;
     const loanAgeYears = c.close_date ? Math.round((months / 12) * 10) / 10 : null;
     const tenureYears = loanAgeYears;
     const dataGap =
