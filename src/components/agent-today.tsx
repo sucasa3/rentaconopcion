@@ -384,7 +384,9 @@ function BestMove({
 }) {
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
-  const opener = item.draftBody?.trim() || n?.openerSeed || item.headline;
+  // The canonical narrative decides the opener. A cached draft is only used
+  // when the server has already validated it against the same fact snapshot.
+  const opener = n?.openerSeed || item.draftBody?.trim() || item.headline;
 
   return (
     <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-border-subtle bg-card shadow-elevated">

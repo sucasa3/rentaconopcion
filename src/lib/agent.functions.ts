@@ -502,7 +502,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
           })),
           ...score.signals,
         ],
-        opener: draftOpener(c.client_name, score),
+        opener: rosterOpener(c.id, f, c.client_name),
         readiness_score: readiness.score,
         readiness_label: readiness.label,
         readiness_checks: readiness.checks,
