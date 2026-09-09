@@ -25,15 +25,15 @@ export function StatCard({
 }) {
   const toneRing: Record<string, string> = {
     default: "bg-card",
-    growth: "bg-growth/8",
-    attention: "bg-attention/12",
-    info: "bg-info/8",
+    growth: "bg-status-positive/8",
+    attention: "bg-status-attention/10",
+    info: "bg-surface-intelligence",
   };
   const toneText: Record<string, string> = {
     default: "text-foreground",
-    growth: "text-growth",
-    attention: "text-attention-foreground",
-    info: "text-info",
+    growth: "text-status-positive",
+    attention: "text-status-attention",
+    info: "text-surface-intelligence-foreground",
   };
   const body = (
     <div
@@ -82,9 +82,9 @@ export function StatusPill({
 }) {
   const tones: Record<string, string> = {
     muted: "bg-muted text-muted-foreground",
-    growth: "bg-growth/12 text-growth",
-    attention: "bg-attention/20 text-attention-foreground",
-    info: "bg-info/12 text-info",
+    growth: "bg-status-positive/12 text-status-positive",
+    attention: "bg-status-attention/15 text-status-attention",
+    info: "bg-surface-intelligence text-surface-intelligence-foreground",
     brand: "bg-primary/10 text-primary",
   };
   return (
@@ -140,16 +140,16 @@ export function SummaryCard({
       btn: "bg-destructive text-destructive-foreground hover:opacity-90",
     },
     opportunity: {
-      edge: "border-growth/40 bg-growth/5",
-      badge: "bg-growth/15 text-growth",
-      text: "text-growth",
-      btn: "gradient-growth text-white hover:opacity-90",
+      edge: "border-surface-warm-border bg-surface-warm",
+      badge: "bg-sucasa-orange/12 text-status-opportunity",
+      text: "text-status-opportunity",
+      btn: "bg-action-primary text-action-primary-foreground hover:opacity-90",
     },
     brand: {
       edge: "border-primary/30 bg-primary/5",
       badge: "bg-primary/10 text-primary",
       text: "text-primary",
-      btn: "gradient-brand text-white hover:opacity-90",
+      btn: "bg-action-primary text-action-primary-foreground hover:opacity-90",
     },
   };
   const t = tones[tone];
@@ -233,16 +233,16 @@ export function PriorityCard({
 }) {
   const tones: Record<string, { edge: string; badge: string; text: string; btn: string }> = {
     attention: {
-      edge: "border-attention/40 bg-attention/5",
-      badge: "bg-attention/15 text-attention-foreground",
-      text: "text-attention-foreground",
-      btn: "bg-attention text-attention-foreground hover:opacity-90",
+      edge: "border-status-attention/35 bg-status-attention/5",
+      badge: "bg-status-attention/15 text-status-attention",
+      text: "text-status-attention",
+      btn: "bg-action-primary text-action-primary-foreground hover:opacity-90",
     },
     opportunity: {
-      edge: "border-growth/40 bg-growth/5",
-      badge: "bg-growth/15 text-growth",
-      text: "text-growth",
-      btn: "gradient-growth text-white hover:opacity-90",
+      edge: "border-surface-warm-border bg-surface-warm",
+      badge: "bg-sucasa-orange/12 text-status-opportunity",
+      text: "text-status-opportunity",
+      btn: "bg-action-primary text-action-primary-foreground hover:opacity-90",
     },
     brand: {
       edge: "border-primary/30 bg-primary/5",
@@ -398,7 +398,7 @@ export function ScoreRing({ value, label }: { value: number; label?: string }) {
     <div
       className="relative grid h-24 w-24 place-items-center rounded-full"
       style={{
-        background: `conic-gradient(var(--growth) ${pct * 3.6}deg, var(--muted) 0deg)`,
+        background: `conic-gradient(var(--status-positive) ${pct * 3.6}deg, var(--muted) 0deg)`,
       }}
       role="img"
       aria-label={`${label ?? "Score"}: ${pct} out of 100`}
@@ -484,7 +484,7 @@ export function OpportunityCard({
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {heroLabel}
         </p>
-        <p className="text-2xl font-semibold tabular-nums text-growth">{heroValue}</p>
+        <p className="text-2xl font-semibold tabular-nums text-status-positive">{heroValue}</p>
       </div>
 
       {metrics.length > 0 && (
