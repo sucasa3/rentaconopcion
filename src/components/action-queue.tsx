@@ -92,9 +92,13 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
         {(["hot", "warm", "nurture"] as const).map((t) => (
-          <div key={t} className="rounded-2xl border border-border/70 bg-card px-3 py-2.5">
+          <div key={t} className="rounded-2xl border border-border-subtle bg-card px-3 py-2.5">
             <p className="text-xs text-muted-foreground">
-              {TEMPERATURE_META[t].emoji} {TEMPERATURE_META[t].label}
+              <span
+                className={`mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${TEMPERATURE_META[t].dot}`}
+                aria-hidden
+              />
+              {TEMPERATURE_META[t].label}
             </p>
             <p className="text-xl font-semibold">{data.counts[t]}</p>
           </div>
@@ -116,13 +120,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
           return (
             <li
               key={item.opportunityId}
-              className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
+              className="rounded-3xl border border-border-subtle bg-card p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {meta.emoji} {meta.label}
+                    <span className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${meta.text}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
+                      {meta.label}
                     </span>
                     <span className="text-xs text-muted-foreground">· {item.categoryLabel}</span>
                     {item.shared && (
@@ -142,7 +147,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                     to={`${base}/portfolio/$id` as never}
                     params={{ id: item.portfolioId } as never}
                     search={{ client: item.clientId } as never}
-                    className="shrink-0 rounded-full border border-border/70 p-2 text-muted-foreground"
+                    className="shrink-0 rounded-full border border-border-subtle p-2 text-muted-foreground"
                     aria-label={`Open ${item.name}`}
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -209,7 +214,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                       type="button"
                       onClick={() => setComposing(item)}
                       disabled={!item.email}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border/70 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle px-4 py-2 text-sm font-semibold disabled:opacity-50"
                     >
                       <Icon className="h-4 w-4" /> {item.email ? "Write email" : "No email on file"}
                     </button>
