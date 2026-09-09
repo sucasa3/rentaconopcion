@@ -509,9 +509,23 @@ export async function generateDraft(input: {
     parsed = m ? JSON.parse(m[0]) : {};
   }
   const u = json?.usage ?? {};
+  let subject = String(parsed.subject ?? "").slice(0, 160);
+  let body = String(parsed.body ?? "").slice(0, 2000);
+
+  // The model may only paraphrase. If it introduced a number that is not in
+  // the canonical snapshot, or financing language an agent may not use, the
+  // whole draft is replaced by the deterministic seed rather than edited.
+  if (input.facts && input.narrative) {
+    const check = copyAgreesWithFacts(`${subject} ${body}`, input.facts, input.audience === "agent" ? "agent" : "lender");
+    if (!check.ok) {
+      subject = input.channel === "text" ? "" : input.narrative.headline;
+      body = input.narrative.openerSeed;
+    }
+  }
+
   return {
-    subject: String(parsed.subject ?? "").slice(0, 160),
-    body: String(parsed.body ?? "").slice(0, 2000),
+    subject,
+    body,
     usage: {
       prompt: Number(u.prompt_tokens ?? 0),
       completion: Number(u.completion_tokens ?? 0),
