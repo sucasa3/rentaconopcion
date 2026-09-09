@@ -313,6 +313,33 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
     }
 
 
+    // Open opportunity categories per homeowner — the same raw categories the
+    // narrative engine reads elsewhere. Stored categories are untouched.
+    const categoriesByClient: Record<string, string[]> = {};
+    if (ids.length) {
+      const { data: openOpps } = await context.supabase
+        .from("homeowner_opportunities")
+        .select("portfolio_client_id, category")
+        .in("portfolio_client_id", ids)
+        .eq("state", "open");
+      for (const o of openOpps ?? []) {
+        const list = (categoriesByClient[o.portfolio_client_id] ??= []);
+        if (!list.includes(o.category)) list.push(o.category);
+      }
+    }
+    const { buildNarrative: buildRosterNarrative } = await import("@/lib/opportunity-narrative");
+    const rosterOpener = (
+      clientId: string,
+      f: import("@/lib/client-facts").ClientFacts,
+      name: string | null,
+    ) =>
+      buildRosterNarrative({
+        role: "agent",
+        facts: f,
+        categories: categoriesByClient[clientId] ?? [],
+        firstName: String(name ?? "").trim().split(/\s+/)[0] ?? null,
+      }).openerSeed;
+
     const { normalizeAddress } = await import("@/lib/attom.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const {
@@ -321,7 +348,6 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       extractTaxTrend,
       computeMoveScore,
       computeListingReadiness,
-      draftOpener,
     } = await import("@/lib/agent.server");
     const { computeEngagement, combineIntent } = await import("@/lib/engagement");
     const { extractSales, extractPermits } = await import("@/lib/valuation.server");
