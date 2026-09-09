@@ -872,15 +872,25 @@ export const generateAgentBrief = createServerFn({ method: "POST" })
       listing: listing ?? null,
     };
 
+    // Deterministic fallback: the decided story, no AI required.
+    const fallback = [
+      narrative.headline,
+      narrative.whyNow,
+      narrative.whyItMatters,
+      ...narrative.supportingSignals.map((s) => `• ${s}`),
+      ...narrative.secondarySignals.map((s) => `• ${s}`),
+      narrative.openerSeed,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) {
-      return { brief: score.signals.map((s: { label: string; detail: string }) => `• ${s.label} — ${s.detail}`).join("\n"), ai: false };
-    }
+    if (!apiKey) return { brief: fallback, ai: false };
 
     const sys =
       data.language === "es"
-        ? "Eres un coach de ventas para agentes inmobiliarios. Responde en español, conciso, sin inventar datos."
-        : "You are a listing coach for a residential real estate agent. Be concise, specific, and never invent data that is not in the facts.";
+        ? "Eres un coach para agentes inmobiliarios. Responde en español, conciso. Nunca inventes ni recalcules cifras, y nunca recomiendes un producto de financiamiento."
+        : "You are a coach for a residential real estate agent. Be concise and specific. Never invent, recompute or estimate a number — use only the canonical facts given. An agent never recommends a loan product; if financing comes up, suggest a licensed mortgage professional.";
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
