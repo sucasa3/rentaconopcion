@@ -518,6 +518,7 @@ export async function generateDraft(input: {
   if (input.facts && input.narrative) {
     const check = copyAgreesWithFacts(`${subject} ${body}`, input.facts, input.audience === "agent" ? "agent" : "lender");
     if (!check.ok) {
+      if (process.env["NBA_DRAFT_DEBUG"]) console.log("[draft rejected]", check.violations, body);
       subject = input.channel === "text" ? "" : input.narrative.headline;
       body = input.narrative.openerSeed;
     }
