@@ -359,7 +359,7 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
       taxYear: num(pick(p, "tax.taxYear", "assessment.assessmentYear", "assessment.taxYear")),
     },
     mortgage: {
-      hasRecord: Boolean((openLienCount ?? 0) > 0 || loanAmount || primary?.lender || liens.length),
+      hasRecord: Boolean((openLienCount ?? 0) > 0 || currentBalance || primary?.lender || liens.length),
       loanAmount,
       lender: primary?.lender ?? null,
       originationDate: primary?.recordingDate ?? str(pick(openLien, "lastLoanRecordingDate")),
