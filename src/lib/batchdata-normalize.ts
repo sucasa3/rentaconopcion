@@ -1,9 +1,26 @@
 /**
  * BatchData normalizer — pure functions, no server imports.
  *
- * Used ONLY by the isolated BatchData test harness. Nothing here feeds the
- * production ATTOM pipeline or `property_intel`.
+ * Current open liens and historical mortgage records are kept strictly apart:
+ * `mortgage.liens` is only ever the provider's open-lien list, and
+ * `mortgage.history` is evidence of a payoff trail that must never be promoted
+ * into a current lien.
  */
+
+import { classifyLienStatus, type LienStatus } from "./mortgage-position";
+
+export interface MortgageRecord {
+  lender: string | null;
+  amount: number | null;
+  loanType: string | null;
+  termYears: number | null;
+  recordingDate: string | null;
+  maturityDate: string | null;
+  rate: number | null;
+  ltv: number | null;
+  estimatedPayment: number | null;
+}
+
 
 export interface ParsedAddress {
   address_line1: string;
