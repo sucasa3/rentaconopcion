@@ -10,8 +10,9 @@
  * in a createServerFn in `property-intel.functions.ts`.
  */
 
-import { estimateHomeValue } from "@/lib/value-engine";
+import { estimateHomeValue, type ValueEngineResult } from "@/lib/value-engine";
 import { resolveEquity, equityOffersAllowed } from "@/lib/equity";
+import type { LienStatus } from "@/lib/mortgage-position";
 
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
