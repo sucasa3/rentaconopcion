@@ -59,6 +59,9 @@ export interface ValueEngineInput {
   mortgage?: {
     openLienCount?: number | null;
     totalOpenLienBalance?: number | null;
+    /** CURRENT open balance; the only balance a value may be implied from */
+    currentBalance?: number | null;
+    /** original/historical loan amount — never used for implied value */
     loanAmount?: number | null;
     ltv?: number | null;
   } | null;
