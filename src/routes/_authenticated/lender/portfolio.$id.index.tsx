@@ -172,7 +172,7 @@ function PortfolioDetail() {
         title: `${topRefi.full_name} could save $${topRefi.savings_per_month_dollars.toLocaleString()}/mo`,
         subtitle: `Current rate ${topRefi.rate_at_close ?? "—"}% · Balance ${moneyCompact(
           topRefi.loan_balance_cents,
-        )} · Refi at ${benchmark.toFixed(2)}%`,
+        )} · Refi at ${data.summary.benchmark_rate?.toFixed(2) ?? "—"}%`,
         next: data.top_refi_opportunities.slice(1, 4).map((c: any) => ({
           client: c,
           label: `${c.full_name} — $${c.savings_per_month_dollars.toLocaleString()}/mo savings`,
@@ -332,7 +332,7 @@ function PortfolioDetail() {
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <h2 className="text-base font-semibold">Your book</h2>
-                  <ComparisonRate portfolioId={id} orgId={data.portfolio.orgId} summary={data.summary} />
+                  <ComparisonRate orgId={data.portfolio.orgId} summary={data.summary} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
