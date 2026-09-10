@@ -22,7 +22,6 @@ import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
 import { OUTCOME_STAGES, TEMPERATURE_META, outcomeLabel, type OutcomeStage } from "@/lib/next-best-action";
 import {
-  buildDailyRead,
   firstName,
   firstRunMode,
   handledToday,
@@ -136,7 +135,6 @@ export function AgentToday() {
 
   const best = items[cursor] ?? null;
   const upNext = items.slice(cursor + 1, cursor + 6);
-  const read = buildDailyRead(items.slice(cursor));
   const handled = handledToday(queue?.recentOutcomes ?? []);
   const monitored = clientCount;
   const engagedCount = queue?.counts?.engaged ?? 0;
@@ -218,37 +216,13 @@ export function AgentToday() {
       {best ? (
         <section className="space-y-2.5">
           <SectionHeader title="Start here" />
-          {/* The read sits beside the card it describes; both render the same
-              canonical narrative, so the numbers and copy cannot diverge. */}
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
-            <BestMove
-              item={best}
-              onOutcome={(stage, note) =>
-                outcome.mutate({ opportunityId: best.opportunityId, stage, note })
-              }
-              pending={outcome.isPending}
-            />
-            <IntelligenceSurface label="SuCasa daily read" className="lg:sticky lg:top-4">
-              <p className="text-[15px] font-medium leading-relaxed">{read.sentence}</p>
-              <dl className="mt-4 space-y-3 border-t border-surface-intelligence-border pt-4">
-                {read.startHere && <Read label="Start here" value={read.startHere} strong />}
-                {read.why && <Read label="Why" value={read.why} />}
-                {read.beUsefulBy && <Read label="Be useful by" value={read.beUsefulBy} />}
-              </dl>
-              {read.signals.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-1.5 border-t border-surface-intelligence-border pt-4">
-                  {read.signals.map((s) => (
-                    <span
-                      key={s}
-                      className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-text-secondary"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </IntelligenceSurface>
-          </div>
+          <BestMove
+            item={best}
+            onOutcome={(stage, note) =>
+              outcome.mutate({ opportunityId: best.opportunityId, stage, note })
+            }
+            pending={outcome.isPending}
+          />
         </section>
       ) : (
 
@@ -321,19 +295,6 @@ export function AgentToday() {
   );
 }
 
-/** A single label/value line in the daily read. */
-function Read({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        {label}
-      </dt>
-      <dd className={strong ? "mt-0.5 text-[17px] font-semibold" : "mt-0.5 text-[14px] leading-snug"}>
-        {value}
-      </dd>
-    </div>
-  );
-}
 
 /**
  * A lighter row for the relationships after Start Here: who, why now, the
