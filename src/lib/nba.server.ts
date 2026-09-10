@@ -555,6 +555,8 @@ export async function saveAction(args: {
   subject?: string | null;
   body?: string | null;
   model?: string | null;
+  /** The comparison rate this draft was written against, kept with the draft. */
+  benchmark?: { ratePct: number; asOf: string; source: string } | null;
 }) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("opportunity_actions").upsert(
@@ -573,6 +575,9 @@ export async function saveAction(args: {
       draft_body: args.body ?? null,
       draft_model: args.model ?? null,
       drafted_at: args.body ? new Date().toISOString() : null,
+      benchmark_rate_pct: args.benchmark?.ratePct ?? null,
+      benchmark_as_of: args.benchmark?.asOf ?? null,
+      benchmark_source: args.benchmark?.source ?? null,
     },
     { onConflict: "opportunity_id,audience" },
   );

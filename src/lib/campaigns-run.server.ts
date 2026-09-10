@@ -258,6 +258,10 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
           payload,
           status: "pending",
           crm_status: "pending",
+          // The rate behind any savings figure in this message, frozen at send.
+          benchmark_rate_pct: facts.benchmarkRate,
+          benchmark_as_of: facts.benchmarkAsOf,
+          benchmark_source: facts.benchmarkSource,
         })
         .select("id")
         .maybeSingle();
