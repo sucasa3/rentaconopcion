@@ -102,6 +102,9 @@ export type HomeRecordInput = {
   tax?: { marketTotal?: number | null; assessedTotal?: number | null; taxAmount?: number | null } | null;
   sales?: { lastSalePrice?: number | null; lastSaleDate?: string | null } | null;
   mortgage?: { rate?: number | null } | null;
+  /** Resolved market comparison rate; without it no savings figure is shown. */
+  benchmarkRate?: number | null;
+
   equity?: {
     estimatedValue?: number | null;
     loanBalance?: number | null;
