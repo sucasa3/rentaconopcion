@@ -113,21 +113,18 @@ export interface NormalizedBatchdataProperty {
     estimatedEquity: number | null;
     openLienCount: number | null;
     totalOpenLienBalance: number | null;
+    /** CURRENT open balance only — never an original/historical loan amount. */
+    currentBalance: number | null;
+    /** Shared mortgage-position classification (see mortgage-position.ts). */
+    lienStatus: LienStatus;
     ltv: number | null;
     equityPercent: number | null;
     estimatedPayment: number | null;
     maturityDate: string | null;
-    liens: Array<{
-      lender: string | null;
-      amount: number | null;
-      loanType: string | null;
-      termYears: number | null;
-      recordingDate: string | null;
-      maturityDate: string | null;
-      rate: number | null;
-      ltv: number | null;
-      estimatedPayment: number | null;
-    }>;
+    /** CURRENT open liens only. */
+    liens: Array<MortgageRecord>;
+    /** Historical mortgage records — evidence only, never a current lien. */
+    history: Array<MortgageRecord>;
   };
   sales: {
     lastSaleDate: string | null;
