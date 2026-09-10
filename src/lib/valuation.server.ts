@@ -12,7 +12,7 @@
 
 import { estimateHomeValue } from "@/lib/value-engine";
 import { resolveEquity, equityOffersAllowed } from "@/lib/equity";
-import { BENCHMARK_REFI_RATE } from "./refi";
+
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 
@@ -695,7 +695,14 @@ export function computeEquityRibbon(
   sales: SalesSummary | null,
   tax?: TaxSummary | null,
   state?: string | null,
+  /**
+   * Resolved market comparison rate (see market-rate.server). When absent, the
+   * rate-spread rule is skipped and the signal falls back to equity alone —
+   * we never compare against a made-up rate.
+   */
+  marketRatePct?: number | null,
 ): EquityRibbon {
+
   // Value always comes from the shared SuCasa Value Engine — this function
   // never decides what a home is worth on its own.
   const resolved = estimateHomeValue({
