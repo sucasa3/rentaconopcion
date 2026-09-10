@@ -152,8 +152,6 @@ export const createPortfolio = createServerFn({ method: "POST" })
     return row;
   });
 
-// Assumed current 30-yr benchmark rate used for savings math in the demo.
-const BENCHMARK_RATE_DEFAULT = 6.25;
 
 function monthlyPayment(principalCents: number, ratePct: number, termMonths: number): number {
   if (!principalCents || !ratePct || !termMonths) return 0;
