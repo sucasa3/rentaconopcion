@@ -21,7 +21,7 @@ function scenario(setAt: string | null): BenchmarkRate {
     kind: "lender_scenario",
     label: "FHA scenario",
     source: "Set by your team",
-    asOf: "2026-09-01",
+    asOf: (setAt ?? "2026-09-01").slice(0, 10),
     setAt,
     stale: scenarioIsStale(setAt, NOW),
     staleDays: daysSince(setAt, NOW),
