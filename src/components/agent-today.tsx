@@ -22,7 +22,6 @@ import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
 import { OUTCOME_STAGES, TEMPERATURE_META, outcomeLabel, type OutcomeStage } from "@/lib/next-best-action";
 import {
-  buildDailyRead,
   firstName,
   firstRunMode,
   handledToday,
@@ -136,7 +135,6 @@ export function AgentToday() {
 
   const best = items[cursor] ?? null;
   const upNext = items.slice(cursor + 1, cursor + 6);
-  const read = buildDailyRead(items.slice(cursor));
   const handled = handledToday(queue?.recentOutcomes ?? []);
   const monitored = clientCount;
   const engagedCount = queue?.counts?.engaged ?? 0;
@@ -297,19 +295,6 @@ export function AgentToday() {
   );
 }
 
-/** A single label/value line in the daily read. */
-function Read({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-        {label}
-      </dt>
-      <dd className={strong ? "mt-0.5 text-[17px] font-semibold" : "mt-0.5 text-[14px] leading-snug"}>
-        {value}
-      </dd>
-    </div>
-  );
-}
 
 /**
  * A lighter row for the relationships after Start Here: who, why now, the
