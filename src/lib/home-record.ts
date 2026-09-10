@@ -173,7 +173,7 @@ export function assembleHomeRecord(input: HomeRecordInput): HomeRecord {
     equityPct: input.equity?.equityPct ?? null,
     cashOutHeadroom: input.equity?.cashOutHeadroom ?? null,
     refiSignal: input.equity?.refiSignal ?? null,
-    refi: estimateRefiSavings(loanBalance, rate),
+    refi: estimateRefiSavings(loanBalance, rate, input.benchmarkRate ?? null),
   };
 
   const permits = input.permits ?? [];
