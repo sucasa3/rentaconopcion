@@ -222,7 +222,6 @@ export const getPortfolio = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
-    const benchmark = data.benchmarkRate ?? BENCHMARK_RATE_DEFAULT;
 
     const { data: portfolio, error } = await context.supabase
       .from("lender_portfolios")
@@ -231,6 +230,15 @@ export const getPortfolio = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!portfolio) throw new Error("Portfolio not found");
+
+    // The comparison rate: this org's scenario rate when they've set one,
+    // otherwise the stored market benchmark. Never an assumed number.
+    const { resolveBenchmark } = await import("./market-rate.server");
+    const benchmarkInfo = await resolveBenchmark((portfolio as any).lender_org_id).catch(
+      () => null,
+    );
+    const benchmark = data.benchmarkRate ?? benchmarkInfo?.ratePct ?? null;
+
 
     const { data: clients, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
