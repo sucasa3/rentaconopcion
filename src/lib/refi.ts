@@ -30,10 +30,12 @@ export interface RefiSavings {
 export function estimateRefiSavings(
   balance: number | null | undefined,
   currentRate: number | null | undefined,
-  benchmarkRate: number = BENCHMARK_REFI_RATE,
+  /** Resolved comparison rate. Without one there is no savings estimate. */
+  benchmarkRate: number | null | undefined,
   termMonths = 360,
 ): RefiSavings | null {
-  if (!balance || balance <= 0 || currentRate == null) return null;
+  if (!balance || balance <= 0 || currentRate == null || benchmarkRate == null) return null;
+
   const currentPayment = monthlyPayment(balance, currentRate, termMonths);
   const newPayment = monthlyPayment(balance, benchmarkRate, termMonths);
   const monthlySavings = Math.max(0, Math.round(currentPayment - newPayment));
