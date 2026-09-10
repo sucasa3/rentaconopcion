@@ -171,6 +171,9 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       mortgage,
       permits,
       equity,
+      /** the sourced comparison rate behind any savings figure on this screen */
+      benchmark,
+
       /** canonical resolved value — every surface should read this */
       value: resolved,
       valueStatus,
