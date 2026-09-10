@@ -67,7 +67,12 @@ function ownerOccupied(row: any): boolean | null {
 }
 
 /** Build the canonical snapshot for one cached property record. */
-export function factsFromRecord(client: FactClientRow, row: any | null): ClientFacts {
+export function factsFromRecord(
+  client: FactClientRow,
+  row: any | null,
+  /** Resolved market comparison rate, for the refi spread rule only. */
+  benchmarkRate?: number | null,
+): ClientFacts {
   const base = emptyClientFacts(client.id);
   if (!row) {
     return {
@@ -84,7 +89,14 @@ export function factsFromRecord(client: FactClientRow, row: any | null): ClientF
   const sales = extractSales(row.sales);
   const mortgage = extractMortgage(row.mortgage);
   const permits = extractPermits(row.permits);
-  const ribbon = computeEquityRibbon(avm, mortgage, sales, tax, client.state ?? null);
+  const ribbon = computeEquityRibbon(
+    avm,
+    mortgage,
+    sales,
+    tax,
+    client.state ?? null,
+    benchmarkRate ?? null,
+  );
 
   const lastSaleDate = sales?.lastSale?.date ?? client.close_date ?? null;
 
