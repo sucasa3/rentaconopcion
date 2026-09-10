@@ -31,8 +31,8 @@ function PortfolioLayout() {
   const listFn = useServerFn(listMyPortfolios);
 
   const { data } = useQuery({
-    queryKey: ["lender-portfolio", id, 6.25],
-    queryFn: () => getFn({ data: { id, benchmarkRate: 6.25 } }),
+    queryKey: ["lender-portfolio", id],
+    queryFn: () => getFn({ data: { id } }),
   });
   const { data: mine } = useQuery({ queryKey: ["lender-portfolios"], queryFn: () => listFn() });
   const isManager = !!mine?.isManager;

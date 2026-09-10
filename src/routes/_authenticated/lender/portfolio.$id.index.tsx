@@ -79,15 +79,14 @@ function PortfolioDetail() {
 
   const qc = useQueryClient();
 
-  const [benchmark, setBenchmark] = useState<number>(6.25);
   const [segment, setSegment] = useState<Segment>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [contact, setContact] = useState<any | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["lender-portfolio", id, benchmark],
-    queryFn: () => getFn({ data: { id, benchmarkRate: benchmark } }),
+    queryKey: ["lender-portfolio", id],
+    queryFn: () => getFn({ data: { id } }),
   });
 
   // Deep link: /lender/portfolio/$id?client=<clientId> opens that homeowner directly.
@@ -332,22 +331,7 @@ function PortfolioDetail() {
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <h2 className="text-base font-semibold">Your book</h2>
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    Assumed rate
-                    <input
-                      type="number"
-                      step="0.125"
-                      min={1}
-                      max={20}
-                      value={benchmark}
-                      onChange={(e) => {
-                        setBenchmark(Number(e.target.value) || 6.25);
-                        setPage(0);
-                      }}
-                      className="w-20 rounded-full border border-border bg-background px-3 py-1 text-right text-sm text-foreground"
-                    />
-                    %
-                  </label>
+                  <ComparisonRate portfolioId={id} orgId={data.portfolio.orgId} summary={data.summary} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

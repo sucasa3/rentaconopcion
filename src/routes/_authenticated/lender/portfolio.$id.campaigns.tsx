@@ -12,8 +12,8 @@ function PortfolioCampaigns() {
   const { id } = Route.useParams();
   const getFn = useServerFn(getPortfolio);
   const { data } = useQuery({
-    queryKey: ["lender-portfolio", id, 6.25],
-    queryFn: () => getFn({ data: { id, benchmarkRate: 6.25 } }),
+    queryKey: ["lender-portfolio", id],
+    queryFn: () => getFn({ data: { id } }),
   });
 
   const orgs = data?.portfolio.orgId
