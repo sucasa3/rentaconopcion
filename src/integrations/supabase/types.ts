@@ -1486,6 +1486,24 @@ export type Database = {
           },
         ]
       }
+      cron_tokens: {
+        Row: {
+          created_at: string
+          job_key: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          job_key: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          job_key?: string
+          token?: string
+        }
+        Relationships: []
+      }
       data_provider_health: {
         Row: {
           created_at: string
