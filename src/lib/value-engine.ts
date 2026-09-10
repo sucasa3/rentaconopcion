@@ -104,16 +104,6 @@ function drift(amount: number, months: number, state: string | null | undefined)
   return amount * Math.pow(1 + annual, months / 12);
 }
 
-/** LTV may arrive as a fraction (0.7) or a percentage (70.2). */
-function ltvFraction(ltv: number | null | undefined): number | null {
-  const v = pos(ltv ?? null);
-  if (v == null) return null;
-  const f = v > 1.5 ? v / 100 : v;
-  // Outside this band the number is either noise or a distressed edge case we
-  // will not derive a value from.
-  if (f < 0.05 || f > 1.25) return null;
-  return f;
-}
 
 export function buildValueCandidates(input: ValueEngineInput): ValueCandidate[] {
   const now = input.now ?? new Date();
