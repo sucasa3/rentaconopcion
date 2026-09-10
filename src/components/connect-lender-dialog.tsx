@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getMatchedLenderForMe, createRefiIntent } from "@/lib/lender.functions";
-import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
+import { estimateRefiSavings } from "@/lib/refi";
+import { asOfLabel, type BenchmarkRate } from "@/lib/market-rate";
 
 export function ConnectLenderDialog({
   open,
@@ -21,7 +22,7 @@ export function ConnectLenderDialog({
   estSavingsMonthly,
   loanBalance = null,
   cashOutHeadroom = null,
-  benchmarkRate = BENCHMARK_REFI_RATE,
+  benchmark = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -30,14 +31,15 @@ export function ConnectLenderDialog({
   estSavingsMonthly: number | null;
   loanBalance?: number | null;
   cashOutHeadroom?: number | null;
-  benchmarkRate?: number;
+  /** Sourced comparison rate; savings are hidden without one. */
+  benchmark?: BenchmarkRate | null;
 }) {
 
   const [sent, setSent] = useState(false);
   const fetchMatch = useServerFn(getMatchedLenderForMe);
   const createIntent = useServerFn(createRefiIntent);
 
-  const savings = estimateRefiSavings(loanBalance, currentRate, benchmarkRate);
+  const savings = estimateRefiSavings(loanBalance, currentRate, benchmark?.ratePct ?? null);
   const monthly = savings?.monthlySavings ?? (estSavingsMonthly ?? 0);
 
 
@@ -122,7 +124,12 @@ export function ConnectLenderDialog({
                     label="Your rate (origination)"
                     value={`${currentRate}%`}
                   />
-                  <Row label="Today's benchmark rate" value={`${benchmarkRate}%`} />
+                  {benchmark && (
+                    <Row
+                      label={`Comparison rate (${asOfLabel(benchmark.asOf)})`}
+                      value={`${benchmark.ratePct.toFixed(2)}%`}
+                    />
+                  )}
                   {loanBalance != null && (
                     <Row
                       label="Loan balance (est.)"

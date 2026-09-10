@@ -3,7 +3,7 @@ import { useHomeIntel } from "@/hooks/use-home-intel";
 import type { ValueStatus } from "@/lib/home-value";
 import { TrendingUp, Landmark, Wallet, Hammer, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import { ConnectLenderDialog } from "@/components/connect-lender-dialog";
-import { BENCHMARK_REFI_RATE, estimateRefiSavings } from "@/lib/refi";
+import { estimateRefiSavings } from "@/lib/refi";
 import { useActivityLog, useLogOnMount } from "@/hooks/use-activity-log";
 import { useLanguage, type TranslationKey } from "@/lib/i18n";
 
@@ -60,7 +60,12 @@ export function EquityMortgagePanel() {
   const refiTone =
     equity?.refiSignal === "watch" ? "bg-secondary text-muted-foreground" : "hidden";
 
-  const savings = estimateRefiSavings(equity?.loanBalanceEstimate, mortgage?.interestRate);
+  const benchmark = data.benchmark ?? null;
+  const savings = estimateRefiSavings(
+    equity?.loanBalanceEstimate,
+    mortgage?.interestRate,
+    benchmark?.ratePct ?? null,
+  );
   const isHotRefi = equity?.refiSignal === "strong" || equity?.refiSignal === "moderate";
   const signalKey = equity?.refiSignal ? refiSignalKey(equity.refiSignal) : null;
   const signalWord = signalKey ? t(signalKey) : (equity?.refiSignal ?? "");
@@ -207,7 +212,7 @@ export function EquityMortgagePanel() {
         currentRate={mortgage?.interestRate ?? null}
         loanBalance={equity?.loanBalanceEstimate ?? null}
         cashOutHeadroom={equity?.cashOutHeadroom80 ?? null}
-        benchmarkRate={BENCHMARK_REFI_RATE}
+        benchmark={benchmark}
         estSavingsMonthly={savings?.monthlySavings ?? null}
       />
     </div>
