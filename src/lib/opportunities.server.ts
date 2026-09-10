@@ -222,6 +222,7 @@ function recordForClient(
       lastSaleDate: sales?.lastSale?.date ?? null,
     },
     mortgage: { rate: mortgage?.interestRate ?? null },
+    benchmarkRate: benchmarkRate ?? null,
     equity: {
       estimatedValue: equity.estimatedValue,
       loanBalance: equity.loanBalanceEstimate,

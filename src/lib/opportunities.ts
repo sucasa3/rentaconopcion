@@ -226,7 +226,9 @@ export function tenureBand(monthsSinceClose: number): string {
 // the dashboards never disagree about a number).
 // ---------------------------------------------------------------------------
 
-export const BENCHMARK_RATE_DEFAULT = 6.25;
+// There is no default comparison rate. Callers pass the resolved market or
+// lender scenario rate (see lib/market-rate.ts); without one, rate-based
+// signals simply do not fire.
 
 export function monthsBetween(from: string | null, to: Date): number {
   if (!from) return 0;
@@ -269,7 +271,7 @@ export interface ClientSignals {
   ltvPct: number | null;
   ratePct: number | null;
   monthsSinceClose: number;
-  benchmarkRate: number;
+  benchmarkRate: number | null;
   /** Estimated monthly P&I saving at the benchmark rate. */
   savingsPerMonth: number;
   /** Recent permit activity on the property, if property records show any. */
@@ -318,7 +320,7 @@ export function deriveSignals(input: {
   ratePct: number | null;
   termMonths: number | null;
   closeDate: string | null;
-  benchmarkRate?: number;
+  benchmarkRate?: number | null;
   permitCount?: number;
   likelyNonOwnerOccupied?: boolean;
   /** resolved value/equity — always preferred over the heuristic */
@@ -327,7 +329,7 @@ export function deriveSignals(input: {
   now?: Date;
 }): ClientSignals {
   const now = input.now ?? new Date();
-  const benchmarkRate = input.benchmarkRate ?? BENCHMARK_RATE_DEFAULT;
+  const benchmarkRate = input.benchmarkRate ?? null;
   const termMonths = input.termMonths ?? 360;
   const monthsSinceClose = monthsBetween(input.closeDate, now);
   const heuristicBalance = remainingBalanceCents(
@@ -357,9 +359,10 @@ export function deriveSignals(input: {
     const r = rate / 100 / 12;
     return (p * r) / (1 - Math.pow(1 + r, -termMonths));
   };
-  const savingsPerMonth = input.ratePct
-    ? Math.max(0, Math.round(pay(input.ratePct) - pay(benchmarkRate)))
-    : 0;
+  const savingsPerMonth =
+    input.ratePct != null && benchmarkRate != null
+      ? Math.max(0, Math.round(pay(input.ratePct) - pay(benchmarkRate)))
+      : 0;
 
   return {
     equityCents,
@@ -429,7 +432,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
   const prov = { valueConfidence: s.valueConfidence, valueSource: s.valueSource };
 
   // --- Refinance review -----------------------------------------------------
-  if (s.ratePct != null && seasoned && s.ratePct - s.benchmarkRate >= 0.5) {
+  if (s.ratePct != null && s.benchmarkRate != null && seasoned && s.ratePct - s.benchmarkRate >= 0.5) {
     const delta = s.ratePct - s.benchmarkRate;
     const score = Math.min(100, 40 + delta * 25 + (s.savingsPerMonth > 200 ? 15 : 0));
     out.push({
