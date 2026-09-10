@@ -282,10 +282,16 @@ export const getPortfolio = createServerFn({ method: "GET" })
       const equity = (value ?? 0) - (balance ?? 0);
       const ltv =
         value && balance ? Math.round((balance / value) * 1000) / 10 : null; // %
+      // No sourced comparison rate means no savings figure and no rate segment.
       const currentPmt = monthlyPayment(balance ?? 0, c.rate_at_close ?? 0, termMonths);
-      const refiPmt = monthlyPayment(balance ?? 0, benchmark, termMonths);
-      const savingsPerMonth = Math.max(0, Math.round(currentPmt - refiPmt));
-      const segment = segmentFor(c.rate_at_close, balance, value, monthsSinceClose, benchmark);
+      const refiPmt =
+        benchmark != null ? monthlyPayment(balance ?? 0, benchmark, termMonths) : null;
+      const savingsPerMonth =
+        refiPmt != null ? Math.max(0, Math.round(currentPmt - refiPmt)) : 0;
+      const segment =
+        benchmark != null
+          ? segmentFor(c.rate_at_close, balance, value, monthsSinceClose, benchmark)
+          : "unknown";
 
       return {
         id: c.id,
@@ -365,6 +371,12 @@ export const getPortfolio = createServerFn({ method: "GET" })
         avg_rate: Math.round(avgRate * 100) / 100,
         avg_months_since_close: Math.round(avgMonthsSinceClose),
         benchmark_rate: benchmark,
+        benchmark_label: benchmarkInfo?.label ?? null,
+        benchmark_source: benchmarkInfo?.source ?? null,
+        benchmark_as_of: benchmarkInfo?.asOf ?? null,
+        benchmark_kind: benchmarkInfo?.kind ?? null,
+        benchmark_stale: benchmarkInfo?.stale ?? false,
+        benchmark_market_rate: benchmarkInfo?.marketRatePct ?? null,
       },
       segments: segmentCounts,
       consent_counts: consentCounts,

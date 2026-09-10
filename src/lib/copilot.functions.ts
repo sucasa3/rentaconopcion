@@ -23,8 +23,11 @@ export const searchClients = createServerFn({ method: "POST" })
     const { logAiUsage, monthlyUsageCount, COPILOT_MONTHLY_QUERY_CAP } = await import(
       "./ai-usage.server"
     );
-    const { monthsBetween, remainingBalanceCents, estimatedValueCents, BENCHMARK_RATE_DEFAULT } =
-      await import("./opportunities");
+    const { monthsBetween, remainingBalanceCents, estimatedValueCents } = await import(
+      "./opportunities"
+    );
+    const { marketRatePctOrNull } = await import("./market-rate.server");
+    const benchmarkRatePct = await marketRatePctOrNull();
 
     // --- org scope -------------------------------------------------------
     const { data: memberships } = await context.supabase
@@ -131,13 +134,16 @@ export const searchClients = createServerFn({ method: "POST" })
         const mr = r / 100 / 12;
         return mr <= 0 ? p / term : (p * mr) / (1 - Math.pow(1 + mr, -term));
       };
-      const savings = Math.max(
-        0,
-        Math.round(
-          pmt((balance ?? 0) / 100, c.rate_at_close ?? 0) -
-            pmt((balance ?? 0) / 100, BENCHMARK_RATE_DEFAULT),
-        ),
-      );
+      const savings =
+        benchmarkRatePct == null
+          ? 0
+          : Math.max(
+              0,
+              Math.round(
+                pmt((balance ?? 0) / 100, c.rate_at_close ?? 0) -
+                  pmt((balance ?? 0) / 100, benchmarkRatePct),
+              ),
+            );
       const opp = oppMap.get(c.id);
       return {
         id: c.id,
