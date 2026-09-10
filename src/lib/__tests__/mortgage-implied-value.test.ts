@@ -43,7 +43,7 @@ describe("mortgage-implied valuation", () => {
       openLien: { totalOpenLienCount: 0 },
       mortgageHistory: [{ loanAmount: 300_000, recordingDate: "2001-04-02" }],
       valuation: { ltv: 20 },
-    });
+    })!;
     expect(p.mortgage.currentBalance).toBeNull();
     expect(p.mortgage.liens).toHaveLength(0);
     expect(p.mortgage.history).toHaveLength(1);
