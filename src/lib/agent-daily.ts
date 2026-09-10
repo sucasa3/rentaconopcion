@@ -132,11 +132,23 @@ export interface DailyRead {
   why: string | null;
   /** The existing agent play, phrased as a service to the homeowner. */
   beUsefulBy: string | null;
+  /** Canonical supporting signals, exactly as the card shows them. */
+  signals: string[];
+}
+
+/** Only the canonical narrative fields the opportunity card already renders. */
+export interface DailyReadNarrative {
+  whyNow?: string | null;
+  whyItMatters?: string | null;
+  howToBeUseful?: string | null;
+  supportingSignals?: string[] | null;
 }
 
 /**
  * The daily read is assembled only from fields the engine already produced.
- * Nothing about the homeowner is invented or inferred here.
+ * When a canonical narrative is present it is the single source of the copy,
+ * so the read and the opportunity card can never disagree. Nothing about the
+ * homeowner is invented, inferred or recalculated here.
  */
 export function buildDailyRead(
   items: {
@@ -144,6 +156,7 @@ export function buildDailyRead(
     why: string;
     headline: string;
     engagementLine?: string | null;
+    narrative?: DailyReadNarrative | null;
   }[],
 ): DailyRead {
   const first = items[0];
@@ -153,15 +166,26 @@ export function buildDailyRead(
       startHere: null,
       why: null,
       beUsefulBy: null,
+      signals: [],
     };
   }
   const second = items[1];
   const sentence = second
     ? `Your book is active today. Start with ${firstName(first.name)}, then ${firstName(second.name)}.`
     : `Your book is active today. Start with ${firstName(first.name)}.`;
-  const why = [first.why, first.engagementLine].filter(Boolean).join(" · ");
-  return { sentence, startHere: first.name, why: why || first.why, beUsefulBy: first.headline };
+  const n = first.narrative ?? null;
+  const why =
+    [n?.whyNow || first.why, n?.whyItMatters || first.engagementLine].filter(Boolean).join(" · ") ||
+    first.why;
+  return {
+    sentence,
+    startHere: first.name,
+    why,
+    beUsefulBy: n?.howToBeUseful || first.headline,
+    signals: (n?.supportingSignals ?? []).slice(0, 3),
+  };
 }
+
 
 /**
  * The supporting intelligence lines under the greeting. Every line is dropped
