@@ -17,6 +17,7 @@ import {
   annualDrift,
   assessmentRatio,
 } from "@/lib/data/market-factors";
+import { ltvFraction, mortgageImpliedValue } from "@/lib/mortgage-position";
 
 export type ValueCandidateKind =
   | "provider_avm"
