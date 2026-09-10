@@ -6,7 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { resolveHomeValue, type ValueStatus } from "@/lib/home-value";
+import { homeValueFromResult, resolveHomeValue, type ValueStatus } from "@/lib/home-value";
 
 
 const GetMyHomeIntelInput = z.object({
@@ -145,15 +145,20 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
     }
 
 
-    const resolved = resolveHomeValue({
-      state: profile.state ?? null,
-      avm,
-      tax,
-      equity,
-      sales: sales?.lastSale
-        ? { lastSalePrice: sales.lastSale.amount, lastSaleDate: sales.lastSale.date }
-        : null,
-    });
+    // The equity ribbon already ran the Value Engine (mortgage included), so
+    // homeowner value presentation reuses that exact result. Never recompute a
+    // second, mortgage-blind value here — the hero and the equity figures must
+    // come from one valuation.
+    const resolved = equity
+      ? homeValueFromResult(equity.valueResult)
+      : resolveHomeValue({
+          state: profile.state ?? null,
+          avm,
+          tax,
+          sales: sales?.lastSale
+            ? { lastSalePrice: sales.lastSale.amount, lastSaleDate: sales.lastSale.date }
+            : null,
+        });
     const valueStatus: ValueStatus =
       resolved.value != null
         ? "resolved"

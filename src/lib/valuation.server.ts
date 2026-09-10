@@ -10,8 +10,9 @@
  * in a createServerFn in `property-intel.functions.ts`.
  */
 
-import { estimateHomeValue } from "@/lib/value-engine";
+import { estimateHomeValue, type ValueEngineResult } from "@/lib/value-engine";
 import { resolveEquity, equityOffersAllowed } from "@/lib/equity";
+import type { LienStatus } from "@/lib/mortgage-position";
 
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
@@ -511,6 +512,24 @@ export interface MortgageSummary {
   loanType: string | null;
   termYears: number | null;
   termMonths: number | null;
+
+  // --- Provider (BatchData) current-position fields, when available ---------
+  /** provider-reported count of CURRENT open liens */
+  openLienCount?: number | null;
+  totalOpenLienBalance?: number | null;
+  /** CURRENT open balance only — never an original/historical loan amount */
+  currentBalance?: number | null;
+  /** shared mortgage-position classification (see mortgage-position.ts) */
+  lienStatus?: LienStatus | null;
+  ltv?: number | null;
+  liens?: Array<{ balance?: number | null; lender?: string | null; position?: number | null }> | null;
+  /** historical mortgage records — evidence only, never a current lien */
+  history?: Array<{
+    lender?: string | null;
+    amount?: number | null;
+    recordingDate?: string | null;
+    loanType?: string | null;
+  }> | null;
 }
 export function isMortgageSummary(raw: unknown): raw is MortgageSummary {
   return raw != null && typeof raw === "object" && "hasRecord" in raw && !("property" in raw);
@@ -644,16 +663,26 @@ export function extractPermits(raw: unknown): PermitsSummary {
 
 export interface EquityRibbon {
   estimatedValue: number | null;
-  /** where estimatedValue came from: automated valuation or assessor records */
-  valueSource: "avm" | "assessed" | null;
+  /**
+   * Truthful methodology behind estimatedValue. Never collapse these: audits
+   * depend on knowing which one produced the number.
+   */
+  valueSource: "avm" | "mortgage_implied" | "recent_sale" | "assessed" | null;
   loanBalanceEstimate: number | null;
   equityDollars: number | null;
   equityPct: number | null;
   cashOutHeadroom80: number | null; // 80% LTV cash-out ceiling
   refiSignal: "strong" | "moderate" | "watch" | null;
   tenureYears: number | null;
-  /** true when public records show no open mortgage */
+  /**
+   * No current open mortgage found AND a prior mortgage trail exists — read as
+   * "appears paid off", never as a proven free-and-clear title.
+   */
   noMortgageOnRecord: boolean;
+  /** shared mortgage-position classification behind the equity figures */
+  lienStatus: LienStatus;
+  /** the full Value Engine result, so callers never recompute value */
+  valueResult: ValueEngineResult;
   /** how confident the Value Engine is in estimatedValue */
   valueConfidence: "high" | "medium" | "low" | null;
   /** machine label of the valuation method used */
@@ -715,24 +744,17 @@ export function computeEquityRibbon(
     },
     mortgage: mortgage
       ? {
-          openLienCount: (mortgage as MortgageSummary & { openLienCount?: number | null }).openLienCount ?? null,
-          totalOpenLienBalance:
-            (mortgage as MortgageSummary & { totalOpenLienBalance?: number | null }).totalOpenLienBalance ?? null,
+          openLienCount: mortgage.openLienCount ?? null,
+          totalOpenLienBalance: mortgage.totalOpenLienBalance ?? null,
+          currentBalance: mortgage.currentBalance ?? null,
           loanAmount: mortgage.loanAmount,
-          ltv: (mortgage as MortgageSummary & { ltv?: number | null }).ltv ?? null,
+          ltv: mortgage.ltv ?? null,
         }
       : null,
   });
 
-  const noMortgageOnRecord = mortgage != null && mortgage.hasRecord === false;
-  const balanceEstimate = mortgage && !noMortgageOnRecord ? estimateLoanBalance(mortgage) : null;
-
-  const mExt = mortgage as (MortgageSummary & {
-    openLienCount?: number | null;
-    totalOpenLienBalance?: number | null;
-    ltv?: number | null;
-    liens?: Array<{ balance?: number | null; lender?: string | null; position?: number | null }> | null;
-  }) | null;
+  const mExt = mortgage;
+  const balanceEstimate = mortgage && mortgage.hasRecord !== false ? estimateLoanBalance(mortgage) : null;
 
   const equity = resolveEquity({
     value: resolved,
@@ -743,13 +765,26 @@ export function computeEquityRibbon(
           totalOpenLienBalance: mExt?.totalOpenLienBalance ?? null,
           balanceEstimate,
           ltv: mExt?.ltv ?? null,
+          lienStatus: mExt?.lienStatus ?? null,
           liens: mExt?.liens ?? null,
         }
       : null,
   });
 
+  // Methodology is reported truthfully rather than collapsed into "assessed".
   const valueSource: EquityRibbon["valueSource"] =
-    resolved.kind === "provider_avm" ? "avm" : resolved.value != null ? "assessed" : null;
+    resolved.value == null
+      ? null
+      : resolved.kind === "provider_avm"
+        ? "avm"
+        : resolved.kind === "mortgage_implied"
+          ? "mortgage_implied"
+          : resolved.kind === "recent_sale"
+            ? "recent_sale"
+            : "assessed";
+
+  // Equity owns the mortgage-position read; the ribbon never re-infers it.
+  const noMortgageOnRecord = equity.freeAndClear;
 
   // Refi/cash-out signal only fires on an equity position we are allowed to
   // act on; otherwise the raw data stays visible but no signal is raised.
@@ -780,6 +815,8 @@ export function computeEquityRibbon(
     refiSignal: refi,
     tenureYears: sales?.tenureYears ?? null,
     noMortgageOnRecord,
+    lienStatus: equity.lienStatus,
+    valueResult: resolved,
     valueConfidence: resolved.confidence,
     valueMethodology: resolved.methodology,
     equitySuppression: equity.suppression,

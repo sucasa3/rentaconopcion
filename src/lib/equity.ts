@@ -11,6 +11,7 @@
  */
 
 import { isOfferGrade, type ValueEngineResult, type ValueConfidence } from "@/lib/value-engine";
+import type { LienStatus } from "@/lib/mortgage-position";
 
 export interface LienInput {
   /** balance if known — never inferred from an LTV */
@@ -34,6 +35,8 @@ export interface EquityResolverInput {
     balanceEstimate?: number | null;
     /** provider-reported loan-to-value, fraction or percent */
     ltv?: number | null;
+    /** shared mortgage-position classification; never re-inferred here */
+    lienStatus?: LienStatus | null;
     liens?: LienInput[] | null;
   } | null;
 }
@@ -58,7 +61,13 @@ export interface ResolvedEquity {
   /** 80% loan-to-value headroom above the current balance */
   cashOutHeadroom: number | null;
 
+  /**
+   * Records show no current open mortgage AND a prior mortgage trail. This is
+   * "appears paid off", not a proven free-and-clear title.
+   */
   freeAndClear: boolean;
+  /** the shared mortgage-position classification behind the numbers */
+  lienStatus: LienStatus;
   multiLien: boolean;
   /** open liens kept separate — never merged into one implied loan */
   liens: LienInput[];
@@ -81,7 +90,15 @@ export function resolveEquity(input: EquityResolverInput): ResolvedEquity {
   const m = input.mortgage ?? null;
   const liens = (m?.liens ?? []).filter(Boolean);
   const openLienCount = m?.openLienCount ?? (liens.length > 0 ? liens.length : null);
-  const noRecord = m?.hasRecord === false || openLienCount === 0;
+  // Mortgage position is classified in exactly one place. Legacy records with
+  // no stored status fall back to the conservative reading.
+  const lienStatus: LienStatus =
+    m?.lienStatus ??
+    ((openLienCount ?? 0) > 0 || liens.length > 0
+      ? "confirmed_open"
+      : "unconfirmed");
+  const paidOff = lienStatus === "likely_paid_off";
+  const noRecord = paidOff;
   const multiLien = (openLienCount ?? 0) > 1;
 
   const base: ResolvedEquity = {
@@ -93,7 +110,8 @@ export function resolveEquity(input: EquityResolverInput): ResolvedEquity {
     ltvPct: null,
     balance: null,
     cashOutHeadroom: null,
-    freeAndClear: noRecord,
+    freeAndClear: paidOff,
+    lienStatus,
     multiLien,
     liens,
     openLienCount,
@@ -127,6 +145,17 @@ export function resolveEquity(input: EquityResolverInput): ResolvedEquity {
     return b == null ? s : (s ?? 0) + b;
   }, null);
   const balance = noRecord ? 0 : (reported ?? summed ?? pos(m?.balanceEstimate));
+
+  // An ambiguous record (no open lien on file, but no payoff trail either, or
+  // a sale recent enough that recording may lag) never becomes full equity.
+  if (lienStatus === "unconfirmed" && balance == null) {
+    return {
+      ...base,
+      suppression: "balance_unknown",
+      suppressionReason:
+        "Public records don't confirm whether there is a current mortgage on this home, so equity can't be stated.",
+    };
+  }
 
   if (balance == null) {
     return {

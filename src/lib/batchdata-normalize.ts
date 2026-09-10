@@ -1,9 +1,26 @@
 /**
  * BatchData normalizer — pure functions, no server imports.
  *
- * Used ONLY by the isolated BatchData test harness. Nothing here feeds the
- * production ATTOM pipeline or `property_intel`.
+ * Current open liens and historical mortgage records are kept strictly apart:
+ * `mortgage.liens` is only ever the provider's open-lien list, and
+ * `mortgage.history` is evidence of a payoff trail that must never be promoted
+ * into a current lien.
  */
+
+import { classifyLienStatus, type LienStatus } from "./mortgage-position";
+
+export interface MortgageRecord {
+  lender: string | null;
+  amount: number | null;
+  loanType: string | null;
+  termYears: number | null;
+  recordingDate: string | null;
+  maturityDate: string | null;
+  rate: number | null;
+  ltv: number | null;
+  estimatedPayment: number | null;
+}
+
 
 export interface ParsedAddress {
   address_line1: string;
@@ -113,21 +130,18 @@ export interface NormalizedBatchdataProperty {
     estimatedEquity: number | null;
     openLienCount: number | null;
     totalOpenLienBalance: number | null;
+    /** CURRENT open balance only — never an original/historical loan amount. */
+    currentBalance: number | null;
+    /** Shared mortgage-position classification (see mortgage-position.ts). */
+    lienStatus: LienStatus;
     ltv: number | null;
     equityPercent: number | null;
     estimatedPayment: number | null;
     maturityDate: string | null;
-    liens: Array<{
-      lender: string | null;
-      amount: number | null;
-      loanType: string | null;
-      termYears: number | null;
-      recordingDate: string | null;
-      maturityDate: string | null;
-      rate: number | null;
-      ltv: number | null;
-      estimatedPayment: number | null;
-    }>;
+    /** CURRENT open liens only. */
+    liens: Array<MortgageRecord>;
+    /** Historical mortgage records — evidence only, never a current lien. */
+    history: Array<MortgageRecord>;
   };
   sales: {
     lastSaleDate: string | null;
@@ -259,7 +273,7 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
     return !ownershipStart || !d || d >= ownershipStart;
   });
 
-  const liens = (openLienRows.length ? openLienRows : historyRows).map((m) => ({
+  const toRecord = (m: AnyRec): MortgageRecord => ({
     lender: str(pick(m, "lenderName", "assignedLenderName")),
     amount: num(pick(m, "loanAmount")),
     loanType: str(pick(m, "loanType")),
@@ -272,13 +286,27 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
     rate: num(pick(m, "currentEstimatedInterestRate", "interestRate")),
     ltv: num(pick(m, "ltv")),
     estimatedPayment: num(pick(m, "estimatedPaymentAmount")),
-  }));
+  });
+
+  // CURRENT open liens only. Historical records never fall through into this
+  // list, no matter how empty the open-lien array is.
+  const liens = openLienRows.map(toRecord);
+  const history = historyRows.map(toRecord);
 
   // Primary lien = largest recorded balance among the open liens.
   const primary = [...liens].sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0))[0] ?? null;
   const totalOpenLienBalance = num(pick(openLien, "totalOpenLienBalance"));
-  const openLienCount = num(pick(openLien, "totalOpenLienCount"));
+  const openLienCount = num(pick(openLien, "totalOpenLienCount")) ?? (liens.length || null);
+  // Only a current open balance counts as the balance. An original loan amount
+  // is history, never a current position.
+  const currentBalance = totalOpenLienBalance;
   const loanAmount = totalOpenLienBalance ?? primary?.amount ?? null;
+  const lienStatus = classifyLienStatus({
+    openLienCount,
+    liens,
+    history,
+    lastSaleDate,
+  });
 
   const phones = ((pick(p, "phoneNumbers", "phone_numbers", "contact.phones") as AnyRec[]) ?? [])
     .map((x) => str(typeof x === "string" ? x : pick(x, "number", "phone")))
@@ -331,7 +359,7 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
       taxYear: num(pick(p, "tax.taxYear", "assessment.assessmentYear", "assessment.taxYear")),
     },
     mortgage: {
-      hasRecord: Boolean((openLienCount ?? 0) > 0 || loanAmount || primary?.lender || liens.length),
+      hasRecord: Boolean((openLienCount ?? 0) > 0 || currentBalance || primary?.lender || liens.length),
       loanAmount,
       lender: primary?.lender ?? null,
       originationDate: primary?.recordingDate ?? str(pick(openLien, "lastLoanRecordingDate")),
@@ -343,11 +371,14 @@ export function normalizeBatchdataProperty(raw: unknown): NormalizedBatchdataPro
         (estimate != null && loanAmount != null ? estimate - loanAmount : null),
       openLienCount,
       totalOpenLienBalance,
+      currentBalance,
+      lienStatus,
       ltv: num(pick(p, "valuation.ltv")) ?? primary?.ltv ?? null,
       equityPercent: num(pick(p, "valuation.equityPercent")),
       estimatedPayment: primary?.estimatedPayment ?? null,
       maturityDate: primary?.maturityDate ?? null,
       liens,
+      history,
     },
     sales: { lastSaleDate, lastSaleAmount, priorSales: sales },
     permits: {

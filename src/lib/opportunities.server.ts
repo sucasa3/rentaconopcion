@@ -192,6 +192,7 @@ function engineFactsFor(
     actionable: ribbon.equityActionable,
     suppressionReason: ribbon.equitySuppressionReason,
     freeAndClear: ribbon.noMortgageOnRecord,
+    lienStatus: ribbon.lienStatus,
     multiLien: ribbon.multiLien,
   };
 }

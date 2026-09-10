@@ -17,6 +17,7 @@ import {
   annualDrift,
   assessmentRatio,
 } from "@/lib/data/market-factors";
+import { ltvFraction, mortgageImpliedValue } from "@/lib/mortgage-position";
 
 export type ValueCandidateKind =
   | "provider_avm"
@@ -59,6 +60,9 @@ export interface ValueEngineInput {
   mortgage?: {
     openLienCount?: number | null;
     totalOpenLienBalance?: number | null;
+    /** CURRENT open balance; the only balance a value may be implied from */
+    currentBalance?: number | null;
+    /** original/historical loan amount — never used for implied value */
     loanAmount?: number | null;
     ltv?: number | null;
   } | null;
@@ -101,16 +105,6 @@ function drift(amount: number, months: number, state: string | null | undefined)
   return amount * Math.pow(1 + annual, months / 12);
 }
 
-/** LTV may arrive as a fraction (0.7) or a percentage (70.2). */
-function ltvFraction(ltv: number | null | undefined): number | null {
-  const v = pos(ltv ?? null);
-  if (v == null) return null;
-  const f = v > 1.5 ? v / 100 : v;
-  // Outside this band the number is either noise or a distressed edge case we
-  // will not derive a value from.
-  if (f < 0.05 || f > 1.25) return null;
-  return f;
-}
 
 export function buildValueCandidates(input: ValueEngineInput): ValueCandidate[] {
   const now = input.now ?? new Date();
@@ -150,22 +144,30 @@ export function buildValueCandidates(input: ValueEngineInput): ValueCandidate[] 
     });
   }
 
-  // 3. Mortgage-implied: balance divided by reported LTV.
-  const liens = input.mortgage?.openLienCount ?? null;
-  const balance = pos(input.mortgage?.totalOpenLienBalance) ?? pos(input.mortgage?.loanAmount);
-  const f = ltvFraction(input.mortgage?.ltv);
-  if (balance != null && f != null && (liens == null || liens === 1)) {
+  // 3. Mortgage-implied: CURRENT open balance divided by the reported LTV.
+  // Strict by design — exactly one current open lien, a current balance and a
+  // valid LTV. Historical loan amounts are never used here.
+  const currentBalance =
+    pos(input.mortgage?.currentBalance) ?? pos(input.mortgage?.totalOpenLienBalance);
+  const implied = mortgageImpliedValue({
+    openLienCount: input.mortgage?.openLienCount ?? null,
+    currentBalance,
+    ltv: input.mortgage?.ltv ?? null,
+  });
+  if (implied != null && currentBalance != null) {
+    const f = ltvFraction(input.mortgage?.ltv)!;
     out.push({
       kind: "mortgage_implied",
-      value: Math.round(balance / f),
-      // Backtest (n=30 stored records with both an estimate and loan data):
-      // median error 0.1%, all within 10% — the reported loan-to-value is
-      // derived from the provider's own valuation, so this reconstructs it.
-      weight: 92,
+      value: implied,
+      // The provider's reported loan-to-value is calculated against its own
+      // internal valuation, so this reconstructs that valuation directly.
+      // Backtest (n=30 records with both an estimate and loan data): median
+      // error 0.1%, all within 10%. Ranked ahead of sale and assessor.
+      weight: 96,
       confidence: "high",
       label: "Estimated from recorded loan data",
       asOf: null,
-      reason: `Recorded loan balance of $${Math.round(balance).toLocaleString()} at a reported ${(f * 100).toFixed(1)}% loan-to-value.`,
+      reason: `Current recorded loan balance of $${Math.round(currentBalance).toLocaleString()} at a reported ${(f * 100).toFixed(1)}% loan-to-value.`,
     });
   }
 
