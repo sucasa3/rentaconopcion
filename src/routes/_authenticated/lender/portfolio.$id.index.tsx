@@ -9,6 +9,7 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LenderBriefDialog } from "@/components/lender-brief";
+import { ComparisonRate } from "@/components/comparison-rate";
 import { cn } from "@/lib/utils";
 
 
@@ -188,7 +189,7 @@ function PortfolioDetail() {
       };
     }
     return null;
-  }, [data, benchmark]);
+  }, [data]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -237,7 +238,7 @@ function PortfolioDetail() {
                 <div className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-primary" />
                   <h2 className="text-base font-semibold">
-                    Top refi opportunities @ {benchmark.toFixed(2)}%
+                    Top refi opportunities @ {data.summary.benchmark_rate?.toFixed(2) ?? "—"}%
                   </h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
