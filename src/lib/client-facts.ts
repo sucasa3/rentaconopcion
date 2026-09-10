@@ -12,6 +12,8 @@
  * consistency check only.
  */
 
+import type { LienStatus } from "@/lib/mortgage-position";
+
 export interface ClientFacts {
   clientId: string;
   /** Estimated market value, whole dollars. Null when we cannot state one. */
@@ -49,7 +51,10 @@ export interface ClientFacts {
   equityActionable: boolean;
   /** Why equity is withheld, when it is. */
   suppressionReason: string | null;
+  /** No current open mortgage found and a prior mortgage trail exists. */
   freeAndClear: boolean;
+  /** Canonical mortgage-position classification. */
+  lienStatus: LienStatus;
   multiLien: boolean;
   /** True when there is no cached property record for this address yet. */
   hasRecord: boolean;
@@ -85,6 +90,7 @@ export function emptyClientFacts(clientId: string): ClientFacts {
     equityActionable: false,
     suppressionReason: null,
     freeAndClear: false,
+    lienStatus: "unconfirmed",
     multiLien: false,
     hasRecord: false,
   };

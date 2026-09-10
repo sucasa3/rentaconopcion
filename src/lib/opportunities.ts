@@ -9,6 +9,8 @@
  * All copy in this module must stay in opportunity language.
  */
 
+import type { LienStatus } from "@/lib/mortgage-position";
+
 export const OPPORTUNITY_CATEGORIES = [
   "equity",
   "heloc",
@@ -91,9 +93,11 @@ export const CATEGORY_META: Record<OpportunityCategory, CategoryMeta> = {
 
   free_and_clear: {
     key: "free_and_clear",
-    label: "Owned free and clear",
-    blurb: "Public records show no open loan against this home.",
-    lenderBlurb: "No open loan on record — a first conversation about financing options may be welcome.",
+    // Public records cannot prove a clear title, so the wording stays cautious.
+    label: "No open mortgage found",
+    blurb: "Public records show no current open mortgage and show a prior mortgage history.",
+    lenderBlurb:
+      "No current open mortgage found on record — a first conversation about financing options may be welcome.",
   },
   recent_purchase: {
     key: "recent_purchase",
@@ -155,7 +159,7 @@ export const OPPORTUNITY_STATUS: Record<OpportunityCategory, { status: Opportuni
   market_timing: { status: "on", note: "Driven by homeowner behaviour in the app." },
   free_and_clear: {
     status: "on_with_guardrails",
-    note: "Only when the provider clearly reports zero open liens.",
+    note: "Only on a likely_paid_off position: zero current liens plus a prior mortgage trail and no recent-sale recording lag.",
   },
   recent_purchase: { status: "on", note: "Sale date within the recent-purchase window." },
   mortgage_age: { status: "on", note: "Loan seasoning only; quotes no value or equity." },
@@ -288,8 +292,10 @@ export interface ClientSignals {
   equityActionable: boolean;
   /** why equity products are withheld, when they are */
   equitySuppressionReason: string | null;
-  /** provider clearly reports zero open liens */
+  /** no current open mortgage found AND a prior mortgage trail exists */
   freeAndClear: boolean;
+  /** canonical mortgage-position classification — never re-inferred here */
+  lienStatus: LienStatus;
   /** more than one open recorded loan */
   multiLien: boolean;
   /** months since the property last changed hands, from sale records */
@@ -312,6 +318,7 @@ export interface EngineFacts {
   actionable: boolean;
   suppressionReason: string | null;
   freeAndClear: boolean;
+  lienStatus: LienStatus;
   multiLien: boolean;
 }
 
@@ -385,6 +392,7 @@ export function deriveSignals(input: {
         ? null
         : "This home's records haven't been enriched yet, so equity figures are estimates only."),
     freeAndClear: e?.freeAndClear ?? false,
+    lienStatus: e?.lienStatus ?? "unconfirmed",
     multiLien: e?.multiLien ?? false,
     monthsSinceSale: input.monthsSinceSale ?? null,
   };
@@ -515,8 +523,10 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
     });
   }
 
-  // --- Free and clear -------------------------------------------------------
-  if (s.freeAndClear) {
+  // --- No open mortgage found ----------------------------------------------
+  // Fires only on the canonical likely_paid_off position — never on an
+  // ambiguous record with no lien data at all.
+  if (s.lienStatus === "likely_paid_off") {
     const score = s.equityActionable && s.valueCents ? 80 : 60;
     out.push({
       category: "free_and_clear",
@@ -524,7 +534,7 @@ export function deriveOpportunities(s: ClientSignals): DerivedOpportunity[] {
       strength: bandStrength(score),
       score,
       reasons: [
-        "Public records show no open loan against this home",
+        "Public records show no current open mortgage and show a prior mortgage history",
         s.equityActionable && s.valueCents
           ? `Estimated home value of about ${usd(s.valueCents)}`
           : "Value shown for context only until records are confirmed",

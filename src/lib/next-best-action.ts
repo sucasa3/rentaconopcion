@@ -164,7 +164,7 @@ const AGENT_RECIPES: Record<OpportunityCategory, ActionRecipe> = {
     key: "agent_free_clear",
     channel: "call",
     headline: "Call about their plans for the home",
-    ask: "No loan on record — ask what they want the home to do for them next.",
+    ask: "No current mortgage found on record — ask what they want the home to do for them next.",
   },
   recent_purchase: {
     key: "agent_new_owner",
@@ -244,8 +244,8 @@ const LENDER_RECIPES: Record<OpportunityCategory, ActionRecipe> = {
   free_and_clear: {
     key: "mlo_free_clear",
     channel: "call",
-    headline: "Call about options with no loan in place",
-    ask: "No open loan on record — introduce what their equity could do.",
+    headline: "Call about options with no current mortgage found",
+    ask: "No current open mortgage found on record — introduce what their equity could do.",
   },
   recent_purchase: {
     key: "mlo_new_owner",

@@ -141,7 +141,7 @@ export function EquityMortgagePanel() {
           primary={fmtMoney(equity?.equityDollars)}
           secondary={
             equity?.equityPct != null
-              ? equity.valueSource === "assessed"
+              ? equity.valueSource !== "avm"
                 ? t("money.stat.equity_pct_assessed", { pct: fmtPct(equity.equityPct) })
                 : t("money.stat.equity_pct", { pct: fmtPct(equity.equityPct) })
               : t("money.stat.no_valuation")
@@ -155,7 +155,7 @@ export function EquityMortgagePanel() {
           secondary={
             equity?.cashOutHeadroom80 == null
               ? t("money.stat.needs_valuation")
-              : equity.valueSource === "assessed"
+              : equity.valueSource !== "avm"
                 ? t("money.stat.ltv_assessed")
                 : t("money.stat.ltv")
           }

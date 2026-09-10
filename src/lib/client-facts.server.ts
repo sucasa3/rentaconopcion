@@ -129,6 +129,7 @@ export function factsFromRecord(
     equityActionable: ribbon.equityActionable,
     suppressionReason: ribbon.equitySuppressionReason,
     freeAndClear: ribbon.noMortgageOnRecord,
+    lienStatus: ribbon.lienStatus,
     multiLien: ribbon.multiLien,
     hasRecord: true,
   };
