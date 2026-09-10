@@ -218,37 +218,13 @@ export function AgentToday() {
       {best ? (
         <section className="space-y-2.5">
           <SectionHeader title="Start here" />
-          {/* The read sits beside the card it describes; both render the same
-              canonical narrative, so the numbers and copy cannot diverge. */}
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:items-start">
-            <BestMove
-              item={best}
-              onOutcome={(stage, note) =>
-                outcome.mutate({ opportunityId: best.opportunityId, stage, note })
-              }
-              pending={outcome.isPending}
-            />
-            <IntelligenceSurface label="SuCasa daily read" className="lg:sticky lg:top-4">
-              <p className="text-[15px] font-medium leading-relaxed">{read.sentence}</p>
-              <dl className="mt-4 space-y-3 border-t border-surface-intelligence-border pt-4">
-                {read.startHere && <Read label="Start here" value={read.startHere} strong />}
-                {read.why && <Read label="Why" value={read.why} />}
-                {read.beUsefulBy && <Read label="Be useful by" value={read.beUsefulBy} />}
-              </dl>
-              {read.signals.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-1.5 border-t border-surface-intelligence-border pt-4">
-                  {read.signals.map((s) => (
-                    <span
-                      key={s}
-                      className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-text-secondary"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </IntelligenceSurface>
-          </div>
+          <BestMove
+            item={best}
+            onOutcome={(stage, note) =>
+              outcome.mutate({ opportunityId: best.opportunityId, stage, note })
+            }
+            pending={outcome.isPending}
+          />
         </section>
       ) : (
 
