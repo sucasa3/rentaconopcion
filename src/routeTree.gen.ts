@@ -55,6 +55,7 @@ import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/em
 import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
 import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
 import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
+import { Route as ApiPublicRatesTickRouteImport } from './routes/api/public/rates.tick'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
@@ -312,6 +313,11 @@ const ApiPublicTClickRoute = ApiPublicTClickRouteImport.update({
   path: '/api/public/t/click',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRatesTickRoute = ApiPublicRatesTickRouteImport.update({
+  id: '/api/public/rates/tick',
+  path: '/api/public/rates/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -428,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
   '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
@@ -484,6 +491,7 @@ export interface FileRoutesByTo {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
   '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
@@ -545,6 +553,7 @@ export interface FileRoutesById {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
   '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
@@ -606,6 +615,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
     | '/api/public/webhooks/stripe'
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
     | '/api/public/webhooks/stripe'
@@ -722,6 +733,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
     | '/api/public/webhooks/stripe'
@@ -754,6 +766,7 @@ export interface RootRouteChildren {
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
+  ApiPublicRatesTickRoute: typeof ApiPublicRatesTickRoute
   ApiPublicTClickRoute: typeof ApiPublicTClickRoute
   ApiPublicTOpenRoute: typeof ApiPublicTOpenRoute
   ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
@@ -1086,6 +1099,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicTClickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/rates/tick': {
+      id: '/api/public/rates/tick'
+      path: '/api/public/rates/tick'
+      fullPath: '/api/public/rates/tick'
+      preLoaderRoute: typeof ApiPublicRatesTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
       path: '/api/public/leads/tick'
@@ -1310,6 +1330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
+  ApiPublicRatesTickRoute: ApiPublicRatesTickRoute,
   ApiPublicTClickRoute: ApiPublicTClickRoute,
   ApiPublicTOpenRoute: ApiPublicTOpenRoute,
   ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
