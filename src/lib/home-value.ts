@@ -27,8 +27,15 @@ export interface ResolvedHomeValue {
 }
 
 export function resolveHomeValue(input: ValueEngineInput): ResolvedHomeValue {
-  const r = estimateHomeValue(input);
+  return homeValueFromResult(estimateHomeValue(input));
+}
 
+/**
+ * Presentation shape for an ALREADY-computed Value Engine result. Callers that
+ * have a result in hand (e.g. the equity ribbon) must use this instead of
+ * running the engine a second time, so value and equity can never disagree.
+ */
+export function homeValueFromResult(r: ValueEngineResult): ResolvedHomeValue {
   const source: HomeValueSource =
     r.kind === "provider_avm"
       ? "avm"
