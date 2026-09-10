@@ -524,7 +524,12 @@ export interface MortgageSummary {
   ltv?: number | null;
   liens?: Array<{ balance?: number | null; lender?: string | null; position?: number | null }> | null;
   /** historical mortgage records — evidence only, never a current lien */
-  history?: Array<unknown> | null;
+  history?: Array<{
+    lender?: string | null;
+    amount?: number | null;
+    recordingDate?: string | null;
+    loanType?: string | null;
+  }> | null;
 }
 export function isMortgageSummary(raw: unknown): raw is MortgageSummary {
   return raw != null && typeof raw === "object" && "hasRecord" in raw && !("property" in raw);
