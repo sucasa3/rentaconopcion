@@ -10,7 +10,12 @@
  * automated estimate, recent sale, recorded loan data and assessor records.
  */
 
-import { estimateHomeValue, type ValueEngineInput, type ValueConfidence } from "@/lib/value-engine";
+import {
+  estimateHomeValue,
+  type ValueEngineInput,
+  type ValueEngineResult,
+  type ValueConfidence,
+} from "@/lib/value-engine";
 
 export type HomeValueSource = "avm" | "assessed" | "sale" | "mortgage" | null;
 
