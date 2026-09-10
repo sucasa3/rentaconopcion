@@ -102,6 +102,9 @@ export type HomeRecordInput = {
   tax?: { marketTotal?: number | null; assessedTotal?: number | null; taxAmount?: number | null } | null;
   sales?: { lastSalePrice?: number | null; lastSaleDate?: string | null } | null;
   mortgage?: { rate?: number | null } | null;
+  /** Resolved market comparison rate; without it no savings figure is shown. */
+  benchmarkRate?: number | null;
+
   equity?: {
     estimatedValue?: number | null;
     loanBalance?: number | null;
@@ -170,7 +173,7 @@ export function assembleHomeRecord(input: HomeRecordInput): HomeRecord {
     equityPct: input.equity?.equityPct ?? null,
     cashOutHeadroom: input.equity?.cashOutHeadroom ?? null,
     refiSignal: input.equity?.refiSignal ?? null,
-    refi: estimateRefiSavings(loanBalance, rate),
+    refi: estimateRefiSavings(loanBalance, rate, input.benchmarkRate ?? null),
   };
 
   const permits = input.permits ?? [];

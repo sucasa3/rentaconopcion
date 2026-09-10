@@ -199,7 +199,10 @@ export const askAssistant = createServerFn({ method: "POST" })
         const mortgage = extractMortgage(intel.classes.mortgage?.data);
         const sales = extractSales(intel.classes.sales?.data);
         const tax = intel.classes.tax ? extractTax(intel.classes.tax.data) : null;
-        const equity = computeEquityRibbon(avm, mortgage, sales, tax);
+        const { marketRatePctOrNull } = await import("@/lib/market-rate.server");
+        const equity = computeEquityRibbon(
+          avm, mortgage, sales, tax, null, await marketRatePctOrNull(),
+        );
         const balance = mortgage ? estimateLoanBalance(mortgage) : null;
         snapshot.avm = equity.estimatedValue ?? avm?.estimate ?? null;
         snapshot.yearBuilt = detail?.yearBuilt ?? null;

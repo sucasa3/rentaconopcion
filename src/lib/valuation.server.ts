@@ -12,7 +12,7 @@
 
 import { estimateHomeValue } from "@/lib/value-engine";
 import { resolveEquity, equityOffersAllowed } from "@/lib/equity";
-import { BENCHMARK_REFI_RATE } from "./refi";
+
 
 import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 
@@ -695,7 +695,14 @@ export function computeEquityRibbon(
   sales: SalesSummary | null,
   tax?: TaxSummary | null,
   state?: string | null,
+  /**
+   * Resolved market comparison rate (see market-rate.server). When absent, the
+   * rate-spread rule is skipped and the signal falls back to equity alone —
+   * we never compare against a made-up rate.
+   */
+  marketRatePct?: number | null,
 ): EquityRibbon {
+
   // Value always comes from the shared SuCasa Value Engine — this function
   // never decides what a home is worth on its own.
   const resolved = estimateHomeValue({
@@ -749,9 +756,10 @@ export function computeEquityRibbon(
   let refi: EquityRibbon["refiSignal"] = null;
   if (equityOffersAllowed(equity)) {
     const equityPct = equity.equityPct;
-    const marketRate = BENCHMARK_REFI_RATE;
-    if (equityPct != null && mortgage?.interestRate != null) {
+    const marketRate = marketRatePct ?? null;
+    if (equityPct != null && mortgage?.interestRate != null && marketRate != null) {
       const spread = mortgage.interestRate - marketRate;
+
       if (equityPct >= 0.2 && spread >= 1) refi = "strong";
       else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
       else if (equityPct >= 0.15) refi = "watch";

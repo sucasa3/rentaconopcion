@@ -68,6 +68,11 @@ export const draftOutreach = createServerFn({ method: "POST" })
       ok: true,
     });
 
+    // Keep the rate this wording was based on with the saved draft, so a later
+    // market move never silently rewrites history.
+    const { resolveBenchmark } = await import("./market-rate.server");
+    const benchmark = await resolveBenchmark(item.orgId).catch(() => null);
+
     const recipe = recipeFor(item.category, data.audience);
     await saveAction({
       opportunityId: item.opportunityId,
@@ -83,6 +88,9 @@ export const draftOutreach = createServerFn({ method: "POST" })
       subject: draft.subject,
       body: draft.body,
       model: MODEL_LIGHT,
+      benchmark: benchmark
+        ? { ratePct: benchmark.ratePct, asOf: benchmark.asOf, source: benchmark.source }
+        : null,
     });
 
     return { subject: draft.subject, body: draft.body };

@@ -120,7 +120,8 @@ export async function refreshHomeProfile(
       const s = extractSales(intel.classes.sales?.data);
       const t = intel.classes.tax ? extractTax(intel.classes.tax.data) : null;
       const p = intel.classes.permits ? extractPermits(intel.classes.permits.data) : null;
-      const ribbon = computeEquityRibbon(a, m, s, t);
+      const { marketRatePctOrNull } = await import("@/lib/market-rate.server");
+      const ribbon = computeEquityRibbon(a, m, s, t, null, await marketRatePctOrNull());
 
       avm = a ? { estimate: a.estimate ?? null, low: a.low ?? null, high: a.high ?? null } : null;
       detail = d

@@ -152,8 +152,6 @@ export const createPortfolio = createServerFn({ method: "POST" })
     return row;
   });
 
-// Assumed current 30-yr benchmark rate used for savings math in the demo.
-const BENCHMARK_RATE_DEFAULT = 6.25;
 
 function monthlyPayment(principalCents: number, ratePct: number, termMonths: number): number {
   if (!principalCents || !ratePct || !termMonths) return 0;
@@ -224,7 +222,6 @@ export const getPortfolio = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
-    const benchmark = data.benchmarkRate ?? BENCHMARK_RATE_DEFAULT;
 
     const { data: portfolio, error } = await context.supabase
       .from("lender_portfolios")
@@ -233,6 +230,15 @@ export const getPortfolio = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!portfolio) throw new Error("Portfolio not found");
+
+    // The comparison rate: this org's scenario rate when they've set one,
+    // otherwise the stored market benchmark. Never an assumed number.
+    const { resolveBenchmark } = await import("./market-rate.server");
+    const benchmarkInfo = await resolveBenchmark((portfolio as any).lender_org_id).catch(
+      () => null,
+    );
+    const benchmark = data.benchmarkRate ?? benchmarkInfo?.ratePct ?? null;
+
 
     const { data: clients, error: cErr } = await context.supabase
       .from("lender_portfolio_clients")
@@ -276,10 +282,16 @@ export const getPortfolio = createServerFn({ method: "GET" })
       const equity = (value ?? 0) - (balance ?? 0);
       const ltv =
         value && balance ? Math.round((balance / value) * 1000) / 10 : null; // %
+      // No sourced comparison rate means no savings figure and no rate segment.
       const currentPmt = monthlyPayment(balance ?? 0, c.rate_at_close ?? 0, termMonths);
-      const refiPmt = monthlyPayment(balance ?? 0, benchmark, termMonths);
-      const savingsPerMonth = Math.max(0, Math.round(currentPmt - refiPmt));
-      const segment = segmentFor(c.rate_at_close, balance, value, monthsSinceClose, benchmark);
+      const refiPmt =
+        benchmark != null ? monthlyPayment(balance ?? 0, benchmark, termMonths) : null;
+      const savingsPerMonth =
+        refiPmt != null ? Math.max(0, Math.round(currentPmt - refiPmt)) : 0;
+      const segment =
+        benchmark != null
+          ? segmentFor(c.rate_at_close, balance, value, monthsSinceClose, benchmark)
+          : "unknown";
 
       return {
         id: c.id,
@@ -359,6 +371,12 @@ export const getPortfolio = createServerFn({ method: "GET" })
         avg_rate: Math.round(avgRate * 100) / 100,
         avg_months_since_close: Math.round(avgMonthsSinceClose),
         benchmark_rate: benchmark,
+        benchmark_label: benchmarkInfo?.label ?? null,
+        benchmark_source: benchmarkInfo?.source ?? null,
+        benchmark_as_of: benchmarkInfo?.asOf ?? null,
+        benchmark_kind: benchmarkInfo?.kind ?? null,
+        benchmark_stale: benchmarkInfo?.stale ?? false,
+        benchmark_market_rate: benchmarkInfo?.marketRatePct ?? null,
       },
       segments: segmentCounts,
       consent_counts: consentCounts,

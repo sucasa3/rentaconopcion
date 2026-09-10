@@ -153,13 +153,17 @@ function nonOwnerOccupied(row: IntelRow | undefined): boolean {
  * Assemble the shared Home Record for one client of a book from the cached
  * property record. Same shape, same assembler the homeowner dashboard uses.
  */
-function ribbonFor(client: PortfolioClientRow, row: IntelRow | undefined) {
+function ribbonFor(
+  client: PortfolioClientRow,
+  row: IntelRow | undefined,
+  benchmarkRate?: number | null,
+) {
   const avm = row ? extractAvm(row.avm) : null;
   const tax = row ? extractTax(row.tax) : null;
   const sales = row ? extractSales(row.sales) : null;
   const mortgage = row ? extractMortgage(row.mortgage) : null;
   return {
-    ribbon: computeEquityRibbon(avm, mortgage, sales, tax, client.state),
+    ribbon: computeEquityRibbon(avm, mortgage, sales, tax, client.state, benchmarkRate ?? null),
     sales,
     mortgage,
   };
@@ -169,9 +173,13 @@ function ribbonFor(client: PortfolioClientRow, row: IntelRow | undefined) {
  * Value + equity facts for the rules engine, sourced only from the shared
  * Value Engine / equity resolver via the equity ribbon.
  */
-function engineFactsFor(client: PortfolioClientRow, row: IntelRow | undefined): EngineFacts | null {
+function engineFactsFor(
+  client: PortfolioClientRow,
+  row: IntelRow | undefined,
+  benchmarkRate?: number | null,
+): EngineFacts | null {
   if (!row) return null;
-  const { ribbon } = ribbonFor(client, row);
+  const { ribbon } = ribbonFor(client, row, benchmarkRate);
   if (ribbon.estimatedValue == null) return null;
   return {
     value: ribbon.estimatedValue,
@@ -188,14 +196,19 @@ function engineFactsFor(client: PortfolioClientRow, row: IntelRow | undefined): 
   };
 }
 
-function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, now: Date) {
+function recordForClient(
+  client: PortfolioClientRow,
+  row: IntelRow | undefined,
+  now: Date,
+  benchmarkRate?: number | null,
+) {
   const avm = row ? extractAvm(row.avm) : null;
   const detail = row ? extractDetail(row.detail) : null;
   const tax = row ? extractTax(row.tax) : null;
   const sales = row ? extractSales(row.sales) : null;
   const mortgage = row ? extractMortgage(row.mortgage) : null;
   const permits = row ? extractPermits(row.permits) : null;
-  const equity = computeEquityRibbon(avm, mortgage, sales, tax, client.state);
+  const equity = computeEquityRibbon(avm, mortgage, sales, tax, client.state, benchmarkRate ?? null);
 
   return assembleHomeRecord({
     homeownerId: client.homeowner_id,
@@ -209,6 +222,7 @@ function recordForClient(client: PortfolioClientRow, row: IntelRow | undefined, 
       lastSaleDate: sales?.lastSale?.date ?? null,
     },
     mortgage: { rate: mortgage?.interestRate ?? null },
+    benchmarkRate: benchmarkRate ?? null,
     equity: {
       estimatedValue: equity.estimatedValue,
       loanBalance: equity.loanBalanceEstimate,
@@ -260,6 +274,11 @@ export async function computeForPortfolio(
   const records = await propertyRecords(supabase, rows);
   const now = new Date();
 
+  // One sourced comparison rate for the whole book — either the caller's
+  // explicit scenario rate or the stored market benchmark.
+  const { marketRatePctOrNull } = await import("./market-rate.server");
+  const rate = benchmarkRate ?? (await marketRatePctOrNull());
+
   return rows.map((c) => {
     const intel = records.get(c.id);
     const signals = deriveSignals({
@@ -267,10 +286,10 @@ export async function computeForPortfolio(
       ratePct: c.rate_at_close,
       termMonths: c.term_months,
       closeDate: c.close_date,
-      benchmarkRate,
+      benchmarkRate: rate,
       permitCount: intel ? extractPermits(intel.permits).events.length : 0,
       likelyNonOwnerOccupied: nonOwnerOccupied(intel),
-      engine: engineFactsFor(c, intel),
+      engine: engineFactsFor(c, intel, rate),
       monthsSinceSale: monthsSince(
         intel ? (extractSales(intel.sales).lastSale?.date ?? null) : null,
         now,
@@ -278,7 +297,7 @@ export async function computeForPortfolio(
       now,
     });
 
-    const fromRecord = intel ? opportunitiesFromRecord(recordForClient(c, intel, now)) : [];
+    const fromRecord = intel ? opportunitiesFromRecord(recordForClient(c, intel, now, rate)) : [];
     return {
       client: c,
       signals,

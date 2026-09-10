@@ -140,6 +140,10 @@ export type CampaignFacts = {
   loanBalance: number | null;
   rate: number | null;
   estimatedSavings: number | null;
+  /** The comparison rate that produced estimatedSavings, and where it came from. */
+  benchmarkRate: number | null;
+  benchmarkAsOf: string | null;
+  benchmarkSource: string | null;
   yearBuilt: number | null;
   homeAge: number | null;
   yearsOwned: number | null;
@@ -151,8 +155,6 @@ export type CampaignFacts = {
   state: string | null;
   refiSignal: string | null;
 };
-
-const MARKET_RATE = 6.5;
 
 function fmtMoney(n: number | null | undefined): string {
   if (n == null || !Number.isFinite(n)) return "—";
@@ -177,6 +179,9 @@ export async function loadCachedFacts(t: CampaignTarget): Promise<CampaignFacts>
     loanBalance: null,
     rate: t.rateAtClose ?? null,
     estimatedSavings: null,
+    benchmarkRate: null,
+    benchmarkAsOf: null,
+    benchmarkSource: null,
     yearBuilt: null,
     homeAge: null,
     yearsOwned: null,
@@ -240,14 +245,23 @@ export async function loadCachedFacts(t: CampaignTarget): Promise<CampaignFacts>
   }
 
   // Rough monthly savings if they refinanced to the current market rate.
-  if (facts.rate != null && facts.loanBalance != null && facts.rate > MARKET_RATE) {
+  // Savings are only quoted against the stored, sourced market benchmark.
+  const { resolveBenchmark } = await import("./market-rate.server");
+  const benchmark = await resolveBenchmark(null).catch(() => null);
+  if (benchmark) {
+    facts.benchmarkRate = benchmark.ratePct;
+    facts.benchmarkAsOf = benchmark.asOf;
+    facts.benchmarkSource = benchmark.source;
+  }
+
+  if (benchmark && facts.rate != null && facts.loanBalance != null && facts.rate > benchmark.ratePct) {
     const p = facts.loanBalance;
     const pay = (annualRate: number) => {
       const r = annualRate / 100 / 12;
       const n = 360;
       return (p * r) / (1 - Math.pow(1 + r, -n));
     };
-    facts.estimatedSavings = Math.max(0, Math.round(pay(facts.rate) - pay(MARKET_RATE)));
+    facts.estimatedSavings = Math.max(0, Math.round(pay(facts.rate) - pay(benchmark.ratePct)));
   }
 
   return facts;
@@ -328,7 +342,10 @@ function factsBlock(facts: CampaignFacts, t: CampaignTarget): string {
   if (facts.equityPct != null) l.push(`Equity share: ${Math.round(facts.equityPct * 100)}%`);
   if (facts.loanBalance != null) l.push(`Estimated loan balance: ${fmtMoney(facts.loanBalance)}`);
   if (facts.rate != null) l.push(`Mortgage rate: ${facts.rate.toFixed(2)}%`);
-  if (facts.estimatedSavings != null) l.push(`Estimated monthly refi savings: ${fmtMoney(facts.estimatedSavings)}`);
+  if (facts.estimatedSavings != null)
+    l.push(
+      `Estimated monthly refi savings: ${fmtMoney(facts.estimatedSavings)} (compared with ${facts.benchmarkRate?.toFixed(2)}% — ${facts.benchmarkSource}, as of ${facts.benchmarkAsOf}). Estimate only, not a rate offer.`,
+    );
   if (facts.yearBuilt != null) l.push(`Year built: ${facts.yearBuilt} (age ${facts.homeAge})`);
   if (facts.yearsOwned != null) l.push(`Years owned: ${facts.yearsOwned}`);
   if (facts.assessedValue != null) l.push(`Assessed value: ${fmtMoney(facts.assessedValue)}`);
@@ -439,6 +456,9 @@ export function buildPayload(
     loan_balance: fmtMoney(facts.loanBalance),
     rate: facts.rate != null ? `${facts.rate.toFixed(2)}%` : "",
     estimated_savings: fmtMoney(facts.estimatedSavings),
+    benchmark_rate: facts.benchmarkRate != null ? `${facts.benchmarkRate.toFixed(2)}%` : "",
+    benchmark_as_of: facts.benchmarkAsOf ?? "",
+    benchmark_source: facts.benchmarkSource ?? "",
     partner_name: partnerName,
     partner_type: target.orgType,
     // Partner-branded, SuCasa-powered sender identity (merged in the GHL template)

@@ -9,6 +9,7 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LenderBriefDialog } from "@/components/lender-brief";
+import { ComparisonRate } from "@/components/comparison-rate";
 import { cn } from "@/lib/utils";
 
 
@@ -79,15 +80,14 @@ function PortfolioDetail() {
 
   const qc = useQueryClient();
 
-  const [benchmark, setBenchmark] = useState<number>(6.25);
   const [segment, setSegment] = useState<Segment>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [contact, setContact] = useState<any | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["lender-portfolio", id, benchmark],
-    queryFn: () => getFn({ data: { id, benchmarkRate: benchmark } }),
+    queryKey: ["lender-portfolio", id],
+    queryFn: () => getFn({ data: { id } }),
   });
 
   // Deep link: /lender/portfolio/$id?client=<clientId> opens that homeowner directly.
@@ -172,7 +172,7 @@ function PortfolioDetail() {
         title: `${topRefi.full_name} could save $${topRefi.savings_per_month_dollars.toLocaleString()}/mo`,
         subtitle: `Current rate ${topRefi.rate_at_close ?? "—"}% · Balance ${moneyCompact(
           topRefi.loan_balance_cents,
-        )} · Refi at ${benchmark.toFixed(2)}%`,
+        )} · Refi at ${data.summary.benchmark_rate?.toFixed(2) ?? "—"}%`,
         next: data.top_refi_opportunities.slice(1, 4).map((c: any) => ({
           client: c,
           label: `${c.full_name} — $${c.savings_per_month_dollars.toLocaleString()}/mo savings`,
@@ -189,7 +189,7 @@ function PortfolioDetail() {
       };
     }
     return null;
-  }, [data, benchmark]);
+  }, [data]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -238,7 +238,7 @@ function PortfolioDetail() {
                 <div className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-primary" />
                   <h2 className="text-base font-semibold">
-                    Top refi opportunities @ {benchmark.toFixed(2)}%
+                    Top refi opportunities @ {data.summary.benchmark_rate?.toFixed(2) ?? "—"}%
                   </h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -332,22 +332,7 @@ function PortfolioDetail() {
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <h2 className="text-base font-semibold">Your book</h2>
-                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    Assumed rate
-                    <input
-                      type="number"
-                      step="0.125"
-                      min={1}
-                      max={20}
-                      value={benchmark}
-                      onChange={(e) => {
-                        setBenchmark(Number(e.target.value) || 6.25);
-                        setPage(0);
-                      }}
-                      className="w-20 rounded-full border border-border bg-background px-3 py-1 text-right text-sm text-foreground"
-                    />
-                    %
-                  </label>
+                  <ComparisonRate orgId={data.portfolio.orgId} summary={data.summary} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

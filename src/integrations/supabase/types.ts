@@ -1096,6 +1096,9 @@ export type Database = {
       }
       campaign_sends: {
         Row: {
+          benchmark_as_of: string | null
+          benchmark_rate_pct: number | null
+          benchmark_source: string | null
           body: string | null
           campaign_id: string
           created_at: string
@@ -1117,6 +1120,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          benchmark_as_of?: string | null
+          benchmark_rate_pct?: number | null
+          benchmark_source?: string | null
           body?: string | null
           campaign_id: string
           created_at?: string
@@ -1138,6 +1144,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          benchmark_as_of?: string | null
+          benchmark_rate_pct?: number | null
+          benchmark_source?: string | null
           body?: string | null
           campaign_id?: string
           created_at?: string
@@ -1476,6 +1485,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cron_tokens: {
+        Row: {
+          created_at: string
+          job_key: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          job_key: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          job_key?: string
+          token?: string
+        }
+        Relationships: []
       }
       data_provider_health: {
         Row: {
@@ -2797,6 +2824,10 @@ export type Database = {
           profile_allowance: number
           reply_to_email: string | null
           reserved_profiles: number
+          scenario_rate_label: string | null
+          scenario_rate_pct: number | null
+          scenario_rate_set_at: string | null
+          scenario_rate_set_by: string | null
           seat_limit: number | null
           sender_name: string | null
           signoff: string | null
@@ -2828,6 +2859,10 @@ export type Database = {
           profile_allowance?: number
           reply_to_email?: string | null
           reserved_profiles?: number
+          scenario_rate_label?: string | null
+          scenario_rate_pct?: number | null
+          scenario_rate_set_at?: string | null
+          scenario_rate_set_by?: string | null
           seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
@@ -2859,6 +2894,10 @@ export type Database = {
           profile_allowance?: number
           reply_to_email?: string | null
           reserved_profiles?: number
+          scenario_rate_label?: string | null
+          scenario_rate_pct?: number | null
+          scenario_rate_set_at?: string | null
+          scenario_rate_set_by?: string | null
           seat_limit?: number | null
           sender_name?: string | null
           signoff?: string | null
@@ -3006,10 +3045,46 @@ export type Database = {
           },
         ]
       }
+      market_rates: {
+        Row: {
+          as_of_date: string
+          created_at: string
+          fetched_at: string
+          id: string
+          rate_pct: number
+          series_key: string
+          source: string
+          source_url: string | null
+        }
+        Insert: {
+          as_of_date: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          rate_pct: number
+          series_key: string
+          source: string
+          source_url?: string | null
+        }
+        Update: {
+          as_of_date?: string
+          created_at?: string
+          fetched_at?: string
+          id?: string
+          rate_pct?: number
+          series_key?: string
+          source?: string
+          source_url?: string | null
+        }
+        Relationships: []
+      }
       opportunity_actions: {
         Row: {
           action_key: string
           audience: string
+          benchmark_as_of: string | null
+          benchmark_rate_pct: number | null
+          benchmark_source: string | null
           channel: string
           created_at: string
           draft_body: string | null
@@ -3029,6 +3104,9 @@ export type Database = {
         Insert: {
           action_key: string
           audience: string
+          benchmark_as_of?: string | null
+          benchmark_rate_pct?: number | null
+          benchmark_source?: string | null
           channel: string
           created_at?: string
           draft_body?: string | null
@@ -3048,6 +3126,9 @@ export type Database = {
         Update: {
           action_key?: string
           audience?: string
+          benchmark_as_of?: string | null
+          benchmark_rate_pct?: number | null
+          benchmark_source?: string | null
           channel?: string
           created_at?: string
           draft_body?: string | null

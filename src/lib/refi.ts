@@ -1,10 +1,12 @@
 /**
  * Client-safe refinance math shared by the dashboard panel and the
  * "Connect with lender" dialog. Principal & interest only.
+ *
+ * There is deliberately no default comparison rate here: every caller must
+ * pass the resolved benchmark (see `src/lib/market-rate.ts`) so a savings
+ * figure can always be traced to a sourced, dated rate.
  */
 
-/** Benchmark market rate used for refi signals and savings estimates. */
-export const BENCHMARK_REFI_RATE = 6.5;
 
 /** Monthly principal + interest payment. */
 export function monthlyPayment(
@@ -28,10 +30,12 @@ export interface RefiSavings {
 export function estimateRefiSavings(
   balance: number | null | undefined,
   currentRate: number | null | undefined,
-  benchmarkRate: number = BENCHMARK_REFI_RATE,
+  /** Resolved comparison rate. Without one there is no savings estimate. */
+  benchmarkRate: number | null | undefined,
   termMonths = 360,
 ): RefiSavings | null {
-  if (!balance || balance <= 0 || currentRate == null) return null;
+  if (!balance || balance <= 0 || currentRate == null || benchmarkRate == null) return null;
+
   const currentPayment = monthlyPayment(balance, currentRate, termMonths);
   const newPayment = monthlyPayment(balance, benchmarkRate, termMonths);
   const monthlySavings = Math.max(0, Math.round(currentPayment - newPayment));

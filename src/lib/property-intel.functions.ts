@@ -119,7 +119,15 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       result.budget = extra.budget;
     }
 
-    const equity = avm || mortgage || tax ? computeEquityRibbon(avm, mortgage, sales, tax) : null;
+    // One sourced comparison rate for this homeowner's whole screen.
+    const { resolveBenchmark } = await import("@/lib/market-rate.server");
+    const benchmark = await resolveBenchmark(null).catch(() => null);
+
+    const equity =
+      avm || mortgage || tax
+        ? computeEquityRibbon(avm, mortgage, sales, tax, profile.state ?? null, benchmark?.ratePct ?? null)
+        : null;
+
 
 
     // Backfill any missing address pieces from the matched public record so the
@@ -163,6 +171,9 @@ export const getMyHomeIntel = createServerFn({ method: "POST" })
       mortgage,
       permits,
       equity,
+      /** the sourced comparison rate behind any savings figure on this screen */
+      benchmark,
+
       /** canonical resolved value — every surface should read this */
       value: resolved,
       valueStatus,
