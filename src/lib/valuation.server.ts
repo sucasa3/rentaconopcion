@@ -756,9 +756,10 @@ export function computeEquityRibbon(
   let refi: EquityRibbon["refiSignal"] = null;
   if (equityOffersAllowed(equity)) {
     const equityPct = equity.equityPct;
-    const marketRate = BENCHMARK_REFI_RATE;
-    if (equityPct != null && mortgage?.interestRate != null) {
+    const marketRate = marketRatePct ?? null;
+    if (equityPct != null && mortgage?.interestRate != null && marketRate != null) {
       const spread = mortgage.interestRate - marketRate;
+
       if (equityPct >= 0.2 && spread >= 1) refi = "strong";
       else if (equityPct >= 0.2 && spread >= 0.5) refi = "moderate";
       else if (equityPct >= 0.15) refi = "watch";
