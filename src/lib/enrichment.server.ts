@@ -19,6 +19,7 @@
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 import { batchdataPrimaryEnabled, enrichViaBatchdata } from "./provider-primary.server";
 import { persistPortfolioOpportunities } from "./opportunities.server";
+import { persistHomeTeamCandidates } from "./relationships.server";
 import { verifyAddress } from "./geocode.server";
 
 /** Share of the monthly allowance background work is allowed to consume. */
@@ -377,6 +378,21 @@ export async function runEnrichmentTick(opts?: {
           .update({ last_intel_refreshed_at: now })
           .eq("id", client.id);
         touchedPortfolios.add(client.portfolio_id);
+        // Home Team evidence only. This records who may be involved with the
+        // home; it grants nobody access to the homeowner.
+        if (bd.homeTeam.candidates.length || bd.homeTeam.suppressed.length) {
+          const { data: pf } = await supabaseAdmin
+            .from("lender_portfolios")
+            .select("lender_org_id")
+            .eq("id", client.portfolio_id)
+            .maybeSingle();
+          await persistHomeTeamCandidates(supabaseAdmin, {
+            portfolioClientId: client.id,
+            orgId: pf?.lender_org_id ?? null,
+            candidates: bd.homeTeam.candidates,
+            suppressed: bd.homeTeam.suppressed,
+          });
+        }
       } else if (bd.status === "error") {
         out.retried += 1;
         await supabaseAdmin
