@@ -55,6 +55,7 @@ export interface HomeTeamCandidateResult {
 const PLACEHOLDER_SET = new Set([
   "n/a",
   "na",
+  "n a",
   "none",
   "null",
   "unknown",
