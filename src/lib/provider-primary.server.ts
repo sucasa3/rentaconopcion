@@ -29,6 +29,12 @@ export type PrimaryEnrichResult =
       classes: string[];
       costCents: number;
       latencyMs: number;
+      /**
+       * Quality-filtered Home Team evidence found in the mortgage record.
+       * Evidence only — the caller decides whether to persist it, and it never
+       * implies access to anything.
+       */
+      homeTeam: HomeTeamCandidateResult;
     }
   | {
       status: "no_match" | "unit_no_match";
