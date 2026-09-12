@@ -147,6 +147,43 @@ export function visibleProfessionalContact(
   };
 }
 
+export interface WorkspaceSuppliedDisplay {
+  displayName?: string | null;
+  orgName?: string | null;
+}
+
+/**
+ * How a workspace displays a person.
+ *
+ * Once the professional has claimed and verified their identity, their own
+ * canonical name/company wins. Until then each workspace sees its own wording,
+ * and never Workspace B's private edit.
+ */
+export function visibleProfessionalDisplay(
+  professional: {
+    full_name: string;
+    org_name_raw?: string | null;
+    claim_status: "unclaimed" | "invited" | "claimed";
+    verification_status?: string | null;
+  },
+  suppliedByThisWorkspace: WorkspaceSuppliedDisplay = {},
+): { fullName: string; orgName: string | null; canonical: boolean } {
+  const canonical =
+    professional.claim_status === "claimed" && professional.verification_status === "verified";
+  if (canonical) {
+    return {
+      fullName: professional.full_name,
+      orgName: professional.org_name_raw ?? null,
+      canonical: true,
+    };
+  }
+  return {
+    fullName: suppliedByThisWorkspace.displayName?.trim() || professional.full_name,
+    orgName: suppliedByThisWorkspace.orgName ?? professional.org_name_raw ?? null,
+    canonical: false,
+  };
+}
+
 // --- Network list + queue ordering ----------------------------------------
 
 export interface NetworkProfessional {
