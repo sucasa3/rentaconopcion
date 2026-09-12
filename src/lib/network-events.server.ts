@@ -10,6 +10,7 @@ export type NetworkEventAction =
   | "home_team_candidate_detected"
   | "home_team_candidate_suppressed"
   | "home_team_candidate_suggested"
+  | "home_team_candidate_resolved"
   | "relationship_asserted"
   | "relationship_confirmed"
   | "relationship_rejected"
