@@ -32,11 +32,24 @@ export interface ReviewProgress {
 }
 
 export function reviewProgress(
-  rows: Array<{ decision: ReviewDecision | null }>,
+  rows: Array<{ decision: ReviewDecision | null; onFileStatus?: RelationshipStatus | null }>,
   total: number,
 ): ReviewProgress {
-  const reviewed = rows.filter((r) => isReviewed(r.decision)).length;
+  const reviewed = rows.filter((r) => isEffectivelyReviewed(r)).length;
   return { reviewed: Math.min(reviewed, total), total };
+}
+
+/**
+ * A Home Team is complete either because the agent reviewed it, or because the
+ * homeowner already confirmed the lender. The second case is derived, never
+ * written as a fake agent review record — otherwise an agent-locked record
+ * would make the queue impossible to finish.
+ */
+export function isEffectivelyReviewed(row: {
+  decision?: ReviewDecision | null;
+  onFileStatus?: RelationshipStatus | null;
+}): boolean {
+  return isReviewed(row.decision) || row.onFileStatus === "confirmed";
 }
 
 export function progressLabel(p: ReviewProgress): string {
@@ -190,8 +203,8 @@ export interface ReviewQueueItem {
 /** Unreviewed first, records with a usable hint before records without. */
 export function orderReviewQueue(items: ReviewQueueItem[]): ReviewQueueItem[] {
   return items.slice().sort((a, b) => {
-    const ar = isReviewed(a.decision) ? 1 : 0;
-    const br = isReviewed(b.decision) ? 1 : 0;
+    const ar = isQueueItemComplete(a) ? 1 : 0;
+    const br = isQueueItemComplete(b) ? 1 : 0;
     if (ar !== br) return ar - br;
     const as = a.suggestions.length ? 0 : 1;
     const bs = b.suggestions.length ? 0 : 1;
