@@ -52,3 +52,14 @@
 - [x] Homeowner-confirmed lender is immutable by agents, excluded from bulk
 - [x] Workspace-scoped agent_professional_resource + workspace-scoped contact provenance
 - [x] Explicit server-side org/portfolio-client authorization; idempotent bulk with per-client outcomes
+
+## Stage 2 Slice 2 — professional invitations + homeowner validation (approved)
+- [ ] Harden invite token: require INVITE_TOKEN_SECRET, no service-role/Lovable fallback; typed token; legacy agent wrappers kept
+- [ ] `professional_invitations` canonical ledger; one active invitation per inviter org + professional + context
+- [ ] Server-mediated public landing (no homeowner/property/mortgage data)
+- [ ] Claim requires authenticated + verified matching email; idempotent; reconciliation, never silent merge
+- [ ] Claim verifies email only (not phone/NMLS/license/org)
+- [ ] Homeowner validation: Step A relationship truth, Step B separate optional consent
+- [ ] classifyLenderAccess() stays the only access authority; no home_team shortcut
+- [ ] Invitation events in compliance_audit_events; no homeowner PII
+- [ ] Tests A–H
