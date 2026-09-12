@@ -45,3 +45,10 @@
 - [ ] Actual lender vs mortgage-resource distinction
 - [ ] Agent to lender Home Team invitations (reuse invitation service, new context type)
 - [ ] Access-safe homeowner validation flow (classifyLenderAccess remains the only authority)
+
+### Stage 2 Slice 1 guardrails (approved 2026-09-12)
+- [x] Reposition /agent/network as Professional Network (My people + Complete Home Teams); no sponsorship/credit basis
+- [x] Skip = no state change; unknown = reviewed; no_lender never auto-rejects provider evidence
+- [x] Homeowner-confirmed lender is immutable by agents, excluded from bulk
+- [x] Workspace-scoped agent_professional_resource + workspace-scoped contact provenance
+- [x] Explicit server-side org/portfolio-client authorization; idempotent bulk with per-client outcomes

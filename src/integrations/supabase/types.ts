@@ -2125,6 +2125,57 @@ export type Database = {
           },
         ]
       }
+      home_team_review_state: {
+        Row: {
+          agent_org_id: string
+          created_at: string
+          decision: string
+          id: string
+          note: string | null
+          portfolio_client_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_org_id: string
+          created_at?: string
+          decision?: string
+          id?: string
+          note?: string | null
+          portfolio_client_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_org_id?: string
+          created_at?: string
+          decision?: string
+          id?: string
+          note?: string | null
+          portfolio_client_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_team_review_state_agent_org_id_fkey"
+            columns: ["agent_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_team_review_state_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_value_snapshots: {
         Row: {
           address_normalized: string | null
