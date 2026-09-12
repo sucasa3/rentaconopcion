@@ -9,6 +9,7 @@ import {
   isLockedByHomeowner,
   progressLabel,
   rankProfessionals,
+  resolveActiveOrgId,
   suggestionLabel,
   summarizeBulk,
   type NetworkProfessional,
@@ -51,9 +52,10 @@ function HomeTeamsPage() {
   // The workspace chosen on Professional network follows the agent here. The
   // query string is only a hint: the server re-checks membership on every call.
   const requested = Route.useSearch().orgId;
-  const orgId = agentOrgs.some((o: any) => o.id === requested)
-    ? (requested as string)
-    : (agentOrgs[0]?.id ?? "");
+  const orgId = resolveActiveOrgId(
+    requested,
+    agentOrgs.map((o: any) => o.id as string),
+  );
 
   return (
     <BusinessShell kind="agent">
