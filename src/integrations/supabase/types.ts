@@ -2433,6 +2433,50 @@ export type Database = {
           },
         ]
       }
+      homeowner_relationship_validations: {
+        Row: {
+          created_at: string
+          homeowner_id: string
+          id: string
+          note: string | null
+          outcome: string
+          relationship_id: string
+          requested_at: string | null
+          responded_at: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          homeowner_id: string
+          id?: string
+          note?: string | null
+          outcome: string
+          relationship_id: string
+          requested_at?: string | null
+          responded_at?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          homeowner_id?: string
+          id?: string
+          note?: string | null
+          outcome?: string
+          relationship_id?: string
+          requested_at?: string | null
+          responded_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_relationship_validations_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       introduction_requests: {
         Row: {
           agent_org_id: string
@@ -3959,6 +4003,91 @@ export type Database = {
             columns: ["pro_id"]
             isOneToOne: false
             referencedRelation: "pros_directory"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professional_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by_user_id: string | null
+          created_at: string
+          created_by: string | null
+          declined_at: string | null
+          expires_at: string
+          id: string
+          invitation_context: string
+          invited_email_normalized: string
+          invited_professional_id: string
+          inviter_org_id: string
+          last_sent_at: string | null
+          related_resource_relationship_id: string | null
+          revoked_at: string | null
+          send_count: number
+          sent_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          declined_at?: string | null
+          expires_at?: string
+          id?: string
+          invitation_context?: string
+          invited_email_normalized: string
+          invited_professional_id: string
+          inviter_org_id: string
+          last_sent_at?: string | null
+          related_resource_relationship_id?: string | null
+          revoked_at?: string | null
+          send_count?: number
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          declined_at?: string | null
+          expires_at?: string
+          id?: string
+          invitation_context?: string
+          invited_email_normalized?: string
+          invited_professional_id?: string
+          inviter_org_id?: string
+          last_sent_at?: string | null
+          related_resource_relationship_id?: string | null
+          revoked_at?: string | null
+          send_count?: number
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_invitations_invited_professional_id_fkey"
+            columns: ["invited_professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_invitations_inviter_org_id_fkey"
+            columns: ["inviter_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_invitations_related_resource_relationship_id_fkey"
+            columns: ["related_resource_relationship_id"]
+            isOneToOne: false
+            referencedRelation: "relationships"
             referencedColumns: ["id"]
           },
         ]
