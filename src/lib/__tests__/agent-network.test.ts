@@ -175,12 +175,11 @@ describe("queue ordering and search", () => {
 
 describe("SECURITY: an agent assignment is not an access basis", () => {
   it("naming a lender for a client grants that lender nothing", () => {
-    const access = classifyLenderAccess({
-      relationshipBasis: null,
-      consents: [],
-      introductionRequests: [],
-    } as any);
+    // An agent asserting "this is the client's lender" supplies no basis at all.
+    const access = classifyLenderAccess({ relationshipBasis: "agent_asserted" });
     expect(access.named).toBe(false);
-    expect(access.scopes ?? []).toHaveLength(0);
+    expect(access.category).not.toBe("own_relationship");
+    expect(access.scopes).toHaveLength(0);
   });
 });
+
