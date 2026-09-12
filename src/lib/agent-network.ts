@@ -200,6 +200,14 @@ export interface ReviewQueueItem {
   decision: ReviewDecision | null;
 }
 
+/** Complete for the queue: agent-reviewed, or already confirmed by the homeowner. */
+export function isQueueItemComplete(item: ReviewQueueItem): boolean {
+  return isEffectivelyReviewed({
+    decision: item.decision,
+    onFileStatus: item.onFile?.status ?? null,
+  });
+}
+
 /** Unreviewed first, records with a usable hint before records without. */
 export function orderReviewQueue(items: ReviewQueueItem[]): ReviewQueueItem[] {
   return items.slice().sort((a, b) => {
