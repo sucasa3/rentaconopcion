@@ -7,6 +7,8 @@ import {
   supportsInvitation,
 } from "../relationships";
 import { resolveProfessional, type ProfessionalRecord } from "../professionals";
+import { classifyLenderAccess } from "../lender-access";
+import { normalizeOrgName, resolveOrganization, isAutoResolvable } from "../org-resolution";
 
 const lien = (lender: string | null) => ({ lender, recordingDate: "2019-04-01", loanType: "FHA" });
 
@@ -116,6 +118,7 @@ const pro = (over: Partial<ProfessionalRecord>): ProfessionalRecord => ({
   phone_verified: false,
   nmls_id: null,
   license_number: null,
+  license_state: null,
   claim_status: "unclaimed",
   verification_status: "unverified",
   ...over,
@@ -172,6 +175,69 @@ describe("conservative professional resolution", () => {
   });
 });
 
+describe("licence resolution needs a jurisdiction", () => {
+  it("links on licence + matching state", () => {
+    const r = resolveProfessional([pro({ license_number: "MLO4477", license_state: "FL" })], {
+      fullName: "J Smith",
+      licenseNumber: "mlo-4477",
+      licenseState: "fl",
+    });
+    expect(r.strength).toBe("strong");
+    expect(r.basis).toBe("license_and_state");
+  });
+
+  it("does NOT auto-merge a licence number with no state", () => {
+    const r = resolveProfessional([pro({ license_number: "MLO4477", license_state: "FL" })], {
+      fullName: "J Smith",
+      licenseNumber: "MLO4477",
+    });
+    expect(r.strength).toBe("possible");
+    expect(r.basis).toBe("license_without_state");
+  });
+
+  it("does NOT auto-merge the same licence number in a different state", () => {
+    const r = resolveProfessional([pro({ license_number: "MLO4477", license_state: "GA" })], {
+      fullName: "J Smith",
+      licenseNumber: "MLO4477",
+      licenseState: "FL",
+    });
+    expect(r.strength).toBe("possible");
+  });
+});
+
+describe("organization resolution is exact or reviewed, never fuzzy", () => {
+  const orgs = [{ id: "o1", name: "Movement Mortgage, LLC" }];
+
+  it("auto-resolves an exact normalized legal-name match", () => {
+    const r = resolveOrganization("MOVEMENT MORTGAGE LLC", orgs);
+    expect(r.outcome).toBe("exact");
+    expect(r.orgId).toBe("o1");
+    expect(isAutoResolvable(r.outcome)).toBe(true);
+  });
+
+  it("auto-resolves an explicitly trusted alias", () => {
+    const r = resolveOrganization("Movement Mtg", orgs, [
+      { org_id: "o1", alias_normalized: normalizeOrgName("Movement Mtg"), trusted: true },
+    ]);
+    expect(r.outcome).toBe("trusted_alias");
+    expect(r.orgId).toBe("o1");
+  });
+
+  it("never auto-resolves an untrusted alias or a near miss", () => {
+    const untrusted = resolveOrganization("Movement Mtg", orgs, [
+      { org_id: "o1", alias_normalized: normalizeOrgName("Movement Mtg"), trusted: false },
+    ]);
+    expect(untrusted.outcome).toBe("ambiguous");
+    expect(untrusted.orgId).toBeNull();
+
+    const near = resolveOrganization("Movement Mortgage of Florida", orgs);
+    expect(near.outcome).toBe("ambiguous");
+    expect(near.orgId).toBeNull();
+
+    expect(resolveOrganization("Fairway Independent", orgs).outcome).toBe("none");
+  });
+});
+
 describe("SECURITY: a mistaken agent assertion never exposes a homeowner", () => {
   it("asserted status alone confers no named homeowner access", () => {
     // Jennifer picks the wrong John Smith as Kevin's loan officer, and John
@@ -182,5 +248,27 @@ describe("SECURITY: a mistaken agent assertion never exposes a homeowner", () =>
     expect(grantsNamedHomeownerAccess()).toBe(false);
     // And an agent assertion cannot masquerade as homeowner confirmation.
     expect(countRelationships([row]).confirmed).toBe(0);
+  });
+
+  it("the canonical access classifier grants no named access from an assertion", () => {
+    // Jennifer asserted the Home Team relationship. There is no homeowner
+    // connection request, no consent, and no documented lender relationship.
+    const access = classifyLenderAccess({
+      relationshipBasis: null,
+      hasConnectionRequest: false,
+      hasIntelligenceConsent: false,
+      isSponsored: false,
+      isAgentConnected: false,
+    });
+    expect(access.named).toBe(false);
+    expect(access.scopes).toEqual([]);
+  });
+
+  it("an asserted relationship is never translated into an own-relationship basis", () => {
+    // "asserted" is not in the accepted own-relationship basis vocabulary.
+    const access = classifyLenderAccess({ relationshipBasis: "asserted" });
+    expect(access.named).toBe(false);
+    const viaType = classifyLenderAccess({ relationshipBasis: "professional_homeowner_lender" });
+    expect(viaType.named).toBe(false);
   });
 });
