@@ -48,7 +48,12 @@ function HomeTeamsPage() {
   const orgsFn = useServerFn(listMyOrgs);
   const { data: orgsData } = useQuery({ queryKey: ["my-orgs"], queryFn: () => orgsFn() });
   const agentOrgs = (orgsData?.orgs ?? []).filter((o: any) => o.org_type === "agent");
-  const orgId = agentOrgs[0]?.id ?? "";
+  // The workspace chosen on Professional network follows the agent here. The
+  // query string is only a hint: the server re-checks membership on every call.
+  const requested = Route.useSearch().orgId;
+  const orgId = agentOrgs.some((o: any) => o.id === requested)
+    ? (requested as string)
+    : (agentOrgs[0]?.id ?? "");
 
   return (
     <BusinessShell kind="agent">
