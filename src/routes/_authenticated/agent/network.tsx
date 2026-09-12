@@ -30,11 +30,11 @@ import {
 export const Route = createFileRoute("/_authenticated/agent/network")({
   head: () => ({
     meta: [
-      { title: "Lender Network & Approvals — SuCasa" },
+      { title: "Professional Network — SuCasa" },
       {
         name: "description",
         content:
-          "Approve lender introductions, campaign audiences, and sponsorships for your client book.",
+          "The people you work with, and a fast way to complete every client's Home Team.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -42,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/agent/network")({
   component: AgentNetwork,
 });
 
-type Tab = "intros" | "campaigns" | "connections" | "sponsorships" | "credits";
+type Tab = "people" | "intros" | "campaigns" | "connections" | "sponsorships" | "credits";
 
 function AgentNetwork() {
   const orgsFn = useServerFn(listMyOrgs);
