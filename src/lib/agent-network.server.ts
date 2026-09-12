@@ -381,7 +381,7 @@ export async function assignClientLender(
   if (existing?.status === "confirmed") return { outcome: "blocked_homeowner_confirmed" };
 
   if (existing && existing.subject_id === args.professionalId) {
-    await setReviewState({ ...args, decision: "assigned" } as any, args as any).catch(() => {});
+    await setReviewState(admin, { ...args, decision: "assigned" });
     return { outcome: "unchanged" };
   }
 
