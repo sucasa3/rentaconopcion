@@ -3775,6 +3775,77 @@ export type Database = {
           },
         ]
       }
+      professionals: {
+        Row: {
+          claim_status: string
+          created_at: string
+          created_by: string | null
+          email_normalized: string | null
+          email_verified: boolean
+          full_name: string
+          id: string
+          license_number: string | null
+          license_state: string | null
+          nmls_id: string | null
+          org_id: string | null
+          org_name_raw: string | null
+          phone_normalized: string | null
+          phone_verified: boolean
+          roles: string[]
+          updated_at: string
+          user_id: string | null
+          verification_status: string
+        }
+        Insert: {
+          claim_status?: string
+          created_at?: string
+          created_by?: string | null
+          email_normalized?: string | null
+          email_verified?: boolean
+          full_name: string
+          id?: string
+          license_number?: string | null
+          license_state?: string | null
+          nmls_id?: string | null
+          org_id?: string | null
+          org_name_raw?: string | null
+          phone_normalized?: string | null
+          phone_verified?: boolean
+          roles?: string[]
+          updated_at?: string
+          user_id?: string | null
+          verification_status?: string
+        }
+        Update: {
+          claim_status?: string
+          created_at?: string
+          created_by?: string | null
+          email_normalized?: string | null
+          email_verified?: boolean
+          full_name?: string
+          id?: string
+          license_number?: string | null
+          license_state?: string | null
+          nmls_id?: string | null
+          org_id?: string | null
+          org_name_raw?: string | null
+          phone_normalized?: string | null
+          phone_verified?: boolean
+          roles?: string[]
+          updated_at?: string
+          user_id?: string | null
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professionals_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -4154,6 +4225,112 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      relationships: {
+        Row: {
+          asserted_at: string | null
+          asserted_by: string | null
+          confidence: number | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          consent_record_id: string | null
+          created_at: string
+          evidence: Json
+          id: string
+          object_id: string
+          object_type: string
+          org_id: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          relationship_type: string
+          revoked_at: string | null
+          source: string
+          source_record: Json | null
+          source_relationship_id: string | null
+          status: string
+          subject_id: string
+          subject_type: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          asserted_at?: string | null
+          asserted_by?: string | null
+          confidence?: number | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          consent_record_id?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          object_id: string
+          object_type: string
+          org_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          relationship_type: string
+          revoked_at?: string | null
+          source: string
+          source_record?: Json | null
+          source_relationship_id?: string | null
+          status?: string
+          subject_id: string
+          subject_type: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          asserted_at?: string | null
+          asserted_by?: string | null
+          confidence?: number | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          consent_record_id?: string | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          object_id?: string
+          object_type?: string
+          org_id?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          relationship_type?: string
+          revoked_at?: string | null
+          source?: string
+          source_record?: Json | null
+          source_relationship_id?: string | null
+          status?: string
+          subject_id?: string
+          subject_type?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relationships_consent_record_id_fkey"
+            columns: ["consent_record_id"]
+            isOneToOne: false
+            referencedRelation: "consent_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relationships_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relationships_source_relationship_id_fkey"
+            columns: ["source_relationship_id"]
+            isOneToOne: false
+            referencedRelation: "relationships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rr_cursor: {
         Row: {

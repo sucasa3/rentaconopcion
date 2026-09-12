@@ -12,6 +12,9 @@ import { batchdataFetchAll, batchdataCostCents } from "./batchdata.server";
 import {
   firstBatchdataProperty,
   normalizeBatchdataProperty,
+} from "./batchdata-normalize";
+import { buildHomeTeamCandidates, type HomeTeamCandidateResult } from "./home-team";
+import {
   isMatched,
   parseTestAddress,
 } from "./batchdata-normalize";
@@ -29,6 +32,12 @@ export type PrimaryEnrichResult =
       classes: string[];
       costCents: number;
       latencyMs: number;
+      /**
+       * Quality-filtered Home Team evidence found in the mortgage record.
+       * Evidence only — the caller decides whether to persist it, and it never
+       * implies access to anything.
+       */
+      homeTeam: HomeTeamCandidateResult;
     }
   | {
       status: "no_match" | "unit_no_match";
@@ -103,7 +112,13 @@ export async function enrichViaBatchdata(
   await supabaseAdmin.from("property_intel").upsert(patch, { onConflict: "address_normalized" });
 
   const classes = ["detail", "tax", "owner", "sales", "mortgage", "permits"];
-  return { status: "matched", classes, costCents, latencyMs };
+  // Institution evidence from the mortgage record, noise already removed.
+  const homeTeam = buildHomeTeamCandidates({
+    openLienCount: n.mortgage?.openLienCount ?? null,
+    liens: n.mortgage?.liens ?? [],
+    history: n.mortgage?.history ?? [],
+  });
+  return { status: "matched", classes, costCents, latencyMs, homeTeam };
 }
 
 /**
