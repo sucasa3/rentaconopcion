@@ -525,7 +525,9 @@ export async function pendingValidations(
     .from("professionals")
     .select("id, full_name, org_name_raw")
     .in("id", proIds);
-  const byId = new Map((pros ?? []).map((p: any) => [p.id, p]));
+  const byId = new Map<string, { full_name: string; org_name_raw: string | null }>(
+    (pros ?? []).map((p: any) => [p.id as string, p]),
+  );
 
   const out: PendingValidation[] = [];
   for (const r of rows) {
