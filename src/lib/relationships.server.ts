@@ -16,8 +16,7 @@ import {
   type RelationshipStatus,
   type RelationshipType,
 } from "./relationships";
-import { logNetworkEvent, logNetworkEvents } from "./network-events.server";
-import type { HomeTeamCandidate, SuppressedCandidate } from "./home-team";
+import { logNetworkEvent } from "./network-events.server";
 
 const COLUMNS =
   "id, relationship_type, subject_type, subject_id, object_type, object_id, org_id, source, status, confidence, evidence, consent_record_id, asserted_by, confirmed_by, confirmed_at, revoked_at";
@@ -274,79 +273,4 @@ export async function rejectRelationship(
     metadata: { relationship_type: row.relationship_type, previous_status: row.status },
   });
   return data as RelationshipRow;
-}
-
-/**
- * Persist detected Home Team candidates for one homeowner record.
- *
- * Candidates are institution evidence only: the object of the edge is the
- * portfolio client, and the institution name lives in `evidence` until it can
- * be resolved to a canonical organization. Suppressed noise is recorded as an
- * event for audit and never written to the graph.
- */
-export async function persistHomeTeamCandidates(
-  admin: any,
-  args: {
-    portfolioClientId: string;
-    orgId: string | null;
-    candidates: HomeTeamCandidate[];
-    suppressed: SuppressedCandidate[];
-  },
-): Promise<{ written: number; suppressed: number }> {
-  let written = 0;
-  for (const candidate of args.candidates) {
-    const { row, created } = await upsertEvidenceRelationship(
-      admin,
-      {
-        // Institution evidence attached to the homeowner record. The subject is
-        // the property record itself until an organization is resolved.
-        type: "organization_homeowner",
-        subjectType: "portfolio_client",
-        subjectId: args.portfolioClientId,
-        objectType: "portfolio_client",
-        objectId: args.portfolioClientId,
-        orgId: args.orgId,
-      },
-      {
-        source: "batchdata_mortgage",
-        status: "detected",
-        confidence: candidate.confidence,
-        evidence: {
-          institution_name: candidate.name,
-          institution_name_raw: candidate.rawName,
-          role: candidate.role,
-          ...candidate.evidence,
-        },
-      },
-    );
-    if (created) written += 1;
-    await logNetworkEvent(admin, {
-      action: "home_team_candidate_detected",
-      orgId: args.orgId,
-      entityType: "relationship",
-      entityId: row.id,
-      detail: candidate.name,
-      metadata: {
-        role: candidate.role,
-        source: candidate.source,
-        lien_kind: candidate.evidence.lienKind,
-        confidence: candidate.confidence,
-        created,
-      },
-    });
-  }
-
-  await logNetworkEvents(
-    admin,
-    args.suppressed.map((s) => ({
-      action: "home_team_candidate_suppressed" as const,
-      orgId: args.orgId,
-      entityType: "portfolio_client",
-      entityId: args.portfolioClientId,
-      detail: s.reason,
-      metadata: { reason: s.reason, raw_name: s.rawName },
-    })),
-  );
-
-  return { written, suppressed: args.suppressed.length };
 }

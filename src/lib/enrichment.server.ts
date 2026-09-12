@@ -19,7 +19,7 @@
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 import { batchdataPrimaryEnabled, enrichViaBatchdata } from "./provider-primary.server";
 import { persistPortfolioOpportunities } from "./opportunities.server";
-import { persistHomeTeamCandidates } from "./relationships.server";
+import { persistHomeTeamCandidates } from "./home-team-candidates.server";
 import { verifyAddress } from "./geocode.server";
 
 /** Share of the monthly allowance background work is allowed to consume. */

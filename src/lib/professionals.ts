@@ -23,6 +23,7 @@ export interface ProfessionalRecord {
   phone_verified: boolean;
   nmls_id: string | null;
   license_number: string | null;
+  license_state: string | null;
   claim_status: "unclaimed" | "invited" | "claimed";
   verification_status: "unverified" | "pending" | "verified";
 }
@@ -36,6 +37,8 @@ export interface ProfessionalIdentityInput {
   phoneVerified?: boolean;
   nmlsId?: string | null;
   licenseNumber?: string | null;
+  /** Issuing jurisdiction. A licence number is only strong WITH its state. */
+  licenseState?: string | null;
   orgId?: string | null;
   orgNameRaw?: string | null;
 }
@@ -53,6 +56,12 @@ export function normalizePhone(phone: string | null | undefined): string | null 
 
 export function normalizeName(name: string | null | undefined): string {
   return (name ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+/** Two-letter jurisdiction code, or null when absent/unusable. */
+export function normalizeLicenseState(value: string | null | undefined): string | null {
+  const v = (value ?? "").replace(/[^a-z]/gi, "").toUpperCase();
+  return v.length === 2 ? v : null;
 }
 
 export function normalizeIdentifier(value: string | null | undefined): string | null {
@@ -95,10 +104,11 @@ export interface ResolutionResult {
   basis:
     | "user_id"
     | "nmls"
-    | "license"
+    | "license_and_state"
     | "verified_email"
     | "verified_phone"
     | "name_and_org"
+    | "license_without_state"
     | "unverified_contact"
     | "none";
 }
@@ -118,6 +128,7 @@ export function resolveProfessional(
   const phone = normalizePhone(input.phone);
   const nmls = normalizeIdentifier(input.nmlsId);
   const license = normalizeIdentifier(input.licenseNumber);
+  const licenseState = normalizeLicenseState(input.licenseState);
   const name = normalizeName(input.fullName);
 
   const none: ResolutionResult = { strength: "none", match: null, possible: [], basis: "none" };
@@ -132,8 +143,23 @@ export function resolveProfessional(
     if (hit) return { strength: "strong", match: hit, possible: [], basis: "nmls" };
   }
   if (license) {
-    const hit = candidates.find((c) => normalizeIdentifier(c.license_number) === license);
-    if (hit) return { strength: "strong", match: hit, possible: [], basis: "license" };
+    const sameLicense = candidates.filter((c) => normalizeIdentifier(c.license_number) === license);
+    if (sameLicense.length) {
+      // Licence numbers are only unique within a jurisdiction. Without a state
+      // on both sides, a match is reviewable evidence, never an auto-merge.
+      const sameState = sameLicense.filter(
+        (c) => licenseState && normalizeLicenseState(c.license_state) === licenseState,
+      );
+      if (sameState.length === 1) {
+        return { strength: "strong", match: sameState[0]!, possible: [], basis: "license_and_state" };
+      }
+      return {
+        strength: "possible",
+        match: null,
+        possible: sameState.length ? sameState : sameLicense,
+        basis: "license_without_state",
+      };
+    }
   }
   if (email && input.emailVerified && !isSharedMailbox(email)) {
     const hit = candidates.find((c) => c.email_verified && c.email_normalized === email);

@@ -2029,6 +2029,102 @@ export type Database = {
         }
         Relationships: []
       }
+      home_team_candidates: {
+        Row: {
+          candidate_name: string
+          candidate_name_normalized: string
+          confidence: number | null
+          created_at: string
+          evidence: Json
+          id: string
+          org_id: string | null
+          portfolio_client_id: string
+          resolved_org_id: string | null
+          resolved_professional_id: string | null
+          resolved_relationship_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          role: string
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_name: string
+          candidate_name_normalized: string
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          org_id?: string | null
+          portfolio_client_id: string
+          resolved_org_id?: string | null
+          resolved_professional_id?: string | null
+          resolved_relationship_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role: string
+          source: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_name?: string
+          candidate_name_normalized?: string
+          confidence?: number | null
+          created_at?: string
+          evidence?: Json
+          id?: string
+          org_id?: string | null
+          portfolio_client_id?: string
+          resolved_org_id?: string | null
+          resolved_professional_id?: string | null
+          resolved_relationship_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          role?: string
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_team_candidates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_team_candidates_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_team_candidates_resolved_org_id_fkey"
+            columns: ["resolved_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_team_candidates_resolved_professional_id_fkey"
+            columns: ["resolved_professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "home_team_candidates_resolved_relationship_id_fkey"
+            columns: ["resolved_relationship_id"]
+            isOneToOne: false
+            referencedRelation: "relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       home_value_snapshots: {
         Row: {
           address_normalized: string | null
@@ -3283,6 +3379,47 @@ export type Database = {
           },
           {
             foreignKeyName: "org_addons_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_aliases: {
+        Row: {
+          alias: string
+          alias_normalized: string
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string
+          trusted: boolean
+          updated_at: string
+        }
+        Insert: {
+          alias: string
+          alias_normalized: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id: string
+          trusted?: boolean
+          updated_at?: string
+        }
+        Update: {
+          alias?: string
+          alias_normalized?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string
+          trusted?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_aliases_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "lender_orgs"

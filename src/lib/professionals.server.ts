@@ -12,6 +12,7 @@
 import {
   normalizeEmail,
   normalizeIdentifier,
+  normalizeLicenseState,
   normalizeName,
   normalizePhone,
   resolveProfessional,
@@ -22,7 +23,7 @@ import {
 import { logNetworkEvent } from "./network-events.server";
 
 const COLUMNS =
-  "id, user_id, org_id, org_name_raw, full_name, email_normalized, email_verified, phone_normalized, phone_verified, nmls_id, license_number, claim_status, verification_status";
+  "id, user_id, org_id, org_name_raw, full_name, email_normalized, email_verified, phone_normalized, phone_verified, nmls_id, license_number, license_state, claim_status, verification_status";
 
 /** Narrow candidate set: only records that could plausibly be the same person. */
 export async function findProfessionalCandidates(
@@ -32,6 +33,7 @@ export async function findProfessionalCandidates(
   const email = normalizeEmail(input.email);
   const phone = normalizePhone(input.phone);
   const nmls = normalizeIdentifier(input.nmlsId);
+  const license = normalizeIdentifier(input.licenseNumber);
   const name = normalizeName(input.fullName);
 
   const filters: string[] = [];
@@ -39,6 +41,8 @@ export async function findProfessionalCandidates(
   if (email) filters.push(`email_normalized.eq.${email}`);
   if (phone) filters.push(`phone_normalized.eq.${phone}`);
   if (nmls) filters.push(`nmls_id.eq.${nmls}`);
+  // Licence must be retrievable, or a strong licence match could never be seen.
+  if (license) filters.push(`license_number.eq.${license}`);
   if (name) filters.push(`full_name.ilike.${name}`);
   if (!filters.length) return [];
 
@@ -116,7 +120,8 @@ export async function resolveOrCreateProfessional(
       phone_normalized: phone,
       phone_verified: Boolean(input.phoneVerified && phone),
       nmls_id: normalizeIdentifier(input.nmlsId),
-      license_number: input.licenseNumber ?? null,
+      license_number: normalizeIdentifier(input.licenseNumber),
+      license_state: normalizeLicenseState(input.licenseState),
       created_by: input.createdBy ?? null,
     })
     .select(COLUMNS)

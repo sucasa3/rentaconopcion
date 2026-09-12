@@ -38,3 +38,10 @@
 - [x] Compact What SuCasa sees and preserve one primary Coming Up card
 - [x] Group secondary destinations into Your Home Profile rows
 - [x] Verify 393×526 mobile fold, desktop layout, tests, and runtime console
+
+## Network Stage 2 (next)
+- [ ] Agent Professional Network (people the agent works with, independent of provider data)
+- [ ] Bulk Relationship Review over home_team_candidates
+- [ ] Actual lender vs mortgage-resource distinction
+- [ ] Agent to lender Home Team invitations (reuse invitation service, new context type)
+- [ ] Access-safe homeowner validation flow (classifyLenderAccess remains the only authority)

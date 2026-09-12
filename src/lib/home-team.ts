@@ -142,6 +142,29 @@ const LENDING_MARKERS = [
   "investments",
 ];
 
+/**
+ * Lending stems matched INSIDE a token, so compound institution names such as
+ * "CITIBANK", "PRIMELENDING" or "NAVY FCU" are recognised instead of being
+ * mistaken for a person's name.
+ */
+const LENDING_STEMS = [
+  "bank",
+  "mortgage",
+  "mtg",
+  "lend",
+  "loan",
+  "financ",
+  "funding",
+  "credit",
+  "fcu",
+  "equity",
+  "capital",
+  "savings",
+  "escrow",
+  "bancorp",
+  "banco",
+];
+
 const LEGAL_SUFFIX_MARKERS = ["inc", "llc", "llp", "lp", "corp", "co", "company", "group", "assn"];
 
 /** Collapse provider casing/punctuation noise without losing the name. */
@@ -188,7 +211,8 @@ export function institutionSuppressionReason(raw: string | null | undefined): Su
   const hasLendingMarker =
     LENDING_MARKERS.some((m) => (m.includes(" ") ? key.includes(m) : words.has(m))) ||
     // Bank charter suffix, only when it actually trails the name ("... Bank N A").
-    /\bn\s?a$/.test(key);
+    /\bn\s?a$/.test(key) ||
+    tokens.some((t) => LENDING_STEMS.some((stem) => t.includes(stem)));
 
   if (!hasLendingMarker) {
     // Suffixes are stripped by institutionKey, so look at the original words.
