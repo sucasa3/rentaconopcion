@@ -59,7 +59,7 @@ function AgentNetwork() {
   });
 
   const pending = (intros?.requests ?? []).filter((r: any) => r.status === "pending");
-  const [tab, setTab] = useState<Tab>("intros");
+  const [tab, setTab] = useState<Tab>("people");
 
   return (
     <BusinessShell kind="agent">
@@ -73,13 +73,14 @@ function AgentNetwork() {
               <ArrowLeft className="h-3 w-3" /> Back to client lists
             </Link>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Lender network
+              Professional network
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Nothing about your clients is shared until you approve it here. Lenders see only
-              de-identified opportunity volume in your book.
+              The people you work with, and each client's Home Team. Nothing about a client is
+              shared with anyone until you approve it.
             </p>
           </div>
+
 
           {agentOrgs.length > 1 && (
             <select
