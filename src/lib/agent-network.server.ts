@@ -187,7 +187,36 @@ export async function addAgentProfessional(
   };
 }
 
-/** Correct what this workspace knows. The shared registry name is only touched while unclaimed. */
+/**
+ * True only when this workspace is demonstrably the sole source of an unclaimed
+ * record: nobody has claimed it and no other workspace references it.
+ */
+async function workspaceSolelyOwns(
+  admin: any,
+  orgId: string,
+  professionalId: string,
+  pro: any,
+): Promise<boolean> {
+  if (pro.claim_status !== "unclaimed" || pro.user_id) return false;
+  const { data } = await admin
+    .from("relationships")
+    .select("subject_id")
+    .eq("relationship_type", "agent_professional_resource")
+    .eq("object_id", professionalId)
+    .in("status", ACTIVE_STATUSES)
+    .is("revoked_at", null);
+  const others = new Set((data ?? []).map((r: any) => r.subject_id));
+  others.delete(orgId);
+  return others.size === 0;
+}
+
+/**
+ * Correct what THIS workspace knows.
+ *
+ * Display details and contact details are kept on the workspace's own edge, so
+ * one workspace's wording never rewrites what another workspace sees. The shared
+ * registry is only touched when this workspace solely owns an unclaimed record.
+ */
 export async function updateAgentProfessional(
   admin: any,
   args: {
