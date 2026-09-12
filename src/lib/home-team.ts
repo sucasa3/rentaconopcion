@@ -176,23 +176,31 @@ export function institutionSuppressionReason(raw: string | null | undefined): Su
   if (!key || PLACEHOLDER_SET.has(key)) return "generic_placeholder";
   if (value.replace(/[^a-z0-9]/gi, "").length < 4) return "too_short";
 
-  const lower = ` ${key} `;
-  if (NON_LENDING_MARKERS.some((m) => lower.includes(` ${m} `) || key.includes(m))) {
+  // Word-boundary matching only: a substring test would flag "FIRST" as "IRS".
+  const words = new Set(key.split(" ").filter(Boolean));
+  if (
+    NON_LENDING_MARKERS.some((m) => (m.includes(" ") ? key.includes(m) : words.has(m)))
+  ) {
     return "not_a_lending_entity";
   }
 
   const tokens = key.split(" ").filter(Boolean);
   const hasLendingMarker =
-    LENDING_MARKERS.some((m) => (m.includes(" ") ? key.includes(m) : tokens.includes(m))) ||
+    LENDING_MARKERS.some((m) => (m.includes(" ") ? key.includes(m) : words.has(m))) ||
     // Bank charter suffix, only when it actually trails the name ("... Bank N A").
     /\bn\s?a$/.test(key);
 
   if (!hasLendingMarker) {
-    const hasLegalSuffix = LEGAL_SUFFIX_MARKERS.some((m) => tokens.includes(m));
-    // Two or three bare words with no lending or corporate marker reads as a
-    // person, not an institution. Prefer no candidate.
-    if (!hasLegalSuffix) return "individual_name_not_institution";
+    // Suffixes are stripped by institutionKey, so look at the original words.
+    const rawWords = new Set(
+      value.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean),
+    );
+    const hasLegalSuffix = LEGAL_SUFFIX_MARKERS.some((m) => rawWords.has(m));
+    // A short bare name with no lending or corporate marker reads as a person,
+    // not an institution. Prefer no candidate.
+    if (!hasLegalSuffix && tokens.length < 4) return "individual_name_not_institution";
   }
+
   return null;
 }
 
