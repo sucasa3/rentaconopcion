@@ -245,7 +245,7 @@ export async function updateAgentProfessional(
     .maybeSingle();
   if (!pro) throw new Error("Professional not found");
 
-  if (pro.claim_status === "unclaimed") {
+  if (await workspaceSolelyOwns(admin, args.orgId, args.professionalId, pro)) {
     const patch: Record<string, unknown> = {};
     if (args.fullName?.trim()) patch["full_name"] = args.fullName.trim();
     if (args.orgNameRaw !== undefined) patch["org_name_raw"] = args.orgNameRaw;
@@ -265,6 +265,8 @@ export async function updateAgentProfessional(
         ...((edge.evidence ?? {}) as Record<string, unknown>),
         ...(args.email !== undefined ? { workspace_email: normalizeEmail(args.email) } : {}),
         ...(args.phone !== undefined ? { workspace_phone: normalizePhone(args.phone) } : {}),
+        ...(args.fullName?.trim() ? { workspace_display_name: args.fullName.trim() } : {}),
+        ...(args.orgNameRaw !== undefined ? { workspace_org_name: args.orgNameRaw } : {}),
       },
     })
     .eq("id", edge.id);
