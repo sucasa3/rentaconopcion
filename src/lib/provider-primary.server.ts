@@ -112,7 +112,13 @@ export async function enrichViaBatchdata(
   await supabaseAdmin.from("property_intel").upsert(patch, { onConflict: "address_normalized" });
 
   const classes = ["detail", "tax", "owner", "sales", "mortgage", "permits"];
-  return { status: "matched", classes, costCents, latencyMs };
+  // Institution evidence from the mortgage record, noise already removed.
+  const homeTeam = buildHomeTeamCandidates({
+    openLienCount: n.mortgage?.openLienCount ?? null,
+    liens: n.mortgage?.liens ?? [],
+    history: n.mortgage?.history ?? [],
+  });
+  return { status: "matched", classes, costCents, latencyMs, homeTeam };
 }
 
 /**
