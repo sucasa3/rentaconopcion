@@ -124,8 +124,6 @@ const LENDING_MARKERS = [
   "savings",
   "federal",
   "fsb",
-  "na",
-  "n a",
   "trust",
   "wholesale",
   "home lending",
