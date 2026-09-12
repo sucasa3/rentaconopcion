@@ -117,11 +117,13 @@ export async function listAgentProfessionalNetwork(
   for (const edge of rows) {
     const p = byId.get(edge.object_id) as any;
     if (!p) continue;
-    const contact = visibleProfessionalContact(p, suppliedContact(edge.evidence));
+    const supplied = suppliedContact(edge.evidence);
+    const contact = visibleProfessionalContact(p, supplied);
+    const display = visibleProfessionalDisplay(p, supplied);
     out.push({
       id: p.id,
-      full_name: p.full_name,
-      org_name: p.org_name_raw ?? null,
+      full_name: display.fullName,
+      org_name: display.orgName,
       roles: (p.roles ?? []) as string[],
       email: contact.email,
       phone: contact.phone,
