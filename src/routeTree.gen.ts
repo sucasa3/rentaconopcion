@@ -47,6 +47,7 @@ import { Route as AuthenticatedLenderBillingRouteImport } from './routes/_authen
 import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authenticated/agent/tasks'
 import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
 import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
+import { Route as AuthenticatedAgentHomeTeamsRouteImport } from './routes/_authenticated/agent/home-teams'
 import { Route as AuthenticatedAgentFunnelRouteImport } from './routes/_authenticated/agent/funnel'
 import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -270,6 +271,12 @@ const AuthenticatedAgentNetworkRoute =
     path: '/network',
     getParentRoute: () => AuthenticatedAgentRouteRoute,
   } as any)
+const AuthenticatedAgentHomeTeamsRoute =
+  AuthenticatedAgentHomeTeamsRouteImport.update({
+    id: '/home-teams',
+    path: '/home-teams',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
 const AuthenticatedAgentFunnelRoute =
   AuthenticatedAgentFunnelRouteImport.update({
     id: '/funnel',
@@ -413,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/funnel': typeof AuthenticatedAgentFunnelRoute
+  '/agent/home-teams': typeof AuthenticatedAgentHomeTeamsRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/agent/tasks': typeof AuthenticatedAgentTasksRoute
@@ -471,6 +479,7 @@ export interface FileRoutesByTo {
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/agent/funnel': typeof AuthenticatedAgentFunnelRoute
+  '/agent/home-teams': typeof AuthenticatedAgentHomeTeamsRoute
   '/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/agent/tasks': typeof AuthenticatedAgentTasksRoute
@@ -532,6 +541,7 @@ export interface FileRoutesById {
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
   '/_authenticated/agent/funnel': typeof AuthenticatedAgentFunnelRoute
+  '/_authenticated/agent/home-teams': typeof AuthenticatedAgentHomeTeamsRoute
   '/_authenticated/agent/network': typeof AuthenticatedAgentNetworkRoute
   '/_authenticated/agent/opportunities': typeof AuthenticatedAgentOpportunitiesRoute
   '/_authenticated/agent/tasks': typeof AuthenticatedAgentTasksRoute
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/timeline'
     | '/agent/campaigns'
     | '/agent/funnel'
+    | '/agent/home-teams'
     | '/agent/network'
     | '/agent/opportunities'
     | '/agent/tasks'
@@ -652,6 +663,7 @@ export interface FileRouteTypes {
     | '/timeline'
     | '/agent/campaigns'
     | '/agent/funnel'
+    | '/agent/home-teams'
     | '/agent/network'
     | '/agent/opportunities'
     | '/agent/tasks'
@@ -712,6 +724,7 @@ export interface FileRouteTypes {
     | '/_authenticated/timeline'
     | '/_authenticated/agent/campaigns'
     | '/_authenticated/agent/funnel'
+    | '/_authenticated/agent/home-teams'
     | '/_authenticated/agent/network'
     | '/_authenticated/agent/opportunities'
     | '/_authenticated/agent/tasks'
@@ -1043,6 +1056,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentNetworkRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
     }
+    '/_authenticated/agent/home-teams': {
+      id: '/_authenticated/agent/home-teams'
+      path: '/home-teams'
+      fullPath: '/agent/home-teams'
+      preLoaderRoute: typeof AuthenticatedAgentHomeTeamsRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
     '/_authenticated/agent/funnel': {
       id: '/_authenticated/agent/funnel'
       path: '/funnel'
@@ -1196,6 +1216,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAgentRouteRouteChildren {
   AuthenticatedAgentCampaignsRoute: typeof AuthenticatedAgentCampaignsRoute
   AuthenticatedAgentFunnelRoute: typeof AuthenticatedAgentFunnelRoute
+  AuthenticatedAgentHomeTeamsRoute: typeof AuthenticatedAgentHomeTeamsRoute
   AuthenticatedAgentNetworkRoute: typeof AuthenticatedAgentNetworkRoute
   AuthenticatedAgentOpportunitiesRoute: typeof AuthenticatedAgentOpportunitiesRoute
   AuthenticatedAgentTasksRoute: typeof AuthenticatedAgentTasksRoute
@@ -1208,6 +1229,7 @@ const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren
   {
     AuthenticatedAgentCampaignsRoute: AuthenticatedAgentCampaignsRoute,
     AuthenticatedAgentFunnelRoute: AuthenticatedAgentFunnelRoute,
+    AuthenticatedAgentHomeTeamsRoute: AuthenticatedAgentHomeTeamsRoute,
     AuthenticatedAgentNetworkRoute: AuthenticatedAgentNetworkRoute,
     AuthenticatedAgentOpportunitiesRoute: AuthenticatedAgentOpportunitiesRoute,
     AuthenticatedAgentTasksRoute: AuthenticatedAgentTasksRoute,
