@@ -70,9 +70,12 @@ export async function clientBelongsToWorkspace(
 /** Workspace-supplied contact lives on the workspace's own edge, not the registry. */
 function suppliedContact(evidence: Record<string, unknown> | null | undefined) {
   const e = (evidence ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof e[k] === "string" ? (e[k] as string) : null);
   return {
-    email: typeof e["workspace_email"] === "string" ? (e["workspace_email"] as string) : null,
-    phone: typeof e["workspace_phone"] === "string" ? (e["workspace_phone"] as string) : null,
+    email: str("workspace_email"),
+    phone: str("workspace_phone"),
+    displayName: str("workspace_display_name"),
+    orgName: str("workspace_org_name"),
   };
 }
 
