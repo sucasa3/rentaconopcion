@@ -11,6 +11,10 @@ import {
   summarizeBulk,
   visibleProfessionalContact,
   isLockedByHomeowner,
+  isEffectivelyReviewed,
+  isQueueItemComplete,
+  resolveActiveOrgId,
+  visibleProfessionalDisplay,
   type NetworkProfessional,
   type ReviewQueueItem,
 } from "../agent-network";
@@ -183,3 +187,87 @@ describe("SECURITY: an agent assignment is not an access basis", () => {
   });
 });
 
+
+describe("homeowner-confirmed Home Teams count as complete", () => {
+  const confirmed = item({
+    portfolioClientId: "locked",
+    onFile: {
+      relationshipId: "r1",
+      professionalId: "p1",
+      professionalName: "John Smith",
+      status: "confirmed",
+    },
+  });
+
+  it("counts as complete with no agent review state at all", () => {
+    expect(confirmed.decision).toBeNull();
+    expect(isQueueItemComplete(confirmed)).toBe(true);
+    expect(isEffectivelyReviewed({ decision: null, onFileStatus: "confirmed" })).toBe(true);
+  });
+
+  it("stays immutable to agent actions even though it is complete", () => {
+    expect(isLockedByHomeowner(confirmed)).toBe(true);
+    expect(agentMayChangeLender(confirmed.onFile!.status)).toBe(false);
+  });
+
+  it("lets completion reach the total once the rest are reviewed", () => {
+    const items = [confirmed, item({ portfolioClientId: "c2", decision: "assigned" })];
+    const p = reviewProgress(
+      items.map((i) => ({ decision: i.decision, onFileStatus: i.onFile?.status ?? null })),
+      2,
+    );
+    expect(p).toEqual({ reviewed: 2, total: 2 });
+  });
+
+  it("an agent-asserted lender alone does not complete the record", () => {
+    const asserted = item({
+      onFile: {
+        relationshipId: "r2",
+        professionalId: "p2",
+        professionalName: "Maria Lopez",
+        status: "asserted",
+      },
+    });
+    expect(isQueueItemComplete(asserted)).toBe(false);
+  });
+});
+
+describe("the active agent workspace follows the agent", () => {
+  it("keeps the selected workspace and rejects one the agent is not in", () => {
+    expect(resolveActiveOrgId("org-b", ["org-a", "org-b"])).toBe("org-b");
+    expect(resolveActiveOrgId("org-x", ["org-a", "org-b"])).toBe("org-a");
+    expect(resolveActiveOrgId(undefined, ["org-a", "org-b"])).toBe("org-a");
+    expect(resolveActiveOrgId("org-a", [])).toBe("");
+  });
+});
+
+describe("workspace display data does not mutate a shared unclaimed identity", () => {
+  const shared = {
+    full_name: "J. Smith",
+    org_name_raw: "Big Bank",
+    claim_status: "unclaimed" as const,
+    verification_status: "unverified",
+  };
+
+  it("workspace A sees its own wording, workspace B is unaffected", () => {
+    const a = visibleProfessionalDisplay(shared, {
+      displayName: "John Smith",
+      orgName: "Movement Mortgage",
+    });
+    const b = visibleProfessionalDisplay(shared, {});
+    expect(a.fullName).toBe("John Smith");
+    expect(a.orgName).toBe("Movement Mortgage");
+    expect(b.fullName).toBe("J. Smith");
+    expect(b.orgName).toBe("Big Bank");
+  });
+
+  it("a claimed and verified professional's own identity is authoritative", () => {
+    const d = visibleProfessionalDisplay(
+      { ...shared, claim_status: "claimed", verification_status: "verified" },
+      { displayName: "Johnny S", orgName: "Whatever" },
+    );
+    expect(d.fullName).toBe("J. Smith");
+    expect(d.orgName).toBe("Big Bank");
+    expect(d.canonical).toBe(true);
+  });
+});

@@ -262,3 +262,17 @@ export function orderReviewQueue(items: ReviewQueueItem[]): ReviewQueueItem[] {
 export function isLockedByHomeowner(item: ReviewQueueItem): boolean {
   return item.onFile?.status === "confirmed";
 }
+
+/**
+ * Which agent workspace a screen should open in.
+ *
+ * A requested id is honoured only when the caller actually belongs to it; the
+ * server still re-checks membership on every call.
+ */
+export function resolveActiveOrgId(
+  requested: string | null | undefined,
+  memberOrgIds: string[],
+): string {
+  if (requested && memberOrgIds.includes(requested)) return requested;
+  return memberOrgIds[0] ?? "";
+}
