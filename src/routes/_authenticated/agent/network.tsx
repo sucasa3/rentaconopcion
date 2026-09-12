@@ -16,6 +16,12 @@ import {
   respondToConnectionInvite,
   respondToIntroduction,
 } from "@/lib/network.functions";
+import {
+  addProfessionalToNetwork,
+  listMyProfessionalNetwork,
+  updateNetworkProfessional,
+} from "@/lib/agent-network.functions";
+import { rankProfessionals } from "@/lib/agent-network";
 import { categoryLabel } from "@/lib/opportunities";
 import {
   ArrowLeft,
@@ -568,6 +574,256 @@ function Sponsorships({ orgId }: { orgId: string }) {
               >
                 End sponsorship
               </button>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+// --- My people (Professional Network) --------------------------------------
+
+/**
+ * The professionals this workspace works with, derived from the canonical
+ * `professionals` + `agent_professional_resource` graph. Working with someone
+ * says nothing about any client's actual lender.
+ */
+function MyPeople({ orgId }: { orgId: string }) {
+  const listFn = useServerFn(listMyProfessionalNetwork);
+  const addFn = useServerFn(addProfessionalToNetwork);
+  const updateFn = useServerFn(updateNetworkProfessional);
+  const qc = useQueryClient();
+  const key = ["my-network", orgId];
+
+  const [query, setQuery] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState({ fullName: "", orgNameRaw: "", email: "", phone: "" });
+
+  const { data } = useQuery({
+    queryKey: key,
+    queryFn: () => listFn({ data: { orgId } }),
+  });
+
+  const reset = () => {
+    setForm({ fullName: "", orgNameRaw: "", email: "", phone: "" });
+    setAdding(false);
+    setEditing(null);
+  };
+
+  const add = useMutation({
+    mutationFn: () =>
+      addFn({
+        data: {
+          orgId,
+          fullName: form.fullName,
+          orgNameRaw: form.orgNameRaw || null,
+          email: form.email || null,
+          phone: form.phone || null,
+          role: "loan_officer" as const,
+        },
+      }),
+    onSuccess: (r: any) => {
+      toast.success(
+        r.possibleDuplicates > 0
+          ? "Added — a similar person exists, so it's flagged for review"
+          : "Added to your network",
+      );
+      reset();
+      qc.invalidateQueries({ queryKey: key });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: (professionalId: string) =>
+      updateFn({
+        data: {
+          orgId,
+          professionalId,
+          fullName: form.fullName || undefined,
+          orgNameRaw: form.orgNameRaw || null,
+          email: form.email || null,
+          phone: form.phone || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Saved");
+      reset();
+      qc.invalidateQueries({ queryKey: key });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const people = rankProfessionals((data?.people ?? []) as any[], { query });
+
+  const fields = (
+    <div className="space-y-2">
+      <input
+        value={form.fullName}
+        onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+        placeholder="Name"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+      />
+      <input
+        value={form.orgNameRaw}
+        onChange={(e) => setForm({ ...form, orgNameRaw: e.target.value })}
+        placeholder="Company (optional)"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+      />
+      <input
+        value={form.email}
+        onChange={(e) => setForm({ ...form, email: e.target.value })}
+        placeholder="Email (optional)"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+      />
+      <input
+        value={form.phone}
+        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        placeholder="Phone (optional)"
+        className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+      />
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <div className="sm:flex sm:items-center sm:justify-between sm:gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">Complete your clients' Home Teams</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Name each client's loan officer in seconds using the people below.
+            </p>
+          </div>
+          <Link
+            to="/agent/home-teams"
+            className="mt-3 inline-flex items-center gap-1 rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white sm:mt-0"
+          >
+            Start reviewing
+          </Link>
+        </div>
+      </Card>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search my people"
+          className="min-w-0 flex-1 rounded-full border border-border bg-background px-4 py-2 text-sm"
+        />
+        <button
+          onClick={() => {
+            reset();
+            setAdding(true);
+          }}
+          className="rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-muted"
+        >
+          Add professional
+        </button>
+      </div>
+
+      {adding && (
+        <Card>
+          <p className="text-sm font-semibold">Add a professional you work with</p>
+          <div className="mt-3">{fields}</div>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => add.mutate()}
+              disabled={form.fullName.trim().length < 2 || add.isPending}
+              className="rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+            >
+              Add
+            </button>
+            <button onClick={reset} className="rounded-full border border-border px-4 py-2 text-xs font-medium">
+              Cancel
+            </button>
+          </div>
+        </Card>
+      )}
+
+      {people.length === 0 && !adding ? (
+        <Empty
+          icon={Users}
+          title="No people yet"
+          hint="Add the loan officers and closing partners you work with, then use them across your clients."
+        />
+      ) : (
+        people.map((p: any) => (
+          <div key={p.id} className="rounded-2xl border border-border p-4">
+            <div className="sm:flex sm:items-start sm:justify-between sm:gap-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold">{p.full_name}</p>
+                  {p.hasSucasaIdentity && (
+                    <span className="rounded-full border border-status-positive/30 bg-status-positive/10 px-2 py-0.5 text-[11px] font-medium text-status-positive">
+                      On SuCasa
+                    </span>
+                  )}
+                  {p.needsReview && (
+                    <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                      Needs review
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {[p.org_name, ...(p.roles ?? []).map((r: string) => r.replace(/_/g, " "))]
+                    .filter(Boolean)
+                    .join(" · ") || "Loan officer"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {[p.email, p.phone].filter(Boolean).join(" · ") || "No contact details yet"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {p.clientCount} of your client{p.clientCount === 1 ? "" : "s"} listed with this
+                  person
+                </p>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
+                <Link
+                  to="/agent/home-teams"
+                  className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Use for clients
+                </Link>
+                <button
+                  onClick={() => {
+                    setAdding(false);
+                    setEditing(p.id);
+                    setForm({
+                      fullName: p.full_name,
+                      orgNameRaw: p.org_name ?? "",
+                      email: p.email ?? "",
+                      phone: p.phone ?? "",
+                    });
+                  }}
+                  className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+
+            {editing === p.id && (
+              <div className="mt-3 border-t border-border pt-3">
+                {fields}
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => update.mutate(p.id)}
+                    disabled={update.isPending}
+                    className="rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={reset}
+                    className="rounded-full border border-border px-4 py-2 text-xs font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
           </div>
         ))
