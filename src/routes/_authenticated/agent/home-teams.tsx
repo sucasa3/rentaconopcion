@@ -27,6 +27,9 @@ import { listMyOrgs } from "@/lib/network.functions";
 import { ArrowLeft, ArrowRight, Check, Lock, Plus, Search, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/agent/home-teams")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    orgId: typeof search["orgId"] === "string" ? (search["orgId"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Complete Home Teams — SuCasa" },
