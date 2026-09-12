@@ -1,89 +1,93 @@
-# Stage 2, slice 1: My Professional Network + Home Team review
+# Next Stage 2 slice: agent → lender Home Team invitations
 
-Two features only. The goal is that an agent can complete their clients' Home Teams in seconds per client, mostly by reusing a handful of people they already work with.
+## Corrections just delivered (already live)
 
-No invitations, no claiming, no homeowner validation, no lender preview or activation in this slice.
+1. **Homeowner-confirmed Home Teams count as complete.** Completion is derived
+   (`reviewed` OR homeowner-confirmed lender on file), never written as a fake
+   agent review row. The denominator stays every applicable active client, so a
+   locked record can no longer make the queue impossible to finish.
+2. **The chosen workspace follows the agent.** Complete Home Teams opens on
+   `?orgId=<workspace>`; the id is honoured only if the agent belongs to it,
+   falls back safely, and every server call still re-checks membership.
+3. **Workspace edits stay in the workspace.** Name, company, email and phone a
+   workspace types live on that workspace's own edge. The shared registry is
+   only rewritten when the record is unclaimed *and* no other workspace
+   references it. A claimed, verified professional's own identity wins.
 
-## Screens
+Typecheck clean; 189 tests pass, including the three new groups.
 
-### 1. My Professional Network — `/agent/network` gains a "My people" tab (first tab)
-A simple list of the professionals this agent works with, derived from `professionals` + `relationships` (`agent_professional_resource`). No new contact table.
+## What this next slice builds
 
-Each row shows: name, company when known, role, whatever contact details the agent themselves supplied or that are shared, how many of the agent's clients are currently assigned to that person, whether they already have a SuCasa identity, and a quiet "needs review" marker when the record has a possible duplicate.
+The agent has now said "this client's loan officer is Maria". The slice turns
+that into an invitation Maria can accept, and a homeowner validation path that
+never leaks a homeowner before consent exists.
 
-Actions per row: **Use for clients** (jumps into review pre-filtered), **View clients**, **Edit**. Plus one **Add professional** button.
+### 1. Typed invitation lifecycle
 
-### 2. Complete Home Teams — new route `/agent/home-teams`
-The important one. One client at a time, one question: who is this client's lender?
+One canonical home: `professional_invitations` (already the invitation home in
+the architecture). Add a `context` so the same table serves distinct purposes
+without overloading meaning:
 
-```text
-32 of 74 client Home Teams reviewed          [ Skip ] [ Next ]
+- `agent_invites_professional` — new in this slice
+- existing agent/lender organization invite contexts untouched
 
-Kevin DeJesus
-1010 Arbor Creek Dr, Marietta GA
+Lifecycle: `pending → sent → accepted | declined | expired | revoked`.
+Reuse the existing HMAC-signed, timing-safe, expiring, revocable token
+primitives from the agent invite work — no second token scheme.
 
-Property data suggests: Movement Mortgage        (suggestion)
-On file: none yet
+The invitation never changes the relationship graph on its own. An agent
+assertion stays `asserted` whether or not the invitation is accepted.
 
-  Recently used:  [ Maria Lopez ]  [ John Smith ]
-  [ Search my network... ]
-  [ Add a different lender ]
-  [ No lender / not applicable ]   [ I don't know ]
-```
+### 2. Professional claim handoff
 
-- Provider-detected institutions are always labelled as a suggestion, never as the answer.
-- Large tap targets, arrow-key/Enter support, recently-used people first, instant search.
-- Nothing is required; skipping is a first-class choice.
+Accepting an invitation is how an unclaimed `professionals` row becomes a real
+person's account:
 
-### 3. Bulk apply
-A "Select several" mode on the same screen: multi-select clients, pick one professional, apply. Confirmation is honest: "Maria Lopez set as the loan officer on 12 Home Teams." No scores, no invented success metrics. Progress counts only records actually reviewed.
+- verify token, then require the accepting user to be signed in
+- link `professionals.user_id`, set `claim_status = 'claimed'`
+- verify the contact channel the invitation was actually delivered to
+- from then on that person's canonical identity is authoritative, and every
+  workspace display falls back to it (the rule shipped above)
+- wrong-account protection: signed in as someone else → explain, do not link
 
-## Flow
+Claiming grants the professional their own identity. It grants no homeowner
+access whatsoever.
 
-1. Agent opens Complete Home Teams from Agent Today or the network page.
-2. Queue = the agent's portfolio clients, unreviewed first, clients with a provider suggestion before clients without.
-3. Agent picks someone from their network, adds a new person, or marks blank / not applicable.
-4. Picking someone writes an agent assertion and moves to the next client.
-5. Finishing the queue shows a clean completion state with the number updated.
+### 3. Access-safe homeowner validation
 
-## Data reads and writes
+The only path by which a named homeowner becomes visible stays
+`consent_records` + `classifyLenderAccess()`. This slice adds the request:
 
-Reads: the agent's portfolios and portfolio clients; `home_team_candidates` for that client (suggestion label + provenance); existing `relationships` for the client; `professionals` for the agent's own people.
+- the homeowner is asked to confirm "is Maria your loan officer?"
+- confirmation writes `confirmed` on `professional_homeowner_lender` and, only
+  where the homeowner grants it, a scoped consent record
+- until then the professional sees aggregate/de-identified context only
+- the wrong-John regression is extended: invited + claimed + agent-asserted,
+  with no consent, still returns no named access
 
-Writes:
-- **Add professional** → `resolveOrCreateProfessional()` (existing conservative resolution) + an `agent_professional_resource` relationship at `asserted`. A possible duplicate is surfaced, never silently merged.
-- **Assign to a client** → `professional_homeowner_lender` at `asserted`, `source: agent_confirmation`, evidence records which candidate (if any) informed the choice.
-- **Not applicable / don't know** → review state only, no relationship.
-- Every action appends to the existing audit ledger.
+### 4. Events
 
-Never written here: consent records, lender access, organization records from provider strings, invitations, subscriptions.
+Add to the existing `compliance_audit_events` vocabulary:
+`professional_invitation_created/sent/accepted/declined/expired/revoked`,
+`professional_identity_claimed`, `homeowner_validation_requested`,
+`homeowner_validation_confirmed/declined`.
 
-## Relationship state transitions
+### 5. Screens
 
-| Action | Effect |
-| --- | --- |
-| Agent adds a person they work with | `agent_professional_resource` → `asserted` |
-| Agent names a client's lender | `professional_homeowner_lender` → `asserted` |
-| Agent changes their mind | previous edge → `rejected`, new edge → `asserted` |
-| Agent says "no lender" | no edge; matching suggested candidates → `rejected` |
-| Agent says "I don't know" | nothing changes; client marked reviewed-unknown |
-| Provider candidate used as a hint | candidate row preserved, its id kept in the edge evidence |
+- Professional network → per person: "Invite to SuCasa" with honest state
+  (not invited / invited / on SuCasa)
+- public invitation landing + authenticated acceptance, mirroring the existing
+  agent invite pages
+- no new homeowner surface beyond the validation ask
 
-`asserted` is the ceiling for anything an agent does. `confirmed` stays reserved for the homeowner. An `agent_professional_resource` edge is never read as a client's lender.
+### Out of scope for this slice
 
-## Technical details
+Paid lender activation, aggregate previews, capacity/active-waiting UI, Closing
+Partner, and any removal of legacy Credits/Sponsorships tabs.
 
-- New files: `src/lib/agent-network.ts` (pure: queue ordering, progress counting, suggestion labelling, recently-used ranking), `src/lib/agent-network.server.ts` (reads/writes over existing canonical helpers), `src/lib/agent-network.functions.ts` (authenticated server functions), `src/routes/_authenticated/agent/home-teams.tsx`, plus a "My people" tab component in the existing network route.
-- One narrow migration: `home_team_review_state` (portfolio client, org, decision `pending | assigned | no_lender | unknown`, reviewed_by/at) so "blank", "not applicable" and progress are recordable without abusing relationship or candidate status. Row-level security scoped to the owning organization. This is review bookkeeping only and is never an access basis.
-- Reuses: `professionals.ts` / `.server.ts`, `relationships.ts` / `.server.ts`, `home-team-candidates.server.ts`, `org-resolution.ts`, `network-events.server.ts`, `BusinessShell`, existing agent card/typography patterns and the current colour tokens.
+### Tests
 
-## Tests
-
-- Queue ordering and progress counting are pure and deterministic; progress never exceeds reviewed records.
-- An `agent_professional_resource` edge alone never yields a client lender for any client.
-- Assigning a lender produces `asserted`, never `confirmed`, and writes no consent record.
-- After an assignment, `classifyLenderAccess()` still returns no named homeowner access.
-- "No lender" writes no edge and rejects only the matching candidate.
-- Re-assignment rejects the prior edge and leaves exactly one active lender edge.
-- An unresolved provider candidate renders as a suggestion string and creates no organization.
-- Bulk apply across N clients writes N independent assertions and reports N honestly.
+Token forgery/expiry/revocation; idempotent double-accept; wrong-account;
+claim makes canonical identity authoritative across workspaces; invitation and
+claim grant no named homeowner access; homeowner confirmation is authoritative
+over the agent assertion; invitation state is not relationship state.

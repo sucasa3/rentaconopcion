@@ -699,6 +699,7 @@ function MyPeople({ orgId }: { orgId: string }) {
           </div>
           <Link
             to="/agent/home-teams"
+            search={{ orgId }}
             className="mt-3 inline-flex items-center gap-1 rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white sm:mt-0"
           >
             Start reviewing
@@ -783,6 +784,7 @@ function MyPeople({ orgId }: { orgId: string }) {
               <div className="mt-2 flex flex-wrap gap-2 sm:mt-0">
                 <Link
                   to="/agent/home-teams"
+                  search={{ orgId }}
                   className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
                 >
                   Use for clients

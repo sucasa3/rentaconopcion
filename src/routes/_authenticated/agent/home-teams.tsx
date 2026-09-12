@@ -9,6 +9,7 @@ import {
   isLockedByHomeowner,
   progressLabel,
   rankProfessionals,
+  resolveActiveOrgId,
   suggestionLabel,
   summarizeBulk,
   type NetworkProfessional,
@@ -27,6 +28,9 @@ import { listMyOrgs } from "@/lib/network.functions";
 import { ArrowLeft, ArrowRight, Check, Lock, Plus, Search, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/agent/home-teams")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    orgId: typeof search["orgId"] === "string" ? (search["orgId"] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Complete Home Teams — SuCasa" },
@@ -45,7 +49,13 @@ function HomeTeamsPage() {
   const orgsFn = useServerFn(listMyOrgs);
   const { data: orgsData } = useQuery({ queryKey: ["my-orgs"], queryFn: () => orgsFn() });
   const agentOrgs = (orgsData?.orgs ?? []).filter((o: any) => o.org_type === "agent");
-  const orgId = agentOrgs[0]?.id ?? "";
+  // The workspace chosen on Professional network follows the agent here. The
+  // query string is only a hint: the server re-checks membership on every call.
+  const requested = Route.useSearch().orgId;
+  const orgId = resolveActiveOrgId(
+    requested,
+    agentOrgs.map((o: any) => o.id as string),
+  );
 
   return (
     <BusinessShell kind="agent">

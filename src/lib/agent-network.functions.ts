@@ -115,7 +115,8 @@ export const listHomeTeamReviewQueue = createServerFn({ method: "GET" })
     return {
       items: orderReviewQueue(items),
       progress: reviewProgress(
-        items.map((i) => ({ decision: i.decision })),
+        // A homeowner-confirmed lender counts as complete without a fake agent review row.
+        items.map((i) => ({ decision: i.decision, onFileStatus: i.onFile?.status ?? null })),
         total,
       ),
     };

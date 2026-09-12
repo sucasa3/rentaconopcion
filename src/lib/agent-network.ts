@@ -32,11 +32,24 @@ export interface ReviewProgress {
 }
 
 export function reviewProgress(
-  rows: Array<{ decision: ReviewDecision | null }>,
+  rows: Array<{ decision: ReviewDecision | null; onFileStatus?: RelationshipStatus | null }>,
   total: number,
 ): ReviewProgress {
-  const reviewed = rows.filter((r) => isReviewed(r.decision)).length;
+  const reviewed = rows.filter((r) => isEffectivelyReviewed(r)).length;
   return { reviewed: Math.min(reviewed, total), total };
+}
+
+/**
+ * A Home Team is complete either because the agent reviewed it, or because the
+ * homeowner already confirmed the lender. The second case is derived, never
+ * written as a fake agent review record — otherwise an agent-locked record
+ * would make the queue impossible to finish.
+ */
+export function isEffectivelyReviewed(row: {
+  decision?: ReviewDecision | null;
+  onFileStatus?: RelationshipStatus | null;
+}): boolean {
+  return isReviewed(row.decision) || row.onFileStatus === "confirmed";
 }
 
 export function progressLabel(p: ReviewProgress): string {
@@ -134,6 +147,43 @@ export function visibleProfessionalContact(
   };
 }
 
+export interface WorkspaceSuppliedDisplay {
+  displayName?: string | null;
+  orgName?: string | null;
+}
+
+/**
+ * How a workspace displays a person.
+ *
+ * Once the professional has claimed and verified their identity, their own
+ * canonical name/company wins. Until then each workspace sees its own wording,
+ * and never Workspace B's private edit.
+ */
+export function visibleProfessionalDisplay(
+  professional: {
+    full_name: string;
+    org_name_raw?: string | null;
+    claim_status: "unclaimed" | "invited" | "claimed";
+    verification_status?: string | null;
+  },
+  suppliedByThisWorkspace: WorkspaceSuppliedDisplay = {},
+): { fullName: string; orgName: string | null; canonical: boolean } {
+  const canonical =
+    professional.claim_status === "claimed" && professional.verification_status === "verified";
+  if (canonical) {
+    return {
+      fullName: professional.full_name,
+      orgName: professional.org_name_raw ?? null,
+      canonical: true,
+    };
+  }
+  return {
+    fullName: suppliedByThisWorkspace.displayName?.trim() || professional.full_name,
+    orgName: suppliedByThisWorkspace.orgName ?? professional.org_name_raw ?? null,
+    canonical: false,
+  };
+}
+
 // --- Network list + queue ordering ----------------------------------------
 
 export interface NetworkProfessional {
@@ -187,11 +237,19 @@ export interface ReviewQueueItem {
   decision: ReviewDecision | null;
 }
 
+/** Complete for the queue: agent-reviewed, or already confirmed by the homeowner. */
+export function isQueueItemComplete(item: ReviewQueueItem): boolean {
+  return isEffectivelyReviewed({
+    decision: item.decision,
+    onFileStatus: item.onFile?.status ?? null,
+  });
+}
+
 /** Unreviewed first, records with a usable hint before records without. */
 export function orderReviewQueue(items: ReviewQueueItem[]): ReviewQueueItem[] {
   return items.slice().sort((a, b) => {
-    const ar = isReviewed(a.decision) ? 1 : 0;
-    const br = isReviewed(b.decision) ? 1 : 0;
+    const ar = isQueueItemComplete(a) ? 1 : 0;
+    const br = isQueueItemComplete(b) ? 1 : 0;
     if (ar !== br) return ar - br;
     const as = a.suggestions.length ? 0 : 1;
     const bs = b.suggestions.length ? 0 : 1;
@@ -203,4 +261,18 @@ export function orderReviewQueue(items: ReviewQueueItem[]): ReviewQueueItem[] {
 /** True when this record is locked to agent edits by a homeowner confirmation. */
 export function isLockedByHomeowner(item: ReviewQueueItem): boolean {
   return item.onFile?.status === "confirmed";
+}
+
+/**
+ * Which agent workspace a screen should open in.
+ *
+ * A requested id is honoured only when the caller actually belongs to it; the
+ * server still re-checks membership on every call.
+ */
+export function resolveActiveOrgId(
+  requested: string | null | undefined,
+  memberOrgIds: string[],
+): string {
+  if (requested && memberOrgIds.includes(requested)) return requested;
+  return memberOrgIds[0] ?? "";
 }

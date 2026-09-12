@@ -16,6 +16,7 @@
  */
 import {
   visibleProfessionalContact,
+  visibleProfessionalDisplay,
   type BulkResult,
   type NetworkProfessional,
   type ReviewDecision,
@@ -70,9 +71,12 @@ export async function clientBelongsToWorkspace(
 /** Workspace-supplied contact lives on the workspace's own edge, not the registry. */
 function suppliedContact(evidence: Record<string, unknown> | null | undefined) {
   const e = (evidence ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof e[k] === "string" ? (e[k] as string) : null);
   return {
-    email: typeof e["workspace_email"] === "string" ? (e["workspace_email"] as string) : null,
-    phone: typeof e["workspace_phone"] === "string" ? (e["workspace_phone"] as string) : null,
+    email: str("workspace_email"),
+    phone: str("workspace_phone"),
+    displayName: str("workspace_display_name"),
+    orgName: str("workspace_org_name"),
   };
 }
 
@@ -114,11 +118,13 @@ export async function listAgentProfessionalNetwork(
   for (const edge of rows) {
     const p = byId.get(edge.object_id) as any;
     if (!p) continue;
-    const contact = visibleProfessionalContact(p, suppliedContact(edge.evidence));
+    const supplied = suppliedContact(edge.evidence);
+    const contact = visibleProfessionalContact(p, supplied);
+    const display = visibleProfessionalDisplay(p, supplied);
     out.push({
       id: p.id,
-      full_name: p.full_name,
-      org_name: p.org_name_raw ?? null,
+      full_name: display.fullName,
+      org_name: display.orgName,
       roles: (p.roles ?? []) as string[],
       email: contact.email,
       phone: contact.phone,
@@ -181,7 +187,36 @@ export async function addAgentProfessional(
   };
 }
 
-/** Correct what this workspace knows. The shared registry name is only touched while unclaimed. */
+/**
+ * True only when this workspace is demonstrably the sole source of an unclaimed
+ * record: nobody has claimed it and no other workspace references it.
+ */
+async function workspaceSolelyOwns(
+  admin: any,
+  orgId: string,
+  professionalId: string,
+  pro: any,
+): Promise<boolean> {
+  if (pro.claim_status !== "unclaimed" || pro.user_id) return false;
+  const { data } = await admin
+    .from("relationships")
+    .select("subject_id")
+    .eq("relationship_type", "agent_professional_resource")
+    .eq("object_id", professionalId)
+    .in("status", ACTIVE_STATUSES)
+    .is("revoked_at", null);
+  const others = new Set((data ?? []).map((r: any) => r.subject_id));
+  others.delete(orgId);
+  return others.size === 0;
+}
+
+/**
+ * Correct what THIS workspace knows.
+ *
+ * Display details and contact details are kept on the workspace's own edge, so
+ * one workspace's wording never rewrites what another workspace sees. The shared
+ * registry is only touched when this workspace solely owns an unclaimed record.
+ */
 export async function updateAgentProfessional(
   admin: any,
   args: {
@@ -210,7 +245,7 @@ export async function updateAgentProfessional(
     .maybeSingle();
   if (!pro) throw new Error("Professional not found");
 
-  if (pro.claim_status === "unclaimed") {
+  if (await workspaceSolelyOwns(admin, args.orgId, args.professionalId, pro)) {
     const patch: Record<string, unknown> = {};
     if (args.fullName?.trim()) patch["full_name"] = args.fullName.trim();
     if (args.orgNameRaw !== undefined) patch["org_name_raw"] = args.orgNameRaw;
@@ -230,6 +265,8 @@ export async function updateAgentProfessional(
         ...((edge.evidence ?? {}) as Record<string, unknown>),
         ...(args.email !== undefined ? { workspace_email: normalizeEmail(args.email) } : {}),
         ...(args.phone !== undefined ? { workspace_phone: normalizePhone(args.phone) } : {}),
+        ...(args.fullName?.trim() ? { workspace_display_name: args.fullName.trim() } : {}),
+        ...(args.orgNameRaw !== undefined ? { workspace_org_name: args.orgNameRaw } : {}),
       },
     })
     .eq("id", edge.id);
