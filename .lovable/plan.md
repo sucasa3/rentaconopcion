@@ -1,77 +1,89 @@
-# SuCasa Organic Growth Architecture — Audit + Revised Build Plan
+# Stage 2, slice 1: My Professional Network + Home Team review
 
-## A. What already exists and stays canonical
+Two features only. The goal is that an agent can complete their clients' Home Teams in seconds per client, mostly by reusing a handful of people they already work with.
 
-| Concern | Canonical today | Decision |
-| --- | --- | --- |
-| Homeowner record | `lender_portfolio_clients` (+ `home_profiles`, `property_intel`) | Reuse unchanged |
-| Homeowner access / 4 permission types | `classifyLenderAccess()` (`src/lib/lender-access.ts`) + `consent_records` | **Only** access authority |
-| Invitation security primitives | `invite-token.server.ts` (HMAC, expiry, revocation), `/agent-invite` | Reuse primitives, typed contexts |
-| Agent↔lender org connection | `agent_lender_connections` | Stays the only org-connection lifecycle |
-| Organizations & membership | `lender_orgs` (`org_type`), `lender_members`, `is_lender_member/manager` | Organizations stay canonical |
-| Plans / capacity / Stripe | `plan_tiers.profile_allowance`, `lender_orgs`, `capacity.server.ts`, `profile-pool.ts` | Capacity always from config; never hardcoded |
-| Agent entitlement | `agent_base_entitlements`, `entitlements.ts` | Lender money can never fund it |
-| Lender Today / My Book | `lender-workspace.server.ts`, `lender-daily.ts` | Add an active/waiting filter only |
-| Enrichment | `enrichment.server.ts`, `provider-primary.server.ts`, `batchdata-normalize.ts` | Extend with candidate extraction |
-| Event ledger | `compliance_audit_events` (category, action, actor, org, entity, metadata) | **Reuse for growth analytics — no `network_events` table** |
+No invitations, no claiming, no homeowner validation, no lender preview or activation in this slice.
 
-## B. New models: three tables only
+## Screens
 
-1. **`professionals` — individual people, never organizations.** Fields: `org_id` (FK `lender_orgs`, nullable), role(s), name, normalized email/phone (+ verified flags), NMLS/license, `claim_status`, `verification_status`, `user_id`. Claim/verification lifecycle lives here and nowhere else. `pros` (service vendors) stays separate. A detected BatchData institution is stored as evidence text on the relationship until it resolves to an existing `lender_orgs` row — no duplicate org records. If closing firms are needed later, the smallest safe change is one extra allowed `lender_orgs.org_type` value.
-2. **`relationships` — real-world relationship + evidence only.** `relationship_type`, subject/object typed refs, `org_id`, `source` (provenance), `source_record`, `status` ∈ `detected | suggested | asserted | confirmed | rejected | revoked`, `confidence`, `evidence` jsonb, `asserted_by`, `confirmed_by`, `confirmed_at`, `consent_record_id` (reference only), `source_relationship_id`, `visibility`, timestamps, `revoked_at`. **No** invitation, claim, connection, subscription or permission state; **no** `permission_basis` field that could grant anything.
-3. **`professional_invitations` — the invitation ledger.** inviter, professional, email/phone, `invitation_context` ∈ `agent_lender_org_connection | homeowner_lender_home_team | agent_lender_home_team | lender_agent_network`, related relationship, org, status `created/sent/opened/clicked/claimed/activated/declined/expired/cancelled` + timestamps. One shared invitation service (token signing, expiry, revocation, reminders) with per-context semantics and landing behaviour. Links to the `agent_lender_connections` row when a context produces an org connection.
+### 1. My Professional Network — `/agent/network` gains a "My people" tab (first tab)
+A simple list of the professionals this agent works with, derived from `professionals` + `relationships` (`agent_professional_resource`). No new contact table.
 
-Active/waiting is **not** on `relationships`. It applies only to eligible lender↔homeowner relationships and is represented through the existing capacity/profile structures (`capacity.server.ts` + a nullable activation record scoped to that one relationship type), so the graph never becomes the subscription system.
+Each row shows: name, company when known, role, whatever contact details the agent themselves supplied or that are shared, how many of the agent's clients are currently assigned to that person, whether they already have a SuCasa identity, and a quiet "needs review" marker when the record has a possible duplicate.
 
-## C. Access rule (non-negotiable)
+Actions per row: **Use for clients** (jumps into review pre-filtered), **View clients**, **Edit**. Plus one **Add professional** button.
 
-Agent confirmation creates or strengthens an **assertion** only. It may create a Home Team candidate and trigger an invitation. It never exposes a named homeowner.
+### 2. Complete Home Teams — new route `/agent/home-teams`
+The important one. One client at a time, one question: who is this client's lender?
 
 ```text
-BatchData detects -> agent asserts -> professional invited -> professional claims identity
- -> independent access basis exists (homeowner authorization, or the accepted
-    existing-relationship process, or another canonical basis)
- -> classifyLenderAccess() returns an authorized level
- -> relationship eligible for the named lender experience
- -> plan capacity decides active vs waiting
+32 of 74 client Home Teams reviewed          [ Skip ] [ Next ]
+
+Kevin DeJesus
+1010 Arbor Creek Dr, Marietta GA
+
+Property data suggests: Movement Mortgage        (suggestion)
+On file: none yet
+
+  Recently used:  [ Maria Lopez ]  [ John Smith ]
+  [ Search my network... ]
+  [ Add a different lender ]
+  [ No lender / not applicable ]   [ I don't know ]
 ```
 
-A mistaken MLO selection therefore exposes nothing.
+- Provider-detected institutions are always labelled as a suggestion, never as the answer.
+- Large tap targets, arrow-key/Enter support, recently-used people first, instant search.
+- Nothing is required; skipping is a first-class choice.
 
-## D. BatchData is an accelerator, not a dependency (verified)
+### 3. Bulk apply
+A "Select several" mode on the same screen: multi-select clients, pick one professional, apply. Confirmation is honest: "Maria Lopez set as the loan officer on 12 Home Teams." No scores, no invented success metrics. Progress counts only records actually reviewed.
 
-- `normalized->mortgage->>'lender'` present on **57 of 206** stored records, **50 distinct institutions**, noisy (one row is an insurance-bond company). Source fields: `lenderName` / `assignedLenderName` on open liens and mortgage history.
-- **No individual loan-officer field exists** — no MLO will ever be invented from an institution.
-- `property_intel.mortgage` holds raw ATTOM payloads with **zero** normalized lender names, so extraction runs on the normalized result at enrichment time and persists its own output.
-- Title/closing evidence: nothing reliable today → always "unknown".
-- Every agent flow works with institution evidence, noisy evidence, or none: the agent can associate a professional from their own network to any homeowner without any detection.
+## Flow
 
-## E. Counting vocabulary
+1. Agent opens Complete Home Teams from Agent Today or the network page.
+2. Queue = the agent's portfolio clients, unreviewed first, clients with a provider suggestion before clients without.
+3. Agent picks someone from their network, adds a new person, or marks blank / not applicable.
+4. Picking someone writes an agent assertion and moves to the next client.
+5. Finishing the queue shows a clean completion state with the number updated.
 
-Distinguish and label separately, always: **potential** (detected/suggested), **asserted/confirmed**, **eligible** (classifier-authorized), **active**, **waiting**. Copy claims only what the state supports; raw detections are never presented as eligible relationships.
+## Data reads and writes
 
-## F. Migrations
+Reads: the agent's portfolios and portfolio clients; `home_team_candidates` for that client (suggestion label + provenance); existing `relationships` for the client; `professionals` for the agent's own people.
 
-1. `professionals` + conservative unique indexes + GRANTs + RLS.
-2. `relationships` + indexes (subject/object/type, org+status) + GRANTs + RLS (parties only).
-3. `professional_invitations` + GRANTs + RLS (inviter org, invited professional).
-4. Small activation record for eligible lender↔homeowner relationships, tied to existing capacity logic.
+Writes:
+- **Add professional** → `resolveOrCreateProfessional()` (existing conservative resolution) + an `agent_professional_resource` relationship at `asserted`. A possible duplicate is surfaced, never silently merged.
+- **Assign to a client** → `professional_homeowner_lender` at `asserted`, `source: agent_confirmation`, evidence records which candidate (if any) informed the choice.
+- **Not applicable / don't know** → review state only, no relationship.
+- Every action appends to the existing audit ledger.
 
-## G. Entity resolution (conservative)
+Never written here: consent records, lender access, organization records from provider strings, invitations, subscriptions.
 
-Auto-link only on: existing verified user/professional link, NMLS/license match, or individually verified email/phone. Name+organization or shared/unverified office contact produces a **reviewable possible duplicate**, never a silent merge.
+## Relationship state transitions
 
-## H. Screens / components
+| Action | Effect |
+| --- | --- |
+| Agent adds a person they work with | `agent_professional_resource` → `asserted` |
+| Agent names a client's lender | `professional_homeowner_lender` → `asserted` |
+| Agent changes their mind | previous edge → `rejected`, new edge → `asserted` |
+| Agent says "no lender" | no edge; matching suggested candidates → `rejected` |
+| Agent says "I don't know" | nothing changes; client marked reviewed-unknown |
+| Provider candidate used as a hint | candidate row preserved, its id kept in the edge evidence |
 
-`batchdata-normalize.ts` (`buildHomeTeamCandidates()`, pure, institution-only), enrichment writers, new `professionals.ts`/`.server.ts`, `relationships.ts`/`.server.ts`, `invitations.ts` service, `home-team.ts`, agent "Complete Your Client Network" + fast Bulk Relationship Review + My Professional Network in `agent/network.tsx`, invitation emails/landing, free claimed-lender aggregate view, paid activation active/waiting UI, homeowner validator card on `dashboard.tsx`, admin growth funnel + Network Reproduction Rate.
+`asserted` is the ceiling for anything an agent does. `confirmed` stays reserved for the homeowner. An `agent_professional_resource` edge is never read as a client's lender.
 
-## I. Tests
+## Technical details
 
-Provenance/status rules; conservative resolution (no duplicate John Smith, possible-duplicate review, multi-agent invites); candidate extraction (institution only, never an MLO, prefers unknown); actual-lender vs mortgage-resource divergence; invitation lifecycle + cancellation per context; **wrong-John security test — Jennifer misidentifies John, John claims the invitation, and John still sees nothing named until `classifyLenderAccess()` independently authorizes**; free profile shows counts only; 200 eligible vs smaller capacity → capacity only, payment grants no permission; upgrade activates waiting; lender→agent invite leaves agent entitlement SuCasa-funded; revoked consent removes access; existing lender-access/capacity/narrative suites pass.
+- New files: `src/lib/agent-network.ts` (pure: queue ordering, progress counting, suggestion labelling, recently-used ranking), `src/lib/agent-network.server.ts` (reads/writes over existing canonical helpers), `src/lib/agent-network.functions.ts` (authenticated server functions), `src/routes/_authenticated/agent/home-teams.tsx`, plus a "My people" tab component in the existing network route.
+- One narrow migration: `home_team_review_state` (portfolio client, org, decision `pending | assigned | no_lender | unknown`, reviewed_by/at) so "blank", "not applicable" and progress are recordable without abusing relationship or candidate status. Row-level security scoped to the owning organization. This is review bookkeeping only and is never an access basis.
+- Reuses: `professionals.ts` / `.server.ts`, `relationships.ts` / `.server.ts`, `home-team-candidates.server.ts`, `org-resolution.ts`, `network-events.server.ts`, `BusinessShell`, existing agent card/typography patterns and the current colour tokens.
 
-## Staging
+## Tests
 
-**Stage 1 (next):** relationship/evidence graph, conservative professional identity resolution, BatchData candidate extraction.
-**Stage 2:** Agent Professional Network, Bulk Relationship Review, actual-lender vs resource distinction, agent→lender Home Team invitations, access-safe homeowner validation.
-**Stage 3:** free claiming, independent access validation, paid active/waiting capacity, lender→existing-agent expansion, growth analytics on `compliance_audit_events`.
-Closing Partner: architecture-ready, not built.
+- Queue ordering and progress counting are pure and deterministic; progress never exceeds reviewed records.
+- An `agent_professional_resource` edge alone never yields a client lender for any client.
+- Assigning a lender produces `asserted`, never `confirmed`, and writes no consent record.
+- After an assignment, `classifyLenderAccess()` still returns no named homeowner access.
+- "No lender" writes no edge and rejects only the matching candidate.
+- Re-assignment rejects the prior edge and leaves exactly one active lender edge.
+- An unresolved provider candidate renders as a suggestion string and creates no organization.
+- Bulk apply across N clients writes N independent assertions and reports N honestly.
