@@ -18,7 +18,23 @@ export type NetworkEventAction =
   | "relationship_rejected"
   | "possible_duplicate_detected"
   | "professional_identity_linked"
-  | "professional_identity_created";
+  | "professional_identity_created"
+  // Invitation lifecycle — distinct from relationship, identity and access.
+  | "professional_invitation_created"
+  | "professional_invitation_sent"
+  | "professional_invitation_resent"
+  | "professional_invitation_accepted"
+  | "professional_invitation_declined"
+  | "professional_invitation_revoked"
+  | "professional_identity_claimed"
+  | "professional_identity_reconciliation_required"
+  // Homeowner validation (relationship truth) and the separate consent step.
+  | "homeowner_validation_requested"
+  | "homeowner_relationship_confirmed"
+  | "homeowner_relationship_rejected"
+  | "homeowner_relationship_unknown"
+  | "homeowner_connection_granted"
+  | "homeowner_connection_declined";
 
 export interface NetworkEventInput {
   action: NetworkEventAction;
