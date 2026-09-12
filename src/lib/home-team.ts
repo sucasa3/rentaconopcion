@@ -132,6 +132,14 @@ const LENDING_MARKERS = [
   "residential",
   "financing",
   "escrow",
+  "equity",
+  "lns",
+  "lndg",
+  "bancorp",
+  "banco",
+  "credit",
+  "investment",
+  "investments",
 ];
 
 const LEGAL_SUFFIX_MARKERS = ["inc", "llc", "llp", "lp", "corp", "co", "company", "group", "assn"];
