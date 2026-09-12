@@ -104,6 +104,11 @@ function AgentNetwork() {
             <>
               <nav className="-mx-1 grid grid-cols-2 gap-1 border-b border-border px-1 py-2 sm:flex sm:flex-wrap">
                 <TabButton
+                  active={tab === "people"}
+                  onClick={() => setTab("people")}
+                  label="My people"
+                />
+                <TabButton
                   active={tab === "intros"}
                   onClick={() => setTab("intros")}
                   label="Introductions"
@@ -131,6 +136,7 @@ function AgentNetwork() {
                 />
               </nav>
 
+              {tab === "people" && <MyPeople orgId={activeOrgId} />}
               {tab === "intros" && <Introductions orgId={activeOrgId} rows={intros?.requests ?? []} />}
               {tab === "campaigns" && <CampaignApprovals orgId={activeOrgId} />}
               {tab === "connections" && <Connections agentOrgId={activeOrgId} />}
@@ -140,6 +146,7 @@ function AgentNetwork() {
                   <AgentCreditsCard orgId={activeOrgId} />
                 </div>
               )}
+
             </>
           )}
         </div>
