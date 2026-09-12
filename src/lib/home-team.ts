@@ -52,7 +52,7 @@ export interface HomeTeamCandidateResult {
 }
 
 /** Values that carry no institution at all. */
-const PLACEHOLDERS = new Set([
+const PLACEHOLDER_SET = new Set([
   "n/a",
   "na",
   "none",
@@ -73,8 +73,8 @@ const PLACEHOLDERS = new Set([
   "multiple",
   "other",
   "test",
-];
-const PLACEHOLDER_SET = new Set(PLACEHOLDERS as unknown as string[]);
+]);
+
 
 /**
  * Entities that appear in recorded-lien data but are not the homeowner's
