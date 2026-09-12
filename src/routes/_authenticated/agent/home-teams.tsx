@@ -308,7 +308,7 @@ function Review({ orgId }: { orgId: string }) {
                     key={p.id}
                     disabled={bulk.isPending}
                     onClick={() => bulk.mutate(p.id)}
-                    className="rounded-full border border-relationship/40 bg-relationship/10 px-4 py-2 text-xs font-semibold text-relationship disabled:opacity-60"
+                    className="rounded-full border border-sucasa-orange/40 bg-sucasa-orange/10 px-4 py-2 text-xs font-semibold text-sucasa-orange disabled:opacity-60"
                   >
                     Use {p.full_name}
                   </button>
@@ -333,7 +333,7 @@ function Review({ orgId }: { orgId: string }) {
             {current.suggestions.map((s) => (
               <div
                 key={s.candidateId}
-                className="flex items-center justify-between gap-2 rounded-2xl bg-intelligence-surface px-3 py-2"
+                className="flex items-center justify-between gap-2 rounded-2xl border border-surface-intelligence-border bg-surface-intelligence px-3 py-2 text-surface-intelligence-foreground"
               >
                 <p className="min-w-0 text-xs">{suggestionLabel(s.institution)}</p>
                 <button
@@ -377,7 +377,7 @@ function Review({ orgId }: { orgId: string }) {
                         <button
                           key={id}
                           onClick={() => assign.mutate({ professionalId: id })}
-                          className="rounded-full border border-relationship/40 bg-relationship/10 px-4 py-2 text-xs font-semibold text-relationship"
+                          className="rounded-full border border-sucasa-orange/40 bg-sucasa-orange/10 px-4 py-2 text-xs font-semibold text-sucasa-orange"
                         >
                           {p.full_name}
                         </button>
@@ -462,7 +462,7 @@ function Review({ orgId }: { orgId: string }) {
               ) : (
                 <button
                   onClick={() => setAdding(true)}
-                  className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-relationship"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-sucasa-orange"
                 >
                   <Plus className="h-3 w-3" /> Add a different lender
                 </button>
