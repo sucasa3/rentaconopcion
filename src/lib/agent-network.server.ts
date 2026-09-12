@@ -16,6 +16,7 @@
  */
 import {
   visibleProfessionalContact,
+  visibleProfessionalDisplay,
   type BulkResult,
   type NetworkProfessional,
   type ReviewDecision,
