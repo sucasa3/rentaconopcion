@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as ProfessionalInviteRouteImport } from './routes/professional-invite'
 import { Route as ProRouteImport } from './routes/pro'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PartnerRouteImport } from './routes/partner'
@@ -88,6 +89,11 @@ const RequestRoute = RequestRouteImport.update({
 const ReportRoute = ReportRouteImport.update({
   id: '/report',
   path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfessionalInviteRoute = ProfessionalInviteRouteImport.update({
+  id: '/professional-invite',
+  path: '/professional-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProRoute = ProRouteImport.update({
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
+  '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
@@ -464,6 +471,7 @@ export interface FileRoutesByTo {
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
+  '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
@@ -524,6 +532,7 @@ export interface FileRoutesById {
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
+  '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
@@ -587,6 +596,7 @@ export interface FileRouteTypes {
     | '/partner'
     | '/pricing'
     | '/pro'
+    | '/professional-invite'
     | '/report'
     | '/request'
     | '/services'
@@ -648,6 +658,7 @@ export interface FileRouteTypes {
     | '/partner'
     | '/pricing'
     | '/pro'
+    | '/professional-invite'
     | '/report'
     | '/request'
     | '/services'
@@ -707,6 +718,7 @@ export interface FileRouteTypes {
     | '/partner'
     | '/pricing'
     | '/pro'
+    | '/professional-invite'
     | '/report'
     | '/request'
     | '/services'
@@ -770,6 +782,7 @@ export interface RootRouteChildren {
   PartnerRoute: typeof PartnerRoute
   PricingRoute: typeof PricingRoute
   ProRoute: typeof ProRoute
+  ProfessionalInviteRoute: typeof ProfessionalInviteRoute
   ReportRoute: typeof ReportRoute
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
@@ -816,6 +829,13 @@ declare module '@tanstack/react-router' {
       path: '/report'
       fullPath: '/report'
       preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/professional-invite': {
+      id: '/professional-invite'
+      path: '/professional-invite'
+      fullPath: '/professional-invite'
+      preLoaderRoute: typeof ProfessionalInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pro': {
@@ -1343,6 +1363,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartnerRoute: PartnerRoute,
   PricingRoute: PricingRoute,
   ProRoute: ProRoute,
+  ProfessionalInviteRoute: ProfessionalInviteRoute,
   ReportRoute: ReportRoute,
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
