@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as RequestRouteImport } from './routes/request'
 import { Route as ReportRouteImport } from './routes/report'
+import { Route as ProfessionalInviteRouteImport } from './routes/professional-invite'
 import { Route as ProRouteImport } from './routes/pro'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PartnerRouteImport } from './routes/partner'
@@ -25,6 +26,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
 import { Route as AuthenticatedMoneyRouteImport } from './routes/_authenticated/money'
+import { Route as AuthenticatedHomeTeamRouteImport } from './routes/_authenticated/home-team'
 import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticated/home-plan'
 import { Route as AuthenticatedHomeCareRouteImport } from './routes/_authenticated/home-care'
 import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
@@ -90,6 +92,11 @@ const ReportRoute = ReportRouteImport.update({
   path: '/report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfessionalInviteRoute = ProfessionalInviteRouteImport.update({
+  id: '/professional-invite',
+  path: '/professional-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProRoute = ProRouteImport.update({
   id: '/pro',
   path: '/pro',
@@ -147,6 +154,11 @@ const AuthenticatedTimelineRoute = AuthenticatedTimelineRouteImport.update({
 const AuthenticatedMoneyRoute = AuthenticatedMoneyRouteImport.update({
   id: '/money',
   path: '/money',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeTeamRoute = AuthenticatedHomeTeamRouteImport.update({
+  id: '/home-team',
+  path: '/home-team',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomePlanRoute = AuthenticatedHomePlanRouteImport.update({
@@ -403,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
+  '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
@@ -416,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
   '/home-plan': typeof AuthenticatedHomePlanRoute
+  '/home-team': typeof AuthenticatedHomeTeamRoute
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -464,6 +478,7 @@ export interface FileRoutesByTo {
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
+  '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
@@ -475,6 +490,7 @@ export interface FileRoutesByTo {
   '/documents': typeof AuthenticatedDocumentsRoute
   '/home-care': typeof AuthenticatedHomeCareRoute
   '/home-plan': typeof AuthenticatedHomePlanRoute
+  '/home-team': typeof AuthenticatedHomeTeamRoute
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -524,6 +540,7 @@ export interface FileRoutesById {
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
   '/pro': typeof ProRoute
+  '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
@@ -537,6 +554,7 @@ export interface FileRoutesById {
   '/_authenticated/documents': typeof AuthenticatedDocumentsRoute
   '/_authenticated/home-care': typeof AuthenticatedHomeCareRoute
   '/_authenticated/home-plan': typeof AuthenticatedHomePlanRoute
+  '/_authenticated/home-team': typeof AuthenticatedHomeTeamRoute
   '/_authenticated/money': typeof AuthenticatedMoneyRoute
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -587,6 +605,7 @@ export interface FileRouteTypes {
     | '/partner'
     | '/pricing'
     | '/pro'
+    | '/professional-invite'
     | '/report'
     | '/request'
     | '/services'
@@ -600,6 +619,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/home-care'
     | '/home-plan'
+    | '/home-team'
     | '/money'
     | '/timeline'
     | '/agent/campaigns'
@@ -648,6 +668,7 @@ export interface FileRouteTypes {
     | '/partner'
     | '/pricing'
     | '/pro'
+    | '/professional-invite'
     | '/report'
     | '/request'
     | '/services'
@@ -659,6 +680,7 @@ export interface FileRouteTypes {
     | '/documents'
     | '/home-care'
     | '/home-plan'
+    | '/home-team'
     | '/money'
     | '/timeline'
     | '/agent/campaigns'
@@ -707,6 +729,7 @@ export interface FileRouteTypes {
     | '/partner'
     | '/pricing'
     | '/pro'
+    | '/professional-invite'
     | '/report'
     | '/request'
     | '/services'
@@ -720,6 +743,7 @@ export interface FileRouteTypes {
     | '/_authenticated/documents'
     | '/_authenticated/home-care'
     | '/_authenticated/home-plan'
+    | '/_authenticated/home-team'
     | '/_authenticated/money'
     | '/_authenticated/timeline'
     | '/_authenticated/agent/campaigns'
@@ -770,6 +794,7 @@ export interface RootRouteChildren {
   PartnerRoute: typeof PartnerRoute
   PricingRoute: typeof PricingRoute
   ProRoute: typeof ProRoute
+  ProfessionalInviteRoute: typeof ProfessionalInviteRoute
   ReportRoute: typeof ReportRoute
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
@@ -816,6 +841,13 @@ declare module '@tanstack/react-router' {
       path: '/report'
       fullPath: '/report'
       preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/professional-invite': {
+      id: '/professional-invite'
+      path: '/professional-invite'
+      fullPath: '/professional-invite'
+      preLoaderRoute: typeof ProfessionalInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pro': {
@@ -900,6 +932,13 @@ declare module '@tanstack/react-router' {
       path: '/money'
       fullPath: '/money'
       preLoaderRoute: typeof AuthenticatedMoneyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home-team': {
+      id: '/_authenticated/home-team'
+      path: '/home-team'
+      fullPath: '/home-team'
+      preLoaderRoute: typeof AuthenticatedHomeTeamRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home-plan': {
@@ -1309,6 +1348,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDocumentsRoute: typeof AuthenticatedDocumentsRoute
   AuthenticatedHomeCareRoute: typeof AuthenticatedHomeCareRoute
   AuthenticatedHomePlanRoute: typeof AuthenticatedHomePlanRoute
+  AuthenticatedHomeTeamRoute: typeof AuthenticatedHomeTeamRoute
   AuthenticatedMoneyRoute: typeof AuthenticatedMoneyRoute
   AuthenticatedTimelineRoute: typeof AuthenticatedTimelineRoute
   AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
@@ -1324,6 +1364,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDocumentsRoute: AuthenticatedDocumentsRoute,
   AuthenticatedHomeCareRoute: AuthenticatedHomeCareRoute,
   AuthenticatedHomePlanRoute: AuthenticatedHomePlanRoute,
+  AuthenticatedHomeTeamRoute: AuthenticatedHomeTeamRoute,
   AuthenticatedMoneyRoute: AuthenticatedMoneyRoute,
   AuthenticatedTimelineRoute: AuthenticatedTimelineRoute,
   AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,
@@ -1343,6 +1384,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartnerRoute: PartnerRoute,
   PricingRoute: PricingRoute,
   ProRoute: ProRoute,
+  ProfessionalInviteRoute: ProfessionalInviteRoute,
   ReportRoute: ReportRoute,
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
