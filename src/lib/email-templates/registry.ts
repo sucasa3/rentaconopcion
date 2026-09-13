@@ -26,6 +26,7 @@ export interface TemplateEntry {
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'campaign-update': campaignUpdateTemplate,
   'agent-invite': agentInviteTemplate,
+  'professional-invite': professionalInviteTemplate,
 }
 
 
