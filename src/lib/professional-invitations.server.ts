@@ -10,6 +10,7 @@
  *    `classifyLenderAccess()` + `consent_records`, and the homeowner's
  *    "yes, that's my lender" is deliberately not a permission.
  */
+import { siteUrl } from "./site-urls";
 import {
   decideClaim,
   isActiveInvitation,
@@ -41,7 +42,7 @@ export function invitationLink(invitation: { id: string; invited_email_normalize
     context: CONTEXT,
     email: invitation.invited_email_normalized,
   });
-  const base = process.env["PUBLIC_SITE_URL"] ?? "https://rentaconopcion.lovable.app";
+  const base = siteUrl();
   return `${base}/professional-invite?t=${encodeURIComponent(token)}`;
 }
 

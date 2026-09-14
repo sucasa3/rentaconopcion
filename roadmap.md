@@ -73,3 +73,16 @@
 - [x] Resend and Withdraw verified separately
 - [x] Claim grants no homeowner permission, capacity, agent benefit or paid entitlement
 - [x] Confirm claimed profile / confirmed relationship edge does NOT make the homeowner named or actionable for the lender (classifyLenderAccess remains the only authority)
+
+## Domain migration — sucasa.com platform + homes.sucasa.com IDX (approved 2026-09-14, no DNS changes yet)
+- [x] Single source of truth for link bases (`src/lib/site-urls.ts`); Browse Homes + invitation links read from it
+- [ ] BLOCKED (needs Neil/Lofty): complete Lofty sitemap + URL-family inventory — live site firewall blocks all automated access
+- [ ] Confirm whether Lofty serves `/agents` (collides with our `/agents` deck route)
+- [ ] Confirm city/market page URL structure
+- [ ] Old-URL -> homes.sucasa.com redirect map, query strings preserved
+- [ ] Stand up + fully test homes.sucasa.com before touching sucasa.com
+- [ ] Canonical URLs on IDX pages -> homes.sucasa.com versions, before any redirect
+- [ ] Flip IDX_BASE_URL to https://homes.sucasa.com once that host is live
+- [ ] Connect sucasa.com (primary) + www.sucasa.com redirect to this project — last step
+- [ ] Flip PLATFORM_BASE_URL / set PUBLIC_SITE_URL to https://sucasa.com after connection
+- [ ] Real sitemap for the new app (current one lists only 3 URLs)
