@@ -77,7 +77,13 @@ const ProfessionalInviteEmail = ({
     <Text style={mutedText}>
       This link is personal to this email address and expires in 21 days. To claim your profile you
       will be asked to sign in with this same address. If you would rather not appear, you can
-      decline on the same page.
+      decline on the same page and you will not be contacted about this again.
+    </Text>
+
+    <Text style={mutedText}>
+      If the button does not work, copy and paste this address into your browser:
+      <br />
+      {acceptUrl}
     </Text>
   </EmailBrand>
 )
