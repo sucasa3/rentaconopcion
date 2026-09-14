@@ -664,6 +664,52 @@ function MyPeople({ orgId }: { orgId: string }) {
 
   const people = rankProfessionals((data?.people ?? []) as any[], { query });
 
+  // Invitation state is a separate lifecycle from the network edge, so it is
+  // fetched per professional rather than derived from the roster row.
+  const inviteStateFn = useServerFn(listProfessionalInvitations);
+  const inviteFn = useServerFn(inviteProfessionalToSucasa);
+  const revokeFn = useServerFn(revokeProfessionalInvitation);
+  const professionalIds = ((data?.people ?? []) as any[]).map((p) => p.id as string);
+  const inviteKey = ["network-invites", orgId, professionalIds.join(",")];
+
+  const { data: inviteData } = useQuery({
+    queryKey: inviteKey,
+    queryFn: () => inviteStateFn({ data: { orgId, professionalIds } }),
+    enabled: professionalIds.length > 0,
+  });
+  const inviteStates = new Map<string, any>(
+    ((inviteData?.states ?? []) as any[]).map((s) => [s.professionalId, s]),
+  );
+
+  const refreshInvites = () => qc.invalidateQueries({ queryKey: ["network-invites", orgId] });
+
+  const invite = useMutation({
+    mutationFn: (v: { professionalId: string; resend: boolean }) =>
+      inviteFn({ data: { orgId, professionalId: v.professionalId, resend: v.resend } }),
+    onSuccess: (r: any) => {
+      if (r.outcome === "no_email") {
+        toast.error("Add an email address for this person first");
+      } else if (r.outcome === "already_on_sucasa") {
+        toast.success("They're already on SuCasa");
+      } else if (r.delivered === false) {
+        toast.success("Invitation created — the email will retry shortly");
+      } else {
+        toast.success("Invitation sent");
+      }
+      refreshInvites();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const revoke = useMutation({
+    mutationFn: (invitationId: string) => revokeFn({ data: { orgId, invitationId } }),
+    onSuccess: () => {
+      toast.success("Invitation withdrawn");
+      refreshInvites();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const fields = (
     <div className="space-y-2">
       <input
