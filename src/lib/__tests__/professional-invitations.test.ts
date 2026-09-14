@@ -34,6 +34,7 @@ const ctx = (over: Record<string, unknown> = {}) =>
     authEmailVerified: true,
     professionalUserId: null,
     usersOtherProfessionalId: null,
+    now,
     ...over,
   }) as any;
 
@@ -62,19 +63,19 @@ describe("A. invitation lifecycle state", () => {
 
 describe("B. claiming requires the invited, verified email", () => {
   it("claims when the signed-in verified email matches", () => {
-    expect(decideClaim(ctx(), now)).toEqual({ outcome: "claim", professionalId: "pro-1" });
+    expect(decideClaim(ctx())).toEqual({ outcome: "claim", professionalId: "pro-1" });
   });
 
   it("rejects a different signed-in account", () => {
-    expect(decideClaim(ctx({ authEmail: "someone@else.com" }), now).outcome).toBe("wrong_account");
+    expect(decideClaim(ctx({ authEmail: "someone@else.com" })).outcome).toBe("wrong_account");
   });
 
   it("rejects an anonymous visitor", () => {
-    expect(decideClaim(ctx({ authUserId: null }), now).outcome).toBe("wrong_account");
+    expect(decideClaim(ctx({ authUserId: null })).outcome).toBe("wrong_account");
   });
 
   it("rejects an unverified email", () => {
-    expect(decideClaim(ctx({ authEmailVerified: false }), now).outcome).toBe("email_not_verified");
+    expect(decideClaim(ctx({ authEmailVerified: false })).outcome).toBe("email_not_verified");
   });
 
   it("refuses expired, revoked and declined invitations", () => {
@@ -83,7 +84,7 @@ describe("B. claiming requires the invited, verified email", () => {
       { status: "revoked" },
       { status: "declined" },
     ]) {
-      expect(decideClaim(ctx({ invitation: invitation(over) }), now).outcome).toBe(
+      expect(decideClaim(ctx({ invitation: invitation(over) })).outcome).toBe(
         "invitation_unavailable",
       );
     }
@@ -93,7 +94,6 @@ describe("B. claiming requires the invited, verified email", () => {
     expect(
       decideClaim(
         ctx({ invitation: invitation({ status: "accepted" }), professionalUserId: "user-1" }),
-        now,
       ),
     ).toEqual({ outcome: "already_claimed_by_you", professionalId: "pro-1" });
   });
@@ -101,14 +101,14 @@ describe("B. claiming requires the invited, verified email", () => {
 
 describe("C. conflicts reconcile, never silently merge", () => {
   it("flags a professional record already linked to someone else", () => {
-    expect(decideClaim(ctx({ professionalUserId: "user-2" }), now)).toEqual({
+    expect(decideClaim(ctx({ professionalUserId: "user-2" }))).toEqual({
       outcome: "reconciliation_required",
       why: "professional_linked_elsewhere",
     });
   });
 
   it("flags a user already linked to another professional record", () => {
-    expect(decideClaim(ctx({ usersOtherProfessionalId: "pro-9" }), now)).toEqual({
+    expect(decideClaim(ctx({ usersOtherProfessionalId: "pro-9" }))).toEqual({
       outcome: "reconciliation_required",
       why: "user_linked_elsewhere",
     });
@@ -117,11 +117,10 @@ describe("C. conflicts reconcile, never silently merge", () => {
 
 describe("D. claiming verifies the email only", () => {
   it("never marks phone, NMLS, license or organization verified", () => {
-    const patch = claimVerificationPatch("user-1");
+    const patch = claimVerificationPatch();
     for (const field of CLAIM_DOES_NOT_VERIFY) {
       expect(Object.keys(patch)).not.toContain(field);
     }
-    expect(patch.user_id).toBe("user-1");
     expect(patch.claim_status).toBe("claimed");
   });
 });
@@ -132,7 +131,7 @@ describe("E. homeowner validation answers relationship truth only", () => {
     expect(e.relationship).toBe("confirm");
     expect(e.recorded).toBe("confirmed");
     expect(e.offerConnection).toBe(true);
-    expect(e).not.toHaveProperty("grantsAccess");
+    expect(e.grantsAccess).toBe(false);
   });
 
   it("rejects a wrong professional and keeps provenance", () => {
@@ -152,25 +151,23 @@ describe("E. homeowner validation answers relationship truth only", () => {
 
 describe("F. connection consent is a separate, explicit choice", () => {
   it("writes nothing when the homeowner declines to connect", () => {
-    expect(connectionConsent({ connect: false, scopes: ["contact", "valuation"] })).toEqual({
-      write: false,
-    });
+    expect(connectionConsent({ connect: false, scopes: ["contact", "valuation"] })).toEqual({ grant: false, scopes: [], consentType: "connection_request" });
   });
 
   it("writes nothing when connecting with no scopes ticked", () => {
-    expect(connectionConsent({ connect: true, scopes: [] })).toEqual({ write: false });
+    expect(connectionConsent({ connect: true, scopes: [] })).toEqual({ grant: false, scopes: [], consentType: "connection_request" });
   });
 
   it("records only the scopes actually selected", () => {
     const res = connectionConsent({ connect: true, scopes: ["contact", "mortgage"] });
-    expect(res.write).toBe(true);
+    expect(res.grant).toBe(true);
     expect(res.scopes).toEqual(["contact", "mortgage"]);
-    expect(res.scopeType).toBe("connection_request");
+    expect(res.consentType).toBe("connection_request");
   });
 
   it("ignores anything outside the offered scope list", () => {
     const res = connectionConsent({ connect: true, scopes: ["contact", "everything"] as any });
     expect(res.scopes).toEqual(["contact"]);
-    expect(CONNECTION_SCOPE_CHOICES.map((c) => c.key)).not.toContain("everything");
+    expect(CONNECTION_SCOPE_CHOICES.map((c) => c.scope)).not.toContain("everything");
   });
 });
