@@ -167,7 +167,8 @@ campaign ends. That check is not something I can do from here.
 Decision: the blog moves to the platform, not to the IDX host.
 
 - New routes: `/blog` (index) and `/blog/$slug` (post) on sucasa.com.
-- All 20 slugs preserved byte-for-byte, including the legacy trailing hyphen on
+- The sitemap lists **19** posts plus the `/blog` index (not 20). All 19 slugs
+  preserved byte-for-byte, including the legacy trailing hyphen on
   `pre-califica-para-una-hipoteca-`.
 - 301 from `www.sucasa.com/blog/*` and `sucasa.com/blog/*` to the same path.
 - Per post: title, meta description, canonical `https://sucasa.com/blog/<slug>`,
@@ -182,10 +183,10 @@ browser both get "Robot Validate", by IP. The sitemap is the only readable resou
 
 To unblock, any one of these works:
 1. A content export from Lofty (CMS export, CSV, or XML).
-2. The 20 posts pasted or uploaded as text/markdown.
-3. Someone on a normal residential connection saving the 20 pages and sharing them.
+2. The posts pasted or uploaded as text/markdown.
+3. Someone on a normal residential connection saving the 19 pages and sharing them.
 
-The 20 slugs, ready to receive content:
+The 19 slugs, ready to receive content:
 
 ```text
 pre-califica-para-una-hipoteca-
@@ -193,8 +194,26 @@ que-es-el-programa-de-compra-de-arrendamiento
 renta-con-opcion-a-compra-porque-es-es-la-mejor-opcion
 renta-con-opcion-a-compra-nuevo-programa-beneficios-y-requisitos
 no-te-quedes-sin-casa-la-razon-1-que-mantendra-las-casas-subiendo-de-precio
-(+15 more, full list in the pulled sitemap)
+ultima-data-que-esta-pasando-y-va-a-pasar-con-los-intereses-y-precios-de-casas
+consejos-para-comprar-una-casa-espero-que-los-precios-de-las-casas-bajen
+mi-recomendacion-consejo-para-comprar-tu-casa-en-los-proximos-meses
+aprovecha-la-oportunidad-compra-tu-casa-ahora
+nuevos-programas-disponibles-cada-situacion-tiene-una-solucion
+quiero-comprar-una-casa-y-no-tengo-la-inicial-que-puedo-hacer
+no-compres-casa-ahora-lo-que-opinan-los-experos
+es-necesario-un-social-security-number-para-comprar-una-casa-en-los-estados-unidos
+cuales-son-las-ventajas-de-tener-un-agente-de-real-estate
+no-se-deje-sorprender-por-los-costos-de-cierre
+la-importancia-de-estar-pre-aprobado-por-el-banco
+como-encontrar-la-mejor-hipoteca-para-mis-posibilidades
+cual-es-el-proceso-para-comprar-una-casa
+como-saber-si-puedo-costear-una-casa
 ```
+
+Note the misspelling in `no-compres-casa-ahora-lo-que-opinan-los-experos`
+("experos" should be "expertos"). Keep the slug exactly as-is; add the corrected slug
+later as a new URL with its own 301 if you want it fixed.
+
 
 I will not write placeholder or invented post bodies.
 
