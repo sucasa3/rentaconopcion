@@ -65,7 +65,11 @@ const REASON_COPY: Record<string, string> = {
 };
 
 function ProfessionalInvitePage() {
-  const { t: token } = Route.useSearch();
+  const { t: rawToken } = Route.useSearch();
+  // A token shorter than the signed format can never be valid; treat it as a bad
+  // link locally instead of sending it to the server (which rejects it as a
+  // validation error and would surface as an unhandled runtime error).
+  const token = rawToken && rawToken.length >= 10 ? rawToken : undefined;
   const previewFn = useServerFn(previewProfessionalInvite);
   const acceptFn = useServerFn(acceptProfessionalInvite);
   const declineFn = useServerFn(declineProfessionalInvite);
