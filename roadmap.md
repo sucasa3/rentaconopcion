@@ -80,9 +80,17 @@
 - [x] Confirm `/agents`: Lofty uses only `/agents/<team>/<id>`; bare `/agents` is free for us
 - [x] Confirm city/market structure: nested `/neighborhoods/<id>/<city>` (8), neighborhoods `/neighborhood/<id>/<slug>` (1,006)
 - [x] Draft old-URL -> homes.sucasa.com redirect map, query strings preserved (both hosts: www is today's canonical)
-- [ ] (needs Neil) Keep/rebuild/retire decision for the 51 flat marketing pages
-- [ ] (needs Neil) Decide whether `/blog/*` stays on IDX host or moves to the platform
+- [x] Keep/rebuild/retire classification for the 51 flat marketing pages (approved 2026-09-14 with adjustments)
+- [x] Blog decision: `/blog/*` moves to sucasa.com/blog/*, exact slugs, 301 from www
+- [ ] Same-path rule: rebuilt pages keep their existing slugs (no renaming of Spanish education URLs)
+- [ ] Value check on the 9 retire candidates before any 410 (search data / backlinks / campaign refs); redirect instead of 410 where value exists
+- [ ] Review the 5 single-property pages individually (keep on IDX vs retire/redirect)
+- [ ] VERIFY /documentos (public content or client area?) before implementation
+- [ ] VERIFY /atlantaflips (still has inventory?) before implementation
+- [ ] Build /blog + /blog/$slug on the platform: exact slugs, title, meta description, canonical, published date, structured data
+- [ ] BLOCKED: blog post content cannot be fetched (firewall blocks all page HTML) — needs an export or copy from Lofty
 - [ ] (needs Lofty) Confirm homes.sucasa.com can be provisioned with identical IDX paths
+
 - [ ] Stand up + fully test homes.sucasa.com before touching sucasa.com
 - [ ] Canonical URLs on IDX pages -> homes.sucasa.com versions, before any redirect
 - [ ] Flip IDX_BASE_URL to https://homes.sucasa.com once that host is live
