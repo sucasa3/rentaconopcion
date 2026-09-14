@@ -41,7 +41,7 @@ export function invitationLink(invitation: { id: string; invited_email_normalize
     context: CONTEXT,
     email: invitation.invited_email_normalized,
   });
-  const base = process.env["PUBLIC_SITE_URL"] ?? "https://rentaconopcion.lovable.app";
+  const base = siteUrl();
   return `${base}/professional-invite?t=${encodeURIComponent(token)}`;
 }
 
