@@ -21,6 +21,12 @@ import {
   listMyProfessionalNetwork,
   updateNetworkProfessional,
 } from "@/lib/agent-network.functions";
+import {
+  inviteProfessionalToSucasa,
+  listProfessionalInvitations,
+  revokeProfessionalInvitation,
+} from "@/lib/professional-invitations.functions";
+import { INVITATION_STATE_LABEL } from "@/lib/professional-invitations";
 import { rankProfessionals } from "@/lib/agent-network";
 import { categoryLabel } from "@/lib/opportunities";
 import {
@@ -658,6 +664,52 @@ function MyPeople({ orgId }: { orgId: string }) {
 
   const people = rankProfessionals((data?.people ?? []) as any[], { query });
 
+  // Invitation state is a separate lifecycle from the network edge, so it is
+  // fetched per professional rather than derived from the roster row.
+  const inviteStateFn = useServerFn(listProfessionalInvitations);
+  const inviteFn = useServerFn(inviteProfessionalToSucasa);
+  const revokeFn = useServerFn(revokeProfessionalInvitation);
+  const professionalIds = ((data?.people ?? []) as any[]).map((p) => p.id as string);
+  const inviteKey = ["network-invites", orgId, professionalIds.join(",")];
+
+  const { data: inviteData } = useQuery({
+    queryKey: inviteKey,
+    queryFn: () => inviteStateFn({ data: { orgId, professionalIds } }),
+    enabled: professionalIds.length > 0,
+  });
+  const inviteStates = new Map<string, any>(
+    ((inviteData?.states ?? []) as any[]).map((s) => [s.professionalId, s]),
+  );
+
+  const refreshInvites = () => qc.invalidateQueries({ queryKey: ["network-invites", orgId] });
+
+  const invite = useMutation({
+    mutationFn: (v: { professionalId: string; resend: boolean }) =>
+      inviteFn({ data: { orgId, professionalId: v.professionalId, resend: v.resend } }),
+    onSuccess: (r: any) => {
+      if (r.outcome === "no_email") {
+        toast.error("Add an email address for this person first");
+      } else if (r.outcome === "already_on_sucasa") {
+        toast.success("They're already on SuCasa");
+      } else if (r.delivered === false) {
+        toast.success("Invitation created — the email will retry shortly");
+      } else {
+        toast.success("Invitation sent");
+      }
+      refreshInvites();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const revoke = useMutation({
+    mutationFn: (invitationId: string) => revokeFn({ data: { orgId, invitationId } }),
+    onSuccess: () => {
+      toast.success("Invitation withdrawn");
+      refreshInvites();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const fields = (
     <div className="space-y-2">
       <input
@@ -751,7 +803,10 @@ function MyPeople({ orgId }: { orgId: string }) {
           hint="Add the loan officers and closing partners you work with, then use them across your clients."
         />
       ) : (
-        people.map((p: any) => (
+        people.map((p: any) => {
+          const inv = inviteStates.get(p.id);
+          const state = inv?.state ?? (p.hasSucasaIdentity ? "on_sucasa" : "not_invited");
+          return (
           <div key={p.id} className="rounded-2xl border border-border p-4">
             <div className="sm:flex sm:items-start sm:justify-between sm:gap-3">
               <div className="min-w-0">
@@ -789,6 +844,40 @@ function MyPeople({ orgId }: { orgId: string }) {
                 >
                   Use for clients
                 </Link>
+                {state === "not_invited" || state === "declined" || state === "revoked" ? (
+                  <button
+                    onClick={() => invite.mutate({ professionalId: p.id, resend: false })}
+                    disabled={invite.isPending || inv?.hasEmail === false}
+                    title={inv?.hasEmail === false ? "Add an email address first" : undefined}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+                  >
+                    Invite to SuCasa
+                  </button>
+                ) : state === "on_sucasa" ? null : (
+                  <>
+                    <span className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground">
+                      {INVITATION_STATE_LABEL[state as keyof typeof INVITATION_STATE_LABEL]}
+                    </span>
+                    {inv?.canResend && (
+                      <button
+                        onClick={() => invite.mutate({ professionalId: p.id, resend: true })}
+                        disabled={invite.isPending}
+                        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+                      >
+                        Resend
+                      </button>
+                    )}
+                    {inv?.invitationId && state === "invitation_sent" && (
+                      <button
+                        onClick={() => revoke.mutate(inv.invitationId)}
+                        disabled={revoke.isPending}
+                        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+                      >
+                        Withdraw
+                      </button>
+                    )}
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setAdding(false);
@@ -805,6 +894,7 @@ function MyPeople({ orgId }: { orgId: string }) {
                   Edit
                 </button>
               </div>
+
             </div>
 
             {editing === p.id && (
@@ -828,7 +918,8 @@ function MyPeople({ orgId }: { orgId: string }) {
               </div>
             )}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );

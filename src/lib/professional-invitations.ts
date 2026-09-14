@@ -258,5 +258,7 @@ export function connectionConsent(choice: ConnectionChoice): {
 } {
   if (!choice.connect) return { grant: false, scopes: [], consentType: "connection_request" };
   const scopes = choice.scopes.filter((s) => ALLOWED_SCOPES.has(s));
+  // Connecting while sharing nothing grants nothing: no consent record is written.
+  if (scopes.length === 0) return { grant: false, scopes: [], consentType: "connection_request" };
   return { grant: true, scopes, consentType: "connection_request" };
 }
