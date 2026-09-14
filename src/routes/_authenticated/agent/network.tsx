@@ -21,6 +21,12 @@ import {
   listMyProfessionalNetwork,
   updateNetworkProfessional,
 } from "@/lib/agent-network.functions";
+import {
+  inviteProfessionalToSucasa,
+  listProfessionalInvitations,
+  revokeProfessionalInvitation,
+} from "@/lib/professional-invitations.functions";
+import { INVITATION_STATE_LABEL } from "@/lib/professional-invitations";
 import { rankProfessionals } from "@/lib/agent-network";
 import { categoryLabel } from "@/lib/opportunities";
 import {
