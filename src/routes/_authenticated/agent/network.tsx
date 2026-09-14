@@ -844,6 +844,40 @@ function MyPeople({ orgId }: { orgId: string }) {
                 >
                   Use for clients
                 </Link>
+                {state === "not_invited" || state === "declined" || state === "revoked" ? (
+                  <button
+                    onClick={() => invite.mutate({ professionalId: p.id, resend: false })}
+                    disabled={invite.isPending || inv?.hasEmail === false}
+                    title={inv?.hasEmail === false ? "Add an email address first" : undefined}
+                    className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+                  >
+                    Invite to SuCasa
+                  </button>
+                ) : state === "on_sucasa" ? null : (
+                  <>
+                    <span className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground">
+                      {INVITATION_STATE_LABEL[state as keyof typeof INVITATION_STATE_LABEL]}
+                    </span>
+                    {inv?.canResend && (
+                      <button
+                        onClick={() => invite.mutate({ professionalId: p.id, resend: true })}
+                        disabled={invite.isPending}
+                        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+                      >
+                        Resend
+                      </button>
+                    )}
+                    {inv?.invitationId && state === "invitation_sent" && (
+                      <button
+                        onClick={() => revoke.mutate(inv.invitationId)}
+                        disabled={revoke.isPending}
+                        className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+                      >
+                        Withdraw
+                      </button>
+                    )}
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setAdding(false);
@@ -860,6 +894,7 @@ function MyPeople({ orgId }: { orgId: string }) {
                   Edit
                 </button>
               </div>
+
             </div>
 
             {editing === p.id && (
