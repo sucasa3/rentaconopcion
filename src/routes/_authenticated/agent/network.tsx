@@ -803,7 +803,10 @@ function MyPeople({ orgId }: { orgId: string }) {
           hint="Add the loan officers and closing partners you work with, then use them across your clients."
         />
       ) : (
-        people.map((p: any) => (
+        people.map((p: any) => {
+          const inv = inviteStates.get(p.id);
+          const state = inv?.state ?? (p.hasSucasaIdentity ? "on_sucasa" : "not_invited");
+          return (
           <div key={p.id} className="rounded-2xl border border-border p-4">
             <div className="sm:flex sm:items-start sm:justify-between sm:gap-3">
               <div className="min-w-0">
