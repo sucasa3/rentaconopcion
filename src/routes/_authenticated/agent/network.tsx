@@ -918,7 +918,8 @@ function MyPeople({ orgId }: { orgId: string }) {
               </div>
             )}
           </div>
-        ))
+          );
+        })
       )}
     </div>
   );
