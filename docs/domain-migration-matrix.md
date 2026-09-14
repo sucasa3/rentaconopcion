@@ -249,3 +249,58 @@ I will not write placeholder or invented post bodies.
 - The `/<ST>/...` two-letter-state family is a permanent constraint on new top-level
   routes.
 - The sitemap can be re-pulled on demand to diff before cutover.
+
+## H. Redirect specification (wildcards, nothing implemented yet)
+
+Rules apply from **both** `sucasa.com` and `www.sucasa.com`, are 301, and preserve the
+full query string and any trailing path segments. Order matters: first match wins.
+
+**Assumption stated explicitly: the sitemap is NOT the inventory.** It omits `/listing`,
+`/listing-detail/*`, `/<ST>/*` and any other dynamically generated family. The rules
+below are written as wildcards so unknown members of a known family are covered without
+being individually enumerated.
+
+| # | Pattern (path) | Target | Notes |
+| --- | --- | --- | --- |
+| 1 | `/neighborhood/*` | `https://homes.sucasa.com/neighborhood/*` | 1,006 known; wildcard covers new ones. |
+| 2 | `/neighborhoods/*` | `https://homes.sucasa.com/neighborhoods/*` | City hubs. |
+| 3 | `/listing-detail/*` | `https://homes.sucasa.com/listing-detail/*` | Not in sitemap. |
+| 4 | `/listing` and `/listing?*` | `https://homes.sucasa.com/listing` | **Query string mandatory** (`key`, `keywordType`, paging, filters). |
+| 5 | `/available-homes*` | `https://homes.sucasa.com/available-homes*` | Search entry + any query. |
+| 6 | `/agents/*` (deep only) | `https://homes.sucasa.com/agents/*` | Bare `/agents` is ours — must NOT match. |
+| 7 | `/<ST>/*` where `<ST>` is a valid two-letter US state | `https://homes.sucasa.com/<ST>/*` | Covers `/IL/Rock-Falls`, `/FL/Naples,Naples`, `/AZ/Village-At-Litchfield-Park,Litchfield-Park`. Commas and encoded characters pass through unchanged. |
+| 8 | Named market/browse paths (section B list) | same path on `homes.sucasa.com` | Explicit list, not a wildcard. |
+| 9 | The 5 single-property paths (section C) | same path on `homes.sucasa.com` | Pending the review in section C. |
+| 10 | `/blog` and `/blog/*` | same path on `sucasa.com` | Stays on the platform. |
+| 11 | Section A paths | same path on `sucasa.com` | Same-path rule. |
+| 12 | `/precalificacion`, `/landing-de-precalificacion`, `/calificacion` | `sucasa.com/preaprobacion` | Hold if ads still run. |
+| 13 | `/cita` | `sucasa.com/onboarding` | Hold if ads still run. |
+| 14 | `/fb-live` | `sucasa.com/onboarding` | Cheap insurance. |
+| 15 | The 8 remaining retire candidates (section D) | — | 410, **only after** the GSC review and two weeks of clean 404 logs. |
+| 16 | Anything else not matched | `sucasa.com` equivalent if it exists, else 404 on the platform | Catch-all is a 404, never a blind redirect to the homepage. |
+
+Safety rules for whoever implements this:
+- Never wildcard a redirect to a single destination page — an unmatched IDX path must
+  land on its IDX equivalent, not on `/available-homes`, or Google reads it as a soft 404.
+- Rule 6 must be anchored to `/agents/` with a following segment.
+- Rule 7 must be restricted to the 50 valid state codes plus `DC`, so it cannot swallow
+  a future two-letter route of ours.
+- Confirm each rule against a live sample URL on `homes.sucasa.com` before enabling it.
+- Before enabling anything, re-pull the sitemap AND collect the real indexed inventory
+  from Search Console (Pages report + `site:` families) and from server access logs.
+  Any family found there and absent above gets its own rule first.
+
+## I. Cutover blockers
+
+Nothing moves until every item is closed.
+
+| # | Blocker | Owner | Status |
+| --- | --- | --- | --- |
+| 1 | Lofty confirms `homes.sucasa.com` can serve the identical IDX paths | Lofty | Open |
+| 2 | Blog export / content for the 19 posts | Lofty or you | Open — firewall blocks all page HTML |
+| 3 | `/documentos`: public content or signed-in client area? | You | Open |
+| 4 | `/atlantaflips`: still has inventory, or empty? | You | Open |
+| 5 | Active-ad check on `/precalificacion`, `/landing-de-precalificacion`, `/calificacion`, `/cita` | You | Open |
+| 6 | Google Search Console review of the 8 proposed 410 candidates **and** discovery of any indexed URL family missing from section H | You + me once GSC is connected | Open |
+
+The final cutover sequence and rollback plan will be written once these six are resolved.
