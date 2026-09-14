@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import { IDX_BASE_URL } from "@/lib/site-urls";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -40,7 +41,7 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
-          <a href="https://sucasa.com/homes" target="_blank" rel="noopener noreferrer" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+          <a href={IDX_BASE_URL} target="_blank" rel="noopener noreferrer" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
             Browse Homes
           </a>
           {session ? (
@@ -70,7 +71,7 @@ export function SiteHeader() {
                 {l.label}
               </Link>
             ))}
-            <a href="https://sucasa.com/homes" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-sm text-foreground hover:bg-secondary">
+            <a href={IDX_BASE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-sm text-foreground hover:bg-secondary">
               Browse Homes
             </a>
             {session ? (
@@ -102,7 +103,7 @@ export function SiteFooter() {
           <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
-        <FooterCol title="Homeowners" links={[["Browse Homes", "https://sucasa.com/homes"], ["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
+        <FooterCol title="Homeowners" links={[["Browse Homes", IDX_BASE_URL], ["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
         <FooterCol title="Professionals" links={[["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
         <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
       </div>
