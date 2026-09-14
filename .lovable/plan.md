@@ -1,52 +1,48 @@
-# Final smoke test: Professional Network invitation flow
+# Fix the 404 claim link and reduce spam placement
 
-No architecture changes. This is a verification pass; the only code or data changes are the test records needed to run it, plus fixes for anything the test actually breaks.
+## What's happening
 
-## What I found before planning
+**The 404 is real and expected.** The invitation email links to the live site at
+`rentaconopcion.lovable.app/professional-invite`. I checked that address: the live site
+answers, but the claim page itself returns 404. The claim page exists in the project but has
+never been included in a publish, so the live site doesn't have it yet. It is not a domain
+problem, and it is not a broken link or a bad token.
 
-The professional and relationship records in the database are completely empty: 0 professionals, 0 relationships, 0 suggestions, 0 invitations. So there is nothing to invite today, and every checklist item that starts with "Agent sees a lender" cannot run until test records exist. Members and client books are intact (1,088 clients, both agent workspaces present).
+**Junk placement is a reputation matter, not a setup error.** Sending from
+`notify.sucasa.com` is fully verified and correctly delegated. A brand-new sending
+subdomain with almost no history is routinely filed as junk by Hotmail/Outlook for the
+first sends. Nothing is misconfigured.
 
-## Step 1 — Test records
+## Plan
 
-In your **SuCasa Demo Realty** workspace (you are an owner there), I add:
+1. **Publish the app** so the claim page goes live. Then re-check the exact link from your
+   email and confirm it opens the claim page instead of 404.
+2. **Re-check the claim flow end to end** on the live site: open the link, sign in with
+   neilterc+1@hotmail.com, claim, and confirm the agent's Professional Network row switches
+   to "On SuCasa".
+3. **Re-run the separation checks** after the claim: no homeowner sharing record, no lender
+   access, no monitoring capacity, no credits, no paid entitlement — only the audit trail.
+4. **Improve deliverability on the invitation email** (small, copy/structure-level changes
+   that inbox filters weigh):
+   - a plain-text alternative alongside the styled version
+   - a visible sender identity and a real reply-to address on the invitation
+   - a one-line unsubscribe/decline reference in the footer text
+5. **Warm-up guidance for you** (no code): mark the message "not junk" and add the sender to
+   your contacts on the test account; ask the first handful of real recipients to do the
+   same. Placement improves as the subdomain builds history.
 
-- One test lender professional with the email **neilterc+1@hotmail.com**, linked to that workspace as a confirmed lender for one client.
-- One test lender professional with **no email at all**, to check the non-invitable state and its hint.
+## Notes
 
-Both are clearly marked test records and are removable afterwards. No organizations are auto-created, no homeowner permissions, no monitoring capacity, no paid entitlement.
+- Nothing about the token, expiry or security changes here.
+- If you would rather the invitation link use a SuCasa domain instead of the Lovable
+  address, that is a separate step: connect the domain to the project, then the link base
+  gets pointed at it. Tell me if you want that included.
 
-## Step 2 — Browser verification (I run this)
+## Technical detail
 
-Signed in as your agent account:
-
-1. Professional Network shows both test lenders under "My people".
-2. "Invite to SuCasa" on the first one flips immediately to "Invitation sent".
-3. The no-email lender stays non-invitable and shows the explanatory hint.
-4. I read the stored invitation and confirm the emailed link carries the correct signed token, and that the message body contains no homeowner name, address or loan detail.
-5. Signed in as a different account, opening that link shows the "this invitation belongs to another address" message and reveals nothing.
-6. Link failure cases, each checked on screen: withdrawn, expired, malformed, too short, and a tampered token. Each must show a plain unavailable/needed message with no data and no blank screen.
-7. Resend and Withdraw exercised separately, each checked against the state shown in the list afterwards.
-
-## Step 3 — You claim it
-
-I send you the invitation link. You sign in as **neilterc+1@hotmail.com** (confirming that address first) and claim the profile. Then I verify on screen that the agent's list shows **On SuCasa**.
-
-## Step 4 — Separation check
-
-After the claim, I confirm from the records that claiming granted nothing beyond identity:
-
-- no homeowner permission of any kind was created
-- the homeowner relationship stays as it was; no sharing was implied
-- no monitoring capacity, agent benefit, credit or paid entitlement changed
-- every step appears in the audit trail with no homeowner details
-
-## Reporting
-
-I report only failures and corrections. If everything passes, you get a short pass list and nothing else. If the test exposes a real defect I will describe it and propose the minimum fix before changing anything.
-
-## Technical notes
-
-- Test records: `professionals` rows (one with `email_normalized`, one without) plus `relationships` edges of the professional-lender type scoped to org `55035d6b` with `status = confirmed`, written via a data change, not a schema migration.
-- Verification uses Playwright against the running app with the injected Supabase session; failure cases hit `/professional-invite` with crafted `t` values.
-- Separation is asserted by reading `consent_records`, `relationships`, `agent_base_entitlements`, `premium_memberships` and `agent_credit_ledger` before and after the claim, and `compliance_audit_events` for the event trail.
-- Paid lender activation, active/waiting capacity, lender aggregate preview, lender-to-agent expansion and Closing Partner remain out of scope.
+- Claim link base: `PUBLIC_SITE_URL` env, defaulting to `https://rentaconopcion.lovable.app`.
+- Verified live: `GET /` → 200, `GET /professional-invite?t=...` → 404, i.e. the published
+  build predates `src/routes/professional-invite.tsx`.
+- Email domain `notify.sucasa.com`: verified, NS delegation active, auth emails enabled.
+- Deliverability edits are confined to `src/lib/email-templates/professional-invite.tsx`
+  and the shared brand wrapper; no change to `professional-invitations.server.ts` logic.
