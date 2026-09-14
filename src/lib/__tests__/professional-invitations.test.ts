@@ -11,6 +11,8 @@ import {
   mayResend,
   validationEffect,
 } from "../professional-invitations";
+import { grantsNamedHomeownerAccess } from "../relationships";
+import { classifyLenderAccess } from "../lender-access";
 
 const DAY = 24 * 60 * 60 * 1000;
 const now = Date.UTC(2026, 0, 10);
@@ -169,5 +171,32 @@ describe("F. connection consent is a separate, explicit choice", () => {
     const res = connectionConsent({ connect: true, scopes: ["contact", "everything"] as any });
     expect(res.scopes).toEqual(["contact"]);
     expect(CONNECTION_SCOPE_CHOICES.map((c) => c.scope)).not.toContain("everything");
+  });
+});
+
+/**
+ * G — separation of identity/evidence from lender access.
+ *
+ * Claiming a professional profile, or the existence of a confirmed
+ * professional_homeowner_lender edge, must never make a homeowner named or
+ * workable in the lender experience. Named access is decided ONLY by
+ * classifyLenderAccess() over the lender's own documented basis + consent.
+ */
+describe("G — claim and confirmed edge grant no lender access", () => {
+  it("a claimed identity carries no homeowner access", () => {
+    expect(grantsNamedHomeownerAccess()).toBe(false);
+    expect(claimVerificationPatch()).not.toHaveProperty("user_id");
+  });
+
+  it("homeowner confirmation of the relationship grants no access", () => {
+    const effect = validationEffect("yes");
+    expect(effect.grantsAccess).toBe(false);
+  });
+
+  it("with no documented basis or consent the homeowner is neither named nor queued", () => {
+    const access = classifyLenderAccess({ relationshipBasis: null });
+    expect(access.named).toBe(false);
+    expect(access.inQueue).toBe(false);
+    expect(access.scopes).toEqual([]);
   });
 });
