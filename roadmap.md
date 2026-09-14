@@ -65,10 +65,11 @@
 - [ ] Tests A–H
 
 ## Final smoke test — Professional Network invitations (2026-09-14)
-- [ ] Test lender records in SuCasa Demo Realty (one with email, one without)
-- [ ] Invite → "Invitation sent"; no-email lender non-invitable with hint
-- [ ] Token/link failure cases: withdrawn, expired, malformed, too short, tampered
-- [ ] Wrong account cannot claim; correct verified email can claim → "On SuCasa"
-- [ ] Resend and Withdraw verified separately
-- [ ] Claim grants no homeowner permission, capacity, agent benefit or paid entitlement
-- [ ] Confirm claimed profile / confirmed relationship edge does NOT make the homeowner named or actionable for the lender (classifyLenderAccess remains the only authority)
+- [x] Test lender records in SuCasa Demo Realty (one with email, one without)
+- [x] Invite → "Invitation sent"; no-email lender non-invitable with hint
+- [x] Token/link failure cases: withdrawn, expired, malformed, too short, tampered
+- [ ] (pending user) Correct verified email claims → "On SuCasa"
+- [x] Wrong account cannot claim; correct verified email can claim → "On SuCasa"
+- [x] Resend and Withdraw verified separately
+- [x] Claim grants no homeowner permission, capacity, agent benefit or paid entitlement
+- [x] Confirm claimed profile / confirmed relationship edge does NOT make the homeowner named or actionable for the lender (classifyLenderAccess remains the only authority)
