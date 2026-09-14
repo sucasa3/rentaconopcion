@@ -1,93 +1,52 @@
-# Next Stage 2 slice: agent → lender Home Team invitations
+# Final smoke test: Professional Network invitation flow
 
-## Corrections just delivered (already live)
+No architecture changes. This is a verification pass; the only code or data changes are the test records needed to run it, plus fixes for anything the test actually breaks.
 
-1. **Homeowner-confirmed Home Teams count as complete.** Completion is derived
-   (`reviewed` OR homeowner-confirmed lender on file), never written as a fake
-   agent review row. The denominator stays every applicable active client, so a
-   locked record can no longer make the queue impossible to finish.
-2. **The chosen workspace follows the agent.** Complete Home Teams opens on
-   `?orgId=<workspace>`; the id is honoured only if the agent belongs to it,
-   falls back safely, and every server call still re-checks membership.
-3. **Workspace edits stay in the workspace.** Name, company, email and phone a
-   workspace types live on that workspace's own edge. The shared registry is
-   only rewritten when the record is unclaimed *and* no other workspace
-   references it. A claimed, verified professional's own identity wins.
+## What I found before planning
 
-Typecheck clean; 189 tests pass, including the three new groups.
+The professional and relationship records in the database are completely empty: 0 professionals, 0 relationships, 0 suggestions, 0 invitations. So there is nothing to invite today, and every checklist item that starts with "Agent sees a lender" cannot run until test records exist. Members and client books are intact (1,088 clients, both agent workspaces present).
 
-## What this next slice builds
+## Step 1 — Test records
 
-The agent has now said "this client's loan officer is Maria". The slice turns
-that into an invitation Maria can accept, and a homeowner validation path that
-never leaks a homeowner before consent exists.
+In your **SuCasa Demo Realty** workspace (you are an owner there), I add:
 
-### 1. Typed invitation lifecycle
+- One test lender professional with the email **neilterc+1@hotmail.com**, linked to that workspace as a confirmed lender for one client.
+- One test lender professional with **no email at all**, to check the non-invitable state and its hint.
 
-One canonical home: `professional_invitations` (already the invitation home in
-the architecture). Add a `context` so the same table serves distinct purposes
-without overloading meaning:
+Both are clearly marked test records and are removable afterwards. No organizations are auto-created, no homeowner permissions, no monitoring capacity, no paid entitlement.
 
-- `agent_invites_professional` — new in this slice
-- existing agent/lender organization invite contexts untouched
+## Step 2 — Browser verification (I run this)
 
-Lifecycle: `pending → sent → accepted | declined | expired | revoked`.
-Reuse the existing HMAC-signed, timing-safe, expiring, revocable token
-primitives from the agent invite work — no second token scheme.
+Signed in as your agent account:
 
-The invitation never changes the relationship graph on its own. An agent
-assertion stays `asserted` whether or not the invitation is accepted.
+1. Professional Network shows both test lenders under "My people".
+2. "Invite to SuCasa" on the first one flips immediately to "Invitation sent".
+3. The no-email lender stays non-invitable and shows the explanatory hint.
+4. I read the stored invitation and confirm the emailed link carries the correct signed token, and that the message body contains no homeowner name, address or loan detail.
+5. Signed in as a different account, opening that link shows the "this invitation belongs to another address" message and reveals nothing.
+6. Link failure cases, each checked on screen: withdrawn, expired, malformed, too short, and a tampered token. Each must show a plain unavailable/needed message with no data and no blank screen.
+7. Resend and Withdraw exercised separately, each checked against the state shown in the list afterwards.
 
-### 2. Professional claim handoff
+## Step 3 — You claim it
 
-Accepting an invitation is how an unclaimed `professionals` row becomes a real
-person's account:
+I send you the invitation link. You sign in as **neilterc+1@hotmail.com** (confirming that address first) and claim the profile. Then I verify on screen that the agent's list shows **On SuCasa**.
 
-- verify token, then require the accepting user to be signed in
-- link `professionals.user_id`, set `claim_status = 'claimed'`
-- verify the contact channel the invitation was actually delivered to
-- from then on that person's canonical identity is authoritative, and every
-  workspace display falls back to it (the rule shipped above)
-- wrong-account protection: signed in as someone else → explain, do not link
+## Step 4 — Separation check
 
-Claiming grants the professional their own identity. It grants no homeowner
-access whatsoever.
+After the claim, I confirm from the records that claiming granted nothing beyond identity:
 
-### 3. Access-safe homeowner validation
+- no homeowner permission of any kind was created
+- the homeowner relationship stays as it was; no sharing was implied
+- no monitoring capacity, agent benefit, credit or paid entitlement changed
+- every step appears in the audit trail with no homeowner details
 
-The only path by which a named homeowner becomes visible stays
-`consent_records` + `classifyLenderAccess()`. This slice adds the request:
+## Reporting
 
-- the homeowner is asked to confirm "is Maria your loan officer?"
-- confirmation writes `confirmed` on `professional_homeowner_lender` and, only
-  where the homeowner grants it, a scoped consent record
-- until then the professional sees aggregate/de-identified context only
-- the wrong-John regression is extended: invited + claimed + agent-asserted,
-  with no consent, still returns no named access
+I report only failures and corrections. If everything passes, you get a short pass list and nothing else. If the test exposes a real defect I will describe it and propose the minimum fix before changing anything.
 
-### 4. Events
+## Technical notes
 
-Add to the existing `compliance_audit_events` vocabulary:
-`professional_invitation_created/sent/accepted/declined/expired/revoked`,
-`professional_identity_claimed`, `homeowner_validation_requested`,
-`homeowner_validation_confirmed/declined`.
-
-### 5. Screens
-
-- Professional network → per person: "Invite to SuCasa" with honest state
-  (not invited / invited / on SuCasa)
-- public invitation landing + authenticated acceptance, mirroring the existing
-  agent invite pages
-- no new homeowner surface beyond the validation ask
-
-### Out of scope for this slice
-
-Paid lender activation, aggregate previews, capacity/active-waiting UI, Closing
-Partner, and any removal of legacy Credits/Sponsorships tabs.
-
-### Tests
-
-Token forgery/expiry/revocation; idempotent double-accept; wrong-account;
-claim makes canonical identity authoritative across workspaces; invitation and
-claim grant no named homeowner access; homeowner confirmation is authoritative
-over the agent assertion; invitation state is not relationship state.
+- Test records: `professionals` rows (one with `email_normalized`, one without) plus `relationships` edges of the professional-lender type scoped to org `55035d6b` with `status = confirmed`, written via a data change, not a schema migration.
+- Verification uses Playwright against the running app with the injected Supabase session; failure cases hit `/professional-invite` with crafted `t` values.
+- Separation is asserted by reading `consent_records`, `relationships`, `agent_base_entitlements`, `premium_memberships` and `agent_credit_ledger` before and after the claim, and `compliance_audit_events` for the event trail.
+- Paid lender activation, active/waiting capacity, lender aggregate preview, lender-to-agent expansion and Closing Partner remain out of scope.
