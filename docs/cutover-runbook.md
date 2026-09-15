@@ -1,7 +1,9 @@
 # sucasa.com production cutover runbook
 
-Status: **prepared, not activated.** No DNS, domain, canonical or base-URL value has
-been changed. `homes.sucasa.com` is live and serving Lofty IDX.
+Status: **activated 2026-09-15.** `sucasa.com` (primary) and `www.sucasa.com` are
+connected with DNS verified and finishing hosting setup; `homes.sucasa.com` is live and
+serving Lofty IDX. The redirect rules and the three production URL values are in place
+and ship with the next publish.
 
 Source of truth for what moves where: `docs/domain-migration-matrix.md`.
 
@@ -124,9 +126,7 @@ In Lovable: connect `sucasa.com` and `www.sucasa.com` as two entries, set
 10. Monitor 404s and index coverage per host for two weeks; execute the 410s only after
     that window is clean.
 
-## 7. Production URL configuration (prepared, NOT active)
-
-To activate at step 6:
+## 7. Production URL configuration (active)
 
 ```text
 PLATFORM_BASE_URL = https://sucasa.com        # src/lib/site-urls.ts
@@ -134,11 +134,10 @@ PUBLIC_SITE_URL   = https://sucasa.com        # environment variable (overrides 
 IDX_BASE_URL      = https://homes.sucasa.com  # src/lib/site-urls.ts
 ```
 
-`src/lib/site-urls.ts` still holds the current live values, plus
-`PLANNED_PLATFORM_BASE_URL` and `PLANNED_IDX_BASE_URL` with the target values. Setting
-`PUBLIC_SITE_URL` alone switches every server-generated link (invitations, tracking)
-without a code deploy. `IDX_BASE_URL` drives the "Browse Homes" links and can be flipped
-independently, any time now that `homes.sucasa.com` is live.
+`PLATFORM_BASE_URL` and `IDX_BASE_URL` are set to these values in
+`src/lib/site-urls.ts`; `LEGACY_PLATFORM_BASE_URL` records the previous address, which
+keeps resolving. `PUBLIC_SITE_URL` overrides `PLATFORM_BASE_URL` at runtime, so links can
+be pointed back without a code change.
 
 Already-delivered invitation and claim links keep working: the Lovable host keeps
 resolving, and the token lives in the path/query which every redirect preserves.
