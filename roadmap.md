@@ -79,7 +79,7 @@
 - [x] Keep Home Care and Home Team compact with distinct semantic surfaces
 - [x] Reduce mobile navigation to Home, Value, Care, Team, and More
 - [x] Move Setup Guide from the Home dashboard into More without removing destinations
-- [ ] Verify 320/375/390/430px, desktop, navigation, focus, reduced motion, and console
+- [x] Verify 320/375/390/430px, desktop, navigation, focus, reduced motion, and console
 
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
