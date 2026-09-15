@@ -193,8 +193,8 @@ function Dashboard() {
     <HomeownerShell premium>
       <main className="px-4 pb-28 pt-3 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
-          {needsAddress ? <CompleteAddressCard /> : null}
           <HomeHero data={heroData} />
+          {needsAddress ? <CompleteAddressCard /> : null}
 
           <section className="grid gap-3 sm:grid-cols-[1.05fr_1.95fr]">
             <ScoreCard score={homeScore} updatedAt={scoreFreshness} />
@@ -332,8 +332,8 @@ function SystemHealth({ systems }: { systems: Array<{ key: string; label: string
             <div key={system.key} className="rounded-xl bg-secondary p-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-semibold">{system.label}</span>
-                <span className={system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-status-positive"}>
-                  {system.status === "overdue" ? "Due" : system.status === "due_soon" ? "Watch" : "On track"}
+                <span className={system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-muted-foreground"}>
+                  {system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}
                 </span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{system.detail}</p>
