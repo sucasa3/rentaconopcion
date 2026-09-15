@@ -9,6 +9,10 @@ import {
   HeartPulse,
   History,
   MessageCircleQuestion,
+  House,
+  Snowflake,
+  Droplets,
+  Zap,
   ShieldCheck,
   Sparkles,
   UserRound,
@@ -210,7 +214,7 @@ function Dashboard() {
       }
     >
       <main className="px-2.5 pb-24 pt-2 sm:px-6 sm:py-7">
-        <div className="mx-auto max-w-5xl space-y-2.5 sm:space-y-5">
+        <div className="mx-auto max-w-5xl space-y-3 sm:space-y-5">
           <HomeHero data={heroData} />
           {needsAddress ? <CompleteAddressCard /> : null}
 
@@ -225,10 +229,10 @@ function Dashboard() {
 
           <HomeTeamCard team={previewTeam ?? homeTeam ?? { agent: null, lender: null }} />
 
-          <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-3 shadow-soft sm:gap-6 sm:p-5">
+           <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4 shadow-soft transition-shadow hover:shadow-elevated sm:gap-6 sm:p-5">
             <div className="relative min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-sucasa-navy sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
-              <p className="mt-0.5 text-xs leading-snug text-text-secondary sm:text-sm">Get answers grounded in your home records.</p>
+              <p className="mt-1 text-xs leading-snug text-text-secondary sm:text-sm">Get answers about your home, records and next steps.</p>
             </div>
             <Button asChild className="relative min-h-11 shrink-0 rounded-xl bg-action-primary px-3 text-action-primary-foreground sm:px-4">
               <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /><span className="hidden min-[390px]:inline">Ask about your home</span><span className="min-[390px]:hidden">Ask</span></Link>
@@ -291,7 +295,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
         ? "text-status-attention"
         : "text-status-positive";
   return (
-    <section className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-soft transition-shadow hover:shadow-elevated sm:p-5">
+    <section className="min-w-0 rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-shadow hover:shadow-elevated sm:p-5">
       <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-2">
         <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence"><HeartPulse className="h-4 w-4 text-intelligence-accent" /></span><h2 className="truncate text-base font-semibold text-sucasa-navy sm:text-lg">Home Health</h2></div>
         <Dialog>
@@ -320,7 +324,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
         </Dialog>
       </div>
       <div className="grid gap-3 pt-3 sm:grid-cols-[minmax(220px,0.85fr)_minmax(0,1.6fr)] sm:gap-5">
-        <div className="flex min-w-0 items-center gap-3 rounded-xl bg-surface-intelligence p-3 sm:gap-4 sm:p-4">
+        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-surface-intelligence-border bg-surface-intelligence p-3 sm:gap-4 sm:p-4">
         <div className="relative grid h-[76px] w-[76px] shrink-0 place-items-center sm:h-24 sm:w-24">
           <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
             <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
@@ -338,13 +342,17 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
         </div>
         </div>
       {systems.length ? (
-        <div className="divide-y divide-border sm:grid sm:grid-cols-2 sm:gap-x-4 sm:divide-y-0">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {systems.map((system) => (
-            <div key={system.key} className={`border-l-2 py-2 pl-2.5 sm:border-b sm:py-2.5 ${system.status === "overdue" ? "border-l-status-risk sm:border-b-border" : system.status === "due_soon" ? "border-l-status-attention sm:border-b-border" : "border-l-status-positive sm:border-b-border"}`}>
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
-                <span className="truncate text-[11px] font-medium sm:text-sm">{system.label}</span>
+            <div key={system.key} className="min-w-0 rounded-xl border border-border bg-card p-2.5 shadow-soft sm:p-3">
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence text-intelligence-accent">{systemIcon(system.key)}</span>
+                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-sucasa-navy sm:text-sm">{system.label}</span>
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              </div>
+              <div className="mt-2 flex items-center gap-1.5">
                 <span
-                  className={`flex shrink-0 items-center gap-1 text-[9px] font-semibold leading-none sm:text-xs ${system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-status-positive"}`}
+                  className={`flex min-w-0 items-center gap-1.5 text-[9px] font-semibold leading-none sm:text-xs ${system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-status-positive"}`}
                   aria-label={`${system.label}: ${system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Good"}`}
                 >
                   <span className={`h-2 w-2 shrink-0 rounded-full ${system.status === "overdue" ? "bg-status-risk" : system.status === "due_soon" ? "bg-status-attention" : "bg-status-positive"}`} aria-hidden />
@@ -368,10 +376,10 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
 
 function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { topPlanItem: { title: string; why: string } | null; planCount: number; documentCount: number; historyCount: number }) {
   return (
-    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-3 shadow-soft sm:p-5">
-      <p className="text-base font-semibold text-sucasa-navy sm:text-lg">Home Care</p>
+    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-3.5 shadow-soft sm:p-5">
+      <p className="text-lg font-semibold text-sucasa-navy">Home Care</p>
       <Tabs defaultValue="todo" className="mt-0.5">
-        <TabsList className="grid h-11 w-full grid-cols-3 bg-transparent p-0"><TabsTrigger value="todo" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">To do</TabsTrigger><TabsTrigger value="documents" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">Documents</TabsTrigger><TabsTrigger value="history" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">History</TabsTrigger></TabsList>
+        <TabsList className="grid h-11 w-full grid-cols-3 rounded-xl bg-secondary p-1"><TabsTrigger value="todo" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">To do</TabsTrigger><TabsTrigger value="documents" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">Documents</TabsTrigger><TabsTrigger value="history" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">History</TabsTrigger></TabsList>
         <TabsContent value="todo" className="mt-1.5">
           {topPlanItem ? <PreviewRow icon={<HeartPulse className="h-4 w-4" />} title={topPlanItem.title} detail={topPlanItem.why} to="/home-care" /> : <EmptyPreview text="Nothing is due from the records currently available." to="/home-care" />}
           {planCount > 1 && <p className="mt-1.5 text-[10px] text-muted-foreground sm:text-xs">{planCount - 1} more items in your care plan</p>}
@@ -385,7 +393,7 @@ function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { top
 
 function HomeTeamCard({ team }: { team: { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-3 shadow-soft sm:p-5">
+    <section className="rounded-2xl border border-border bg-card p-3.5 shadow-soft sm:p-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
         <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span><p className="truncate text-base font-semibold text-sucasa-navy sm:text-lg">Home Team</p></div>
         <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/home-team" aria-label="Manage Home Team"><ChevronRight className="h-4 w-4" /></Link></Button>
@@ -409,9 +417,9 @@ function TeamMemberCard({ member, role }: { member: HomeTeamMemberSummary | null
   return (
     <Link
       to="/home-team"
-      className="grid min-h-14 min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-card p-2 transition-colors hover:bg-secondary sm:min-h-16 sm:grid-cols-[40px_minmax(0,1fr)_auto] sm:p-3"
+      className="grid min-h-16 min-w-0 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-card p-2.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-3"
     >
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-home-team-avatar text-xs font-semibold text-action-primary sm:h-10 sm:w-10 sm:text-sm">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-home-team-avatar text-xs font-semibold text-action-primary sm:text-sm">
         {member ? initials : <UserRound className="h-5 w-5" />}
       </div>
       {member ? (
@@ -435,5 +443,13 @@ function PreviewRow({ icon, title, detail, to }: { icon: ReactNode; title: strin
 
 function EmptyPreview({ text, to }: { text: string; to: "/home-care" }) {
   return <Link to={to} className="flex min-h-11 items-center gap-3 rounded-xl bg-card px-3 py-3 text-xs text-muted-foreground sm:text-sm"><ShieldCheck className="h-4 w-4 text-status-nurture" /><span className="flex-1">{text}</span><ChevronRight className="h-4 w-4" /></Link>;
+}
+
+function systemIcon(key: string) {
+  const className = "h-4 w-4";
+  if (key === "roof") return <House className={className} />;
+  if (key === "hvac") return <Snowflake className={className} />;
+  if (key === "water_heater") return <Droplets className={className} />;
+  return <Zap className={className} />;
 }
 
