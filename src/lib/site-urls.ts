@@ -25,8 +25,8 @@ export const PLATFORM_BASE_URL = "https://rentaconopcion.lovable.app";
 /** Where the platform will live after cutover. Not in use yet. */
 export const PLANNED_PLATFORM_BASE_URL = "https://sucasa.com";
 
-/** Base for the Lofty-powered IDX search / listing experience. */
-export const IDX_BASE_URL = "https://sucasa.com/homes";
+/** Base for the Lofty-powered IDX search / listing experience. Live since 2026-09-15. */
+export const IDX_BASE_URL = "https://homes.sucasa.com";
 
 /** Where IDX will live after cutover. Not in use yet. */
 export const PLANNED_IDX_BASE_URL = "https://homes.sucasa.com";
