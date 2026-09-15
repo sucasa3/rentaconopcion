@@ -20,8 +20,8 @@ function compactMoney(value: number | null) {
  */
 export function HomeHero({ data }: { data: HomeHeroView }) {
   return (
-    <section className="relative rounded-2xl border border-border bg-card pb-2.5 shadow-elevated sm:rounded-3xl sm:pb-5">
-      <div className="relative h-[188px] w-full overflow-hidden rounded-t-[calc(var(--radius-2xl)-1px)] min-[430px]:h-[208px] sm:h-[340px] sm:rounded-t-[calc(var(--radius-3xl)-1px)] lg:h-[390px]">
+    <section className="relative rounded-[22px] border border-border bg-card pb-3 shadow-elevated sm:rounded-3xl sm:pb-5">
+      <div className="relative h-[218px] w-full overflow-hidden rounded-t-[21px] min-[430px]:h-[238px] sm:h-[340px] sm:rounded-t-[calc(var(--radius-3xl)-1px)] lg:h-[390px]">
         <img
           src={heroPhoto.url}
           alt={data.address ? `Photo of ${data.address}` : "Your home"}
@@ -30,11 +30,11 @@ export function HomeHero({ data }: { data: HomeHeroView }) {
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="home-photo-vignette pointer-events-none absolute inset-0" aria-hidden />
-        <div className="absolute inset-x-0 bottom-0 p-4 pb-10 sm:p-7 sm:pb-14">
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary-foreground/80 sm:text-xs">
+        <div className="absolute inset-x-0 bottom-0 p-4 pb-12 sm:p-7 sm:pb-16">
+          <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase text-primary-foreground/80 sm:text-xs">
             <MapPin className="h-3.5 w-3.5" /> Your home
           </div>
-          <h1 className="mt-0.5 max-w-[28ch] text-xl font-semibold leading-tight text-primary-foreground drop-shadow-lg sm:mt-1 sm:text-4xl lg:text-5xl">
+          <h1 className="mt-1 max-w-[24ch] text-[22px] font-bold leading-[1.08] text-primary-foreground drop-shadow-lg sm:text-4xl lg:text-5xl">
             {data.address ?? "Add your home address"}
           </h1>
           {!data.address && (
@@ -45,7 +45,7 @@ export function HomeHero({ data }: { data: HomeHeroView }) {
         </div>
       </div>
 
-      <div className="relative z-10 -mt-8 mx-2.5 grid grid-cols-3 divide-x divide-border rounded-2xl border border-surface-intelligence-border bg-hero-glass px-1 py-2.5 shadow-elevated backdrop-blur-xl sm:-mt-12 sm:mx-5 sm:px-2 sm:py-4">
+      <div className="relative z-10 -mt-9 mx-2.5 grid grid-cols-3 divide-x divide-surface-intelligence-border rounded-2xl border border-surface-intelligence-border bg-hero-glass px-1 py-3 shadow-elevated backdrop-blur-xl sm:-mt-12 sm:mx-5 sm:px-2 sm:py-4">
         <Link to="/money" aria-label="View value and equity details" className="col-span-2 grid min-h-11 grid-cols-2 divide-x divide-border rounded-lg transition-colors hover:bg-surface-intelligence focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <HeroMetric icon={<House />} label="Estimated Value" shortLabel="Value" value={compactMoney(data.value)} />
           <HeroMetric
@@ -97,11 +97,11 @@ function HeroMetric({
         </span>
       ) : icon ? <span className="hidden text-intelligence-accent min-[370px]:block [&_svg]:h-4 [&_svg]:w-4 sm:[&_svg]:h-5 sm:[&_svg]:w-5">{icon}</span> : null}
       <div className="min-w-0 text-left">
-      <p className="truncate text-[8px] font-semibold uppercase text-text-secondary sm:text-[10px]">
+       <p className="truncate text-[8px] font-bold uppercase text-intelligence-accent sm:text-[10px]">
         <span className="min-[360px]:hidden">{shortLabel}</span>
         <span className="hidden min-[360px]:inline">{label}</span>
       </p>
-      <p className={`${score != null ? "min-[370px]:hidden" : ""} mt-0.5 truncate text-base font-bold tabular-nums text-sucasa-navy sm:text-2xl`}>{value}</p>
+       <p className={`${score != null ? "min-[370px]:hidden" : ""} mt-0.5 truncate text-lg font-bold tabular-nums text-sucasa-navy sm:text-2xl`}>{value}</p>
       {note && (
         <p
           className={`truncate text-[8px] sm:text-xs ${notePositive ? "text-status-positive" : "text-muted-foreground"}`}

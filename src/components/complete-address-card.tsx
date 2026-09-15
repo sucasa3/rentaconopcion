@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { MapPin, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { AddressAutocomplete, type AddressValue } from "@/components/address-autocomplete";
+import { Button } from "@/components/ui/button";
 
 
 /**
@@ -75,24 +76,24 @@ export function CompleteAddressCard({
 
   return (
     <div
-      className={`rounded-3xl border border-border bg-card shadow-soft ${compact ? "p-4" : "p-6"}`}
+      className={`rounded-2xl border border-surface-intelligence-border bg-surface-intelligence shadow-soft ${compact ? "p-3.5" : "p-6"}`}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 rounded-full bg-primary/10 p-2 text-primary">
+        <span className="mt-0.5 rounded-xl bg-card p-2 text-intelligence-accent shadow-soft">
           <MapPin className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold">
             {mode === "edit" ? "Verify your home address" : "Finish your address"}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className={`${compact ? "text-xs leading-snug" : "text-sm"} mt-1 text-muted-foreground`}>
             {mode === "edit"
               ? "Search for your address and confirm it on the map so we match the right property records."
               : "We have your street, but we need the city and state (or ZIP) to match your home to property records for value, equity and property details."}
           </p>
 
 
-          <div className="mt-4 space-y-2">
+          <div className={`${compact ? "mt-3" : "mt-4"} space-y-2`}>
             <AddressAutocomplete
               value={{ street, city, state, zip }}
               onChange={(v: AddressValue) => {
@@ -103,14 +104,14 @@ export function CompleteAddressCard({
               }}
             />
 
-            <button
+            <Button
               onClick={save}
               disabled={!valid || saving}
-              className="inline-flex items-center gap-2 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-50"
+              className="min-h-11 rounded-xl bg-action-primary px-4 text-sm font-semibold text-action-primary-foreground shadow-soft"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Save address
-            </button>
+            </Button>
           </div>
         </div>
       </div>
