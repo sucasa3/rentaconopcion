@@ -69,7 +69,13 @@ const ITEMS: Item[] = [
 ];
 
 const MOBILE_ITEMS: Item[] = [
-  ITEMS[0],
+  {
+    key: "home",
+    labelKey: "nav.home",
+    to: "/dashboard",
+    icon: <Home className="h-5 w-5" />,
+    match: (p) => p === "/dashboard",
+  },
   {
     key: "value",
     labelKey: "nav.value",

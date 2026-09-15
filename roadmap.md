@@ -74,11 +74,11 @@
 - [x] Verify 320/375/390/430px, desktop, Home Team variants, and Home Care/Money transitions
 
 ## Homeowner final visual refinement (2026-09-15)
-- [ ] Combine Home Score and evidence-backed systems into one Home Health section
-- [ ] Remove the repeated Value & Equity summary below the hero
-- [ ] Keep Home Care and Home Team compact with distinct semantic surfaces
-- [ ] Reduce mobile navigation to Home, Value, Care, Team, and More
-- [ ] Move Setup Guide from the Home dashboard into More without removing destinations
+- [x] Combine Home Score and evidence-backed systems into one Home Health section
+- [x] Remove the repeated Value & Equity summary below the hero
+- [x] Keep Home Care and Home Team compact with distinct semantic surfaces
+- [x] Reduce mobile navigation to Home, Value, Care, Team, and More
+- [x] Move Setup Guide from the Home dashboard into More without removing destinations
 - [ ] Verify 320/375/390/430px, desktop, navigation, focus, reduced motion, and console
 
 ## Network Stage 2 (next)

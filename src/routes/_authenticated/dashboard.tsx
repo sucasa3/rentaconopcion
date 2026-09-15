@@ -340,7 +340,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
       {systems.length ? (
         <div className="divide-y divide-border sm:grid sm:grid-cols-2 sm:gap-x-4 sm:divide-y-0">
           {systems.map((system) => (
-            <div key={system.key} className="border-l-2 border-border py-2 pl-2.5 sm:border-b sm:py-2.5">
+            <div key={system.key} className={`border-l-2 py-2 pl-2.5 sm:border-b sm:py-2.5 ${system.status === "overdue" ? "border-l-status-risk sm:border-b-border" : system.status === "due_soon" ? "border-l-status-attention sm:border-b-border" : "border-l-status-positive sm:border-b-border"}`}>
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
                 <span className="truncate text-[11px] font-medium sm:text-sm">{system.label}</span>
                 <span
