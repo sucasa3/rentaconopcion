@@ -254,7 +254,7 @@ function Dashboard() {
           {needsAddress ? <CompleteAddressCard /> : null}
 
           {/* ------------------------------------------- identity: the home */}
-          <HomeHero data={heroData} scoreDetail={homeScore} scorePending={!homeScore} />
+        <HomeHero data={heroData} />
 
           {/* --------------------------------------------- what SuCasa sees */}
           <section className="rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-4 sm:px-5">
