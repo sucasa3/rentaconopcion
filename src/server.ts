@@ -48,6 +48,11 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // Permanent host/path redirects for the sucasa.com cutover. Inert on
+      // every other host, so this is safe to ship before any DNS change.
+      const redirect = resolveLegacyRedirect(request.url);
+      if (redirect) return legacyRedirectResponse(redirect);
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
