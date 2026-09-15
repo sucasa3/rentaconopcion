@@ -87,11 +87,11 @@ export function HouseModel({ data, reducedMotion }: Props) {
       </mesh>
       <ZonePuck position={[-0.7, 1.6, -0.2]} color={zoneEmissive("hvac")} />
 
-      {/* Plumbing pipe stub on wing roof */}
+      {/* Water heater vent on wing roof */}
       <mesh castShadow position={[1.7, 1.1, 0.2]} material={trim}>
         <cylinderGeometry args={[0.06, 0.06, 0.4, 16]} />
       </mesh>
-      <ZonePuck position={[1.7, 1.4, 0.2]} color={zoneEmissive("plumbing")} scale={0.6} />
+      <ZonePuck position={[1.7, 1.4, 0.2]} color={zoneEmissive("waterHeater")} scale={0.6} />
 
       {/* Electrical meter box on side */}
       <mesh position={[-1.22, 0.1, 0.4]} material={trim}>
