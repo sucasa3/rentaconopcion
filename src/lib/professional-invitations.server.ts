@@ -22,6 +22,11 @@ import {
   connectionConsent,
   validationEffect,
 } from "./professional-invitations";
+import {
+  homeownerProfessionalName,
+  type HomeTeamMemberSummary,
+  type HomeTeamSummary,
+} from "./home-team-summary";
 import { logNetworkEvent } from "./network-events.server";
 import { signTypedInviteToken, verifyTypedInviteToken } from "./invite-token.server";
 import { confirmRelationship, rejectRelationship } from "./relationships.server";
@@ -485,6 +490,136 @@ export interface PendingValidation {
   professionalName: string;
   professionalOrg: string | null;
   askedBy: string | null;
+}
+
+interface HomeTeamProfessionalRow {
+  id: string;
+  full_name: string;
+  org_name_raw: string | null;
+  org_id: string | null;
+}
+
+interface HomeTeamOrganizationRow {
+  id: string;
+  name: string;
+  contact_name: string | null;
+}
+
+function preferredTeamEdge(rows: any[]): any | null {
+  return (
+    rows.find((row) => row.status === "confirmed" && !row.revoked_at) ??
+    rows.find((row) => row.status === "asserted" && !row.revoked_at) ??
+    null
+  );
+}
+
+/**
+ * Current presentation-safe Home Team for one signed-in homeowner.
+ *
+ * This reads relationship truth only. It never reads or writes consent, never
+ * calls the lender access classifier, and returns no contact information.
+ */
+export async function homeTeamSummary(admin: any, homeownerId: string): Promise<HomeTeamSummary> {
+  const { data: clients } = await admin
+    .from("lender_portfolio_clients")
+    .select("id")
+    .eq("homeowner_id", homeownerId)
+    .is("archived_at", null);
+  const clientIds = (clients ?? []).map((client: any) => client.id as string);
+
+  const [{ data: direct }, { data: clientEdges }] = await Promise.all([
+    admin
+      .from("relationships")
+      .select("id, relationship_type, subject_type, subject_id, object_type, object_id, org_id, status, revoked_at")
+      .in("relationship_type", ["agent_homeowner", "professional_homeowner_lender"])
+      .eq("object_type", "homeowner")
+      .eq("object_id", homeownerId)
+      .in("status", ["asserted", "confirmed"])
+      .is("revoked_at", null),
+    clientIds.length
+      ? admin
+          .from("relationships")
+          .select("id, relationship_type, subject_type, subject_id, object_type, object_id, org_id, status, revoked_at")
+          .in("relationship_type", ["agent_homeowner", "professional_homeowner_lender"])
+          .eq("object_type", "portfolio_client")
+          .in("object_id", clientIds)
+          .in("status", ["asserted", "confirmed"])
+          .is("revoked_at", null)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const rows = [...(direct ?? []), ...(clientEdges ?? [])] as any[];
+  const agentEdge = preferredTeamEdge(rows.filter((row) => row.relationship_type === "agent_homeowner"));
+  const lenderEdge = preferredTeamEdge(
+    rows.filter((row) => row.relationship_type === "professional_homeowner_lender"),
+  );
+  const selected = [agentEdge, lenderEdge].filter(Boolean) as any[];
+  if (!selected.length) return { agent: null, lender: null };
+
+  const professionalIds = selected
+    .filter((row) => row.subject_type === "professional")
+    .map((row) => row.subject_id as string);
+  const organizationIds = selected
+    .filter((row) => row.subject_type === "organization")
+    .map((row) => row.subject_id as string);
+  const [{ data: professionals }, { data: organizations }] = await Promise.all([
+    professionalIds.length
+      ? admin.from("professionals").select("id, full_name, org_name_raw, org_id").in("id", professionalIds)
+      : Promise.resolve({ data: [] }),
+    organizationIds.length
+      ? admin.from("lender_orgs").select("id, name, contact_name").in("id", organizationIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+  const proById = new Map<string, HomeTeamProfessionalRow>(
+    (professionals ?? []).map((row: HomeTeamProfessionalRow) => [row.id, row]),
+  );
+  const orgById = new Map<string, HomeTeamOrganizationRow>(
+    (organizations ?? []).map((row: HomeTeamOrganizationRow) => [row.id, row]),
+  );
+
+  async function summarize(edge: any, role: "agent" | "lender"): Promise<HomeTeamMemberSummary | null> {
+    if (!edge) return null;
+    if (edge.subject_type === "professional") {
+      const professional = proById.get(edge.subject_id);
+      if (!professional?.full_name) return null;
+      let organizationName = professional.org_name_raw ?? null;
+      if (!organizationName && professional.org_id) {
+        const { data: organization } = await admin
+          .from("lender_orgs")
+          .select("name")
+          .eq("id", professional.org_id)
+          .maybeSingle();
+        organizationName = organization?.name ?? null;
+      }
+      return {
+        relationshipId: edge.id,
+        professionalId: professional.id,
+        displayName: homeownerProfessionalName(professional.full_name),
+        organizationName,
+        role,
+        state: edge.status === "confirmed" ? "confirmed" : "pending",
+      };
+    }
+    if (edge.subject_type === "organization") {
+      const organization = orgById.get(edge.subject_id);
+      if (!organization) return null;
+      return {
+        relationshipId: edge.id,
+        professionalId: null,
+        displayName: homeownerProfessionalName(organization.contact_name || organization.name),
+        organizationName: organization.name,
+        role,
+        state: edge.status === "confirmed" ? "confirmed" : "pending",
+      };
+    }
+    return null;
+  }
+
+  const [agent, lender] = await Promise.all([
+    summarize(agentEdge, "agent"),
+    summarize(lenderEdge, "lender"),
+  ]);
+  return { agent, lender };
 }
 
 /** Asserted lenders awaiting this homeowner's own answer. */
