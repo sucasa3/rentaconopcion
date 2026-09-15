@@ -141,8 +141,8 @@
   --surface-intelligence-foreground: oklch(0.32 0.09 255);
   --intelligence-accent: oklch(0.5561 0.0899 246.4);
   --home-team-avatar: oklch(0.9366 0.0149 251.2);
-  /* Hero intelligence strip: deep navy #17324D at 82% over the photo. */
-  --hero-glass: oklch(0.3102 0.059 250.3 / 0.82);
+  /* Hero intelligence strip: pale frosted intelligence surface. */
+  --hero-glass: oklch(0.985 0.012 245 / 0.9);
   --hero-glass-positive: oklch(0.78 0.11 165);
   /* Secondary text is a step darker than --muted-foreground so it stays
      legible on the warm and intelligence surfaces, not only on white. */

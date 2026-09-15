@@ -81,6 +81,12 @@
 - [x] Move Setup Guide from the Home dashboard into More without removing destinations
 - [x] Verify 320/375/390/430px, desktop, navigation, focus, reduced motion, and console
 
+## Homeowner reference-rich visual treatment (2026-09-15)
+- [ ] Restyle the hero intelligence strip as light frosted glass with canonical metrics
+- [ ] Give Home Health evidence-backed system tiles and stronger visual hierarchy
+- [ ] Enrich Home Care, Home Team, Ask SuCasa, and bottom navigation without changing behavior
+- [ ] Verify and present the finished 390px mobile view before further structural changes
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates

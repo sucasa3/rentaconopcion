@@ -150,15 +150,15 @@ export function HomeownerShell({ children, premium = false, moreContent }: { chi
 
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/95 backdrop-blur-xl md:hidden">
-        <div className="flex items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-card/95 shadow-[0_-8px_24px_color-mix(in_oklab,var(--color-sucasa-navy)_6%,transparent)] backdrop-blur-xl md:hidden">
+        <div className="flex items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
           {MOBILE_ITEMS.map((i) => (
             <Link
               key={i.key}
               to={i.to as never}
               search={i.search as never}
               className={cn(
-                "flex min-h-11 flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-medium transition active:scale-95 min-[390px]:text-[10px]",
+                "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-semibold transition active:scale-95 min-[390px]:text-[10px] [&_svg]:h-[22px] [&_svg]:w-[22px]",
                 i.match(pathname, tab) ? "text-sucasa-orange" : "text-muted-foreground",
               )}
             >
@@ -171,7 +171,7 @@ export function HomeownerShell({ children, premium = false, moreContent }: { chi
               <Button
                 variant="ghost"
                 className={cn(
-                  "h-auto min-h-11 flex-1 flex-col gap-0.5 rounded-none px-0 py-2 text-[9px] font-medium hover:bg-transparent min-[390px]:text-[10px]",
+                  "h-auto min-h-14 flex-1 flex-col justify-center gap-0.5 rounded-none px-0 py-1.5 text-[9px] font-semibold hover:bg-transparent min-[390px]:text-[10px] [&_svg]:h-[22px] [&_svg]:w-[22px]",
                   moreActive || moreOpen ? "text-sucasa-orange" : "text-muted-foreground",
                 )}
               >
