@@ -46,7 +46,7 @@ Per-page decisions from the matrix that are also implemented:
 
 ## 2. How they were tested
 
-`src/lib/legacy-redirects.test.ts` — 14 cases run in the suite:
+`src/lib/legacy-redirects.test.ts` — 13 cases run in the suite:
 
 - inert on `rentaconopcion.lovable.app` and `localhost`
 - `www` → apex, path and query preserved, single hop
