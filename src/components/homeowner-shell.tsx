@@ -70,7 +70,7 @@ const ITEMS: Item[] = [
  * tab bar on mobile. Mirrors `BusinessShell` so all three roles feel like the
  * same native app.
  */
-export function HomeownerShell({ children }: { children: ReactNode }) {
+export function HomeownerShell({ children, premium = false }: { children: ReactNode; premium?: boolean }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const tab = useRouterState({
     select: (s) => (s.location.search as { tab?: string } | undefined)?.tab,
@@ -80,7 +80,7 @@ export function HomeownerShell({ children }: { children: ReactNode }) {
 
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className={cn("min-h-screen bg-surface", premium && "homeowner-premium")}>
       <div className="mx-auto flex max-w-7xl">
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border/70 bg-card px-3 py-5 md:flex">
           <Link to="/" className="mb-6 flex items-center gap-2 px-2">
