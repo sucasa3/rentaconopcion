@@ -98,6 +98,12 @@
 - [x] Replace washed-out score, care, team, address, and assistant accents without changing structure
 - [x] Verify 320/375/390/430px and desktop for contrast, overflow, and legibility
 
+## Homeowner no-pastel visual correction (2026-09-15)
+- [x] Apply the approved exact white, navy, blue, orange, green, amber, red, and text colors
+- [x] Remove pastel fills from Home Health, system tiles, Home Care, Home Team, and address prompt
+- [x] Keep color concentrated in icons, rings, statuses, borders, tabs, navigation, and CTAs
+- [x] Verify mobile and desktop contrast, overflow, canonical status color, and console behavior
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates

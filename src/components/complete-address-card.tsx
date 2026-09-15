@@ -77,7 +77,7 @@ export function CompleteAddressCard({
 
   return (
     <div
-      className={`rounded-2xl border border-surface-intelligence-border bg-surface-intelligence shadow-soft ${compact ? "p-3.5" : "p-6"}`}
+      className={`rounded-2xl border border-intelligence-accent/55 border-l-[3px] bg-card shadow-soft ${compact ? "p-3.5" : "p-6"}`}
     >
       <div className="flex items-start gap-3">
         <span className="mt-0.5 rounded-xl bg-intelligence-accent p-2 text-primary-foreground shadow-soft">

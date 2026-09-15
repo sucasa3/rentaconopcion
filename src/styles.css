@@ -238,42 +238,43 @@
 }
 
 .homeowner-premium {
+  /* Exact homeowner palette: bright neutral canvas with saturated accents. */
   --background: oklch(0.9759 0.0029 264.5);
   --foreground: oklch(0.2494 0.0304 256.9);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2494 0.0304 256.9);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.2494 0.0304 256.9);
-  --primary: oklch(0.388 0.132 250);
+  --primary: oklch(0.4182 0.0892 249.9);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.9567 0.0052 247.9);
   --secondary-foreground: oklch(0.3102 0.059 250.3);
   --muted: oklch(0.9567 0.0052 247.9);
   --muted-foreground: oklch(0.5444 0.035 265.1);
-  --accent: oklch(0.925 0.045 248);
+  --accent: oklch(0.9567 0.0052 247.9);
   --accent-foreground: oklch(0.3102 0.059 250.3);
   --border: oklch(0.9104 0.0087 247.9);
   --input: oklch(0.9104 0.0087 247.9);
-  --ring: oklch(0.48 0.16 250);
+  --ring: oklch(0.5663 0.1627 252.6);
   --surface: oklch(0.9759 0.0029 264.5);
   --surface-elevated: oklch(1 0 0);
-  --sucasa-navy: oklch(0.285 0.085 250.3);
+  --sucasa-navy: oklch(0.3102 0.059 250.3);
   --sucasa-orange: oklch(0.6181 0.1755 35.5);
-  --surface-warm: oklch(0.952 0.026 68);
-  --surface-warm-border: oklch(0.82 0.075 52);
-  --surface-intelligence: oklch(0.935 0.045 246);
-  --surface-intelligence-border: oklch(0.73 0.105 246);
-  --surface-intelligence-foreground: oklch(0.34 0.13 249.9);
-  --intelligence-accent: oklch(0.49 0.155 246.4);
-  --home-team-avatar: oklch(0.885 0.055 251.2);
+  --surface-warm: oklch(1 0 0);
+  --surface-warm-border: oklch(0.9104 0.0087 247.9);
+  --surface-intelligence: oklch(1 0 0);
+  --surface-intelligence-border: oklch(0.5663 0.1627 252.6);
+  --surface-intelligence-foreground: oklch(0.3102 0.059 250.3);
+  --intelligence-accent: oklch(0.5663 0.1627 252.6);
+  --home-team-avatar: oklch(0.5663 0.1627 252.6);
   --text-secondary: oklch(0.5444 0.035 265.1);
   --border-subtle: oklch(0.9104 0.0087 247.9);
   --status-opportunity: oklch(0.6181 0.1755 35.5);
-  --status-positive: oklch(0.49 0.145 165);
-  --status-attention: oklch(0.61 0.155 72);
-  --status-risk: oklch(0.53 0.205 24);
+  --status-positive: oklch(0.5635 0.1142 163.9);
+  --status-attention: oklch(0.6648 0.1397 70.2);
+  --status-risk: oklch(0.5692 0.1584 24.9);
   --status-nurture: oklch(0.5444 0.035 265.1);
-  --action-primary: oklch(0.38 0.135 249.9);
+  --action-primary: oklch(0.4182 0.0892 249.9);
   --action-primary-foreground: oklch(0.99 0 0);
   color: var(--foreground);
 }
