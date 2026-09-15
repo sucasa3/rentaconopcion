@@ -40,12 +40,12 @@
 - [x] Verify 393×526 mobile fold, desktop layout, tests, and runtime console
 
 ## Homeowner Home Profile premium redesign (approved 2026-09-15)
-- [ ] Preserve the property-photo hero as the dominant first impression
-- [ ] Make Home Score explainable and separate missing records from physical concerns
-- [ ] Show only evidence-backed system statuses; keep Water Heater distinct from Plumbing
-- [ ] Use canonical dates for value, equity, score, and system freshness
-- [ ] Consolidate money, care, team, and Ask SuCasa into the approved mobile hierarchy
-- [ ] Verify and present the actual 390px and desktop views
+- [x] Preserve the property-photo hero as the dominant first impression
+- [x] Make Home Score explainable and separate missing records from physical concerns
+- [x] Show only evidence-backed system statuses; keep Water Heater distinct from Plumbing
+- [x] Use canonical dates for value, equity, score, and system freshness
+- [x] Consolidate money, care, team, and Ask SuCasa into the approved mobile hierarchy
+- [x] Verify and present the actual 390px and desktop views
 
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
