@@ -160,6 +160,14 @@ export const listMyHomeTeamValidations = createServerFn({ method: "GET" })
     return { pending };
   });
 
+/** Presentation-safe current team. Relationship truth only; grants no access. */
+export const getMyHomeTeamSummary = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { homeTeamSummary } = await import("./professional-invitations.server");
+    return homeTeamSummary(await admin(), context.userId);
+  });
+
 /** Step A — relationship truth. Answering "yes" shares nothing. */
 export const submitHomeTeamValidation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

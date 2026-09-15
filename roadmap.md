@@ -47,6 +47,14 @@
 - [x] Consolidate money, care, team, and Ask SuCasa into the approved mobile hierarchy
 - [x] Verify and present the actual 390px and desktop views
 
+## Homeowner Home Profile light refinement + Home Team (2026-09-15)
+- [ ] Replace the dashboard-only near-black premium tokens with a warm premium light SuCasa treatment
+- [ ] Refine Score, Systems, Value & Equity, Home Care, and Ask SuCasa with existing semantic colors
+- [ ] Add one permission-neutral canonical Home Team read for confirmed/current agent and lender plus pending states
+- [ ] Show confirmed, one-professional, pending, and empty Home Team states without fabricating records
+- [ ] Verify 320/375/390/430 mobile, desktop, Dashboard → Home Care, and Dashboard → Money
+- [ ] Confirm relationship display does not change consent or professional access
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates
