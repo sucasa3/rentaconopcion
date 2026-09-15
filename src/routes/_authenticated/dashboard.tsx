@@ -196,15 +196,16 @@ function Dashboard() {
     ...docList.map((row: any) => row.updated_at ?? row.created_at),
   ]);
   const valueFreshness = latestDate((snapshots ?? []).map((row: any) => row.captured_on));
+  const previewTeam = developmentHomeTeamPreview();
 
   return (
     <HomeownerShell premium>
-      <main className="px-4 pb-28 pt-3 sm:px-6 sm:py-8">
-        <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+      <main className="px-4 pb-28 pt-3 sm:px-6 sm:py-7">
+        <div className="mx-auto max-w-5xl space-y-4 sm:space-y-5">
           <HomeHero data={heroData} />
           {needsAddress ? <CompleteAddressCard /> : null}
 
-          <section className="grid gap-3 sm:grid-cols-[1.05fr_1.95fr]">
+          <section className="grid grid-cols-[0.9fr_1.1fr] gap-3 sm:grid-cols-[1.05fr_1.95fr]">
             <ScoreCard score={homeScore} updatedAt={scoreFreshness} />
             <SystemHealth systems={visibleSystems} />
           </section>
@@ -223,15 +224,15 @@ function Dashboard() {
             historyCount={(serviceLog ?? []).length}
           />
 
-          <HomeTeamCard team={homeTeam ?? { agent: null, lender: null }} />
+          <HomeTeamCard team={previewTeam ?? homeTeam ?? { agent: null, lender: null }} />
 
-          <section className="relative overflow-hidden rounded-3xl border border-surface-intelligence-border bg-surface-intelligence px-5 py-6 shadow-soft sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-6">
+          <section className="relative overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4 shadow-soft sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-5">
             <div className="relative">
               <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-intelligence-foreground"><Sparkles className="h-4 w-4 text-sucasa-orange" /> Ask SuCasa</p>
-              <h2 className="mt-2 text-xl font-semibold text-foreground">What would you like to know about your home?</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Get answers grounded in the records SuCasa has for this home.</p>
+              <h2 className="mt-1.5 text-lg font-semibold text-sucasa-navy">What would you like to know about your home?</h2>
+              <p className="mt-1 text-sm text-text-secondary">Answers grounded in the records SuCasa has for this home.</p>
             </div>
-            <Button asChild className="relative mt-5 min-h-11 w-full rounded-xl sm:mt-0 sm:w-auto">
+            <Button asChild className="relative mt-4 min-h-11 w-full rounded-xl bg-action-primary text-action-primary-foreground sm:mt-0 sm:w-auto">
               <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
             </Button>
           </section>
@@ -277,6 +278,32 @@ function latestDate(values: Array<string | null | undefined>) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(dates[0]);
 }
 
+/** Development-only presentation fixtures. They never write relationship data or ship as canonical records. */
+function developmentHomeTeamPreview(): { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } | null {
+  if (!import.meta.env.DEV || typeof window === "undefined") return null;
+  const state = new URLSearchParams(window.location.search).get("teamPreview");
+  const agent: HomeTeamMemberSummary = {
+    relationshipId: "preview-agent",
+    professionalId: "preview-agent",
+    displayName: "Alex M.",
+    organizationName: null,
+    role: "agent",
+    state: "confirmed",
+  };
+  const lender: HomeTeamMemberSummary = {
+    relationshipId: "preview-lender",
+    professionalId: "preview-lender",
+    displayName: "Jordan T.",
+    organizationName: null,
+    role: "lender",
+    state: state === "pending" ? "pending" : "confirmed",
+  };
+  if (state === "confirmed") return { agent, lender };
+  if (state === "one") return { agent, lender: null };
+  if (state === "pending") return { agent: null, lender };
+  return null;
+}
+
 function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; updatedAt: string | null }) {
   const value = score?.score ?? 0;
   const circumference = 2 * Math.PI * 48;
@@ -291,9 +318,9 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
         ? "text-status-attention"
         : "text-status-positive";
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-soft">
-      <div className="flex items-center gap-5">
-        <div className="relative grid h-24 w-24 shrink-0 place-items-center">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft">
+      <div className="flex flex-col items-center text-center sm:flex-row sm:gap-5 sm:text-left">
+        <div className="relative grid h-20 w-20 shrink-0 place-items-center sm:h-24 sm:w-24">
           <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
             <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
             {score && (
@@ -301,15 +328,15 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
                 strokeDasharray={circumference} strokeDashoffset={circumference * (1 - value / 100)} className={`home-score-ring ${ringTone}`} />
             )}
           </svg>
-          <span className="text-3xl font-semibold tabular-nums">{score ? value : "—"}</span>
+          <span className="text-2xl font-semibold tabular-nums text-sucasa-navy sm:text-3xl">{score ? value : "—"}</span>
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Score</p>
-          <p className="mt-1 text-base font-semibold">{limitedRecords ? "Based on limited records" : score?.bandLabel ?? "Not enough information"}</p>
+          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary sm:mt-0 sm:text-xs">Home Score</p>
+          <p className="mt-1 text-sm font-semibold leading-tight sm:text-base">{limitedRecords ? "Based on limited records" : score?.bandLabel ?? "Not enough information"}</p>
           {updatedAt && <p className="mt-1 text-xs text-muted-foreground">Updated {updatedAt}</p>}
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="ghost" size="sm" className="mt-2 h-auto px-0 text-primary hover:bg-transparent">What affects this?</Button>
+               <Button variant="ghost" size="sm" className="mt-1 min-h-11 px-1 text-action-primary hover:bg-transparent">What affects this?</Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader><DialogTitle>Your Home Score</DialogTitle></DialogHeader>
@@ -339,29 +366,28 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
 
 function SystemHealth({ systems }: { systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-soft">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home systems</p><h2 className="mt-1 text-lg font-semibold">What your records indicate</h2></div>
-        <HeartPulse className="h-5 w-5 text-primary" />
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary sm:text-xs">Home systems</p><h2 className="mt-1 text-sm font-semibold leading-tight sm:text-lg">What records indicate</h2></div>
+        <HeartPulse className="h-4 w-4 shrink-0 text-action-primary sm:h-5 sm:w-5" />
       </div>
       {systems.length ? (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 sm:gap-2">
           {systems.map((system) => (
-            <div key={system.key} className="rounded-xl border border-border-subtle bg-secondary/70 p-3">
+            <div key={system.key} className="rounded-lg bg-secondary px-2.5 py-2 sm:rounded-xl sm:p-3">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold">{system.label}</span>
-                <span className={system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-muted-foreground"}>
-                  {system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}
+                <span className="truncate text-xs font-semibold sm:text-sm">{system.label}</span>
+                <span className={`h-2 w-2 shrink-0 rounded-full ${system.status === "overdue" ? "bg-status-risk" : system.status === "due_soon" ? "bg-status-attention" : "bg-status-nurture"}`} aria-label={system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}>
                 </span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">{system.detail}</p>
+              <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{system.detail}</p>
             </div>
           ))}
         </div>
       ) : (
-        <div className="mt-4 flex gap-3 rounded-xl bg-secondary p-4">
+        <div className="mt-3 flex gap-2 rounded-xl bg-secondary p-3">
           <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">No system-specific records are available yet. SuCasa will not guess at your home’s condition.</p>
+          <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">No system records yet. SuCasa will not guess at condition.</p>
         </div>
       )}
     </section>
@@ -370,14 +396,14 @@ function SystemHealth({ systems }: { systems: Array<{ key: string; label: string
 
 function MoneyCard({ value, equity, equityPct, updatedAt }: { value: number | null; equity: number | null; equityPct: number | null; updatedAt: string | null }) {
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-soft sm:p-6">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your money</p><h2 className="mt-1 text-xl font-semibold">Value & equity</h2></div>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-intelligence-accent sm:text-xs">Your money</p><h2 className="mt-1 text-lg font-semibold text-sucasa-navy sm:text-xl">Value & equity</h2></div>
         <Button asChild variant="ghost" size="sm" className="min-h-11"><Link to="/money">Details <ChevronRight className="h-4 w-4" /></Link></Button>
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <div className="rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4"><p className="text-xs text-surface-intelligence-foreground">Estimated value</p><p className="mt-1 text-xl font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(value, true)}</p></div>
-        <div className="rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4"><p className="text-xs text-surface-intelligence-foreground">Estimated equity</p><p className="mt-1 text-xl font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="mt-1 text-xs text-muted-foreground">{Math.round(equityPct * 100)}% of value</p>}</div>
+      <div className="mt-3 grid grid-cols-2 divide-x divide-surface-intelligence-border rounded-xl border border-surface-intelligence-border bg-surface-intelligence">
+        <div className="min-w-0 p-3 sm:p-4"><p className="text-[11px] text-intelligence-accent sm:text-xs">Estimated value</p><p className="mt-1 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(value, true)}</p></div>
+        <div className="min-w-0 p-3 sm:p-4"><p className="text-[11px] text-intelligence-accent sm:text-xs">Estimated equity</p><p className="mt-1 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="mt-0.5 text-[11px] text-status-positive sm:text-xs">{Math.round(equityPct * 100)}% of value</p>}</div>
       </div>
       {updatedAt && <p className="mt-3 text-xs text-muted-foreground">Value record as of {updatedAt}</p>}
     </section>
@@ -386,16 +412,16 @@ function MoneyCard({ value, equity, equityPct, updatedAt }: { value: number | nu
 
 function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { topPlanItem: { title: string; why: string } | null; planCount: number; documentCount: number; historyCount: number }) {
   return (
-    <section className="rounded-3xl border border-surface-warm-border bg-surface-warm p-5 shadow-soft sm:p-6">
+    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-4 shadow-soft sm:p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Care</p>
-      <Tabs defaultValue="todo" className="mt-3">
-        <TabsList className="grid h-11 w-full grid-cols-3 bg-card/70"><TabsTrigger value="todo" className="h-9 data-[state=active]:text-status-opportunity">To do</TabsTrigger><TabsTrigger value="documents" className="h-9 data-[state=active]:text-status-opportunity">Documents</TabsTrigger><TabsTrigger value="history" className="h-9 data-[state=active]:text-status-opportunity">History</TabsTrigger></TabsList>
-        <TabsContent value="todo" className="mt-4">
+      <Tabs defaultValue="todo" className="mt-2">
+        <TabsList className="grid h-11 w-full grid-cols-3 bg-transparent p-0"><TabsTrigger value="todo" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">To do</TabsTrigger><TabsTrigger value="documents" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">Documents</TabsTrigger><TabsTrigger value="history" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">History</TabsTrigger></TabsList>
+        <TabsContent value="todo" className="mt-3">
           {topPlanItem ? <PreviewRow icon={<HeartPulse className="h-4 w-4" />} title={topPlanItem.title} detail={topPlanItem.why} to="/home-care" /> : <EmptyPreview text="Nothing is due from the records currently available." to="/home-care" />}
           {planCount > 1 && <p className="mt-3 text-xs text-muted-foreground">{planCount - 1} more items in your care plan</p>}
         </TabsContent>
-        <TabsContent value="documents" className="mt-4"><PreviewRow icon={<FileText className="h-4 w-4" />} title={`${documentCount} saved document${documentCount === 1 ? "" : "s"}`} detail="Inspections, reports and home records" to="/documents" /></TabsContent>
-        <TabsContent value="history" className="mt-4"><PreviewRow icon={<History className="h-4 w-4" />} title={`${historyCount} service record${historyCount === 1 ? "" : "s"}`} detail="Your home’s maintenance history" to="/timeline" /></TabsContent>
+        <TabsContent value="documents" className="mt-3"><PreviewRow icon={<FileText className="h-4 w-4" />} title={`${documentCount} saved document${documentCount === 1 ? "" : "s"}`} detail="Inspections, reports and home records" to="/documents" /></TabsContent>
+        <TabsContent value="history" className="mt-3"><PreviewRow icon={<History className="h-4 w-4" />} title={`${historyCount} service record${historyCount === 1 ? "" : "s"}`} detail="Your home’s maintenance history" to="/timeline" /></TabsContent>
       </Tabs>
     </section>
   );
@@ -403,16 +429,16 @@ function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { top
 
 function HomeTeamCard({ team }: { team: { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } }) {
   return (
-    <section className="rounded-3xl border border-border bg-card p-5 shadow-soft sm:p-6">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface-warm"><ShieldCheck className="h-5 w-5 text-sucasa-orange" /></span>
-        <div><p className="text-lg font-semibold">Your Home Team</p><p className="mt-1 text-sm text-muted-foreground">Your relationships and information-sharing choices are managed separately.</p></div>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span>
+        <div><p className="text-lg font-semibold text-sucasa-navy">Your Home Team</p><p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Your trusted home professionals.</p></div>
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
         <TeamMemberCard member={team.agent} role="agent" />
         <TeamMemberCard member={team.lender} role="lender" />
       </div>
-      <Button asChild variant="ghost" className="mt-3 min-h-11 w-full justify-between px-3 text-primary">
+      <Button asChild variant="ghost" className="mt-1 min-h-11 w-full justify-between px-2 text-action-primary">
         <Link to="/home-team">Manage Home Team <ChevronRight className="h-4 w-4" /></Link>
       </Button>
     </section>
@@ -430,14 +456,14 @@ function TeamMemberCard({ member, role }: { member: HomeTeamMemberSummary | null
   return (
     <Link
       to="/home-team"
-      className="min-w-0 rounded-2xl border border-border-subtle bg-surface-warm/55 p-3 transition-colors hover:bg-surface-warm sm:p-4"
+      className="min-w-0 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary sm:p-4"
     >
-      <div className="grid h-11 w-11 place-items-center rounded-full bg-card text-sm font-semibold text-status-opportunity ring-1 ring-surface-warm-border">
+      <div className="grid h-10 w-10 place-items-center rounded-full bg-home-team-avatar text-sm font-semibold text-action-primary">
         {member ? initials : <UserRound className="h-5 w-5" />}
       </div>
       {member ? (
         <>
-          <p className="mt-3 truncate text-sm font-semibold text-foreground sm:text-base">{member.displayName}</p>
+          <p className="mt-2.5 truncate text-sm font-semibold text-foreground sm:text-base">{member.displayName}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {member.state === "confirmed" ? `Your ${roleLabel}` : "Pending confirmation"}
           </p>
@@ -445,7 +471,7 @@ function TeamMemberCard({ member, role }: { member: HomeTeamMemberSummary | null
         </>
       ) : (
         <>
-          <p className="mt-3 text-sm font-semibold text-foreground sm:text-base">Add an {roleLabel}</p>
+          <p className="mt-2.5 text-sm font-semibold text-foreground sm:text-base">Add {role === "agent" ? "an" : "a"} {roleLabel}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">Not connected</p>
         </>
       )}
@@ -454,10 +480,10 @@ function TeamMemberCard({ member, role }: { member: HomeTeamMemberSummary | null
 }
 
 function PreviewRow({ icon, title, detail, to }: { icon: ReactNode; title: string; detail: string; to: "/home-care" | "/documents" | "/timeline" }) {
-  return <Link to={to} className="flex min-h-11 items-center gap-3 rounded-xl bg-card/75 p-4"><span className="text-sucasa-orange">{icon}</span><span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span><span className="block text-sm text-muted-foreground">{detail}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>;
+  return <Link to={to} className="flex min-h-11 items-center gap-3 rounded-xl bg-card px-3 py-3"><span className="text-sucasa-orange">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="block text-xs text-muted-foreground sm:text-sm">{detail}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>;
 }
 
 function EmptyPreview({ text, to }: { text: string; to: "/home-care" }) {
-  return <Link to={to} className="flex min-h-11 items-center gap-3 rounded-xl bg-card/75 p-4 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-status-nurture" /><span className="flex-1">{text}</span><ChevronRight className="h-4 w-4" /></Link>;
+  return <Link to={to} className="flex min-h-11 items-center gap-3 rounded-xl bg-card px-3 py-3 text-xs text-muted-foreground sm:text-sm"><ShieldCheck className="h-4 w-4 text-status-nurture" /><span className="flex-1">{text}</span><ChevronRight className="h-4 w-4" /></Link>;
 }
 
