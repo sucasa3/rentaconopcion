@@ -1,5 +1,10 @@
 # Roadmap
 
+## Homeowner hero intelligence strip (approved)
+- [x] Translucent navy glass strip over the lower edge of the property photo
+- [x] Estimated Value, Estimated Equity, Home Score from canonical data only
+- [x] Verify 320/390/430px + desktop, address never covered
+
 ## SuCasa Agent Experience: Invitation → Activation → Daily Operating System (approved)
 
 - [x] Email brand redesign (real logo, warm/light, navy accents) + QA notes
