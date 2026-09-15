@@ -160,6 +160,13 @@ function Dashboard() {
     homeScore: homeScore?.score ?? null,
     zones: homeScore?.zones ?? null,
   };
+  const docList = docs ?? [];
+  const findingList = findings ?? [];
+  const needsAddress =
+    rawIntel &&
+    !rawIntel.ok &&
+    (rawIntel.error === "incomplete_address" || rawIntel.error === "No address on profile");
+  const topPlanItem = planSummary?.top ?? null;
 
   const visibleSystems = timeline
     .filter((item) => ["roof", "hvac", "water_heater", "electrical"].includes(item.key))
@@ -217,7 +224,7 @@ function Dashboard() {
               <p className="mt-1 text-sm text-muted-foreground">Get answers grounded in the records SuCasa has for this home.</p>
             </div>
             <Button asChild className="mt-5 w-full sm:mt-0 sm:w-auto">
-              <Link to="/assistant" search={{ question: undefined }}><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
+              <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
             </Button>
           </section>
 
