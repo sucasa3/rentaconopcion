@@ -1,18 +1,18 @@
 /**
  * Single source of truth for the public web addresses this app links to.
  *
- * Domain migration (approved 2026-09-14):
- *   sucasa.com          -> this platform          (not connected yet)
- *   www.sucasa.com      -> redirect to sucasa.com (not configured yet)
- *   homes.sucasa.com    -> existing Lofty IDX     (does not resolve yet)
+ * Domain migration (see docs/cutover-runbook.md):
+ *   sucasa.com          -> this platform          (still served by Lofty)
+ *   www.sucasa.com      -> redirect to sucasa.com (still served by Lofty)
+ *   homes.sucasa.com    -> existing Lofty IDX     (LIVE since 2026-09-15)
  *
- * Nothing here points at sucasa.com or homes.sucasa.com yet, on purpose: those
- * hosts do not yet resolve to the right place, so switching early would create
- * dead links, including in emails already sitting in people's inboxes.
+ * Step 1 is done: IDX_BASE_URL now points at homes.sucasa.com.
  *
- * Cutover is two edits, in this order:
- *   1. homes.sucasa.com live and tested  -> set IDX_BASE_URL to "https://homes.sucasa.com"
- *   2. sucasa.com connected as primary   -> set PLATFORM_BASE_URL to "https://sucasa.com"
+ * Step 2 stays pending on purpose. PLATFORM_BASE_URL must NOT point at
+ * sucasa.com until sucasa.com actually resolves to this app — until then, any
+ * link generated with it (invitations, tracking) would land on the old Lofty
+ * site. Flip it, or set PUBLIC_SITE_URL, only once the domain is verified and
+ * serving this platform.
  *
  * Links already delivered stay valid either way: the current Lovable address
  * keeps resolving and, once sucasa.com is primary, redirects to it preserving
@@ -25,8 +25,8 @@ export const PLATFORM_BASE_URL = "https://rentaconopcion.lovable.app";
 /** Where the platform will live after cutover. Not in use yet. */
 export const PLANNED_PLATFORM_BASE_URL = "https://sucasa.com";
 
-/** Base for the Lofty-powered IDX search / listing experience. */
-export const IDX_BASE_URL = "https://sucasa.com/homes";
+/** Base for the Lofty-powered IDX search / listing experience. Live since 2026-09-15. */
+export const IDX_BASE_URL = "https://homes.sucasa.com";
 
 /** Where IDX will live after cutover. Not in use yet. */
 export const PLANNED_IDX_BASE_URL = "https://homes.sucasa.com";
