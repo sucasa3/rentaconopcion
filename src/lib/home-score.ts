@@ -18,7 +18,7 @@ export type HomeScoreResult = {
   summary: string;
   breakdown: ScoreBreakdown[];
   topActions: string[];
-  zones: { roof: ZoneStatus; hvac: ZoneStatus; plumbing: ZoneStatus; electrical: ZoneStatus };
+  zones: { roof: ZoneStatus; hvac: ZoneStatus; waterHeater: ZoneStatus; electrical: ZoneStatus };
   itemsNeedingAttention: number;
 };
 
@@ -162,7 +162,7 @@ export function computeHomeScore(input: HomeScoreInput): HomeScoreResult {
     zones: {
       roof: statusZone(timeline.find((i) => i.key === "roof")),
       hvac: statusZone(timeline.find((i) => i.key === "hvac")),
-      plumbing: statusZone(timeline.find((i) => i.key === "water_heater")),
+      waterHeater: statusZone(timeline.find((i) => i.key === "water_heater")),
       electrical: statusZone(timeline.find((i) => i.key === "electrical")),
     },
     itemsNeedingAttention,

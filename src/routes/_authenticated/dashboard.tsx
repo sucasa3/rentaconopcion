@@ -1,19 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
-  CalendarCheck,
-  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
   FileText,
   HeartPulse,
   History,
   MessageCircleQuestion,
-  Plus,
-  Sparkles,
+  ShieldCheck,
   TrendingUp,
-  Wrench,
 } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
@@ -23,22 +21,10 @@ import { useHomeRecord } from "@/hooks/use-home-record";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 
 import { CompleteAddressCard } from "@/components/complete-address-card";
-import { HomeAlerts } from "@/components/home-alerts";
 import { useValueSnapshot } from "@/hooks/use-value-snapshot";
 import { useLogOnMount } from "@/hooks/use-activity-log";
 import { profileCompleteness } from "@/lib/next-step";
-import { buildHomePlan, formatCostBand, planCounts } from "@/lib/home-plan";
-import {
-  greetingKey,
-  homeHealth,
-  isQuiet,
-  recentUpdates,
-  smarterInvitations,
-  updateDate,
-  whatSuCasaSees,
-  type HomeFacts,
-  type Line,
-} from "@/lib/home-today";
+import { buildHomePlan, planCounts } from "@/lib/home-plan";
 
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
@@ -47,6 +33,11 @@ import { listValueSnapshots } from "@/lib/home-timeline.functions";
 import { useHomeIntel } from "@/hooks/use-home-intel";
 import { useLanguage } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { HomeScoreResult } from "@/lib/home-score";
+import type { TimelineItem } from "@/lib/maintenance-rules";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
@@ -169,255 +160,80 @@ function Dashboard() {
     homeScore: homeScore?.score ?? null,
     zones: homeScore?.zones ?? null,
   };
-
-  // ---------------------------------------------------------------- the read
   const docList = docs ?? [];
   const findingList = findings ?? [];
-  const hasInspection = docList.some((d: any) => d.kind === "inspection");
-  const equityPct = okIntel?.equity?.equityPct ?? null;
-
-  const facts: HomeFacts = {
-    overdue: timeline.filter((i) => i.status === "overdue").length,
-    dueSoon: timeline.filter((i) => i.status === "due_soon").length,
-    timelineItems: timeline.length,
-    plan90: planSummary?.next90Days ?? 0,
-    planTotal: planSummary?.total ?? 0,
-    findings: findingList.length,
-    hasInspection,
-    documents: docList.length,
-    equityPct,
-  };
-
-  const sees = whatSuCasaSees(facts);
-  const health = homeHealth(facts);
-  const quiet = isQuiet(facts);
-  const updates = recentUpdates({
-    documents: docList as any,
-    findings: findingList as any,
-    snapshots: (snapshots ?? []) as any,
-  });
-  const invitations = smarterInvitations({
-    hasName: !!firstName,
-    hasAddress,
-    hasPhone,
-    hasDocuments: docList.length > 0,
-    hasLogs: (serviceLog ?? []).length > 0,
-  });
-
-  const line = (l: Line) => t(l.key, l.params as never);
-
   const needsAddress =
     rawIntel &&
     !rawIntel.ok &&
     (rawIntel.error === "incomplete_address" || rawIntel.error === "No address on profile");
-
   const topPlanItem = planSummary?.top ?? null;
-  const cost = topPlanItem ? formatCostBand(topPlanItem.costBand) : null;
+
+  const visibleSystems = timeline
+    .filter((item) => ["roof", "hvac", "water_heater", "electrical"].includes(item.key))
+    .map((item) => ({
+      key: item.key,
+      label: item.key === "water_heater" ? "Water Heater" : item.label,
+      status: item.status,
+      detail:
+        item.source === "logged"
+          ? "From your service history"
+          : item.source === "permit"
+            ? "Estimated from permit records"
+            : "Estimated from available home records",
+    }));
+
+  const scoreFreshness = latestDate([
+    ...(serviceLog ?? []).map((row: any) => row.serviced_at),
+    ...findingList.map((row: any) => row.updated_at ?? row.created_at),
+    ...docList.map((row: any) => row.updated_at ?? row.created_at),
+  ]);
+  const valueFreshness = latestDate((snapshots ?? []).map((row: any) => row.captured_on));
 
   return (
-    <HomeownerShell>
-      <main className="px-4 pb-8 pt-3 sm:px-5 sm:py-8">
-        <div className="mx-auto max-w-3xl space-y-5 sm:space-y-7">
-          {/* ---------------------------------------------------- greeting */}
-          <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="min-w-0 py-1">
-              <h1 className="truncate text-[24px] font-semibold leading-tight sm:text-[30px]">
-                {t(greetingKey())}{firstName ? `, ${firstName}.` : "."}
-              </h1>
-              <p className="mt-1 text-[14px] leading-snug text-muted-foreground">
-                {t("home.today.summary")}
-              </p>
-            </div>
-            <div className="hidden shrink-0 items-center gap-2 sm:flex">
-              <GuidedOnboarding
-                role="homeowner"
-                userId={userId}
-                signals={{
-                  urgentCount: findingList.filter(
-                    (f: any) => f.urgency === "high" || f.urgency === "medium",
-                  ).length,
-                  refiSignal: !!okIntel?.equity?.refiSignal,
-                  documentCount: docList.length,
-                  completeness: completeness.pct,
-                }}
-                onFocusChange={goToFocus}
-              />
-              <Link
-                to="/request"
-                className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft"
-              >
-                <Plus className="h-4 w-4" /> {t("dash.request")}
-              </Link>
-            </div>
-          </div>
-
+    <HomeownerShell premium>
+      <main className="px-4 pb-28 pt-3 sm:px-6 sm:py-8">
+        <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+          <HomeHero data={heroData} />
           {needsAddress ? <CompleteAddressCard /> : null}
 
-          {/* ------------------------------------------- identity: the home */}
-          <HomeHero data={heroData} scoreDetail={homeScore} scorePending={!homeScore} />
-
-          {/* --------------------------------------------- what SuCasa sees */}
-          <section className="rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-4 sm:px-5">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-              <Sparkles className="h-3.5 w-3.5" /> {t("home.sees.label")}
-            </p>
-            <ul className="mt-2.5 space-y-1.5">
-              {sees.map((s) => (
-                <li key={s.key} className="flex gap-2 text-[14px] leading-snug">
-                  <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
-                  {line(s)}
-                </li>
-              ))}
-            </ul>
-
-            {updates.length > 0 && (
-              <div className="mt-3 border-t border-primary/15 pt-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  {t("home.recent.label")}
-                </p>
-                <ul className="mt-2 space-y-1.5">
-                  {updates.map((u) => (
-                    <li
-                      key={`${u.line.key}-${u.at}`}
-                      className="flex flex-wrap items-baseline gap-x-2 text-[13px] text-muted-foreground"
-                    >
-                      <span className="text-foreground">{line(u.line)}</span>
-                      <span className="text-[12px]">{updateDate(u.at, language)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          <section className="grid gap-3 sm:grid-cols-[1.05fr_1.95fr]">
+            <ScoreCard score={homeScore} updatedAt={scoreFreshness} />
+            <SystemHealth systems={visibleSystems} />
           </section>
 
-          {/* Missing inspection is invited once in "Make SuCasa smarter" below. */}
-          <HomeAlerts report={report} hasInspection />
+          <MoneyCard
+            value={okIntel?.value.value ?? null}
+            equity={okIntel?.equity?.equityDollars ?? null}
+            equityPct={okIntel?.equity?.equityPct ?? null}
+            updatedAt={valueFreshness}
+          />
 
-          {/* ------------------------------------------ coming up / quiet day */}
-          {planSummary && planSummary.next90Days > 0 && topPlanItem ? (
-            <section className="rounded-3xl border border-border/70 bg-card p-5 shadow-soft sm:p-6">
-              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                <CalendarCheck className="h-3.5 w-3.5" /> {t("home.coming.label")}
-              </p>
-              <p className="mt-2 text-[15px] font-medium">
-                {planSummary.next90Days === 1
-                  ? t("home.coming.count_one")
-                  : t("home.coming.count", { count: planSummary.next90Days })}
-              </p>
-              <p className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("home.coming.start")}
-              </p>
-              <p className="mt-1 text-[19px] font-semibold leading-snug">{topPlanItem.title}</p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{topPlanItem.why}</p>
-              {cost && (
-                <p className="mt-2.5 text-sm">
-                  <span className="text-muted-foreground">{t("home.coming.cost")}: </span>
-                  <span className="font-semibold">{cost}</span>
-                </p>
-              )}
-              <Link
-                to="/home-plan"
-                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
-              >
-                {t("home.coming.cta")} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </section>
-          ) : (
-            <section className="rounded-[28px] border border-primary/25 bg-primary/[0.05] p-6 text-center shadow-soft">
-              <CheckCircle2 className="mx-auto h-7 w-7 text-primary" />
-              <p className="mt-2 text-[17px] font-semibold">{t("home.quiet.headline")}</p>
-              <p className="mx-auto mt-1.5 max-w-md text-sm leading-relaxed text-muted-foreground">
-                {t("home.quiet.sentence")}
-              </p>
-              <Link
-                to="/home-plan"
-                className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary"
-              >
-                {t("home.coming.cta")} <ArrowRight className="h-4 w-4" />
-              </Link>
-            </section>
-          )}
+          <CareCard
+            topPlanItem={topPlanItem}
+            planCount={planSummary?.next90Days ?? 0}
+            documentCount={docList.length}
+            historyCount={(serviceLog ?? []).length}
+          />
 
-          {/* ----------------------------------------- compact home profile */}
-          <section className="overflow-hidden border-y border-border/70 bg-card sm:rounded-2xl sm:border">
-            <p className="px-5 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              {t("home.profile.label")}
-            </p>
-            <Row
-              to="/home-care"
-              icon={<HeartPulse className="h-4 w-4" />}
-              title={t("home.health.label")}
-              sub={line(health.line)}
-            />
-            <Row
-              to="/documents"
-              icon={<FileText className="h-4 w-4" />}
-              title={t("home.vault.label")}
-              sub={
-                findingList.length > 0 && hasInspection
-                  ? findingList.length === 1
-                    ? t("dash.docs.findings_one")
-                    : t("dash.docs.findings_many", { count: findingList.length })
-                  : docList.length > 0
-                    ? t("dash.docs.saved", { count: docList.length })
-                    : t("home.vault.sentence")
-              }
-            />
-            <Row
-              to="/assistant"
-              icon={<MessageCircleQuestion className="h-4 w-4" />}
-              title={t("home.ask.label")}
-              sub={t("dash.assistant.sentence")}
-            />
-            <Row
-              to="/timeline"
-              icon={<History className="h-4 w-4" />}
-              title={t("home.story.label")}
-              sub={t("timeline.subtitle")}
-            />
-            <Row
-              to="/money"
-              icon={<TrendingUp className="h-4 w-4" />}
-              title={t("home.value.row")}
-              sub={t("home.value.row_sub")}
-            />
-            <Row
-              to="/request"
-              icon={<Wrench className="h-4 w-4" />}
-              title={t("home.help.label")}
-              sub={t("home.help.sentence")}
-              last
-            />
+          <HomeTeamCard />
+
+          <section className="rounded-[1.5rem] border border-primary/25 bg-accent px-5 py-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-foreground">Ask SuCasa</p>
+              <h2 className="mt-2 text-xl font-semibold">What would you like to know about your home?</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Get answers grounded in the records SuCasa has for this home.</p>
+            </div>
+            <Button asChild className="mt-5 w-full sm:mt-0 sm:w-auto">
+              <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
+            </Button>
           </section>
 
-          {/* ------------------------------------------------- completeness */}
-          {invitations.length > 0 && (
-            <section className="border-l-2 border-primary/40 px-4 py-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                {t("home.smarter.label")}
-              </p>
-              <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
-                {invitations.map((inv) => (
-                  <li key={inv.key} className="flex items-center gap-1.5 text-[14px]">
-                    <Plus className="h-3.5 w-3.5 shrink-0 text-primary" /> {line(inv)}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-[12px] leading-snug text-muted-foreground">{t("home.smarter.why")}</p>
-              <Link to="/documents" className="mt-2 inline-flex text-sm font-semibold text-primary">
-                {t("dash.docs.action_add")} <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </section>
-          )}
-
-          <div className="flex items-center justify-center pt-1 sm:hidden">
+          <div className="flex justify-center pt-1">
             <GuidedOnboarding
               role="homeowner"
               userId={userId}
               signals={{
-                urgentCount: findingList.filter(
-                  (f: any) => f.urgency === "high" || f.urgency === "medium",
-                ).length,
+                urgentCount: findingList.filter((f: any) => f.urgency === "high" || f.urgency === "medium").length,
                 refiSignal: !!okIntel?.equity?.refiSignal,
                 documentCount: docList.length,
                 completeness: completeness.pct,
@@ -431,6 +247,157 @@ function Dashboard() {
       </main>
     </HomeownerShell>
   );
+}
+
+function formatMoney(value: number | null, compact = false) {
+  if (value == null) return "Not available";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+    notation: compact ? "compact" : "standard",
+  }).format(value);
+}
+
+function latestDate(values: Array<string | null | undefined>) {
+  const dates = values
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+  if (!dates[0]) return null;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(dates[0]);
+}
+
+function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; updatedAt: string | null }) {
+  const value = score?.score ?? 0;
+  const circumference = 2 * Math.PI * 48;
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5">
+      <div className="flex items-center gap-5">
+        <div className="relative grid h-24 w-24 shrink-0 place-items-center">
+          <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
+            <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
+            {score && (
+              <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round"
+                strokeDasharray={circumference} strokeDashoffset={circumference * (1 - value / 100)} className="home-score-ring text-status-positive" />
+            )}
+          </svg>
+          <span className="text-3xl font-semibold tabular-nums">{score ? value : "—"}</span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Score</p>
+          <p className="mt-1 text-base font-semibold">{score?.bandLabel ?? "Not enough information"}</p>
+          {updatedAt && <p className="mt-1 text-xs text-muted-foreground">Updated {updatedAt}</p>}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="mt-2 h-auto px-0 text-primary hover:bg-transparent">What affects this?</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader><DialogTitle>Your Home Score</DialogTitle></DialogHeader>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                The score is based on the information SuCasa currently has, including maintenance history, inspection findings and available home records.
+              </p>
+              <div className="rounded-lg bg-secondary p-3 text-sm">
+                Missing records mean <strong>we do not know yet</strong>. They are kept separate from evidence that something may need attention.
+              </div>
+              {score && (
+                <ul className="space-y-3">
+                  {score.breakdown.map((item) => (
+                    <li key={item.key} className="flex gap-3 text-sm">
+                      <span className="font-semibold tabular-nums">{item.earned}/{item.max}</span>
+                      <span><strong>{item.label}</strong><span className="block text-muted-foreground">{item.detail}</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SystemHealth({ systems }: { systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home systems</p><h2 className="mt-1 text-lg font-semibold">What your records indicate</h2></div>
+        <HeartPulse className="h-5 w-5 text-primary" />
+      </div>
+      {systems.length ? (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {systems.map((system) => (
+            <div key={system.key} className="rounded-xl bg-secondary p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">{system.label}</span>
+                <span className={system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-muted-foreground"}>
+                  {system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{system.detail}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4 flex gap-3 rounded-xl bg-secondary p-4">
+          <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No system-specific records are available yet. SuCasa will not guess at your home’s condition.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MoneyCard({ value, equity, equityPct, updatedAt }: { value: number | null; equity: number | null; equityPct: number | null; updatedAt: string | null }) {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your money</p><h2 className="mt-1 text-xl font-semibold">Value & equity</h2></div>
+        <Button asChild variant="ghost" size="sm"><Link to="/money">Details <ChevronRight className="h-4 w-4" /></Link></Button>
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-secondary p-4"><p className="text-xs text-muted-foreground">Estimated value</p><p className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{formatMoney(value, true)}</p></div>
+        <div className="rounded-xl bg-secondary p-4"><p className="text-xs text-muted-foreground">Estimated equity</p><p className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="mt-1 text-xs text-muted-foreground">{Math.round(equityPct * 100)}% of value</p>}</div>
+      </div>
+      {updatedAt && <p className="mt-3 text-xs text-muted-foreground">Value record as of {updatedAt}</p>}
+    </section>
+  );
+}
+
+function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { topPlanItem: { title: string; why: string } | null; planCount: number; documentCount: number; historyCount: number }) {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5 sm:p-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Care</p>
+      <Tabs defaultValue="todo" className="mt-3">
+        <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="todo">To do</TabsTrigger><TabsTrigger value="documents">Documents</TabsTrigger><TabsTrigger value="history">History</TabsTrigger></TabsList>
+        <TabsContent value="todo" className="mt-4">
+          {topPlanItem ? <PreviewRow icon={<HeartPulse className="h-4 w-4" />} title={topPlanItem.title} detail={topPlanItem.why} to="/home-care" /> : <EmptyPreview text="Nothing is due from the records currently available." to="/home-care" />}
+          {planCount > 1 && <p className="mt-3 text-xs text-muted-foreground">{planCount - 1} more items in your care plan</p>}
+        </TabsContent>
+        <TabsContent value="documents" className="mt-4"><PreviewRow icon={<FileText className="h-4 w-4" />} title={`${documentCount} saved document${documentCount === 1 ? "" : "s"}`} detail="Inspections, reports and home records" to="/documents" /></TabsContent>
+        <TabsContent value="history" className="mt-4"><PreviewRow icon={<History className="h-4 w-4" />} title={`${historyCount} service record${historyCount === 1 ? "" : "s"}`} detail="Your home’s maintenance history" to="/timeline" /></TabsContent>
+      </Tabs>
+    </section>
+  );
+}
+
+function HomeTeamCard() {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+      <div className="flex gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary"><ShieldCheck className="h-5 w-5 text-primary" /></span><div><p className="font-semibold">Your Home Team</p><p className="mt-1 max-w-xl text-sm text-muted-foreground">Review suggested relationships and choose separately who can access information about your home.</p></div></div>
+      <Button asChild variant="outline" className="mt-4 w-full sm:mt-0 sm:w-auto"><Link to="/home-team">View Home Team <ChevronRight className="h-4 w-4" /></Link></Button>
+    </section>
+  );
+}
+
+function PreviewRow({ icon, title, detail, to }: { icon: ReactNode; title: string; detail: string; to: "/home-care" | "/documents" | "/timeline" }) {
+  return <Link to={to} className="flex items-center gap-3 rounded-xl bg-secondary p-4"><span className="text-primary">{icon}</span><span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span><span className="block text-sm text-muted-foreground">{detail}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>;
+}
+
+function EmptyPreview({ text, to }: { text: string; to: "/home-care" }) {
+  return <Link to={to} className="flex items-center gap-3 rounded-xl bg-secondary p-4 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-status-positive" /><span className="flex-1">{text}</span><ChevronRight className="h-4 w-4" /></Link>;
 }
 
 /** A quiet destination row — deliberately lighter than the cards above it. */

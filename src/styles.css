@@ -226,6 +226,49 @@
   --sidebar-ring: oklch(0.6 0.13 255);
 }
 
+.homeowner-premium {
+  --background: oklch(0.105 0.012 250);
+  --foreground: oklch(0.97 0.006 250);
+  --card: oklch(0.155 0.014 250);
+  --card-foreground: oklch(0.97 0.006 250);
+  --popover: oklch(0.17 0.014 250);
+  --popover-foreground: oklch(0.97 0.006 250);
+  --primary: oklch(0.67 0.2 255);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.21 0.014 250);
+  --secondary-foreground: oklch(0.94 0.008 250);
+  --muted: oklch(0.205 0.012 250);
+  --muted-foreground: oklch(0.7 0.016 250);
+  --accent: oklch(0.24 0.055 255);
+  --accent-foreground: oklch(0.9 0.08 255);
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.67 0.2 255);
+  --surface: oklch(0.105 0.012 250);
+  --surface-elevated: oklch(0.18 0.014 250);
+  --status-positive: oklch(0.77 0.2 150);
+  --status-attention: oklch(0.78 0.17 72);
+  --status-risk: oklch(0.69 0.2 25);
+  --status-nurture: oklch(0.7 0.02 250);
+  --action-primary: oklch(0.67 0.2 255);
+  --action-primary-foreground: oklch(0.99 0 0);
+  color: var(--foreground);
+}
+
+@utility home-photo-vignette {
+  background:
+    linear-gradient(to top, oklch(0.08 0.01 250 / 0.94), transparent 62%),
+    linear-gradient(to bottom, oklch(0.08 0.01 250 / 0.38), transparent 38%);
+}
+
+@utility home-score-ring {
+  animation: home-score-reveal 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes home-score-reveal {
+  from { stroke-dashoffset: 301.6; }
+}
+
 @utility assistant-pulse {
   animation: assistant-pulse 1.8s ease-in-out infinite;
 }
@@ -237,6 +280,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .assistant-pulse { animation: none; }
+  .home-score-ring { animation: none; }
 }
 
 @utility gradient-brand {

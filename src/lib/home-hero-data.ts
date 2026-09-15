@@ -11,7 +11,7 @@ export type HomeHeroData = {
   zones: {
     roof: ZoneStatus;
     hvac: ZoneStatus;
-    plumbing: ZoneStatus;
+    waterHeater: ZoneStatus;
     electrical: ZoneStatus;
   };
 };
@@ -43,7 +43,7 @@ export const HOME_HERO: HomeHeroData = {
   zones: {
     roof: "good",
     hvac: "watch",
-    plumbing: "good",
+    waterHeater: "good",
     electrical: "urgent",
   },
 };
