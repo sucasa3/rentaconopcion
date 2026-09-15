@@ -242,6 +242,157 @@ function Dashboard() {
   );
 }
 
+function formatMoney(value: number | null, compact = false) {
+  if (value == null) return "Not available";
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+    notation: compact ? "compact" : "standard",
+  }).format(value);
+}
+
+function latestDate(values: Array<string | null | undefined>) {
+  const dates = values
+    .filter((value): value is string => Boolean(value))
+    .map((value) => new Date(value))
+    .filter((date) => !Number.isNaN(date.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+  if (!dates[0]) return null;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(dates[0]);
+}
+
+function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; updatedAt: string | null }) {
+  const value = score?.score ?? 0;
+  const circumference = 2 * Math.PI * 48;
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5">
+      <div className="flex items-center gap-5">
+        <div className="relative grid h-24 w-24 shrink-0 place-items-center">
+          <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
+            <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
+            {score && (
+              <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round"
+                strokeDasharray={circumference} strokeDashoffset={circumference * (1 - value / 100)} className="home-score-ring text-status-positive" />
+            )}
+          </svg>
+          <span className="text-3xl font-semibold tabular-nums">{score ? value : "—"}</span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Score</p>
+          <p className="mt-1 text-base font-semibold">{score?.bandLabel ?? "Not enough information"}</p>
+          {updatedAt && <p className="mt-1 text-xs text-muted-foreground">Updated {updatedAt}</p>}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="mt-2 h-auto px-0 text-primary hover:bg-transparent">What affects this?</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader><DialogTitle>Your Home Score</DialogTitle></DialogHeader>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                The score is based on the information SuCasa currently has, including maintenance history, inspection findings and available home records.
+              </p>
+              <div className="rounded-lg bg-secondary p-3 text-sm">
+                Missing records mean <strong>we do not know yet</strong>. They are kept separate from evidence that something may need attention.
+              </div>
+              {score && (
+                <ul className="space-y-3">
+                  {score.breakdown.map((item) => (
+                    <li key={item.key} className="flex gap-3 text-sm">
+                      <span className="font-semibold tabular-nums">{item.earned}/{item.max}</span>
+                      <span><strong>{item.label}</strong><span className="block text-muted-foreground">{item.detail}</span></span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SystemHealth({ systems }: { systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home systems</p><h2 className="mt-1 text-lg font-semibold">What your records indicate</h2></div>
+        <HeartPulse className="h-5 w-5 text-primary" />
+      </div>
+      {systems.length ? (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {systems.map((system) => (
+            <div key={system.key} className="rounded-xl bg-secondary p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">{system.label}</span>
+                <span className={system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-status-positive"}>
+                  {system.status === "overdue" ? "Due" : system.status === "due_soon" ? "Watch" : "On track"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">{system.detail}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4 flex gap-3 rounded-xl bg-secondary p-4">
+          <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No system-specific records are available yet. SuCasa will not guess at your home’s condition.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MoneyCard({ value, equity, equityPct, updatedAt }: { value: number | null; equity: number | null; equityPct: number | null; updatedAt: string | null }) {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Your money</p><h2 className="mt-1 text-xl font-semibold">Value & equity</h2></div>
+        <Button asChild variant="ghost" size="sm"><Link to="/money">Details <ChevronRight className="h-4 w-4" /></Link></Button>
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-secondary p-4"><p className="text-xs text-muted-foreground">Estimated value</p><p className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{formatMoney(value, true)}</p></div>
+        <div className="rounded-xl bg-secondary p-4"><p className="text-xs text-muted-foreground">Estimated equity</p><p className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="mt-1 text-xs text-muted-foreground">{Math.round(equityPct * 100)}% of value</p>}</div>
+      </div>
+      {updatedAt && <p className="mt-3 text-xs text-muted-foreground">Value record as of {updatedAt}</p>}
+    </section>
+  );
+}
+
+function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { topPlanItem: { title: string; why: string } | null; planCount: number; documentCount: number; historyCount: number }) {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5 sm:p-6">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Care</p>
+      <Tabs defaultValue="todo" className="mt-3">
+        <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="todo">To do</TabsTrigger><TabsTrigger value="documents">Documents</TabsTrigger><TabsTrigger value="history">History</TabsTrigger></TabsList>
+        <TabsContent value="todo" className="mt-4">
+          {topPlanItem ? <PreviewRow icon={<HeartPulse className="h-4 w-4" />} title={topPlanItem.title} detail={topPlanItem.why} to="/home-care" /> : <EmptyPreview text="Nothing is due from the records currently available." to="/home-care" />}
+          {planCount > 1 && <p className="mt-3 text-xs text-muted-foreground">{planCount - 1} more items in your care plan</p>}
+        </TabsContent>
+        <TabsContent value="documents" className="mt-4"><PreviewRow icon={<FileText className="h-4 w-4" />} title={`${documentCount} saved document${documentCount === 1 ? "" : "s"}`} detail="Inspections, reports and home records" to="/documents" /></TabsContent>
+        <TabsContent value="history" className="mt-4"><PreviewRow icon={<History className="h-4 w-4" />} title={`${historyCount} service record${historyCount === 1 ? "" : "s"}`} detail="Your home’s maintenance history" to="/timeline" /></TabsContent>
+      </Tabs>
+    </section>
+  );
+}
+
+function HomeTeamCard() {
+  return (
+    <section className="rounded-[1.5rem] border border-border bg-card p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+      <div className="flex gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-secondary"><ShieldCheck className="h-5 w-5 text-primary" /></span><div><p className="font-semibold">Your Home Team</p><p className="mt-1 max-w-xl text-sm text-muted-foreground">Review suggested relationships and choose separately who can access information about your home.</p></div></div>
+      <Button asChild variant="outline" className="mt-4 w-full sm:mt-0 sm:w-auto"><Link to="/home-team">View Home Team <ChevronRight className="h-4 w-4" /></Link></Button>
+    </section>
+  );
+}
+
+function PreviewRow({ icon, title, detail, to }: { icon: ReactNode; title: string; detail: string; to: "/home-care" | "/documents" | "/timeline" }) {
+  return <Link to={to} className="flex items-center gap-3 rounded-xl bg-secondary p-4"><span className="text-primary">{icon}</span><span className="min-w-0 flex-1"><span className="block font-semibold">{title}</span><span className="block text-sm text-muted-foreground">{detail}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>;
+}
+
+function EmptyPreview({ text, to }: { text: string; to: "/home-care" }) {
+  return <Link to={to} className="flex items-center gap-3 rounded-xl bg-secondary p-4 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-status-positive" /><span className="flex-1">{text}</span><ChevronRight className="h-4 w-4" /></Link>;
+}
+
 /** A quiet destination row — deliberately lighter than the cards above it. */
 function Row({
   to,
