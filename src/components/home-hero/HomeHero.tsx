@@ -9,7 +9,7 @@ export function HomeHero({
 }) {
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-elevated sm:rounded-3xl">
-      <div className="relative h-[248px] w-full sm:h-[380px] lg:h-[430px]">
+      <div className="relative h-[176px] w-full min-[430px]:h-[196px] sm:h-[340px] lg:h-[390px]">
         <img
           src={heroPhoto.url}
           alt={data.address ? `Photo of ${data.address}` : "Your home"}
@@ -18,11 +18,11 @@ export function HomeHero({
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div className="home-photo-vignette pointer-events-none absolute inset-0" aria-hidden />
-        <div className="absolute inset-x-0 bottom-0 p-4 sm:p-7">
-          <div className="inline-flex items-center gap-2 text-[12px] font-medium text-primary-foreground/75">
+        <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-7">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-primary-foreground/80 sm:text-xs">
             <MapPin className="h-3.5 w-3.5" /> Your home
           </div>
-          <h1 className="mt-1 max-w-[24ch] text-2xl font-semibold leading-tight text-primary-foreground drop-shadow-lg sm:text-4xl lg:text-5xl">
+          <h1 className="mt-0.5 max-w-[28ch] text-xl font-semibold leading-tight text-primary-foreground drop-shadow-lg sm:mt-1 sm:text-4xl lg:text-5xl">
             {data.address ?? "Add your home address"}
           </h1>
           {!data.address && (

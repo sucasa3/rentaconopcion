@@ -63,6 +63,11 @@
 - [x] Verify confirmed, one-professional, pending, and empty Home Team presentation states
 - [x] Capture 390px and desktop views; verify Home Care and Money transitions
 
+## Homeowner compact reference match (2026-09-15)
+- [x] Tighten the photo, score, systems, money, care, team, and Ask SuCasa composition without changing behavior
+- [x] Preserve narrow-screen resilience, 44px controls, canonical states, and the existing SuCasa logo
+- [x] Verify 320/375/390/430px, desktop, Home Team variants, and Home Care/Money transitions
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates
