@@ -2,7 +2,8 @@
 
 ## Visual system
 - Preserve the current property-photo-first structure, navigation, calculations, records, permissions, and assistant behavior.
-- Tune only the homeowner-scoped light tokens to the approved palette: cool light page, white cards, subtle gray surfaces, warm care surface, deep navy hierarchy, restrained orange accents, semantic green/amber/red, and intelligence blue.
+- Tune only the homeowner-scoped light tokens to the exact approved palette: `#F6F7F9` page, `#FFFFFF` cards, `#EEF1F4` secondary, `#F5F1EC` care, `#182230` text, `#17324D` deep navy, `#214F7B` action navy, `#DA5431` orange, `#2F7D67` positive, `#B9822C` attention, `#B94A48` risk, `#E8EFF6` intelligence, `#4478A5` intelligence accent, `#DDE2E7` borders, and `#E3EBF4` Home Team avatars.
+- Keep white and neutral surfaces dominant; navy, orange, and dark green provide personality without large blue, beige, or saturated fields.
 - Keep Agent and Lender styling untouched.
 
 ## Mobile hierarchy and density
@@ -15,7 +16,7 @@
 - Present Home Systems as compact evidence-backed rows for Roof, HVAC, Water Heater, and Electrical; never imply live monitoring or invent health.
 - Keep Value & Equity in a white outer card with one compact intelligence-blue inner surface and side-by-side financial values.
 - Keep Home Care warm and compact with orange only for the active tab and small accents.
-- Render at most one canonical agent and lender in compact white cards; pending and empty states remain distinct and permission-neutral.
+- Render at most one canonical agent and lender in compact white cards with blue-gray avatar circles, navy initials, dark names, and muted role labels. Keep the professionals visually primary and the manage action secondary; pending and empty states remain distinct and permission-neutral.
 - Finish with a compact intelligence surface and the existing “Ask about your home” action.
 
 ## Safety
