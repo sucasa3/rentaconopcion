@@ -65,11 +65,13 @@ export function HomeHero({ data }: { data: HomeHeroView }) {
 
 function HeroMetric({
   label,
+  shortLabel,
   value,
   note,
   notePositive = false,
 }: {
   label: string;
+  shortLabel: string;
   value: string;
   note?: string | null;
   notePositive?: boolean;
@@ -77,7 +79,8 @@ function HeroMetric({
   return (
     <div className="min-w-0 px-2 text-center sm:px-3">
       <p className="truncate text-[9px] font-medium uppercase tracking-[0.08em] text-white/60 sm:text-[11px] sm:tracking-[0.1em]">
-        {label}
+        <span className="min-[360px]:hidden">{shortLabel}</span>
+        <span className="hidden min-[360px]:inline">{label}</span>
       </p>
       <p className="mt-0.5 truncate text-sm font-semibold tabular-nums text-white sm:text-2xl">{value}</p>
       {note && (
