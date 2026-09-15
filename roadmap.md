@@ -96,7 +96,7 @@
 ## Homeowner vibrant color refinement (2026-09-15)
 - [x] Strengthen homeowner-scoped navy, blue, orange, green, amber, and red accents
 - [x] Replace washed-out score, care, team, address, and assistant accents without changing structure
-- [ ] Verify 320/375/390/430px and desktop for contrast, overflow, and legibility
+- [x] Verify 320/375/390/430px and desktop for contrast, overflow, and legibility
 
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)

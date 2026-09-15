@@ -234,7 +234,7 @@ function Dashboard() {
               <p className="flex items-center gap-1.5 text-sm font-semibold text-primary-foreground sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
               <p className="mt-1 text-xs leading-snug text-primary-foreground/70 sm:text-sm">Get answers about your home, records and next steps.</p>
             </div>
-            <Button asChild className="relative min-h-11 shrink-0 rounded-xl bg-sucasa-orange px-3 text-sucasa-orange-foreground shadow-soft hover:bg-sucasa-orange/90 sm:px-4">
+            <Button asChild className="relative min-h-11 shrink-0 rounded-xl bg-intelligence-accent px-3 text-primary-foreground shadow-soft hover:bg-intelligence-accent/90 sm:px-4">
               <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /><span className="hidden min-[390px]:inline">Ask about your home</span><span className="min-[390px]:hidden">Ask</span></Link>
             </Button>
           </section>
