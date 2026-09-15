@@ -55,6 +55,13 @@
 - [x] Verify 320/375/390/430 mobile, desktop, Dashboard → Home Care, and Dashboard → Money
 - [x] Confirm relationship display does not change consent or professional access
 
+## Homeowner approved-reference visual refinement (2026-09-15)
+- [ ] Apply the approved cool-light homeowner palette through dashboard-scoped semantic tokens
+- [ ] Tighten 390px density while preserving the photo-first hierarchy and 44px actions
+- [ ] Refine Score, Systems, Value & Equity, Home Care, Home Team, and Ask SuCasa presentation only
+- [ ] Verify confirmed, one-professional, pending, and empty Home Team presentation states
+- [ ] Capture 390px and desktop views; verify Home Care and Money transitions
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates
