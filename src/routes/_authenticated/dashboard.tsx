@@ -161,50 +161,6 @@ function Dashboard() {
     zones: homeScore?.zones ?? null,
   };
 
-  // ---------------------------------------------------------------- the read
-  const docList = docs ?? [];
-  const findingList = findings ?? [];
-  const hasInspection = docList.some((d: any) => d.kind === "inspection");
-  const equityPct = okIntel?.equity?.equityPct ?? null;
-
-  const facts: HomeFacts = {
-    overdue: timeline.filter((i) => i.status === "overdue").length,
-    dueSoon: timeline.filter((i) => i.status === "due_soon").length,
-    timelineItems: timeline.length,
-    plan90: planSummary?.next90Days ?? 0,
-    planTotal: planSummary?.total ?? 0,
-    findings: findingList.length,
-    hasInspection,
-    documents: docList.length,
-    equityPct,
-  };
-
-  const sees = whatSuCasaSees(facts);
-  const health = homeHealth(facts);
-  const quiet = isQuiet(facts);
-  const updates = recentUpdates({
-    documents: docList as any,
-    findings: findingList as any,
-    snapshots: (snapshots ?? []) as any,
-  });
-  const invitations = smarterInvitations({
-    hasName: !!firstName,
-    hasAddress,
-    hasPhone,
-    hasDocuments: docList.length > 0,
-    hasLogs: (serviceLog ?? []).length > 0,
-  });
-
-  const line = (l: Line) => t(l.key, l.params as never);
-
-  const needsAddress =
-    rawIntel &&
-    !rawIntel.ok &&
-    (rawIntel.error === "incomplete_address" || rawIntel.error === "No address on profile");
-
-  const topPlanItem = planSummary?.top ?? null;
-  const cost = topPlanItem ? formatCostBand(topPlanItem.costBand) : null;
-
   const visibleSystems = timeline
     .filter((item) => ["roof", "hvac", "water_heater", "electrical"].includes(item.key))
     .map((item) => ({
@@ -261,7 +217,7 @@ function Dashboard() {
               <p className="mt-1 text-sm text-muted-foreground">Get answers grounded in the records SuCasa has for this home.</p>
             </div>
             <Button asChild className="mt-5 w-full sm:mt-0 sm:w-auto">
-              <Link to="/assistant"><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
+              <Link to="/assistant" search={{ question: undefined }}><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
             </Button>
           </section>
 
