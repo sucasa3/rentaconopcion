@@ -27,6 +27,10 @@ export const es: Dictionary = {
   "nav.report": "Informe",
   "nav.timeline": "Historial",
   "nav.timeline_long": "Historial del hogar",
+  "nav.value": "Valor",
+  "nav.care": "Cuidado",
+  "nav.team": "Equipo",
+  "nav.more": "Más",
 
   "alerts.title": "Requiere tu atención",
   "alerts.new": "Nuevo",

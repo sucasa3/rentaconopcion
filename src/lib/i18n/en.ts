@@ -31,6 +31,10 @@ export const en = {
   "nav.report": "Report",
   "nav.timeline": "History",
   "nav.timeline_long": "Home history",
+  "nav.value": "Value",
+  "nav.care": "Care",
+  "nav.team": "Team",
+  "nav.more": "More",
 
   // ----------------------------------------------------------------- alerts
   "alerts.title": "Needs your attention",
