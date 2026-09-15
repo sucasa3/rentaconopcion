@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import type { HomeHeroView } from "@/lib/home-hero-data";
 import heroPhoto from "@/assets/home-hero-photo.jpg.asset.json";
 
@@ -45,14 +46,16 @@ export function HomeHero({ data }: { data: HomeHeroView }) {
       </div>
 
       <div className="relative z-10 -mt-7 mx-2.5 mb-2.5 grid grid-cols-3 divide-x divide-white/15 rounded-xl border border-white/12 bg-hero-glass px-1 py-2 shadow-elevated backdrop-blur-md sm:-mt-11 sm:mx-5 sm:mb-5 sm:rounded-2xl sm:px-2 sm:py-3.5">
-        <HeroMetric label="Estimated Value" shortLabel="Value" value={compactMoney(data.value)} />
-        <HeroMetric
-          label="Estimated Equity"
-          shortLabel="Equity"
-          value={compactMoney(data.equity)}
-          note={data.equityPct != null ? `${Math.round(data.equityPct * 100)}% of value` : null}
-          notePositive
-        />
+        <Link to="/money" aria-label="View value and equity details" className="col-span-2 grid min-h-11 grid-cols-2 divide-x divide-white/15 rounded-lg transition-colors hover:bg-primary-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground/70">
+          <HeroMetric label="Estimated Value" shortLabel="Value" value={compactMoney(data.value)} />
+          <HeroMetric
+            label="Estimated Equity"
+            shortLabel="Equity"
+            value={compactMoney(data.equity)}
+            note={data.equityPct != null ? `${Math.round(data.equityPct * 100)}% of value` : null}
+            notePositive
+          />
+        </Link>
         <HeroMetric
           label="Home Score"
           shortLabel="Score"

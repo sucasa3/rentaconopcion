@@ -73,6 +73,14 @@
 - [x] Preserve narrow-screen resilience, 44px controls, canonical states, and the existing SuCasa logo
 - [x] Verify 320/375/390/430px, desktop, Home Team variants, and Home Care/Money transitions
 
+## Homeowner final visual refinement (2026-09-15)
+- [x] Combine Home Score and evidence-backed systems into one Home Health section
+- [x] Remove the repeated Value & Equity summary below the hero
+- [x] Keep Home Care and Home Team compact with distinct semantic surfaces
+- [x] Reduce mobile navigation to Home, Value, Care, Team, and More
+- [x] Move Setup Guide from the Home dashboard into More without removing destinations
+- [x] Verify 320/375/390/430px, desktop, navigation, focus, reduced motion, and console
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates

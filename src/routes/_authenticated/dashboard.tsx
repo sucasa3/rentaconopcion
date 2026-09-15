@@ -29,7 +29,6 @@ import { buildHomePlan, planCounts } from "@/lib/home-plan";
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
-import { listValueSnapshots } from "@/lib/home-timeline.functions";
 import { getMyHomeTeamSummary } from "@/lib/professional-invitations.functions";
 import type { HomeTeamMemberSummary } from "@/lib/home-team-summary";
 import { useHomeIntel } from "@/hooks/use-home-intel";
@@ -111,7 +110,6 @@ function Dashboard() {
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const fetchFindings = useServerFn(listInspectionFindings);
   const fetchDocs = useServerFn(listHomeDocuments);
-  const fetchSnapshots = useServerFn(listValueSnapshots);
   const fetchHomeTeam = useServerFn(getMyHomeTeamSummary);
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
@@ -126,11 +124,6 @@ function Dashboard() {
   const { data: docs } = useQuery({
     queryKey: ["home-documents"],
     queryFn: () => fetchDocs(undefined),
-    staleTime: 5 * 60_000,
-  });
-  const { data: snapshots } = useQuery({
-    queryKey: ["value-snapshots"],
-    queryFn: () => fetchSnapshots(undefined),
     staleTime: 5 * 60_000,
   });
   const { data: homeTeam } = useQuery({
@@ -195,27 +188,33 @@ function Dashboard() {
     ...findingList.map((row: any) => row.updated_at ?? row.created_at),
     ...docList.map((row: any) => row.updated_at ?? row.created_at),
   ]);
-  const valueFreshness = latestDate((snapshots ?? []).map((row: any) => row.captured_on));
   const previewTeam = developmentHomeTeamPreview();
 
   return (
-    <HomeownerShell premium>
+    <HomeownerShell
+      premium
+      moreContent={
+        <GuidedOnboarding
+          role="homeowner"
+          userId={userId}
+          signals={{
+            urgentCount: findingList.filter((f: any) => f.urgency === "high" || f.urgency === "medium").length,
+            refiSignal: !!okIntel?.equity?.refiSignal,
+            documentCount: docList.length,
+            completeness: completeness.pct,
+          }}
+          onFocusChange={goToFocus}
+          triggerLabel={t("home.setup.label")}
+          autoOpen={false}
+        />
+      }
+    >
       <main className="px-2.5 pb-24 pt-2 sm:px-6 sm:py-7">
         <div className="mx-auto max-w-5xl space-y-2.5 sm:space-y-5">
           <HomeHero data={heroData} />
           {needsAddress ? <CompleteAddressCard /> : null}
 
-          <section className="grid grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-2 sm:grid-cols-[1.05fr_1.95fr] sm:gap-3">
-            <ScoreCard score={homeScore} updatedAt={scoreFreshness} />
-            <SystemHealth systems={visibleSystems} />
-          </section>
-
-          <MoneyCard
-            value={okIntel?.value.value ?? null}
-            equity={okIntel?.equity?.equityDollars ?? null}
-            equityPct={okIntel?.equity?.equityPct ?? null}
-            updatedAt={valueFreshness}
-          />
+          <HomeHealth score={homeScore} updatedAt={scoreFreshness} systems={visibleSystems} />
 
           <CareCard
             topPlanItem={topPlanItem}
@@ -236,35 +235,10 @@ function Dashboard() {
             </Button>
           </section>
 
-          <div className="flex justify-center pt-1">
-            <GuidedOnboarding
-              role="homeowner"
-              userId={userId}
-              signals={{
-                urgentCount: findingList.filter((f: any) => f.urgency === "high" || f.urgency === "medium").length,
-                refiSignal: !!okIntel?.equity?.refiSignal,
-                documentCount: docList.length,
-                completeness: completeness.pct,
-              }}
-              onFocusChange={goToFocus}
-              triggerLabel={t("home.setup.label")}
-              autoOpen={false}
-            />
-          </div>
         </div>
       </main>
     </HomeownerShell>
   );
-}
-
-function formatMoney(value: number | null, compact = false) {
-  if (value == null) return "Not available";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-    notation: compact ? "compact" : "standard",
-  }).format(value);
 }
 
 function latestDate(values: Array<string | null | undefined>) {
@@ -303,7 +277,7 @@ function developmentHomeTeamPreview(): { agent: HomeTeamMemberSummary | null; le
   return null;
 }
 
-function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; updatedAt: string | null }) {
+function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | null; updatedAt: string | null; systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
   const value = score?.score ?? 0;
   const circumference = 2 * Math.PI * 48;
   const limitedRecords = score?.breakdown.some(
@@ -317,9 +291,9 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
         ? "text-status-attention"
         : "text-status-positive";
   return (
-    <section className="min-w-0 rounded-2xl border border-border bg-card p-2.5 shadow-soft sm:p-4">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-b border-border pb-1.5 sm:pb-2">
-        <p className="truncate text-[11px] font-semibold text-sucasa-navy sm:text-base">Home Score</p>
+    <section className="min-w-0 rounded-2xl border border-border bg-card p-3 shadow-soft transition-shadow hover:shadow-elevated sm:p-5">
+      <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-2">
+        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence"><HeartPulse className="h-4 w-4 text-intelligence-accent" /></span><h2 className="truncate text-base font-semibold text-sucasa-navy sm:text-lg">Home Health</h2></div>
         <Dialog>
           <DialogTrigger asChild>
              <Button variant="ghost" size="sm" className="min-h-11 shrink-0 px-0 text-[9px] text-action-primary hover:bg-transparent sm:px-1 sm:text-xs"><span className="sm:hidden">What affects?</span><span className="hidden sm:inline">What affects this?</span></Button>
@@ -345,8 +319,9 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
           </DialogContent>
         </Dialog>
       </div>
-      <div className="flex flex-col items-center pt-2 text-center sm:flex-row sm:gap-5 sm:text-left">
-        <div className="relative grid h-[72px] w-[72px] shrink-0 place-items-center sm:h-24 sm:w-24">
+      <div className="grid gap-3 pt-3 sm:grid-cols-[minmax(220px,0.85fr)_minmax(0,1.6fr)] sm:gap-5">
+        <div className="flex min-w-0 items-center gap-3 rounded-xl bg-surface-intelligence p-3 sm:gap-4 sm:p-4">
+        <div className="relative grid h-[76px] w-[76px] shrink-0 place-items-center sm:h-24 sm:w-24">
           <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
             <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
             {score && (
@@ -356,26 +331,16 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
           </svg>
           <span className="text-xl font-semibold tabular-nums text-sucasa-navy sm:text-3xl">{score ? value : "—"}</span>
         </div>
-        <div className="min-w-0">
-          <p className="mt-1 text-[11px] font-semibold leading-tight sm:mt-0 sm:text-base">{limitedRecords ? "Limited records" : score?.bandLabel ?? "Not enough information"}</p>
+        <div className="min-w-0 text-left">
+          <p className="text-[10px] font-medium uppercase text-intelligence-accent">Home Score</p>
+          <p className="mt-1 text-xs font-semibold leading-tight text-sucasa-navy sm:text-base">{limitedRecords ? "Limited records" : score?.bandLabel ?? "Not enough information"}</p>
           {updatedAt && <p className="mt-0.5 text-[9px] text-muted-foreground sm:text-xs">Updated {updatedAt}</p>}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function SystemHealth({ systems }: { systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
-  return (
-    <section className="min-w-0 rounded-2xl border border-border bg-card p-2.5 shadow-soft sm:p-4">
-      <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border sm:min-h-0 sm:pb-2">
-        <h2 className="truncate text-xs font-semibold text-sucasa-navy sm:text-base">Home Systems</h2>
-        <HeartPulse className="h-4 w-4 shrink-0 text-action-primary sm:h-5 sm:w-5" />
-      </div>
+        </div>
       {systems.length ? (
-        <div className="mt-1 divide-y divide-border sm:grid sm:grid-cols-2 sm:gap-x-3 sm:divide-y-0">
+        <div className="divide-y divide-border sm:grid sm:grid-cols-2 sm:gap-x-4 sm:divide-y-0">
           {systems.map((system) => (
-            <div key={system.key} className="py-1.5 sm:border-b sm:border-border sm:py-2">
+            <div key={system.key} className={`border-l-2 py-2 pl-2.5 sm:border-b sm:py-2.5 ${system.status === "overdue" ? "border-l-status-risk sm:border-b-border" : system.status === "due_soon" ? "border-l-status-attention sm:border-b-border" : "border-l-status-positive sm:border-b-border"}`}>
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
                 <span className="truncate text-[11px] font-medium sm:text-sm">{system.label}</span>
                 <span
@@ -391,27 +356,12 @@ function SystemHealth({ systems }: { systems: Array<{ key: string; label: string
           ))}
         </div>
       ) : (
-        <div className="mt-2 flex gap-2 rounded-lg bg-secondary p-2">
+        <div className="flex items-center gap-2 rounded-xl bg-secondary p-3">
           <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <p className="text-[10px] leading-snug text-muted-foreground sm:text-sm">No system records yet. SuCasa will not guess.</p>
         </div>
       )}
-    </section>
-  );
-}
-
-function MoneyCard({ value, equity, equityPct, updatedAt }: { value: number | null; equity: number | null; equityPct: number | null; updatedAt: string | null }) {
-  return (
-    <section className="rounded-2xl border border-border bg-card p-3 shadow-soft sm:p-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <h2 className="truncate text-base font-semibold text-sucasa-navy sm:text-xl">Value &amp; Equity</h2>
-        <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/money" aria-label="View value and equity details"><ChevronRight className="h-4 w-4" /></Link></Button>
       </div>
-      <div className="mt-1 grid grid-cols-2 divide-x divide-surface-intelligence-border rounded-xl border border-surface-intelligence-border bg-surface-intelligence">
-        <div className="min-w-0 px-3 py-2.5 sm:p-4"><p className="text-[10px] text-intelligence-accent sm:text-xs">Estimated value</p><p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(value, true)}</p></div>
-        <div className="min-w-0 px-3 py-2.5 sm:p-4"><p className="text-[10px] text-intelligence-accent sm:text-xs">Estimated equity</p><p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="text-[10px] text-status-positive sm:text-xs">{Math.round(equityPct * 100)}% of value</p>}</div>
-      </div>
-      {updatedAt && <p className="mt-1.5 text-[10px] text-muted-foreground sm:text-xs">Value record as of {updatedAt}</p>}
     </section>
   );
 }
