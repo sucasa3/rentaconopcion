@@ -376,9 +376,14 @@ function SystemHealth({ systems }: { systems: Array<{ key: string; label: string
         <div className="mt-1 divide-y divide-border sm:grid sm:grid-cols-2 sm:gap-x-3 sm:divide-y-0">
           {systems.map((system) => (
             <div key={system.key} className="py-1.5 sm:border-b sm:border-border sm:py-2">
-              <div className="flex items-center justify-between gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1.5">
                 <span className="truncate text-[11px] font-medium sm:text-sm">{system.label}</span>
-                <span className={`h-2 w-2 shrink-0 rounded-full ${system.status === "overdue" ? "bg-status-risk" : system.status === "due_soon" ? "bg-status-attention" : "bg-status-nurture"}`} aria-label={system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}>
+                <span
+                  className={`flex shrink-0 items-center gap-1 text-[9px] font-semibold leading-none sm:text-xs ${system.status === "overdue" ? "text-status-risk" : system.status === "due_soon" ? "text-status-attention" : "text-action-primary"}`}
+                  aria-label={`${system.label}: ${system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}`}
+                >
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${system.status === "overdue" ? "bg-status-risk" : system.status === "due_soon" ? "bg-status-attention" : "bg-action-primary"}`} aria-hidden />
+                  <span>{system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}</span>
                 </span>
               </div>
               <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{system.detail}</p>
