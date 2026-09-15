@@ -63,6 +63,8 @@
   --color-surface-intelligence: var(--surface-intelligence);
   --color-surface-intelligence-border: var(--surface-intelligence-border);
   --color-surface-intelligence-foreground: var(--surface-intelligence-foreground);
+  --color-intelligence-accent: var(--intelligence-accent);
+  --color-home-team-avatar: var(--home-team-avatar);
   --color-text-primary: var(--foreground);
   --color-text-secondary: var(--text-secondary);
   --color-border-subtle: var(--border-subtle);
@@ -135,6 +137,8 @@
   --surface-intelligence: oklch(0.972 0.018 250);
   --surface-intelligence-border: oklch(0.9 0.035 250);
   --surface-intelligence-foreground: oklch(0.32 0.09 255);
+  --intelligence-accent: oklch(0.5561 0.0899 246.4);
+  --home-team-avatar: oklch(0.9366 0.0149 251.2);
   /* Secondary text is a step darker than --muted-foreground so it stays
      legible on the warm and intelligence surfaces, not only on white. */
   --text-secondary: oklch(0.45 0.03 255);
@@ -205,6 +209,8 @@
   --surface-intelligence: oklch(0.24 0.035 255);
   --surface-intelligence-border: oklch(0.36 0.06 255);
   --surface-intelligence-foreground: oklch(0.9 0.05 250);
+  --intelligence-accent: oklch(0.72 0.09 246.4);
+  --home-team-avatar: oklch(0.3 0.04 251.2);
   --text-secondary: oklch(0.74 0.02 250);
   --border-subtle: oklch(1 0 0 / 12%);
   --status-opportunity: oklch(0.76 0.15 40);
@@ -227,30 +233,42 @@
 }
 
 .homeowner-premium {
-  --background: oklch(0.982 0.01 70);
-  --foreground: oklch(0.19 0.04 255);
+  --background: oklch(0.9759 0.0029 264.5);
+  --foreground: oklch(0.2494 0.0304 256.9);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.19 0.04 255);
+  --card-foreground: oklch(0.2494 0.0304 256.9);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.19 0.04 255);
-  --primary: oklch(0.36 0.13 255);
+  --popover-foreground: oklch(0.2494 0.0304 256.9);
+  --primary: oklch(0.4182 0.0892 249.9);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.965 0.014 70);
-  --secondary-foreground: oklch(0.25 0.05 255);
-  --muted: oklch(0.965 0.014 70);
-  --muted-foreground: oklch(0.48 0.03 255);
-  --accent: oklch(0.965 0.025 250);
-  --accent-foreground: oklch(0.3 0.09 255);
-  --border: oklch(0.905 0.016 70);
-  --input: oklch(0.905 0.016 70);
-  --ring: oklch(0.5 0.13 255);
-  --surface: oklch(0.982 0.01 70);
+  --secondary: oklch(0.9567 0.0052 247.9);
+  --secondary-foreground: oklch(0.3102 0.059 250.3);
+  --muted: oklch(0.9567 0.0052 247.9);
+  --muted-foreground: oklch(0.5444 0.035 265.1);
+  --accent: oklch(0.9489 0.0121 248);
+  --accent-foreground: oklch(0.3102 0.059 250.3);
+  --border: oklch(0.9104 0.0087 247.9);
+  --input: oklch(0.9104 0.0087 247.9);
+  --ring: oklch(0.4182 0.0892 249.9);
+  --surface: oklch(0.9759 0.0029 264.5);
   --surface-elevated: oklch(1 0 0);
-  --status-positive: oklch(0.5 0.13 155);
-  --status-attention: oklch(0.52 0.11 75);
-  --status-risk: oklch(0.52 0.2 25);
-  --status-nurture: oklch(0.5 0.03 255);
-  --action-primary: oklch(0.36 0.13 255);
+  --sucasa-navy: oklch(0.3102 0.059 250.3);
+  --sucasa-orange: oklch(0.6181 0.1755 35.5);
+  --surface-warm: oklch(0.9599 0.0079 73.7);
+  --surface-warm-border: oklch(0.9104 0.0087 247.9);
+  --surface-intelligence: oklch(0.9489 0.0121 248);
+  --surface-intelligence-border: oklch(0.9104 0.0087 247.9);
+  --surface-intelligence-foreground: oklch(0.4182 0.0892 249.9);
+  --intelligence-accent: oklch(0.5561 0.0899 246.4);
+  --home-team-avatar: oklch(0.9366 0.0149 251.2);
+  --text-secondary: oklch(0.5444 0.035 265.1);
+  --border-subtle: oklch(0.9104 0.0087 247.9);
+  --status-opportunity: oklch(0.6181 0.1755 35.5);
+  --status-positive: oklch(0.5351 0.0842 171.4);
+  --status-attention: oklch(0.647 0.1196 74.2);
+  --status-risk: oklch(0.5565 0.1446 24);
+  --status-nurture: oklch(0.5444 0.035 265.1);
+  --action-primary: oklch(0.4182 0.0892 249.9);
   --action-primary-foreground: oklch(0.99 0 0);
   color: var(--foreground);
 }
