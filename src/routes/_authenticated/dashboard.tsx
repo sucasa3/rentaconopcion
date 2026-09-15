@@ -1,19 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
-  CalendarCheck,
-  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
   FileText,
   HeartPulse,
   History,
   MessageCircleQuestion,
-  Plus,
-  Sparkles,
+  ShieldCheck,
   TrendingUp,
-  Wrench,
 } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
@@ -23,22 +21,10 @@ import { useHomeRecord } from "@/hooks/use-home-record";
 import { GuidedOnboarding } from "@/components/guided-onboarding";
 
 import { CompleteAddressCard } from "@/components/complete-address-card";
-import { HomeAlerts } from "@/components/home-alerts";
 import { useValueSnapshot } from "@/hooks/use-value-snapshot";
 import { useLogOnMount } from "@/hooks/use-activity-log";
 import { profileCompleteness } from "@/lib/next-step";
-import { buildHomePlan, formatCostBand, planCounts } from "@/lib/home-plan";
-import {
-  greetingKey,
-  homeHealth,
-  isQuiet,
-  recentUpdates,
-  smarterInvitations,
-  updateDate,
-  whatSuCasaSees,
-  type HomeFacts,
-  type Line,
-} from "@/lib/home-today";
+import { buildHomePlan, planCounts } from "@/lib/home-plan";
 
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
@@ -47,6 +33,11 @@ import { listValueSnapshots } from "@/lib/home-timeline.functions";
 import { useHomeIntel } from "@/hooks/use-home-intel";
 import { useLanguage } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { HomeScoreResult } from "@/lib/home-score";
+import type { TimelineItem } from "@/lib/maintenance-rules";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   ssr: false,
