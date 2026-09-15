@@ -56,9 +56,10 @@
 - [x] Confirm relationship display does not change consent or professional access
 
 ## Homeowner approved-reference visual refinement (2026-09-15)
-- [ ] Apply the approved cool-light homeowner palette through dashboard-scoped semantic tokens
+- [ ] Apply the exact approved homeowner palette through dashboard-scoped semantic tokens (#F6F7F9 page, #FFFFFF cards, #EEF1F4 secondary, #F5F1EC care, #182230 text, #17324D deep navy, #214F7B action navy, #DA5431 orange, #2F7D67 positive, #B9822C attention, #B94A48 risk, #E8EFF6 intelligence, #4478A5 intelligence accent, #DDE2E7 borders, #E3EBF4 avatars)
 - [ ] Tighten 390px density while preserving the photo-first hierarchy and 44px actions
-- [ ] Refine Score, Systems, Value & Equity, Home Care, Home Team, and Ask SuCasa presentation only
+- [ ] Refine Score, Systems, Value & Equity, Home Care, Home Team, and Ask SuCasa presentation only; keep white/neutral surfaces dominant
+- [ ] Make Home Team professionals visually primary with compact white cards, blue-gray avatars, navy initials, muted role labels, and a secondary manage action
 - [ ] Verify confirmed, one-professional, pending, and empty Home Team presentation states
 - [ ] Capture 390px and desktop views; verify Home Care and Money transitions
 
