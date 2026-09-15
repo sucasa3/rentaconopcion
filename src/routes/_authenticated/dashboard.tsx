@@ -229,12 +229,12 @@ function Dashboard() {
 
           <HomeTeamCard team={previewTeam ?? homeTeam ?? { agent: null, lender: null }} />
 
-           <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:gap-6 sm:p-5">
+            <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-sucasa-navy bg-sucasa-navy p-4 shadow-elevated transition-all hover:-translate-y-0.5 sm:gap-6 sm:p-5">
             <div className="relative min-w-0">
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-sucasa-navy sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
-              <p className="mt-1 text-xs leading-snug text-text-secondary sm:text-sm">Get answers about your home, records and next steps.</p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-primary-foreground sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
+              <p className="mt-1 text-xs leading-snug text-primary-foreground/70 sm:text-sm">Get answers about your home, records and next steps.</p>
             </div>
-            <Button asChild className="relative min-h-11 shrink-0 rounded-xl bg-action-primary px-3 text-action-primary-foreground sm:px-4">
+            <Button asChild className="relative min-h-11 shrink-0 rounded-xl bg-intelligence-accent px-3 text-primary-foreground shadow-soft hover:bg-intelligence-accent/90 sm:px-4">
               <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /><span className="hidden min-[390px]:inline">Ask about your home</span><span className="min-[390px]:hidden">Ask</span></Link>
             </Button>
           </section>
@@ -324,21 +324,21 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
         </Dialog>
       </div>
       <div className="grid gap-3 pt-3 sm:grid-cols-[minmax(220px,0.85fr)_minmax(0,1.6fr)] sm:gap-5">
-        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-surface-intelligence-border bg-surface-intelligence p-3 sm:gap-4 sm:p-4">
+        <div className="flex min-w-0 items-center gap-3 rounded-xl border border-surface-intelligence-border bg-sucasa-navy p-3 shadow-soft sm:gap-4 sm:p-4">
         <div className="relative grid h-[76px] w-[76px] shrink-0 place-items-center sm:h-24 sm:w-24">
           <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
-            <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
+            <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-primary-foreground/20" />
             {score && (
               <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round"
                 strokeDasharray={circumference} strokeDashoffset={circumference * (1 - value / 100)} className={`home-score-ring ${ringTone}`} />
             )}
           </svg>
-          <span className="text-xl font-semibold tabular-nums text-sucasa-navy sm:text-3xl">{score ? value : "—"}</span>
+          <span className="text-xl font-semibold tabular-nums text-primary-foreground sm:text-3xl">{score ? value : "—"}</span>
         </div>
         <div className="min-w-0 text-left">
-          <p className="text-[10px] font-medium uppercase text-intelligence-accent">Home Score</p>
-          <p className="mt-1 text-xs font-semibold leading-tight text-sucasa-navy sm:text-base">{limitedRecords ? "Limited records" : score?.bandLabel ?? "Not enough information"}</p>
-          {updatedAt && <p className="mt-0.5 text-[9px] text-muted-foreground sm:text-xs">Updated {updatedAt}</p>}
+          <p className="text-[10px] font-semibold uppercase text-primary-foreground/65">Home Score</p>
+          <p className="mt-1 text-xs font-semibold leading-tight text-primary-foreground sm:text-base">{limitedRecords ? "Limited records" : score?.bandLabel ?? "Not enough information"}</p>
+          {updatedAt && <p className="mt-0.5 text-[9px] text-primary-foreground/60 sm:text-xs">Updated {updatedAt}</p>}
         </div>
         </div>
       {systems.length ? (
@@ -346,7 +346,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
           {systems.map((system) => (
             <div key={system.key} className={`min-w-0 rounded-xl border p-2.5 shadow-soft sm:p-3 ${system.status === "overdue" ? "border-status-risk/20 bg-status-risk/5" : system.status === "due_soon" ? "border-status-attention/20 bg-status-attention/5" : "border-status-positive/20 bg-status-positive/5"}`}>
               <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence text-intelligence-accent">{systemIcon(system.key)}</span>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-intelligence-accent text-primary-foreground shadow-soft">{systemIcon(system.key)}</span>
                 <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-sucasa-navy sm:text-sm">{system.label}</span>
                 <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               </div>
@@ -379,7 +379,7 @@ function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { top
     <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-3.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-5">
       <p className="text-lg font-bold text-sucasa-navy sm:text-xl">Home Care</p>
       <Tabs defaultValue="todo" className="mt-0.5">
-        <TabsList className="grid h-11 w-full grid-cols-3 rounded-xl bg-secondary p-1"><TabsTrigger value="todo" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">To do</TabsTrigger><TabsTrigger value="documents" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">Documents</TabsTrigger><TabsTrigger value="history" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">History</TabsTrigger></TabsList>
+        <TabsList className="grid h-11 w-full grid-cols-3 rounded-xl bg-card/80 p-1"><TabsTrigger value="todo" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-sucasa-orange data-[state=active]:text-sucasa-orange-foreground data-[state=active]:shadow-soft">To do</TabsTrigger><TabsTrigger value="documents" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-sucasa-orange data-[state=active]:text-sucasa-orange-foreground data-[state=active]:shadow-soft">Documents</TabsTrigger><TabsTrigger value="history" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-sucasa-orange data-[state=active]:text-sucasa-orange-foreground data-[state=active]:shadow-soft">History</TabsTrigger></TabsList>
         <TabsContent value="todo" className="mt-1.5">
           {topPlanItem ? <PreviewRow icon={<HeartPulse className="h-4 w-4" />} title={topPlanItem.title} detail={topPlanItem.why} to="/home-care" /> : <EmptyPreview text="Nothing is due from the records currently available." to="/home-care" />}
           {planCount > 1 && <p className="mt-1.5 text-[10px] text-muted-foreground sm:text-xs">{planCount - 1} more items in your care plan</p>}
@@ -395,7 +395,7 @@ function HomeTeamCard({ team }: { team: { agent: HomeTeamMemberSummary | null; l
   return (
     <section className="rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span><p className="truncate text-lg font-bold text-sucasa-navy sm:text-xl">Home Team</p></div>
+       <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-intelligence-accent"><ShieldCheck className="h-4 w-4 text-primary-foreground" /></span><p className="truncate text-lg font-bold text-sucasa-navy sm:text-xl">Home Team</p></div>
         <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/home-team" aria-label="Manage Home Team"><ChevronRight className="h-4 w-4" /></Link></Button>
       </div>
       <div className="mt-1.5 grid grid-cols-2 gap-2 sm:gap-3">

@@ -80,7 +80,7 @@ export function CompleteAddressCard({
       className={`rounded-2xl border border-surface-intelligence-border bg-surface-intelligence shadow-soft ${compact ? "p-3.5" : "p-6"}`}
     >
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 rounded-xl bg-card p-2 text-intelligence-accent shadow-soft">
+        <span className="mt-0.5 rounded-xl bg-intelligence-accent p-2 text-primary-foreground shadow-soft">
           <MapPin className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
