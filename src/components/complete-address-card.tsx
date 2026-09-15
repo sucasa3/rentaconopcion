@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { MapPin, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { AddressAutocomplete, type AddressValue } from "@/components/address-autocomplete";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export function CompleteAddressCard({
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(!compact);
 
   useEffect(() => {
     let alive = true;
@@ -83,9 +84,28 @@ export function CompleteAddressCard({
           <MapPin className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
+          <div className="flex min-h-10 items-center gap-2">
+            <div className="min-w-0 flex-1">
           <h2 className="text-base font-semibold">
             {mode === "edit" ? "Verify your home address" : "Finish your address"}
           </h2>
+              {compact && !expanded ? <p className="truncate text-xs text-muted-foreground">Connect value, equity and property records.</p> : null}
+            </div>
+            {compact ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-expanded={expanded}
+                onClick={() => setExpanded((current) => !current)}
+                className="min-h-11 shrink-0 px-2 text-action-primary"
+              >
+                {expanded ? "Close" : "Finish"}
+                <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+              </Button>
+            ) : null}
+          </div>
+          {expanded ? <>
           <p className={`${compact ? "text-xs leading-snug" : "text-sm"} mt-1 text-muted-foreground`}>
             {mode === "edit"
               ? "Search for your address and confirm it on the map so we match the right property records."
@@ -113,6 +133,7 @@ export function CompleteAddressCard({
               Save address
             </Button>
           </div>
+          </> : null}
         </div>
       </div>
     </div>

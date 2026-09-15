@@ -91,7 +91,7 @@
 - [x] Strengthen the existing photo hero and light intelligence strip without fabricated data
 - [x] Compact the incomplete-address prompt so it does not overpower the dashboard
 - [x] Increase visual richness in Home Health, Home Care, Home Team, Ask SuCasa, and mobile navigation
-- [ ] Verify reference fidelity at 390px plus 320/375/430px and desktop
+- [x] Verify reference fidelity at 390px plus 320/375/430px and desktop
 
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
