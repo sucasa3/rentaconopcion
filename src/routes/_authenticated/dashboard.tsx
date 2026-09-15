@@ -358,6 +358,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
                   <span className={`h-2 w-2 shrink-0 rounded-full ${system.status === "overdue" ? "bg-status-risk" : system.status === "due_soon" ? "bg-status-attention" : "bg-status-positive"}`} aria-hidden />
                   <span>{system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Good"}</span>
                 </span>
+              </div>
               <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{system.detail}</p>
             </div>
           ))}
