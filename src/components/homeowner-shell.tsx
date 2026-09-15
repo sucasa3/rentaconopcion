@@ -124,7 +124,7 @@ export function HomeownerShell({ children, premium = false }: { children: ReactN
               to={i.to as never}
               search={i.search as never}
               className={cn(
-                "flex min-h-11 flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition active:scale-95",
+                "flex min-h-11 flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-medium transition active:scale-95 min-[390px]:text-[10px]",
                 i.match(pathname, tab) ? "text-primary" : "text-muted-foreground",
               )}
             >

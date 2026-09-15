@@ -200,12 +200,12 @@ function Dashboard() {
 
   return (
     <HomeownerShell premium>
-      <main className="px-4 pb-28 pt-3 sm:px-6 sm:py-7">
-        <div className="mx-auto max-w-5xl space-y-4 sm:space-y-5">
+      <main className="px-2.5 pb-24 pt-2 sm:px-6 sm:py-7">
+        <div className="mx-auto max-w-5xl space-y-2.5 sm:space-y-5">
           <HomeHero data={heroData} />
           {needsAddress ? <CompleteAddressCard /> : null}
 
-          <section className="grid grid-cols-[0.9fr_1.1fr] gap-3 sm:grid-cols-[1.05fr_1.95fr]">
+          <section className="grid grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-2 sm:grid-cols-[1.05fr_1.95fr] sm:gap-3">
             <ScoreCard score={homeScore} updatedAt={scoreFreshness} />
             <SystemHealth systems={visibleSystems} />
           </section>
@@ -226,14 +226,13 @@ function Dashboard() {
 
           <HomeTeamCard team={previewTeam ?? homeTeam ?? { agent: null, lender: null }} />
 
-          <section className="relative overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4 shadow-soft sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-5">
-            <div className="relative">
-              <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-intelligence-foreground"><Sparkles className="h-4 w-4 text-sucasa-orange" /> Ask SuCasa</p>
-              <h2 className="mt-1.5 text-lg font-semibold text-sucasa-navy">What would you like to know about your home?</h2>
-              <p className="mt-1 text-sm text-text-secondary">Answers grounded in the records SuCasa has for this home.</p>
+          <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-3 shadow-soft sm:gap-6 sm:p-5">
+            <div className="relative min-w-0">
+              <p className="flex items-center gap-1.5 text-sm font-semibold text-sucasa-navy sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
+              <p className="mt-0.5 text-xs leading-snug text-text-secondary sm:text-sm">Get answers grounded in your home records.</p>
             </div>
-            <Button asChild className="relative mt-4 min-h-11 w-full rounded-xl bg-action-primary text-action-primary-foreground sm:mt-0 sm:w-auto">
-              <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /> Ask about your home</Link>
+            <Button asChild className="relative min-h-11 shrink-0 rounded-xl bg-action-primary px-3 text-action-primary-foreground sm:px-4">
+              <Link to="/assistant" search={{ topic: undefined }}><MessageCircleQuestion className="h-4 w-4" /><span className="hidden min-[390px]:inline">Ask about your home</span><span className="min-[390px]:hidden">Ask</span></Link>
             </Button>
           </section>
 
@@ -318,9 +317,36 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
         ? "text-status-attention"
         : "text-status-positive";
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-      <div className="flex flex-col items-center text-center sm:flex-row sm:gap-5 sm:text-left">
-        <div className="relative grid h-20 w-20 shrink-0 place-items-center sm:h-24 sm:w-24">
+    <section className="min-w-0 rounded-2xl border border-border bg-card p-2.5 shadow-soft sm:p-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-b border-border pb-1.5 sm:pb-2">
+        <p className="truncate text-xs font-semibold text-sucasa-navy sm:text-base">Home Score</p>
+        <Dialog>
+          <DialogTrigger asChild>
+             <Button variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-[10px] text-action-primary hover:bg-transparent sm:text-xs">What affects this?</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Your Home Score</DialogTitle></DialogHeader>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              The score is based on the information SuCasa currently has, including maintenance history, inspection findings and available home records.
+            </p>
+            <div className="rounded-lg bg-secondary p-3 text-sm">
+              Missing records mean <strong>we do not know yet</strong>. They are kept separate from evidence that something may need attention.
+            </div>
+            {score && (
+              <ul className="space-y-3">
+                {score.breakdown.map((item) => (
+                  <li key={item.key} className="flex gap-3 text-sm">
+                    <span className="font-semibold tabular-nums">{item.earned}/{item.max}</span>
+                    <span><strong>{item.label}</strong><span className="block text-muted-foreground">{item.detail}</span></span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="flex flex-col items-center pt-2 text-center sm:flex-row sm:gap-5 sm:text-left">
+        <div className="relative grid h-[72px] w-[72px] shrink-0 place-items-center sm:h-24 sm:w-24">
           <svg viewBox="0 0 112 112" className="absolute inset-0 -rotate-90" aria-hidden>
             <circle cx="56" cy="56" r="48" fill="none" stroke="currentColor" strokeWidth="7" className="text-secondary" />
             {score && (
@@ -328,36 +354,11 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
                 strokeDasharray={circumference} strokeDashoffset={circumference * (1 - value / 100)} className={`home-score-ring ${ringTone}`} />
             )}
           </svg>
-          <span className="text-2xl font-semibold tabular-nums text-sucasa-navy sm:text-3xl">{score ? value : "—"}</span>
+          <span className="text-xl font-semibold tabular-nums text-sucasa-navy sm:text-3xl">{score ? value : "—"}</span>
         </div>
         <div className="min-w-0">
-          <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary sm:mt-0 sm:text-xs">Home Score</p>
-          <p className="mt-1 text-sm font-semibold leading-tight sm:text-base">{limitedRecords ? "Based on limited records" : score?.bandLabel ?? "Not enough information"}</p>
-          {updatedAt && <p className="mt-1 text-xs text-muted-foreground">Updated {updatedAt}</p>}
-          <Dialog>
-            <DialogTrigger asChild>
-               <Button variant="ghost" size="sm" className="mt-1 min-h-11 px-1 text-action-primary hover:bg-transparent">What affects this?</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader><DialogTitle>Your Home Score</DialogTitle></DialogHeader>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                The score is based on the information SuCasa currently has, including maintenance history, inspection findings and available home records.
-              </p>
-              <div className="rounded-lg bg-secondary p-3 text-sm">
-                Missing records mean <strong>we do not know yet</strong>. They are kept separate from evidence that something may need attention.
-              </div>
-              {score && (
-                <ul className="space-y-3">
-                  {score.breakdown.map((item) => (
-                    <li key={item.key} className="flex gap-3 text-sm">
-                      <span className="font-semibold tabular-nums">{item.earned}/{item.max}</span>
-                      <span><strong>{item.label}</strong><span className="block text-muted-foreground">{item.detail}</span></span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DialogContent>
-          </Dialog>
+          <p className="mt-1 text-[11px] font-semibold leading-tight sm:mt-0 sm:text-base">{limitedRecords ? "Limited records" : score?.bandLabel ?? "Not enough information"}</p>
+          {updatedAt && <p className="mt-0.5 text-[9px] text-muted-foreground sm:text-xs">Updated {updatedAt}</p>}
         </div>
       </div>
     </section>
@@ -366,17 +367,17 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
 
 function SystemHealth({ systems }: { systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft">
-      <div className="flex items-start justify-between gap-3">
-        <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-text-secondary sm:text-xs">Home systems</p><h2 className="mt-1 text-sm font-semibold leading-tight sm:text-lg">What records indicate</h2></div>
+    <section className="min-w-0 rounded-2xl border border-border bg-card p-2.5 shadow-soft sm:p-4">
+      <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border sm:min-h-0 sm:pb-2">
+        <h2 className="truncate text-xs font-semibold text-sucasa-navy sm:text-base">Home Systems</h2>
         <HeartPulse className="h-4 w-4 shrink-0 text-action-primary sm:h-5 sm:w-5" />
       </div>
       {systems.length ? (
-        <div className="mt-3 grid gap-1.5 sm:grid-cols-2 sm:gap-2">
+        <div className="mt-1 divide-y divide-border sm:grid sm:grid-cols-2 sm:gap-x-3 sm:divide-y-0">
           {systems.map((system) => (
-            <div key={system.key} className="rounded-lg bg-secondary px-2.5 py-2 sm:rounded-xl sm:p-3">
+            <div key={system.key} className="py-1.5 sm:border-b sm:border-border sm:py-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-xs font-semibold sm:text-sm">{system.label}</span>
+                <span className="truncate text-[11px] font-medium sm:text-sm">{system.label}</span>
                 <span className={`h-2 w-2 shrink-0 rounded-full ${system.status === "overdue" ? "bg-status-risk" : system.status === "due_soon" ? "bg-status-attention" : "bg-status-nurture"}`} aria-label={system.status === "overdue" ? "May be due" : system.status === "due_soon" ? "Review soon" : "Record found"}>
                 </span>
               </div>
@@ -385,9 +386,9 @@ function SystemHealth({ systems }: { systems: Array<{ key: string; label: string
           ))}
         </div>
       ) : (
-        <div className="mt-3 flex gap-2 rounded-xl bg-secondary p-3">
+        <div className="mt-2 flex gap-2 rounded-lg bg-secondary p-2">
           <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <p className="text-xs leading-relaxed text-muted-foreground sm:text-sm">No system records yet. SuCasa will not guess at condition.</p>
+          <p className="text-[10px] leading-snug text-muted-foreground sm:text-sm">No system records yet. SuCasa will not guess.</p>
         </div>
       )}
     </section>
@@ -396,29 +397,29 @@ function SystemHealth({ systems }: { systems: Array<{ key: string; label: string
 
 function MoneyCard({ value, equity, equityPct, updatedAt }: { value: number | null; equity: number | null; equityPct: number | null; updatedAt: string | null }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-intelligence-accent sm:text-xs">Your money</p><h2 className="mt-1 text-lg font-semibold text-sucasa-navy sm:text-xl">Value & equity</h2></div>
-        <Button asChild variant="ghost" size="sm" className="min-h-11"><Link to="/money">Details <ChevronRight className="h-4 w-4" /></Link></Button>
+    <section className="rounded-2xl border border-border bg-card p-3 shadow-soft sm:p-5">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <h2 className="truncate text-base font-semibold text-sucasa-navy sm:text-xl">Value &amp; Equity</h2>
+        <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/money" aria-label="View value and equity details"><ChevronRight className="h-4 w-4" /></Link></Button>
       </div>
-      <div className="mt-3 grid grid-cols-2 divide-x divide-surface-intelligence-border rounded-xl border border-surface-intelligence-border bg-surface-intelligence">
-        <div className="min-w-0 p-3 sm:p-4"><p className="text-[11px] text-intelligence-accent sm:text-xs">Estimated value</p><p className="mt-1 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(value, true)}</p></div>
-        <div className="min-w-0 p-3 sm:p-4"><p className="text-[11px] text-intelligence-accent sm:text-xs">Estimated equity</p><p className="mt-1 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="mt-0.5 text-[11px] text-status-positive sm:text-xs">{Math.round(equityPct * 100)}% of value</p>}</div>
+      <div className="mt-1 grid grid-cols-2 divide-x divide-surface-intelligence-border rounded-xl border border-surface-intelligence-border bg-surface-intelligence">
+        <div className="min-w-0 px-3 py-2.5 sm:p-4"><p className="text-[10px] text-intelligence-accent sm:text-xs">Estimated value</p><p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(value, true)}</p></div>
+        <div className="min-w-0 px-3 py-2.5 sm:p-4"><p className="text-[10px] text-intelligence-accent sm:text-xs">Estimated equity</p><p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-sucasa-navy sm:text-2xl">{formatMoney(equity, true)}</p>{equityPct != null && <p className="text-[10px] text-status-positive sm:text-xs">{Math.round(equityPct * 100)}% of value</p>}</div>
       </div>
-      {updatedAt && <p className="mt-3 text-xs text-muted-foreground">Value record as of {updatedAt}</p>}
+      {updatedAt && <p className="mt-1.5 text-[10px] text-muted-foreground sm:text-xs">Value record as of {updatedAt}</p>}
     </section>
   );
 }
 
 function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { topPlanItem: { title: string; why: string } | null; planCount: number; documentCount: number; historyCount: number }) {
   return (
-    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-4 shadow-soft sm:p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Home Care</p>
-      <Tabs defaultValue="todo" className="mt-2">
+    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-3 shadow-soft sm:p-5">
+      <p className="text-base font-semibold text-sucasa-navy sm:text-lg">Home Care</p>
+      <Tabs defaultValue="todo" className="mt-0.5">
         <TabsList className="grid h-11 w-full grid-cols-3 bg-transparent p-0"><TabsTrigger value="todo" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">To do</TabsTrigger><TabsTrigger value="documents" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">Documents</TabsTrigger><TabsTrigger value="history" className="h-11 rounded-none border-b-2 border-transparent px-1 shadow-none data-[state=active]:border-sucasa-orange data-[state=active]:bg-transparent data-[state=active]:text-status-opportunity data-[state=active]:shadow-none">History</TabsTrigger></TabsList>
-        <TabsContent value="todo" className="mt-3">
+        <TabsContent value="todo" className="mt-1.5">
           {topPlanItem ? <PreviewRow icon={<HeartPulse className="h-4 w-4" />} title={topPlanItem.title} detail={topPlanItem.why} to="/home-care" /> : <EmptyPreview text="Nothing is due from the records currently available." to="/home-care" />}
-          {planCount > 1 && <p className="mt-3 text-xs text-muted-foreground">{planCount - 1} more items in your care plan</p>}
+          {planCount > 1 && <p className="mt-1.5 text-[10px] text-muted-foreground sm:text-xs">{planCount - 1} more items in your care plan</p>}
         </TabsContent>
         <TabsContent value="documents" className="mt-3"><PreviewRow icon={<FileText className="h-4 w-4" />} title={`${documentCount} saved document${documentCount === 1 ? "" : "s"}`} detail="Inspections, reports and home records" to="/documents" /></TabsContent>
         <TabsContent value="history" className="mt-3"><PreviewRow icon={<History className="h-4 w-4" />} title={`${historyCount} service record${historyCount === 1 ? "" : "s"}`} detail="Your home’s maintenance history" to="/timeline" /></TabsContent>
@@ -429,18 +430,15 @@ function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { top
 
 function HomeTeamCard({ team }: { team: { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
-      <div className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span>
-        <div><p className="text-lg font-semibold text-sucasa-navy">Your Home Team</p><p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">Your trusted home professionals.</p></div>
+    <section className="rounded-2xl border border-border bg-card p-3 shadow-soft sm:p-5">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span><p className="truncate text-base font-semibold text-sucasa-navy sm:text-lg">Home Team</p></div>
+        <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/home-team" aria-label="Manage Home Team"><ChevronRight className="h-4 w-4" /></Link></Button>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3">
+      <div className="mt-1.5 grid grid-cols-2 gap-2 sm:gap-3">
         <TeamMemberCard member={team.agent} role="agent" />
         <TeamMemberCard member={team.lender} role="lender" />
       </div>
-      <Button asChild variant="ghost" className="mt-1 min-h-11 w-full justify-between px-2 text-action-primary">
-        <Link to="/home-team">Manage Home Team <ChevronRight className="h-4 w-4" /></Link>
-      </Button>
     </section>
   );
 }
@@ -456,31 +454,28 @@ function TeamMemberCard({ member, role }: { member: HomeTeamMemberSummary | null
   return (
     <Link
       to="/home-team"
-      className="min-w-0 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-secondary sm:p-4"
+      className="grid min-h-14 min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-card p-2 transition-colors hover:bg-secondary sm:min-h-16 sm:grid-cols-[40px_minmax(0,1fr)_auto] sm:p-3"
     >
-      <div className="grid h-10 w-10 place-items-center rounded-full bg-home-team-avatar text-sm font-semibold text-action-primary">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-home-team-avatar text-xs font-semibold text-action-primary sm:h-10 sm:w-10 sm:text-sm">
         {member ? initials : <UserRound className="h-5 w-5" />}
       </div>
       {member ? (
-        <>
-          <p className="mt-2.5 truncate text-sm font-semibold text-foreground sm:text-base">{member.displayName}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold text-foreground sm:text-base">{member.displayName}</p>
+          <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
             {member.state === "confirmed" ? `Your ${roleLabel}` : "Pending confirmation"}
           </p>
-          {member.organizationName && <p className="mt-1 truncate text-xs text-muted-foreground">{member.organizationName}</p>}
-        </>
+        </div>
       ) : (
-        <>
-          <p className="mt-2.5 text-sm font-semibold text-foreground sm:text-base">Add {role === "agent" ? "an" : "a"} {roleLabel}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Not connected</p>
-        </>
+        <div className="min-w-0"><p className="truncate text-xs font-semibold text-foreground sm:text-base">Add {role === "agent" ? "an" : "a"} {roleLabel}</p><p className="text-[10px] text-muted-foreground sm:text-xs">Not connected</p></div>
       )}
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
     </Link>
   );
 }
 
 function PreviewRow({ icon, title, detail, to }: { icon: ReactNode; title: string; detail: string; to: "/home-care" | "/documents" | "/timeline" }) {
-  return <Link to={to} className="flex min-h-11 items-center gap-3 rounded-xl bg-card px-3 py-3"><span className="text-sucasa-orange">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="block text-xs text-muted-foreground sm:text-sm">{detail}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></Link>;
+  return <Link to={to} className="flex min-h-11 items-center gap-2.5 rounded-xl bg-card px-3 py-2"><span className="shrink-0 text-sucasa-orange">{icon}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold sm:text-sm">{title}</span><span className="block truncate text-[10px] text-muted-foreground sm:text-sm">{detail}</span></span><ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" /></Link>;
 }
 
 function EmptyPreview({ text, to }: { text: string; to: "/home-care" }) {
