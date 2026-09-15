@@ -48,12 +48,12 @@
 - [x] Verify and present the actual 390px and desktop views
 
 ## Homeowner Home Profile light refinement + Home Team (2026-09-15)
-- [ ] Replace the dashboard-only near-black premium tokens with a warm premium light SuCasa treatment
-- [ ] Refine Score, Systems, Value & Equity, Home Care, and Ask SuCasa with existing semantic colors
-- [ ] Add one permission-neutral canonical Home Team read for confirmed/current agent and lender plus pending states
-- [ ] Show confirmed, one-professional, pending, and empty Home Team states without fabricating records
-- [ ] Verify 320/375/390/430 mobile, desktop, Dashboard → Home Care, and Dashboard → Money
-- [ ] Confirm relationship display does not change consent or professional access
+- [x] Replace the dashboard-only near-black premium tokens with a warm premium light SuCasa treatment
+- [x] Refine Score, Systems, Value & Equity, Home Care, and Ask SuCasa with existing semantic colors
+- [x] Add one permission-neutral canonical Home Team read for confirmed/current agent and lender plus pending states
+- [x] Show confirmed, one-professional, pending, and empty Home Team states without fabricating records
+- [x] Verify 320/375/390/430 mobile, desktop, Dashboard → Home Care, and Dashboard → Money
+- [x] Confirm relationship display does not change consent or professional access
 
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
