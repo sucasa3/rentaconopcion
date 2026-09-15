@@ -45,18 +45,17 @@ export function HomeHero({ data }: { data: HomeHeroView }) {
       </div>
 
       <div className="relative z-10 -mt-7 mx-2.5 mb-2.5 grid grid-cols-3 divide-x divide-white/15 rounded-xl border border-white/12 bg-hero-glass px-1 py-2 shadow-elevated backdrop-blur-md sm:-mt-11 sm:mx-5 sm:mb-5 sm:rounded-2xl sm:px-2 sm:py-3.5">
-        <HeroMetric
-          label="Estimated Value"
-          value={compactMoney(data.value)}
-        />
+        <HeroMetric label="Estimated Value" shortLabel="Value" value={compactMoney(data.value)} />
         <HeroMetric
           label="Estimated Equity"
+          shortLabel="Equity"
           value={compactMoney(data.equity)}
           note={data.equityPct != null ? `${Math.round(data.equityPct * 100)}% of value` : null}
           notePositive
         />
         <HeroMetric
           label="Home Score"
+          shortLabel="Score"
           value={data.homeScore != null ? String(data.homeScore) : "—"}
         />
       </div>
