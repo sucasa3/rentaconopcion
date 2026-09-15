@@ -319,10 +319,10 @@ function ScoreCard({ score, updatedAt }: { score: HomeScoreResult | null; update
   return (
     <section className="min-w-0 rounded-2xl border border-border bg-card p-2.5 shadow-soft sm:p-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1 border-b border-border pb-1.5 sm:pb-2">
-        <p className="truncate text-xs font-semibold text-sucasa-navy sm:text-base">Home Score</p>
+        <p className="truncate text-[11px] font-semibold text-sucasa-navy sm:text-base">Home Score</p>
         <Dialog>
           <DialogTrigger asChild>
-             <Button variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-[10px] text-action-primary hover:bg-transparent sm:text-xs">What affects this?</Button>
+             <Button variant="ghost" size="sm" className="min-h-11 shrink-0 px-0 text-[9px] text-action-primary hover:bg-transparent sm:px-1 sm:text-xs"><span className="sm:hidden">What affects?</span><span className="hidden sm:inline">What affects this?</span></Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader><DialogTitle>Your Home Score</DialogTitle></DialogHeader>
