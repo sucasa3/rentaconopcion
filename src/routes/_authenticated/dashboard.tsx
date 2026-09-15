@@ -216,7 +216,7 @@ function Dashboard() {
       <main className="px-2.5 pb-24 pt-2 sm:px-6 sm:py-7">
         <div className="mx-auto max-w-5xl space-y-3 sm:space-y-5">
           <HomeHero data={heroData} />
-          {needsAddress ? <CompleteAddressCard /> : null}
+          {needsAddress ? <CompleteAddressCard compact /> : null}
 
           <HomeHealth score={homeScore} updatedAt={scoreFreshness} systems={visibleSystems} />
 
@@ -229,7 +229,7 @@ function Dashboard() {
 
           <HomeTeamCard team={previewTeam ?? homeTeam ?? { agent: null, lender: null }} />
 
-           <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4 shadow-soft transition-shadow hover:shadow-elevated sm:gap-6 sm:p-5">
+           <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-surface-intelligence-border bg-surface-intelligence p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:gap-6 sm:p-5">
             <div className="relative min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-sucasa-navy sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
               <p className="mt-1 text-xs leading-snug text-text-secondary sm:text-sm">Get answers about your home, records and next steps.</p>
@@ -295,9 +295,9 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
         ? "text-status-attention"
         : "text-status-positive";
   return (
-    <section className="min-w-0 rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-shadow hover:shadow-elevated sm:p-5">
+    <section className="min-w-0 rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-5">
       <div className="grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-b border-border pb-2">
-        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence"><HeartPulse className="h-4 w-4 text-intelligence-accent" /></span><h2 className="truncate text-base font-semibold text-sucasa-navy sm:text-lg">Home Health</h2></div>
+        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence"><HeartPulse className="h-4 w-4 text-intelligence-accent" /></span><h2 className="truncate text-lg font-bold text-sucasa-navy sm:text-xl">Home Health</h2></div>
         <Dialog>
           <DialogTrigger asChild>
              <Button variant="ghost" size="sm" className="min-h-11 shrink-0 px-0 text-[9px] text-action-primary hover:bg-transparent sm:px-1 sm:text-xs"><span className="sm:hidden">What affects?</span><span className="hidden sm:inline">What affects this?</span></Button>
@@ -344,7 +344,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
       {systems.length ? (
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {systems.map((system) => (
-            <div key={system.key} className="min-w-0 rounded-xl border border-border bg-card p-2.5 shadow-soft sm:p-3">
+            <div key={system.key} className={`min-w-0 rounded-xl border p-2.5 shadow-soft sm:p-3 ${system.status === "overdue" ? "border-status-risk/20 bg-status-risk/5" : system.status === "due_soon" ? "border-status-attention/20 bg-status-attention/5" : "border-status-positive/20 bg-status-positive/5"}`}>
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-surface-intelligence text-intelligence-accent">{systemIcon(system.key)}</span>
                 <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-sucasa-navy sm:text-sm">{system.label}</span>
@@ -376,8 +376,8 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
 
 function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { topPlanItem: { title: string; why: string } | null; planCount: number; documentCount: number; historyCount: number }) {
   return (
-    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-3.5 shadow-soft sm:p-5">
-      <p className="text-lg font-semibold text-sucasa-navy">Home Care</p>
+    <section className="rounded-2xl border border-surface-warm-border bg-surface-warm p-3.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-5">
+      <p className="text-lg font-bold text-sucasa-navy sm:text-xl">Home Care</p>
       <Tabs defaultValue="todo" className="mt-0.5">
         <TabsList className="grid h-11 w-full grid-cols-3 rounded-xl bg-secondary p-1"><TabsTrigger value="todo" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">To do</TabsTrigger><TabsTrigger value="documents" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">Documents</TabsTrigger><TabsTrigger value="history" className="h-9 rounded-lg px-1 shadow-none data-[state=active]:bg-card data-[state=active]:text-status-opportunity data-[state=active]:shadow-soft">History</TabsTrigger></TabsList>
         <TabsContent value="todo" className="mt-1.5">
@@ -393,9 +393,9 @@ function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { top
 
 function HomeTeamCard({ team }: { team: { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } }) {
   return (
-    <section className="rounded-2xl border border-border bg-card p-3.5 shadow-soft sm:p-5">
+    <section className="rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span><p className="truncate text-base font-semibold text-sucasa-navy sm:text-lg">Home Team</p></div>
+        <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-home-team-avatar"><ShieldCheck className="h-4 w-4 text-sucasa-orange" /></span><p className="truncate text-lg font-bold text-sucasa-navy sm:text-xl">Home Team</p></div>
         <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/home-team" aria-label="Manage Home Team"><ChevronRight className="h-4 w-4" /></Link></Button>
       </div>
       <div className="mt-1.5 grid grid-cols-2 gap-2 sm:gap-3">

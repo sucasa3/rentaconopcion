@@ -158,7 +158,7 @@ export function HomeownerShell({ children, premium = false, moreContent }: { chi
               to={i.to as never}
               search={i.search as never}
               className={cn(
-                "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-[9px] font-semibold transition active:scale-95 min-[390px]:text-[10px] [&_svg]:h-[22px] [&_svg]:w-[22px]",
+                 "flex min-h-16 flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[9px] font-semibold transition active:scale-95 min-[390px]:text-[10px] [&_svg]:h-[23px] [&_svg]:w-[23px]",
                 i.match(pathname, tab) ? "text-sucasa-orange" : "text-muted-foreground",
               )}
             >
@@ -171,7 +171,7 @@ export function HomeownerShell({ children, premium = false, moreContent }: { chi
               <Button
                 variant="ghost"
                 className={cn(
-                  "h-auto min-h-14 flex-1 flex-col justify-center gap-0.5 rounded-none px-0 py-1.5 text-[9px] font-semibold hover:bg-transparent min-[390px]:text-[10px] [&_svg]:h-[22px] [&_svg]:w-[22px]",
+                  "h-auto min-h-16 flex-1 flex-col justify-center gap-1 rounded-none px-0 py-1.5 text-[9px] font-semibold hover:bg-transparent min-[390px]:text-[10px] [&_svg]:h-[23px] [&_svg]:w-[23px]",
                   moreActive || moreOpen ? "text-sucasa-orange" : "text-muted-foreground",
                 )}
               >

@@ -87,6 +87,12 @@
 - [x] Enrich Home Care, Home Team, Ask SuCasa, and bottom navigation without changing behavior
 - [x] Verify and present the finished 390px mobile view before further structural changes
 
+## Homeowner reference-fidelity correction (2026-09-15)
+- [x] Strengthen the existing photo hero and light intelligence strip without fabricated data
+- [x] Compact the incomplete-address prompt so it does not overpower the dashboard
+- [x] Increase visual richness in Home Health, Home Care, Home Team, Ask SuCasa, and mobile navigation
+- [x] Verify reference fidelity at 390px plus 320/375/430px and desktop
+
 ## Network Stage 2 (next)
 - [ ] Agent Professional Network (people the agent works with, independent of provider data)
 - [ ] Bulk Relationship Review over home_team_candidates
