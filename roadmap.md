@@ -179,3 +179,10 @@
 - [x] Synthetic system item is presentation-only; nothing persisted until save
 - [x] Cancel leaves no record; save invalidates component-service-log (Home Care + Home Health)
 - [x] Request service unchanged
+
+## One Home Care page + recurring-task guidance (2026-09-16)
+- [x] Merge current To Do care and future Home Plan horizons into `/home-care`
+- [x] Redirect `/home-plan` to the merged Home Care page
+- [x] Preserve cost ranges, request actions, and done/dismiss state
+- [x] Add bilingual “How to handle this” guidance to supported recurring tasks
+- [x] Keep recurring-task completion separate from opening guidance

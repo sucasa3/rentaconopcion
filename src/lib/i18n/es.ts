@@ -265,6 +265,7 @@ export const es: Dictionary = {
   "next.pro.reviews": "{count} reseñas",
   "next.pro.request": "Solicitar este profesional",
   "next.dialog.title": "{label}: qué hacer",
+  "next.dialog.description": "Guía paso a paso y cuándo llamar a un profesional.",
   "next.dialog.steps": "Pasos",
   "next.dialog.diy": "Hazlo tú mismo vs. profesional:",
   "next.dialog.cost": "Costo típico:",

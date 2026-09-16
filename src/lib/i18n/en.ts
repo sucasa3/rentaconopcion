@@ -266,6 +266,7 @@ export const en = {
   "next.pro.reviews": "{count} reviews",
   "next.pro.request": "Request this pro",
   "next.dialog.title": "{label} — what to do",
+  "next.dialog.description": "Step-by-step guidance and when to call a professional.",
   "next.dialog.steps": "Steps",
   "next.dialog.diy": "DIY vs. pro:",
   "next.dialog.cost": "Typical cost:",
