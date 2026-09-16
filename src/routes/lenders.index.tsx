@@ -94,21 +94,21 @@ function LendersLandingPage() {
                 earlier, and the agent keeps the relationship.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Button
-                  asChild
-                  size="lg"
-                  className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
-                >
-                  <a href={PILOT_MAILTO} onClick={() => track("lender_pilot_clicked")}>
+                <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+                  <Button
+                    size="lg"
+                    className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                  >
                     Talk to us about a pilot <ArrowRight />
-                  </a>
-                </Button>
+                  </Button>
+                </PilotRequestDialog>
                 <Button asChild size="lg" variant="outline" className="min-h-12">
                   <Link to="/lenders/deck" onClick={() => track("lender_deck_viewed")}>
                     View presentation
                   </Link>
                 </Button>
               </div>
+
               <p className="mt-3 text-sm text-muted-foreground">
                 A 90-day, measurable pilot with a defined group of loan officers and their agent
                 partners.
