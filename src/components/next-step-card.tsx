@@ -25,7 +25,7 @@ export function NextStepCard({
   const [open, setOpen] = useState(false);
   const slug = CATEGORY_SLUG[item.category] ?? "handyman";
   const guide = buildTimelineGuide(item, t);
-  const systemLabel = t(`care.system.${item.key}` as any) ?? item.label;
+  const systemLabel = t(`care.system.${item.key}` as TranslationKey) ?? item.label;
 
   const fetchPros = useServerFn(getRecommendedPros);
   const { data: pros } = useQuery({
