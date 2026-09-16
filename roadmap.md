@@ -196,3 +196,13 @@
 - [x] Add first-party, PII-safe, non-blocking funnel milestones and attribution
 - [x] Verify free capacity only; no access, connection, sponsorship, paid, consent, or permission side effects
 - [x] Verify mobile, desktop, accessibility, metadata, routes, deck, signup, tests, and console
+
+## Public lender conversion experience (2026-09-16)
+- [x] Build public `/lenders` landing page (index,follow) in the `/agents` design language
+- [x] Preserve the full presentation at `/lenders/deck`, noindex, with print/PDF and keyboard nav
+- [x] Primary CTA "Talk to us about a pilot"; secondary presentation; sign-in for existing officers
+- [x] Trust section states: relationship stays with agent, upload is not consent, no automatic lender access
+- [x] All demo homeowners, values, equity and mortgage details labeled illustrative/fictional
+- [x] Add PII-free lender funnel events; exempt `/lenders*` from legacy IDX redirects
+- [ ] PRODUCT DECISION: does one physical property consume a profile slot in every workspace that holds it, or count once globally? (currently per-organization)
+- [ ] FUTURE: homeowner-confirmed agent relationship resolution when two agents assert the same homeowner

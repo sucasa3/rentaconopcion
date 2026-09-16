@@ -132,6 +132,7 @@ export function resolveLegacyRedirect(rawUrl: string): LegacyRedirect | null {
   // Bare /agents and its explicit presentation are platform pages. This must
   // run before the deep-agent IDX family below.
   if (path === "/agents" || path === "/agents/deck") return null;
+  if (path === "/lenders" || path === "/lenders/deck") return null;
 
   if (
     path.startsWith(AGENTS_PREFIX) ||
