@@ -125,7 +125,8 @@ function Detail({ label, value }: { label: string; value: string }) {
 export const template = {
   component: LenderPilotRequestEmail,
   subject: (data: Record<string, any>) =>
-    `New lender pilot request — ${data.company}`,
+    `${data.company} requested a SuCasa lender pilot — 90-day demo opportunity`,
+
   displayName: 'Lender pilot request notification',
   to: 'info@sucasa.com',
   previewData: {
