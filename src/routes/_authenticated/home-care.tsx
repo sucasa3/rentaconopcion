@@ -10,6 +10,8 @@ import { RecentRequestsCard } from "@/components/recent-requests-card";
 
 export const Route = createFileRoute("/_authenticated/home-care")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { system?: string } =>
+    typeof search.system === "string" ? { system: search.system } : {},
   head: () => ({
     meta: [
       { title: "Home care — SuCasa" },
@@ -33,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/home-care")({
 function HomeCarePage() {
   const t = useT();
   const navigate = useNavigate();
+  const { system } = Route.useSearch();
   return (
     <HomeownerShell>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
@@ -44,7 +47,10 @@ function HomeCarePage() {
             <ArrowLeft className="h-4 w-4" /> {t("common.back_home")}
           </Link>
 
-          <HomeCarePanel onGoToDocuments={() => navigate({ to: "/documents" })} />
+          <HomeCarePanel
+            focusSystem={system}
+            onGoToDocuments={() => navigate({ to: "/documents" })}
+          />
           <PredictedActionsCard />
           <RecommendedProsCard />
           <RecentRequestsCard />

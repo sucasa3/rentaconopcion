@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHomeIntel } from "@/hooks/use-home-intel";
 import {
   getMyComponentServiceLog,
@@ -50,8 +50,11 @@ function seasonalKey(key: string, part: "label" | "hint"): TranslationKey | null
 
 export function HomeCarePanel({
   onGoToDocuments,
+  focusSystem,
 }: {
   onGoToDocuments?: () => void;
+  /** Optional system key from ?system= — that system is expanded and highlighted. */
+  focusSystem?: string;
 }) {
   const t = useT();
   const fetchLog = useServerFn(getMyComponentServiceLog);
@@ -64,6 +67,21 @@ export function HomeCarePanel({
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const { intel: okIntel, isLoading } = useHomeIntel();
+
+  // Focused system (?system=): scroll it into view and flash a strong accent once.
+  const focusRef = useRef<HTMLDivElement | null>(null);
+  const [focusFlash, setFocusFlash] = useState(false);
+  useEffect(() => {
+    if (!focusSystem || isLoading) return;
+    setFocusFlash(true);
+    const node = focusRef.current;
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      node.focus({ preventScroll: true });
+    }
+    const timer = window.setTimeout(() => setFocusFlash(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, [focusSystem, isLoading]);
 
   const { data: findings } = useQuery({
     queryKey: ["inspection-findings"],
@@ -177,6 +195,11 @@ export function HomeCarePanel({
     };
   });
 
+  // The focused system only ever reflects canonical timeline evidence.
+  const focusKey = focusSystem && systemLabelKey(focusSystem) ? focusSystem : null;
+  const focusItem = focusKey ? (items.find((i) => i.key === focusKey) ?? null) : null;
+  const focusLabel = focusKey ? t(systemLabelKey(focusKey)!) : null;
+
   const RANK: Record<string, number> = { overdue: 0, due_soon: 1, ok: 2 };
   const rows: CareRow[] = [...systemRows, ...routineRows].sort((a, b) => {
     const r = RANK[a.status] - RANK[b.status];
@@ -189,7 +212,11 @@ export function HomeCarePanel({
   // Keep the screen calm: what needs you, plus one healthy item for reassurance.
   const defaultVisible = Math.max(attentionCount + 1, 4);
 
-  const visibleRows = showAll ? rows : rows.slice(0, defaultVisible);
+  const baseVisible = showAll ? rows : rows.slice(0, defaultVisible);
+  // A focused system is always listed, even if it would normally be collapsed away.
+  const focusRow = focusKey ? rows.find((r) => r.key === `sys-${focusKey}`) : undefined;
+  const visibleRows =
+    focusRow && !baseVisible.includes(focusRow) ? [...baseVisible, focusRow] : baseVisible;
   const hiddenCount = rows.length - visibleRows.length;
 
   const lateCount = rows.filter((r) => r.status === "overdue").length;
@@ -262,6 +289,87 @@ export function HomeCarePanel({
         connectLabel={onGoToDocuments ? t("care.connect.label") : undefined}
         onConnect={onGoToDocuments}
       />
+
+      {focusKey && focusLabel && (
+        <div
+          ref={focusRef}
+          tabIndex={-1}
+          aria-live="polite"
+          className={`scroll-mt-24 rounded-3xl border-2 bg-card p-4 shadow-soft outline-none transition-all sm:p-6 ${
+            focusFlash
+              ? "border-primary ring-4 ring-primary/25"
+              : focusItem?.status === "overdue"
+                ? "border-destructive/40"
+                : focusItem?.status === "due_soon"
+                  ? "border-accent-foreground/40"
+                  : "border-border"
+          }`}
+        >
+          <h3 className="text-lg font-bold">{focusLabel}</h3>
+
+          {focusItem ? (
+            <>
+              {(focusItem.status === "overdue" || focusItem.status === "due_soon") && (
+                <div className="mt-3 rounded-2xl bg-secondary p-3">
+                  <p className="text-sm font-semibold">{t("care.focus.why")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t("care.focus.last_known", {
+                      source: t(
+                        focusItem.source === "logged"
+                          ? "care.focus.source_logged"
+                          : focusItem.source === "permit"
+                            ? "care.focus.source_permit"
+                            : "care.focus.source_records",
+                      ),
+                      year: focusItem.installedYear,
+                    })}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("care.focus.window", {
+                      years: focusItem.expectedYear - focusItem.installedYear,
+                    })}
+                  </p>
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setMarkItem(focusItem)}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary"
+                >
+                  <CheckSquare className="h-4 w-4" />
+                  {t("care.focus.update_info")}
+                </button>
+                <Link
+                  to="/request"
+                  search={{ category: toCategorySlug(focusItem.category ?? focusItem.label) }}
+                  className="inline-flex min-h-[44px] items-center rounded-full gradient-brand px-4 text-sm font-semibold text-white"
+                >
+                  {t("care.focus.request_service")}
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">{t("care.focus.no_info")}</p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => navigate({ to: "/onboarding" })}
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary"
+                >
+                  {t("care.focus.add_details", { system: focusLabel })}
+                </button>
+                <Link
+                  to="/request"
+                  search={{ category: toCategorySlug(focusLabel) }}
+                  className="inline-flex min-h-[44px] items-center rounded-full gradient-brand px-4 text-sm font-semibold text-white"
+                >
+                  {t("care.focus.request_service")}
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
         {nextStep && <NextStepCard item={nextStep} onMarkDone={() => setMarkItem(nextStep)} />}

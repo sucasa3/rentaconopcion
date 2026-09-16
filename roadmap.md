@@ -163,3 +163,11 @@
 - [ ] Flip PLATFORM_BASE_URL / set PUBLIC_SITE_URL to https://sucasa.com after connection
 - [ ] Real sitemap for the new app (current one lists only 3 URLs)
 
+
+## Home Health tiles link to focused Home Care (2026-09-16)
+- [x] Each Home Health system tile is a single tap target linking to /home-care?system=<key>
+- [x] Home Care validates ?system= and expands, scrolls to and flashes the focused system
+- [x] Focused system with evidence shows "Why SuCasa flagged this" reason first, then Update information / Request service
+- [x] Focused system without evidence shows a system-specific prompt (Add <system> details / Request service), never a generic empty state
+- [x] Home Score keeps the existing "What affects this?" explainer (not routed to Home Care)
+- [x] Normal Back behavior preserved; bilingual copy added
