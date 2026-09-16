@@ -64,6 +64,7 @@ import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public
 import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
 import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
 import { Route as ApiPublicRatesTickRouteImport } from './routes/api/public/rates.tick'
+import { Route as ApiPublicLendersPilotRouteImport } from './routes/api/public/lenders.pilot'
 import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
@@ -367,6 +368,11 @@ const ApiPublicRatesTickRoute = ApiPublicRatesTickRouteImport.update({
   path: '/api/public/rates/tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLendersPilotRoute = ApiPublicLendersPilotRouteImport.update({
+  id: '/api/public/lenders/pilot',
+  path: '/api/public/lenders/pilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
   id: '/api/public/leads/tick',
   path: '/api/public/leads/tick',
@@ -491,6 +497,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/lenders/pilot': typeof ApiPublicLendersPilotRoute
   '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
@@ -554,6 +561,7 @@ export interface FileRoutesByTo {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/lenders/pilot': typeof ApiPublicLendersPilotRoute
   '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
@@ -624,6 +632,7 @@ export interface FileRoutesById {
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
   '/api/public/leads/tick': typeof ApiPublicLeadsTickRoute
+  '/api/public/lenders/pilot': typeof ApiPublicLendersPilotRoute
   '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
@@ -694,6 +703,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/lenders/pilot'
     | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
@@ -757,6 +767,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/lenders/pilot'
     | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
@@ -826,6 +837,7 @@ export interface FileRouteTypes {
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
     | '/api/public/leads/tick'
+    | '/api/public/lenders/pilot'
     | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
@@ -861,6 +873,7 @@ export interface RootRouteChildren {
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
   ApiPublicLeadsTickRoute: typeof ApiPublicLeadsTickRoute
+  ApiPublicLendersPilotRoute: typeof ApiPublicLendersPilotRoute
   ApiPublicRatesTickRoute: typeof ApiPublicRatesTickRoute
   ApiPublicTClickRoute: typeof ApiPublicTClickRoute
   ApiPublicTOpenRoute: typeof ApiPublicTOpenRoute
@@ -1257,6 +1270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRatesTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/lenders/pilot': {
+      id: '/api/public/lenders/pilot'
+      path: '/api/public/lenders/pilot'
+      fullPath: '/api/public/lenders/pilot'
+      preLoaderRoute: typeof ApiPublicLendersPilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/leads/tick': {
       id: '/api/public/leads/tick'
       path: '/api/public/leads/tick'
@@ -1513,6 +1533,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,
   ApiPublicLeadsTickRoute: ApiPublicLeadsTickRoute,
+  ApiPublicLendersPilotRoute: ApiPublicLendersPilotRoute,
   ApiPublicRatesTickRoute: ApiPublicRatesTickRoute,
   ApiPublicTClickRoute: ApiPublicTClickRoute,
   ApiPublicTOpenRoute: ApiPublicTOpenRoute,

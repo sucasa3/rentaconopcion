@@ -1,14 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Check,
+  CheckCircle2,
   ChevronRight,
   Cpu,
   Database,
   Handshake,
   Lightbulb,
+  Loader2,
   LockKeyhole,
   MessageCircle,
   Network,
@@ -20,11 +22,20 @@ import {
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 
-const PILOT_MAILTO =
-  "mailto:neil@sucasa.com?subject=SuCasa%20lender%20pilot&body=Company%3A%0ALoan%20officers%3A%0AMarkets%3A%0A";
 
 export const Route = createFileRoute("/lenders/")({
   head: () => ({
