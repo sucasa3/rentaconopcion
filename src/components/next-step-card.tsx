@@ -24,9 +24,9 @@ export function NextStepCard({
   const t = useT();
   const [open, setOpen] = useState(false);
   const slug = CATEGORY_SLUG[item.category] ?? "handyman";
-  const guide = buildGuide(item, t);
-  const systemLabel = GUIDE_STEPS[item.key]
-    ? t(`care.system.${item.key}` as TranslationKey)
+  const guide = buildTimelineGuide(item, t);
+  const systemLabel = guide
+    ? t(`care.system.${item.key}` as any)
     : item.label;
 
   const fetchPros = useServerFn(getRecommendedPros);
