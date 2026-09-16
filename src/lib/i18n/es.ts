@@ -586,4 +586,6 @@ export const es: Dictionary = {
   "home.thinking.unsure": "Aún no lo sé",
   "plan.done_toast": "Atendido",
   "plan.done_toast_sub": "Tu Plan de Casa se ha actualizado.",
+  "plan.coming.label": "Lo que viene",
+  "plan.coming.sub": "Tareas futuras basadas en la edad y registros de tu casa.",
 };
