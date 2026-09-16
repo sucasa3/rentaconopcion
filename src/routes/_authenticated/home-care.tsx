@@ -10,9 +10,8 @@ import { RecentRequestsCard } from "@/components/recent-requests-card";
 
 export const Route = createFileRoute("/_authenticated/home-care")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown>) => ({
-    system: typeof search.system === "string" ? search.system : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { system?: string } =>
+    typeof search.system === "string" ? { system: search.system } : {},
   head: () => ({
     meta: [
       { title: "Home care — SuCasa" },
