@@ -230,11 +230,25 @@ const nextSteps = {
   padding: '24px',
   backgroundColor: '#f8fafc',
 }
+const whyItMatters = {
+  border: `1px solid ${BORDER}`,
+  borderRadius: '16px',
+  padding: '24px',
+  marginBottom: '24px',
+  backgroundColor: '#ffffff',
+}
 const bullet = {
   margin: '0 0 10px',
   fontSize: '14px',
   lineHeight: '22px',
   color: '#0f172a',
 }
+const bulletLead = { fontWeight: 700, color: DEEP_BLUE }
+const ctaSub = {
+  margin: '12px 0 0',
+  fontSize: '13px',
+  color: TEXT_MUTED,
+}
 const footer = { padding: '16px 4px 0' }
 const footerText = { margin: '0', fontSize: '11px', color: TEXT_MUTED }
+
