@@ -1,35 +1,30 @@
-# Home Health system tiles become tappable links
+# Rename "Dashboard" to "My home" + fix "Add water heater details"
 
-Each system tile in Home Health (Water Heater, HVAC, Roof, Electrical — and the score tile) currently shows a chevron but is not a link. Make every tile a real destination.
+## 1. Menu label
+In the public site header (and the matching homeowner footer link), rename the
+"Dashboard" entry to "My home". It keeps pointing at the same page — label only.
 
-## Behavior
+## 2. "Add <system> details" opens the details form, not onboarding
+Today, when a system has no records, that button sends you to the "Let's get to
+know you" onboarding page. Instead it should open the same pop-up already used
+for "Update information": a small form asking whether the system was
+**replaced or serviced**, the **year**, plus optional **brand, model, warranty
+years, provider and notes**. Saving it logs the service and refreshes Home Care
+and Home Health.
 
-1. **System tiles → Home Care, focused on that system.**
-   - Each tile becomes a `<Link>` to `/home-care?system=<key>` (e.g. `water_heater`, `hvac`, `roof`, `electrical`).
-   - Add a validated `system` search param on the Home Care page. When present, that system's section is expanded/highlighted and scrolled into view, and its existing actions ("add/update info", "request service") are surfaced directly.
-   - If the param is absent or invalid, the page renders exactly as today.
+"Request service" beside it stays exactly as it is.
 
-2. **Home Score tile → "What affects this?"**
-   - The score area links to the existing score explanation (the same "What affects?" explainer the button already opens), not a new page.
-
-3. **Accessibility & visual polish**
-   - Real links (not click handlers): keyboard focusable, visible focus ring, 44px minimum touch target.
-   - Keep the chevron; add a subtle hover/press state consistent with existing PreviewRow links.
-
-## Guardrails
-
-- Presentation and navigation only: no changes to Home Score logic, system-condition evidence rules, maintenance rules, service-request flow internals, or permissions.
-- "Request service" continues to use the existing `/request` flow — the tile does not bypass it, Home Care surfaces the existing entry point.
-- No new pages, no new data, no fabricated system content.
-
-## Verification
-
-- At 390px: tap Water Heater → lands on /home-care?system=water_heater with that system highlighted and its actions visible; invalid `?system=` value falls back to the normal page.
-- Score tile opens the score explainer.
-- Keyboard focus + aria labels pass; `tsgo --noEmit` and full test suite (226 tests) pass.
+Onboarding stays the destination only for the card that asks for the home's
+basic details (address/year built) — not for a single system.
 
 ## Technical notes
-
-- `src/routes/_authenticated/dashboard.tsx`: wrap each system tile in `Link to="/home-care" search={{ system: key }}`.
-- `src/routes/_authenticated/home-care.tsx`: add `validateSearch` for `system`, map key → system section, scroll/highlight via ref + `useEffect`, render the system's existing update-info and request-service actions inline.
-- i18n: reuse existing labels; add aria-label strings in en/es if missing.
+- `src/components/site-header.tsx`: nav label and footer link text.
+- `src/components/home-care-panel.tsx`: in the focused-system card's no-record
+  branch, replace `navigate({ to: "/onboarding" })` with
+  `setMarkItem(<synthetic item>)`, built from the canonical `LIFESPANS` rule for
+  the focused key (key, label, category, years) with unknown install year left
+  as the current year default the dialog already applies. No new data model,
+  no change to `logComponentService`, maintenance rules, Home Score, or
+  permissions — the dialog writes the same canonical service log.
+- Add a small unit test that the synthetic item carries the canonical key and
+  category for each system key.
