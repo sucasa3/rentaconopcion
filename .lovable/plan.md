@@ -1,57 +1,61 @@
-# Lender landing page at /lenders — plus what happens when two agents upload the same homeowner
+# What "access to the homeowner" means — and making it visible in the UI
 
-## Part 1 — The public lender page
+Today the rules exist and are enforced, but the agent screens don't state which
+tier a record sits in. An agent can therefore read "I have this homeowner" as
+"I may do anything with this homeowner". This plan names the tiers in plain
+language and shows them on the record.
 
-Today `/lenders` is the private 19-slide partnership deck (noindex). Mirror exactly what we just did for agents:
+## The four tiers (already how the system behaves)
 
-- `/lenders` becomes the public, indexable landing page.
-- `/lenders/deck` keeps the existing deck untouched, including its PDF/print mode and keyboard navigation. All existing deck links keep working.
+1. **Property intelligence** — facts about the house, keyed to the address:
+   estimated value, estimated equity, characteristics, mortgage-age context.
+   Available to any agent who has that address in their own book. Shared across
+   workspaces because it describes the property, not a person. Never implies
+   anything about the homeowner's plans.
+2. **The agent's own client information** — what the agent themselves put in:
+   name, contact details from their upload, notes, their own activity. Private
+   to that workspace. Another agent with the same address never sees it.
+3. **Homeowner-provided information** — anything the homeowner entered in
+   SuCasa: documents, home profile answers, maintenance records, their own
+   detailed activity. Requires the homeowner's participation and permission.
+   Agents currently see only aggregate engagement counts, never the raw log.
+4. **Permission to contact** — decided per channel (Call / Text / Email), and
+   separately from all of the above. A documented client relationship plus the
+   contact detail allows manual one-to-one contact; any recorded opt-out blocks
+   that channel outright; campaigns and automation need explicit recorded
+   permission.
 
-### Page structure (mobile-first, same design system as /agents)
+Lender access is a separate gate again: homeowner consent is the only authority,
+and nothing an agent does grants it.
 
-1. **Hero** — "Your agents already have the customers. SuCasa helps them know who to call, and why." Primary action **Talk to us about a pilot**, secondary **View presentation**, plus a quiet **Sign in** for existing loan officers.
-2. **Product proof, high on the page** — a compact, clearly labeled "ILLUSTRATIVE DEMO" card in the real lender product language: a homeowner whose circumstances changed, why now, what the loan officer could say, and the next step. Every name and number fictional.
-3. **The problem** — databases full of homeowners, no way to tell which matter today; budget goes to buying new leads instead of activating existing ones.
-4. **The flow** — agent database → homeowner signals → agent has a reason to reach out → a conversation happens → a financing need emerges → your loan officer gets the opportunity.
-5. **Focus, not volume** — the deck's 1,000 → 37 illustrative framing, labeled illustrative and not a guaranteed result.
-6. **What a loan officer actually gets** — a prioritized book, equity and mortgage-age context, annual-review moments, suggested language, branded outreach.
-7. **Agent + lender flywheel** — the lender brings agents, agents bring homeowners, homeowners create financing conversations, and the agent keeps the relationship.
-8. **Trust and boundaries** — the section that matters most for lenders: the homeowner controls their own permissions; an agent uploading a database gives a lender nothing automatically; lender visibility only exists where the homeowner consented; SuCasa is not a lead list and does not sell anyone's database.
-9. **Is / is not** — straight from the deck, so expectations are set before a sales call.
-10. **Pilot** — the 90-day pilot shape and success metrics, ending with the contact/pilot action.
+## What to build
 
-### Messaging discipline (same rules as the agent page)
+**A. Access summary on the client record**
+On the agent client detail page, add a compact "What you can see" strip with the
+four tiers as small labelled rows: Property facts (always), Your notes
+(private to you), Homeowner-shared (present / not shared yet), Contact
+(the permitted channels). Each row has a short one-line explanation behind a
+"Why?" affordance, reusing the reasons the channel evaluator already returns.
 
-Signals, changes, and reasons to reconnect only. No claim that SuCasa predicts who will refinance, sell, move, or transact, and no guaranteed conversion. Every displayed homeowner, value, and equity figure is fictional and visibly labeled.
+**B. Clearer empty state for homeowner-shared information**
+Where the record has no homeowner-provided data, say so explicitly — "This
+homeowner hasn't shared their home information with you" — instead of showing
+an ambiguous blank section.
 
-### Funnel tracking
+**C. Contact row consistency**
+Blocked channels stay visible but disabled with their existing reason, so the
+distinction between "no phone on file" and "asked not to be called" is legible.
 
-Same first-party, PII-free ledger used for agents, with lender-specific events: landing view, pilot/contact clicked, deck viewed, pricing clicked, sign-in clicked. Non-blocking writes, no new vendor, sanitized referrer only.
+**D. Bilingual copy** for all new strings, matching the existing pattern.
 
-### One decision needed
-
-The lender page's main action: a **contact/pilot request form** (name, company, email, rough loan-officer count) that lands in the existing audit/notification path, or simply a **mailto/calendar link**? See the question below.
-
-## Part 2 — Two agents, same homeowner: what actually happens
-
-Verified against the current schema and code:
-
-- **The property record is shared, once.** Property intelligence is keyed uniquely by normalized address, so the second agent's upload reuses the same record instead of triggering a second round of paid provider calls. That's the intended economics.
-- **Each agent's client row is their own.** Portfolio client rows and relationship records are stored per organization with org-level visibility, so Agent A cannot see Agent B's copy, notes, activity, or that Agent B exists in the system at all.
-- **Neither agent gains any access to the other's work, and neither gains homeowner access by uploading.** Consent records remain the only authority for who may see homeowner information.
-- **Both agents will see the same underlying home facts and therefore similar signals** — because both are looking at the same house. Each sees it inside their own book, with their own history and their own suggested next step.
-- **The one existing cross-agent guardrail** is representation: if the home is listed with another agent, the record is flagged and put in a quiet, value-only mode with no solicitation.
-- **Capacity is counted per workspace.** The same home occupying a slot in two different agents' 100-profile allowances is worth confirming as intentional before launch.
-
-### Open product gap worth naming now
-
-Nothing today tells the homeowner "two professionals have you in their book," and nothing lets the homeowner choose which one is actually their agent. Long term the honest answer is the homeowner decides: whoever the homeowner confirms is their agent gets the confirmed relationship, and the other keeps a self-asserted, unconfirmed record. That is a separate piece of work, not part of this landing page.
+## Not in scope
+No change to any rule, gate, scope, or query. No new data, no new access. This
+is labelling and empty-state work on top of the existing evaluators
+(`contact-channels.ts`, `lender-access.ts`) — display only.
 
 ## Technical notes
-
-- Route split: `src/routes/lenders.tsx` becomes a layout with `lenders.index.tsx` (landing) and `lenders.deck.tsx` (existing deck moved verbatim, print link retargeted).
-- Legacy IDX redirect rules get `/lenders` and `/lenders/deck` explicitly exempted, with a redirect test, matching the `/agents` treatment.
-- Reuse `SiteHeader`/`SiteFooter`, existing semantic tokens, and the deck's product-frame patterns; no marketing-only color or font additions.
-- Header/footer gain the public "For Lenders" link; lender pricing CTAs point at the new page's action.
-- Landing route gets its own title, description, OG/Twitter text, canonical `https://sucasa.com/lenders`, and `index,follow`; the deck route stays noindex.
-- New funnel actions appended to the existing event action union; no schema change.
+- Tier state derives from data the client detail loader already returns
+  (relationship basis, engagement aggregate presence, channel options); no new
+  server function or column.
+- Contact row renders from `evaluateAgentChannels` output via the existing
+  `channel-actions` component; do not re-derive availability in the view.
