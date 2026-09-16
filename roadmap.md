@@ -186,3 +186,13 @@
 - [x] Preserve cost ranges, request actions, and done/dismiss state
 - [x] Add bilingual “How to handle this” guidance to supported recurring tasks
 - [x] Keep recurring-task completion separate from opening guidance
+
+## Public agent conversion experience (2026-09-16)
+- [ ] Build product-led `/agents` landing page with authentic illustrative Agent Today proof
+- [ ] Preserve the complete noindex presentation at `/agents/deck`
+- [ ] Add role-specific public agent signup using existing profiles and idempotent workspace activation
+- [ ] Route agent pricing actions into the agent-specific signup flow
+- [ ] Preserve `/agents/deck` ahead of legacy deep-agent IDX redirects
+- [ ] Add first-party, PII-safe, non-blocking funnel milestones and attribution
+- [ ] Verify free capacity only; no access, connection, sponsorship, paid, consent, or permission side effects
+- [ ] Verify mobile, desktop, accessibility, metadata, routes, deck, signup, tests, and console
