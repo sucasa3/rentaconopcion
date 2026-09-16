@@ -52,6 +52,7 @@ function HomeCarePage() {
             focusSystem={system}
             onGoToDocuments={() => navigate({ to: "/documents" })}
           />
+          <HomePlanSection />
           <PredictedActionsCard />
           <RecommendedProsCard />
           <RecentRequestsCard />
