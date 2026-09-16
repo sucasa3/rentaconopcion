@@ -17,7 +17,8 @@ Order on `/home-care`:
    - Next 12 months
    - Next 3–5 years
    Each item keeps its plain-English reason, its **typical cost range** ("$8K–$18K typical"), and its "Take care of it" action into the existing request flow. Done / dismiss keeps working and still saves per item.
-3. The existing Predicted actions, Recommended pros and Recent requests cards stay below.
+3. **How to do it yourself** — for each plan/care item where a safe DIY path exists, add a small "Do it yourself" option that opens a compact pop-up with concise SuCasa guidance. Guidance is presentation-only (e.g., "Clean the lint trap and vacuum the outside vent cover every 6 months") and never replaces a pro for safety-critical systems (roof, electrical, gas). Items without guidance do not show the option.
+4. The existing Predicted actions, Recommended pros and Recent requests cards stay below.
 
 Items already shown in the "Now" list are not repeated in "Next 90 days" — the same item appears once, with its cost range attached.
 
@@ -28,14 +29,14 @@ Items already shown in the "Now" list are not repeated in "Next 90 days" — the
 ## What does not change
 
 - No new numbers: cost ranges, horizons, urgency and reasons all come from the existing plan engine and cost bands.
-- Home Score, value/equity, system conditions, maintenance rules, relationships, consent and permissions are untouched.
+- Home Score, value/equity, system-condition logic, maintenance rules, documents, relationships, consent and permissions are untouched.
 - Missing records still show neutral "we don't know" states, never "healthy".
 - Agent and Lender experiences untouched.
 
 ## Technical notes
 
 - Keep `src/lib/home-plan.ts` and `src/lib/home-plan.functions.ts` as-is (build, save, per-item state, cached AI "why").
-- Extract the plan rendering from `src/routes/_authenticated/home-plan.tsx` into a `HomePlanSection` component and render it inside `/home-care` under the care panel; the route file becomes a redirect (`beforeLoad` → `/home-care`) so it stays a real server redirect, not a client bounce.
-- Point `src/components/home-alerts.tsx` and the dashboard plan preview at `/home-care`.
-- Reuse existing i18n `plan.*` keys; add only a heading key for the new "What's coming" section (EN + ES).
+- Extract the plan rendering from `src/routes/_authenticated/home-plan.tsx` into a `HomePlanSection` component and render it inside `/home-care` under the care panel; the route file becomes a redirect (`beforeLoad` → `/home-care`) so it stays a real HTTP redirect, not a client bounce.
+- Add a small DIY guidance dictionary in `src/lib/diy-guides.ts` keyed by system/seasonal/plan item; each entry is title + 3–5 bullets. Link only opens when an entry exists.
+- Reuse existing i18n `plan.*` keys; add heading keys for the new "What's coming" section and DIY labels (EN + ES).
 - Verify at 320/375/390/430px and desktop: no overflow, horizons collapsible, done/dismiss persists, `?system=` focus still works, no console errors; `tsgo --noEmit` and the test suite pass.
