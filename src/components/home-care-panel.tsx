@@ -67,6 +67,9 @@ export function HomeCarePanel({
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [markItem, setMarkItem] = useState<TimelineItem | null>(null);
+  // True only when the dialog was opened for a system with no canonical record.
+  const [markNeedsYear, setMarkNeedsYear] = useState(false);
+
   const [showAll, setShowAll] = useState(false);
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
