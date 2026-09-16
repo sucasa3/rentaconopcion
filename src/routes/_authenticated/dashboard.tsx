@@ -360,7 +360,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
                 </span>
               </div>
               <p className="mt-1 hidden text-xs text-muted-foreground sm:block">{system.detail}</p>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
