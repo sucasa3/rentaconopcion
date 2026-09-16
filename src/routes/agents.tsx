@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
-import { getAgentAttribution } from "@/lib/agent-funnel.client";
+import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 
 export const Route = createFileRoute("/agents")({

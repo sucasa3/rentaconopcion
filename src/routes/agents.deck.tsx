@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Printer, Maximize2 } from "lucide-react";
 import { ScaledSlide } from "@/components/deck/slide-layout";
 import { AGENT_SLIDES } from "@/components/deck/agent-slides";
 import { useServerFn } from "@tanstack/react-start";
-import { getAgentAttribution } from "@/lib/agent-funnel.client";
+import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 
 type Search = { slide?: number; print?: boolean };

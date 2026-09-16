@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { activateAgentWorkspace } from "@/lib/agent-onboarding.functions";
-import { getAgentAttribution } from "@/lib/agent-funnel.client";
+import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordAuthenticatedAgentEvent, recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 
 const searchSchema = z.object({ source: z.string().max(80).optional() });
