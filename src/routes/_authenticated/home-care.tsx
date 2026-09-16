@@ -47,7 +47,10 @@ function HomeCarePage() {
             <ArrowLeft className="h-4 w-4" /> {t("common.back_home")}
           </Link>
 
-          <HomeCarePanel onGoToDocuments={() => navigate({ to: "/documents" })} />
+          <HomeCarePanel
+            focusSystem={system}
+            onGoToDocuments={() => navigate({ to: "/documents" })}
+          />
           <PredictedActionsCard />
           <RecommendedProsCard />
           <RecentRequestsCard />
