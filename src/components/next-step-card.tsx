@@ -12,7 +12,7 @@ import {
 import { getRecommendedPros } from "@/lib/pros.functions";
 import type { TimelineItem } from "@/lib/maintenance-rules";
 import { CATEGORY_SLUG, buildTimelineGuide } from "@/lib/diy-guides";
-import { useT } from "@/lib/i18n";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
 export function NextStepCard({
   item,
