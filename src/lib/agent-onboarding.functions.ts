@@ -104,6 +104,13 @@ export const activateAgentWorkspace = createServerFn({ method: "POST" })
         .from("lender_members")
         .insert({ lender_org_id: orgId, user_id: context.userId, role: "owner" });
       if (memberError) throw new Error(memberError.message);
+
+      // The SuCasa-funded starter allowance is independent of lenders,
+      // sponsorships, subscriptions and homeowner permissions.
+      const { error: entitlementError } = await supabaseAdmin
+        .from("agent_base_entitlements")
+        .insert({ org_id: orgId, profile_limit: 100, source: "sucasa" });
+      if (entitlementError) throw new Error(entitlementError.message);
     } else if (data.agencyName?.trim() && created === false) {
       // Owners may rename their agency during setup.
       const { data: role } = await supabaseAdmin
@@ -171,6 +178,19 @@ export const activateAgentWorkspace = createServerFn({ method: "POST" })
       .from("lender_portfolio_clients")
       .select("id", { count: "exact", head: true })
       .eq("portfolio_id", portfolio!.id);
+
+    const { logNetworkEventOnce } = await import("./network-events.server");
+    await logNetworkEventOnce(supabaseAdmin, {
+      action: "agent_workspace_activated",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_organization",
+      entityId: orgId,
+      metadata: {
+        created_workspace: created,
+        activation_path: data.token ? "invitation" : "public",
+      },
+    });
 
     return {
       orgId: orgId!,

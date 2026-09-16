@@ -167,7 +167,18 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await agentOrgIds(context.supabase, context.userId);
+    const access = await agentOrgIds(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
+    const orgId = access.ids[0] ?? null;
+    await logNetworkEvent(supabaseAdmin, {
+      action: "agent_import_started",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_portfolio",
+      entityId: data.portfolioId,
+      metadata: { method: "manual" },
+    });
 
     const { data: portfolio, error } = await context.supabase
       .from("lender_portfolios")
@@ -1449,6 +1460,22 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    await logNetworkEvent(supabaseAdmin, {
+      action: "agent_import_completed",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_portfolio_client",
+      entityId: row.id,
+      metadata: { method: "manual", inserted: 1 },
+    });
+    await logNetworkEventOnce(supabaseAdmin, {
+      action: "agent_first_profile_created",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_organization",
+      entityId: orgId,
+      metadata: { method: "manual" },
+    });
     return { ok: true, id: row.id as string };
   });
 
@@ -1464,7 +1491,18 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await agentOrgIds(context.supabase, context.userId);
+    const access = await agentOrgIds(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
+    const orgId = access.ids[0] ?? null;
+    await logNetworkEvent(supabaseAdmin, {
+      action: "agent_import_started",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_portfolio",
+      entityId: data.portfolioId,
+      metadata: { method: "csv" },
+    });
     const { parseClientCsv } = await import("./lender.server");
     const parsed = parseClientCsv(data.csv);
     if (parsed.length === 0) return { inserted: 0, skipped: 0, remaining: null };
@@ -1492,6 +1530,22 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     }));
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
+    await logNetworkEvent(supabaseAdmin, {
+      action: "agent_import_completed",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_portfolio",
+      entityId: data.portfolioId,
+      metadata: { method: "csv", inserted: rows.length, skipped },
+    });
+    await logNetworkEventOnce(supabaseAdmin, {
+      action: "agent_first_profile_created",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_organization",
+      entityId: orgId,
+      metadata: { method: "csv" },
+    });
     return {
       inserted: rows.length,
       skipped,

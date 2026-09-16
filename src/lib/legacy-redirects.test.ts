@@ -40,6 +40,7 @@ describe("legacy redirects", () => {
 
   it("keeps bare /agents but moves deep agent pages", () => {
     expect(at("https://sucasa.com/agents")).toBeNull();
+    expect(at("https://sucasa.com/agents/deck?slide=7")).toBeNull();
     expect(at("https://sucasa.com/agents/SuCasa-Real-Estate-Team-Team/8351857")?.location).toBe(
       "https://homes.sucasa.com/agents/SuCasa-Real-Estate-Team-Team/8351857",
     );
