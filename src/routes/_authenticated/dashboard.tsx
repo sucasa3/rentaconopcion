@@ -136,7 +136,7 @@ function Dashboard() {
     staleTime: 5 * 60_000,
   });
 
-  // The forward-looking half: one plan drives this hero, /home-plan and the
+  // The forward-looking half: one plan drives this hero, /home-care and the
   // assistant's grounding.
   const homePlan = record ? buildHomePlan(record, new Date(), serviceLog ?? []) : null;
   const planSummary = homePlan ? planCounts(homePlan) : null;
