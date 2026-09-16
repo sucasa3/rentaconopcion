@@ -212,7 +212,11 @@ export function HomeCarePanel({
   // Keep the screen calm: what needs you, plus one healthy item for reassurance.
   const defaultVisible = Math.max(attentionCount + 1, 4);
 
-  const visibleRows = showAll ? rows : rows.slice(0, defaultVisible);
+  const baseVisible = showAll ? rows : rows.slice(0, defaultVisible);
+  // A focused system is always listed, even if it would normally be collapsed away.
+  const focusRow = focusKey ? rows.find((r) => r.key === `sys-${focusKey}`) : undefined;
+  const visibleRows =
+    focusRow && !baseVisible.includes(focusRow) ? [...baseVisible, focusRow] : baseVisible;
   const hiddenCount = rows.length - visibleRows.length;
 
   const lateCount = rows.filter((r) => r.status === "overdue").length;
