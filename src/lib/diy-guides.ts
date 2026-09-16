@@ -19,13 +19,6 @@ export const CATEGORY_SLUG: Record<string, string> = {
   Exterior: "painting",
 };
 
-export type Guide = {
-  what: string;
-  steps: string[];
-  diy: string;
-  cost: string;
-};
-
 /** How many steps each guide has in the dictionary. */
 export const GUIDE_STEPS: Record<string, number> = {
   roof: 4,
