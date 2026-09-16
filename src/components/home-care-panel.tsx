@@ -50,8 +50,11 @@ function seasonalKey(key: string, part: "label" | "hint"): TranslationKey | null
 
 export function HomeCarePanel({
   onGoToDocuments,
+  focusSystem,
 }: {
   onGoToDocuments?: () => void;
+  /** Optional system key from ?system= — that system is expanded and highlighted. */
+  focusSystem?: string;
 }) {
   const t = useT();
   const fetchLog = useServerFn(getMyComponentServiceLog);
