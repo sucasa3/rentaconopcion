@@ -27,7 +27,7 @@ export function SiteHeader() {
     { to: "/partner", label: "For Pros" },
     { to: "/lender", label: "For Lenders" },
     { to: "/agent", label: "For Agents" },
-    { to: "/dashboard", label: "Dashboard" },
+    { to: "/dashboard", label: "My home" },
   ] as const;
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -103,7 +103,7 @@ export function SiteFooter() {
           <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
-        <FooterCol title="Homeowners" links={[["Browse Homes", IDX_BASE_URL], ["Create Profile", "/onboarding"], ["Dashboard", "/dashboard"], ["Request Service", "/request"]]} />
+        <FooterCol title="Homeowners" links={[["Browse Homes", IDX_BASE_URL], ["Create Profile", "/onboarding"], ["My home", "/dashboard"], ["Request Service", "/request"]]} />
         <FooterCol title="Professionals" links={[["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
         <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
       </div>

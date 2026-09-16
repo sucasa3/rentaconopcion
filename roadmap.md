@@ -171,3 +171,11 @@
 - [x] Focused system without evidence shows a system-specific prompt (Add <system> details / Request service), never a generic empty state
 - [x] Home Score keeps the existing "What affects this?" explainer (not routed to Home Care)
 - [x] Normal Back behavior preserved; bilingual copy added
+
+## "My home" rename + Add system details dialog (2026-09-16)
+- [x] Public header and footer "Dashboard" renamed to "My home"
+- [x] "Add <system> details" opens the existing details dialog instead of onboarding
+- [x] Year must be explicitly confirmed before saving (no current-year inference)
+- [x] Synthetic system item is presentation-only; nothing persisted until save
+- [x] Cancel leaves no record; save invalidates component-service-log (Home Care + Home Health)
+- [x] Request service unchanged
