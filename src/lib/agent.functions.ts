@@ -711,18 +711,7 @@ export const setListingStatus = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const access = await agentOrgIds(context.supabase, context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
-    const orgId = access.ids[0] ?? null;
-    await logNetworkEvent(supabaseAdmin, {
-      action: "agent_import_started",
-      actorUserId: context.userId,
-      orgId,
-      entityType: "agent_portfolio",
-      entityId: data.portfolioId,
-      metadata: { method: "manual" },
-    });
+    await agentOrgIds(context.supabase, context.userId);
     const { error } = await context.supabase.from("property_listing_status").upsert(
       {
         portfolio_client_id: data.clientId,
@@ -1436,7 +1425,18 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await agentOrgIds(context.supabase, context.userId);
+    const access = await agentOrgIds(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
+    const orgId = access.ids[0] ?? null;
+    await logNetworkEvent(supabaseAdmin, {
+      action: "agent_import_started",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_portfolio",
+      entityId: data.portfolioId,
+      metadata: { method: "manual" },
+    });
     const { remainingCreditsForPortfolio } = await import("./credits-stats.server");
     const remaining = await remainingCreditsForPortfolio(context.supabase, data.portfolioId);
     if (remaining != null && remaining <= 0) {
