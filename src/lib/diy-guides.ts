@@ -1,6 +1,14 @@
 import type { TimelineItem } from "@/lib/maintenance-rules";
 import { type TranslationKey, useT } from "@/lib/i18n";
 
+/** Shorthand for a DIY guide. */
+export type Guide = {
+  what: string;
+  steps: string[];
+  diy: string;
+  cost: string;
+};
+
 /** Maintenance category → service request category slug. */
 export const CATEGORY_SLUG: Record<string, string> = {
   Roofing: "roofing",
