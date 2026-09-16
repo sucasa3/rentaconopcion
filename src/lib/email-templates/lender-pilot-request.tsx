@@ -44,11 +44,30 @@ const LenderPilotRequestEmail = ({
         </Section>
 
         <Section style={hero}>
-          <Text style={eyebrow}>NEW PILOT REQUEST</Text>
-          <Heading style={heading}>{company} is ready to activate their agent network</Heading>
+          <Text style={eyebrow}>NEW LENDER PILOT REQUEST</Text>
+          <Heading style={heading}>{company} wants to turn its agent relationships into a measurable funnel</Heading>
           <Text style={lead}>
-            A mortgage lender just raised their hand for a 90-day SuCasa pilot. This is a
-            high-intent demo opportunity — here is everything you need to qualify and schedule.
+            This is a high-intent demo opportunity. A lender just asked to run a 90-day SuCasa pilot —
+            they are not shopping for leads, they are looking for a repeatable way to help their loan
+            officers stay relevant to the agents who already refer business.
+          </Text>
+        </Section>
+
+        <Section style={whyItMatters}>
+          <Heading as="h2" style={subheading}>Why this request matters</Heading>
+          <Text style={bullet}>
+            <span style={bulletLead}>They already have the relationships. </span>
+            SuCasa does not sell lead lists. We turn an agent's existing database into a short list of
+            homeowners worth a conversation — with the reason attached.
+          </Text>
+          <Text style={bullet}>
+            <span style={bulletLead}>The economics are concrete. </span>
+            A small group of loan officers and agent partners, activated consistently, can change where
+            the next refinance, move-up, or investment purchase conversation starts.
+          </Text>
+          <Text style={bullet}>
+            <span style={bulletLead}>The pilot is designed to prove it. </span>
+            90 days. Existing databases. Real signals. Tracked referrals. Measured funded loans.
           </Text>
         </Section>
 
@@ -69,20 +88,22 @@ const LenderPilotRequestEmail = ({
 
         <Section style={ctaWrap}>
           <Button
-            href={`mailto:${email}?subject=Re: SuCasa Lender Pilot - ${encodeURIComponent(company)}&body=Hi ${encodeURIComponent(name)},%0A%0AThanks for your interest in the SuCasa lender pilot.`}
+            href={`mailto:${email}?subject=Re: SuCasa Lender Pilot - ${encodeURIComponent(company)}&body=Hi ${encodeURIComponent(name)},%0A%0AThanks for your interest in the SuCasa lender pilot. I would love to walk you through how a 90-day pilot works and what we would measure together.`}
             style={button}
           >
-            Reply to schedule the demo
+            Reply now to schedule the demo
           </Button>
+          <Text style={ctaSub}>Hit reply or click above — the email goes straight to {name}.</Text>
         </Section>
 
         <Section style={nextSteps}>
-          <Heading as="h2" style={subheading}>Recommended next steps</Heading>
-          <Text style={bullet}>1. Reply within 24 hours while intent is hot.</Text>
-          <Text style={bullet}>2. Confirm the number of loan officers and active agent partners.</Text>
-          <Text style={bullet}>3. Schedule a 30-minute pilot walkthrough.</Text>
-          <Text style={bullet}>4. Set expectations: 90 days, measurable signal-to-referral funnel.</Text>
+          <Heading as="h2" style={subheading}>Demo playbook</Heading>
+          <Text style={bullet}>1. Reply fast — within 24 hours while the moment is live.</Text>
+          <Text style={bullet}>2. Confirm loan officer count and active agent partnerships.</Text>
+          <Text style={bullet}>3. Schedule a 30-minute pilot walkthrough with one decision-maker.</Text>
+          <Text style={bullet}>4. Set the measurement frame: signals, conversations, referrals, funded loans.</Text>
         </Section>
+
 
         <Section style={footer}>
           <Text style={footerText}>Sent by the SuCasa lender landing page.</Text>
