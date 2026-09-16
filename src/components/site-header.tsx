@@ -25,7 +25,7 @@ export function SiteHeader() {
   const links = [
     { to: "/services", label: "Services" },
     { to: "/partner", label: "For Pros" },
-    { to: "/lender", label: "For Lenders" },
+    { to: "/lenders", label: "For Lenders" },
     { to: "/agents", label: "For Agents" },
     { to: "/dashboard", label: "My home" },
   ] as const;
@@ -104,7 +104,7 @@ export function SiteFooter() {
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
         <FooterCol title="Homeowners" links={[["Browse Homes", IDX_BASE_URL], ["Create Profile", "/onboarding"], ["My home", "/dashboard"], ["Request Service", "/request"]]} />
-        <FooterCol title="Professionals" links={[["For Agents", "/agents"], ["Agent presentation", "/agents/deck"], ["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
+        <FooterCol title="Professionals" links={[["For Agents", "/agents"], ["For Lenders", "/lenders"], ["Agent presentation", "/agents/deck"], ["Lender presentation", "/lenders/deck"], ["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
         <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
       </div>
       <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} SuCasa. All rights reserved.</div>
