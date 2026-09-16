@@ -1,14 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowRight,
   Check,
+  CheckCircle2,
   ChevronRight,
   Cpu,
   Database,
   Handshake,
   Lightbulb,
+  Loader2,
   LockKeyhole,
   MessageCircle,
   Network,
@@ -20,11 +23,20 @@ import {
 } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 
-const PILOT_MAILTO =
-  "mailto:neil@sucasa.com?subject=SuCasa%20lender%20pilot&body=Company%3A%0ALoan%20officers%3A%0AMarkets%3A%0A";
 
 export const Route = createFileRoute("/lenders/")({
   head: () => ({
@@ -83,21 +95,21 @@ function LendersLandingPage() {
                 earlier, and the agent keeps the relationship.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Button
-                  asChild
-                  size="lg"
-                  className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
-                >
-                  <a href={PILOT_MAILTO} onClick={() => track("lender_pilot_clicked")}>
+                <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+                  <Button
+                    size="lg"
+                    className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                  >
                     Talk to us about a pilot <ArrowRight />
-                  </a>
-                </Button>
+                  </Button>
+                </PilotRequestDialog>
                 <Button asChild size="lg" variant="outline" className="min-h-12">
                   <Link to="/lenders/deck" onClick={() => track("lender_deck_viewed")}>
                     View presentation
                   </Link>
                 </Button>
               </div>
+
               <p className="mt-3 text-sm text-muted-foreground">
                 A 90-day, measurable pilot with a defined group of loan officers and their agent
                 partners.
@@ -376,15 +388,15 @@ function LendersLandingPage() {
                 </div>
               ))}
             </div>
-            <Button
-              asChild
-              size="lg"
-              className="mt-7 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
-            >
-              <a href={PILOT_MAILTO} onClick={() => track("lender_pilot_clicked")}>
+            <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+              <Button
+                size="lg"
+                className="mt-7 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+              >
                 Talk to us about a pilot <ArrowRight />
-              </a>
-            </Button>
+              </Button>
+            </PilotRequestDialog>
+
             <div className="mt-5 flex flex-wrap justify-center gap-5 text-sm">
               <Link
                 to="/lenders/deck"
@@ -521,3 +533,167 @@ function LoanOfficerPreview() {
     </div>
   );
 }
+
+function PilotRequestDialog({
+  children,
+  onOpen,
+}: {
+  children: ReactNode;
+  onOpen?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
+  const [loanOfficers, setLoanOfficers] = useState("");
+  const [markets, setMarkets] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError(null);
+    const attribution = getAgentAttribution();
+    try {
+      const response = await fetch("/api/public/lenders/pilot", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          company: company.trim(),
+          loanOfficers: loanOfficers.trim() || undefined,
+          markets: markets.trim() || undefined,
+          message: message.trim() || undefined,
+          visitId: attribution.visitId,
+        }),
+      });
+      if (!response.ok) throw new Error("Request failed");
+      setDone(true);
+    } catch {
+      setError("We couldn't send your request. Please try again or email us directly at info@sucasa.com.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) onOpen?.();
+    if (!nextOpen && done) {
+      setDone(false);
+      setName("");
+      setEmail("");
+      setCompany("");
+      setLoanOfficers("");
+      setMarkets("");
+      setMessage("");
+    }
+    setOpen(nextOpen);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Talk to us about a pilot</DialogTitle>
+          <DialogDescription>
+            Tell us a little about your team. We will reply within one business day.
+          </DialogDescription>
+        </DialogHeader>
+        {done ? (
+          <div className="py-6 text-center">
+            <CheckCircle2 className="mx-auto h-10 w-10 text-status-positive" />
+            <p className="mt-4 font-semibold">Request sent</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Our team will reach out to schedule your demo.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="pilot-name">Full name</Label>
+              <Input
+                id="pilot-name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Jordan Lee"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pilot-email">Work email</Label>
+              <Input
+                id="pilot-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jordan@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pilot-company">Lender / company</Label>
+              <Input
+                id="pilot-company"
+                required
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="Example Mortgage"
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="pilot-officers">Loan officers</Label>
+                <Input
+                  id="pilot-officers"
+                  value={loanOfficers}
+                  onChange={(e) => setLoanOfficers(e.target.value)}
+                  placeholder="e.g. 12"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pilot-markets">Markets</Label>
+                <Input
+                  id="pilot-markets"
+                  value={markets}
+                  onChange={(e) => setMarkets(e.target.value)}
+                  placeholder="e.g. Dallas-Fort Worth"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pilot-message">What are you hoping to solve? (optional)</Label>
+              <Textarea
+                id="pilot-message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="We want our loan officers to stay top-of-mind with the agent partners who already refer business..."
+                rows={4}
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button
+              type="submit"
+              className="w-full bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+              disabled={busy}
+            >
+              {busy ? <Loader2 className="animate-spin" /> : "Send pilot request"}
+              {!busy && <ArrowRight className="ml-2 h-4 w-4" />}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              You can also email us directly at{" "}
+              <a href="mailto:info@sucasa.com" className="text-primary underline">
+                info@sucasa.com
+              </a>
+            </p>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+

@@ -12,6 +12,7 @@ export const publicAgentEventSchema = z.object({
     "agent_signup_started",
     "lender_landing_view",
     "lender_pilot_clicked",
+    "lender_pilot_submitted",
     "lender_deck_viewed",
     "lender_pricing_clicked",
     "lender_signin_clicked",
