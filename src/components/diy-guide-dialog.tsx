@@ -49,6 +49,9 @@ export function DiyGuideDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{target.label} — what to do</DialogTitle>
+          <DialogDescription>
+            Step-by-step guidance and when to call a professional.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">{guide.what}</p>
