@@ -28,6 +28,12 @@ import type { TimelineItem } from "@/lib/maintenance-rules";
 type Props = {
   item: TimelineItem;
   open: boolean;
+  /**
+   * Opened for a system with no canonical record: the pre-filled year is a
+   * convenience only, so the homeowner must confirm or change it before we
+   * store anything as fact.
+   */
+  requireYearConfirm?: boolean;
   onOpenChange: (o: boolean) => void;
 };
 
@@ -35,7 +41,7 @@ type Props = {
  * Lets a homeowner mark a maintenance item done — most work happens without a
  * permit, so their entry becomes the new start of the lifespan clock.
  */
-export function MarkComponentDoneDialog({ item, open, onOpenChange }: Props) {
+export function MarkComponentDoneDialog({ item, open, onOpenChange, requireYearConfirm = false }: Props) {
   const thisYear = new Date().getFullYear();
   const logFn = useServerFn(logComponentService);
   const qc = useQueryClient();
@@ -48,8 +54,13 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange }: Props) {
   const [provider, setProvider] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [yearTouched, setYearTouched] = useState(false);
 
   const submit = async () => {
+    if (requireYearConfirm && !yearTouched) {
+      toast.error("Confirm the year this was done before saving");
+      return;
+    }
     const parsedYear = Number(year);
     if (!Number.isInteger(parsedYear) || parsedYear < 1900 || parsedYear > thisYear + 1) {
       toast.error("Enter a valid year");
@@ -88,10 +99,15 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Mark {item.label.toLowerCase()} done</DialogTitle>
+          <DialogTitle>
+            {requireYearConfirm
+              ? `Add ${item.label.toLowerCase()} details`
+              : `Mark ${item.label.toLowerCase()} done`}
+          </DialogTitle>
           <DialogDescription>
-            A lot of work happens without a permit on file. Add the details and we'll reset the
-            clock and plan future maintenance around your new system.
+            {requireYearConfirm
+              ? "Tell us when this system was last replaced or serviced and we'll plan future maintenance around it. Nothing is saved until you choose the year."
+              : "A lot of work happens without a permit on file. Add the details and we'll reset the clock and plan future maintenance around your new system."}
           </DialogDescription>
         </DialogHeader>
 
@@ -115,9 +131,18 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange }: Props) {
                 id="mcd-year"
                 inputMode="numeric"
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
+                onChange={(e) => {
+                  setYearTouched(true);
+                  setYear(e.target.value);
+                }}
                 placeholder={String(thisYear)}
+                aria-describedby={requireYearConfirm ? "mcd-year-hint" : undefined}
               />
+              {requireYearConfirm && !yearTouched && (
+                <p id="mcd-year-hint" className="text-xs text-muted-foreground">
+                  Confirm or change the year to continue
+                </p>
+              )}
             </div>
           </div>
 
@@ -180,9 +205,9 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange }: Props) {
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={busy}>
+          <Button onClick={submit} disabled={busy || (requireYearConfirm && !yearTouched)}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save and reset clock
+            {requireYearConfirm ? "Save details" : "Save and reset clock"}
           </Button>
         </DialogFooter>
       </DialogContent>
