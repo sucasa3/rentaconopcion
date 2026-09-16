@@ -1,142 +1,57 @@
-# Product-led SuCasa Agent Landing Page
+# Lender landing page at /lenders — plus what happens when two agents upload the same homeowner
 
-## Goal
+## Part 1 — The public lender page
 
-Turn `https://sucasa.com/agents` into a mobile-first public conversion page built from the existing agent presentation and authentic Agent Today product language.
+Today `/lenders` is the private 19-slide partnership deck (noindex). Mirror exactly what we just did for agents:
 
-Within the first mobile viewport, an agent should understand:
+- `/lenders` becomes the public, indexable landing page.
+- `/lenders/deck` keeps the existing deck untouched, including its PDF/print mode and keyboard navigation. All existing deck links keep working.
 
-> Your homeowner relationships already have value. SuCasa helps you know who deserves attention, why now, what to say, and what to do next.
+### Page structure (mobile-first, same design system as /agents)
 
-The free allowance supports the offer but will not lead the positioning.
+1. **Hero** — "Your agents already have the customers. SuCasa helps them know who to call, and why." Primary action **Talk to us about a pilot**, secondary **View presentation**, plus a quiet **Sign in** for existing loan officers.
+2. **Product proof, high on the page** — a compact, clearly labeled "ILLUSTRATIVE DEMO" card in the real lender product language: a homeowner whose circumstances changed, why now, what the loan officer could say, and the next step. Every name and number fictional.
+3. **The problem** — databases full of homeowners, no way to tell which matter today; budget goes to buying new leads instead of activating existing ones.
+4. **The flow** — agent database → homeowner signals → agent has a reason to reach out → a conversation happens → a financing need emerges → your loan officer gets the opportunity.
+5. **Focus, not volume** — the deck's 1,000 → 37 illustrative framing, labeled illustrative and not a guaranteed result.
+6. **What a loan officer actually gets** — a prioritized book, equity and mortgage-age context, annual-review moments, suggested language, branded outreach.
+7. **Agent + lender flywheel** — the lender brings agents, agents bring homeowners, homeowners create financing conversations, and the agent keeps the relationship.
+8. **Trust and boundaries** — the section that matters most for lenders: the homeowner controls their own permissions; an agent uploading a database gives a lender nothing automatically; lender visibility only exists where the homeowner consented; SuCasa is not a lead list and does not sell anyone's database.
+9. **Is / is not** — straight from the deck, so expectations are set before a sales call.
+10. **Pilot** — the 90-day pilot shape and success metrics, ending with the contact/pilot action.
 
-## Conversion hierarchy
+### Messaging discipline (same rules as the agent page)
 
-- Primary action throughout: **Start free**
-- Secondary action near the hero: **View presentation**
-- Existing-user action: **Sign in**
-- Preserve campaign/referrer attribution through signup where the current first-party architecture supports it.
-- Make the next step explicit: account creation → agent workspace → onboarding/demo state → optional database import or connection.
+Signals, changes, and reasons to reconnect only. No claim that SuCasa predicts who will refinance, sell, move, or transact, and no guaranteed conversion. Every displayed homeowner, value, and equity figure is fictional and visibly labeled.
 
-## Page structure
+### Funnel tracking
 
-1. **Hero and immediate product proof**
-   - Keep the SuCasa logo and public navigation.
-   - Lead with “You already have the relationships. Let’s make them worth more.”
-   - Explain the four answers SuCasa provides: who deserves attention, why now, what the agent could say, and the practical next step.
-   - Place a focused, legible Agent Today product state in or immediately below the hero.
-   - On mobile, show a cropped authentic product state rather than shrinking desktop UI into an unreadable frame.
+Same first-party, PII-free ledger used for agents, with lender-specific events: landing view, pilot/contact clicked, deck viewed, pricing clicked, sign-in clicked. Non-blocking writes, no new vendor, sanitized referrer only.
 
-2. **From database to relationship engine**
-   - Contrast a static contact list with a calm, prioritized weekly list.
-   - Explain signals as changes and reasons to reconnect—not predictions of selling, refinancing, moving, transacting, or homeowner intent.
-   - Avoid guaranteed-conversion language.
+### One decision needed
 
-3. **See how a recommendation works**
-   - Show the four-part recommendation clearly:
-     - Who deserves attention?
-     - Why now?
-     - What could I say?
-     - What is the practical next step?
-   - Reuse existing Agent Today visual patterns and components where practical.
-   - Any displayed names, homes, values, equity, reasons, or conversation examples must be fictional, visibly labeled illustrative demo content, and never drawn from production homeowner records.
+The lender page's main action: a **contact/pilot request form** (name, company, email, rough loan-officer count) that lands in the existing audit/notification path, or simply a **mailto/calendar link**? See the question below.
 
-4. **Stay relevant between transactions**
-   - Adapt the presentation’s homeowner journey and “become the first call” story.
-   - Show how SuCasa helps an agent remain useful across value, equity, maintenance, financing, improvements, moves, referrals, and repeat transactions.
+## Part 2 — Two agents, same homeowner: what actually happens
 
-5. **Relationships and privacy**
-   - State explicitly that the agent remains responsible for and in control of professional relationships.
-   - State that homeowners retain their own choices and permissions.
-   - Explain that uploading or creating a Home Profile does not automatically give a lender, provider, sponsor, or other professional access.
-   - Confirm that visibility follows SuCasa’s existing relationship, permission, consent, role, and access rules.
-   - State that SuCasa does not sell the agent’s uploaded database.
-   - Introduce no new access rights.
+Verified against the current schema and code:
 
-6. **How it starts**
-   - Create the agent account and workspace first.
-   - Let the agent enter the workspace without importing contacts.
-   - Offer a clearly labeled demo/onboarding state, then guide them to CSV import or the existing supported connection flow.
-   - Explain that SuCasa creates reusable Home Records and returns a prioritized work list from the existing canonical fact system.
+- **The property record is shared, once.** Property intelligence is keyed uniquely by normalized address, so the second agent's upload reuses the same record instead of triggering a second round of paid provider calls. That's the intended economics.
+- **Each agent's client row is their own.** Portfolio client rows and relationship records are stored per organization with org-level visibility, so Agent A cannot see Agent B's copy, notes, activity, or that Agent B exists in the system at all.
+- **Neither agent gains any access to the other's work, and neither gains homeowner access by uploading.** Consent records remain the only authority for who may see homeowner information.
+- **Both agents will see the same underlying home facts and therefore similar signals** — because both are looking at the same house. Each sees it inside their own book, with their own history and their own suggested next step.
+- **The one existing cross-agent guardrail** is representation: if the home is listed with another agent, the record is flagged and put in a quiet, value-only mode with no solicitation.
+- **Capacity is counted per workspace.** The same home occupying a slot in two different agents' 100-profile allowances is worth confirming as intentional before launch.
 
-7. **Offer and final action**
-   - Present the existing free-agent offer accurately: up to 100 Home Profiles, with paid capacity options linked to `/pricing`.
-   - Keep the allowance secondary to the product value.
-   - Repeat **Start free**, with **Sign in** for existing agents.
+### Open product gap worth naming now
 
-## Routes and presentation preservation
+Nothing today tells the homeowner "two professionals have you in their book," and nothing lets the homeowner choose which one is actually their agent. Long term the honest answer is the homeowner decides: whoever the homeowner confirms is their agent gets the confirmed relationship, and the other keeps a self-asserted, unconfirmed record. That is a separate piece of work, not part of this landing page.
 
-- Replace the current slide viewer at bare `/agents` with the new indexable landing page.
-- Preserve the full presentation at `/agents/deck`, including slide navigation, fullscreen, and printable/PDF mode.
-- Add an explicit platform exception for `/agents/deck` before the existing legacy `/agents/*` IDX redirect rule.
-- Keep bare `/agents` on SuCasa and continue sending all other legacy deep `/agents/*` URLs to the IDX host with paths and query strings preserved.
-- Update the public header’s **For Agents** link from the protected `/agent` workspace to public `/agents`.
-- Add appropriate Agent links to the public footer while leaving homeowner, lender, provider, and authenticated workspace routes intact.
+## Technical notes
 
-## Role-specific Start free flow
-
-Use the existing `profiles` records and idempotent agent workspace activation; do not create a parallel profile model.
-
-- Add a public agent-specific account creation path reached from `/agents`.
-- Collect the existing profile fields needed for setup: name, email, password or Google sign-in, and brokerage/team name.
-- Handle email confirmation correctly before treating signup as authenticated.
-- After authentication, create or reuse only the agent’s organization, owner membership, and book through the existing activation service, then continue to `/agent`.
-- Preserve invitation-based activation as a separate flow with its signed token, matching-email checks, and reconciliation behavior.
-- Point agent pricing CTAs to the same agent-specific start path so they no longer create homeowner-only accounts.
-- Do not require import before workspace entry.
-- Do not create homeowner access, a lender relationship, sponsorship, provider access, paid entitlement, or any permission/consent bypass.
-
-## Funnel analytics
-
-Use first-party project instrumentation only; do not add an analytics vendor.
-
-Capture these milestones:
-
-- `agent_landing_view`
-- `agent_start_clicked`
-- `agent_deck_viewed`
-- `agent_pricing_clicked`
-- `agent_signin_clicked`
-- `agent_signup_started`
-- `agent_signup_completed`
-- `agent_workspace_activated`
-- `agent_import_started`
-- `agent_import_completed`
-- `agent_first_profile_created`
-
-Implementation rules:
-
-- Reuse the existing event/audit conventions where they fit; add only the smallest first-party funnel event path needed for anonymous landing interactions.
-- Keep event payloads allow-listed and free of homeowner personal information.
-- Carry sanitized source, campaign, landing path, and referrer context from the public visit through account creation where possible.
-- Make event writes non-blocking so analytics failure never prevents signup, activation, import, or profile creation.
-- Deduplicate completion milestones so retries and idempotent activation do not inflate conversions.
-
-## Visual direction
-
-- Follow the established SuCasa light public system: white/light-neutral surfaces, deep navy structure, strong orange relationship accents, intelligence blue, and restrained green.
-- Translate the presentation’s premium dark energy into selective deep-navy sections rather than making the whole page dark.
-- Use real product UI as the dominant visual asset, with generous typography, crisp icon circles, thin borders, compact sections, and restrained motion.
-- Respect reduced-motion preferences.
-- Avoid generic illustrations, unsupported testimonials, fabricated outcomes, pastel-filled major cards, and unverified statistics.
-- Use no horizontal scrolling at mobile widths and keep all tap targets accessible.
-
-## Search and sharing
-
-- Add an indexable `/agents` title, description, Open Graph title/description/type, Twitter card, and canonical `https://sucasa.com/agents`.
-- Keep `/agents/deck` excluded from search.
-- Use one H1 and semantic section headings.
-- Add no social image unless a correctly sized image actually shown on the page is available.
-
-## Verification and acceptance
-
-- Verify at 320, 375, 390, and 430px plus desktop: immediate CTA, legible product proof, no overlap, no horizontal scrolling, compact spacing, and accessible controls.
-- Confirm an unfamiliar agent can answer: what SuCasa is, why it helps an existing database, what it tells them, what the product looks like, who controls the relationship, who gets access, what it costs to start, and what happens after Start free.
-- Test header/footer navigation, Start free, View presentation, pricing, sign-in, deck controls, fullscreen, and print mode.
-- Complete fresh email and Google agent signup checks, including the email-confirmation state where applicable.
-- Confirm workspace activation is idempotent and lands at `/agent` without database import.
-- Confirm invitation activation still works independently.
-- Confirm signup creates no homeowner access, lender connection, sponsorship, provider access, paid entitlement, or permission change.
-- Verify every named funnel event, attribution continuity, retry deduplication, and non-blocking failure behavior.
-- Confirm bare `/agents`, `/agents/deck`, and legacy deep `/agents/*` behavior.
-- Check keyboard navigation, focus visibility, contrast, reduced motion, metadata, console output, type checks, and automated tests.
+- Route split: `src/routes/lenders.tsx` becomes a layout with `lenders.index.tsx` (landing) and `lenders.deck.tsx` (existing deck moved verbatim, print link retargeted).
+- Legacy IDX redirect rules get `/lenders` and `/lenders/deck` explicitly exempted, with a redirect test, matching the `/agents` treatment.
+- Reuse `SiteHeader`/`SiteFooter`, existing semantic tokens, and the deck's product-frame patterns; no marketing-only color or font additions.
+- Header/footer gain the public "For Lenders" link; lender pricing CTAs point at the new page's action.
+- Landing route gets its own title, description, OG/Twitter text, canonical `https://sucasa.com/lenders`, and `index,follow`; the deck route stays noindex.
+- New funnel actions appended to the existing event action union; no schema change.
