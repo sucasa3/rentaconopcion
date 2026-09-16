@@ -10,6 +10,9 @@ import { RecentRequestsCard } from "@/components/recent-requests-card";
 
 export const Route = createFileRoute("/_authenticated/home-care")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    system: typeof search.system === "string" ? search.system : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Home care — SuCasa" },
@@ -33,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/home-care")({
 function HomeCarePage() {
   const t = useT();
   const navigate = useNavigate();
+  const { system } = Route.useSearch();
   return (
     <HomeownerShell>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
