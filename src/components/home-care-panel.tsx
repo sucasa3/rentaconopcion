@@ -195,6 +195,11 @@ export function HomeCarePanel({
     };
   });
 
+  // The focused system only ever reflects canonical timeline evidence.
+  const focusKey = focusSystem && systemLabelKey(focusSystem) ? focusSystem : null;
+  const focusItem = focusKey ? (items.find((i) => i.key === focusKey) ?? null) : null;
+  const focusLabel = focusKey ? t(systemLabelKey(focusKey)!) : null;
+
   const RANK: Record<string, number> = { overdue: 0, due_soon: 1, ok: 2 };
   const rows: CareRow[] = [...systemRows, ...routineRows].sort((a, b) => {
     const r = RANK[a.status] - RANK[b.status];
