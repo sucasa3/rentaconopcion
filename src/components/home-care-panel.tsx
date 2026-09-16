@@ -502,7 +502,9 @@ export function HomeCarePanel({
                         />
                         <button
                           disabled={savingKey === row.taskKey}
-                          onClick={() => completeSeasonal(row.taskKey)}
+                          onClick={() => {
+                            if (row.taskKey) completeSeasonal(row.taskKey);
+                          }}
                           className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary disabled:opacity-50"
                         >
                           <CheckSquare className="h-4 w-4" />
