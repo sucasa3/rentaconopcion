@@ -72,8 +72,20 @@ export function buildGuide(item: { key: string; label: string }, t: Translate): 
   };
 }
 
-export function buildTimelineGuide(item: TimelineItem, t: Translate): Guide | null {
-  return buildGuide({ key: item.key, label: item.label }, t);
+function buildFallbackGuide(
+  item: { label: string; expectedYear?: number },
+  t: Translate,
+): Guide {
+  return {
+    what: t("guide.fallback.what", { label: item.label, year: item.expectedYear ?? new Date().getFullYear() }),
+    steps: [t("guide.fallback.step1"), t("guide.fallback.step2"), t("guide.fallback.step3")],
+    diy: t("guide.fallback.diy"),
+    cost: t("guide.fallback.cost"),
+  };
+}
+
+export function buildTimelineGuide(item: TimelineItem, t: Translate): Guide {
+  return buildGuide({ key: item.key, label: item.label }, t) ?? buildFallbackGuide(item, t);
 }
 
 export function useGuide(item: { key: string; label: string } | null): Guide | null {
