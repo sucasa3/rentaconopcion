@@ -387,15 +387,15 @@ function LendersLandingPage() {
                 </div>
               ))}
             </div>
-            <Button
-              asChild
-              size="lg"
-              className="mt-7 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
-            >
-              <a href={PILOT_MAILTO} onClick={() => track("lender_pilot_clicked")}>
+            <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+              <Button
+                size="lg"
+                className="mt-7 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+              >
                 Talk to us about a pilot <ArrowRight />
-              </a>
-            </Button>
+              </Button>
+            </PilotRequestDialog>
+
             <div className="mt-5 flex flex-wrap justify-center gap-5 text-sm">
               <Link
                 to="/lenders/deck"
