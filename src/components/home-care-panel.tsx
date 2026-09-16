@@ -23,6 +23,7 @@ import {
 import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
+import { DiyGuideButton } from "@/components/diy-guide-dialog";
 import { MarkComponentDoneDialog } from "@/components/mark-component-done-dialog";
 import { SectionHero, type HeroTone } from "@/components/section-hero";
 import { listInspectionFindings } from "@/lib/inspection.functions";
@@ -157,6 +158,7 @@ export function HomeCarePanel({
     status: "overdue" | "due_soon" | "ok";
     item?: TimelineItem;
     taskKey?: string;
+    category?: string;
   };
 
   const systemRows: CareRow[] = items.map((item) => {
@@ -199,6 +201,7 @@ export function HomeCarePanel({
       timing: task.due ? t("care.timing.soon") : t("care.legend.ok"),
       status: task.due ? "due_soon" : "ok",
       taskKey: task.key,
+      category: task.category,
     };
   });
 
@@ -488,20 +491,31 @@ export function HomeCarePanel({
                           </Link>
                         )}
                       </>
-                    ) : (
-                      <button
-                        disabled={savingKey === row.taskKey}
-                        onClick={() => completeSeasonal(row.taskKey!)}
-                        className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary disabled:opacity-50"
-                      >
-                        <CheckSquare className="h-4 w-4" />
-                        {savingKey === row.taskKey
-                          ? t("common.saving")
-                          : row.status === "ok"
-                            ? t("care.btn.did_again")
-                            : t("care.btn.did_it")}
-                      </button>
-                    )}
+                    ) : row.taskKey ? (
+                      <>
+                        <DiyGuideButton
+                          target={{
+                            key: `${SEASONAL_PREFIX}${row.taskKey}`,
+                            label: row.label,
+                            category: row.category,
+                          }}
+                        />
+                        <button
+                          disabled={savingKey === row.taskKey}
+                          onClick={() => {
+                            if (row.taskKey) completeSeasonal(row.taskKey);
+                          }}
+                          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary disabled:opacity-50"
+                        >
+                          <CheckSquare className="h-4 w-4" />
+                          {savingKey === row.taskKey
+                            ? t("common.saving")
+                            : row.status === "ok"
+                              ? t("care.btn.did_again")
+                              : t("care.btn.did_it")}
+                        </button>
+                      </>
+                    ) : null}
                   </div>
                 </li>
               ))}

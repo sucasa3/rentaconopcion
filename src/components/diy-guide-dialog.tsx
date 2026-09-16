@@ -41,6 +41,7 @@ export function DiyGuideDialog({
   onOpenChange: (open: boolean) => void;
   target: DiyGuideTarget;
 }) {
+  const t = useT();
   const guide = useGuide(target);
   const slug = requestSlug(target);
   if (!guide) return null;
@@ -48,16 +49,14 @@ export function DiyGuideDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{target.label} — what to do</DialogTitle>
-          <DialogDescription>
-            Step-by-step guidance and when to call a professional.
-          </DialogDescription>
+          <DialogTitle>{t("next.dialog.title", { label: target.label })}</DialogTitle>
+          <DialogDescription>{t("next.dialog.description")}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <p className="text-muted-foreground">{guide.what}</p>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-              Steps
+              {t("next.dialog.steps")}
             </p>
             <ol className="mt-1.5 list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
               {guide.steps.map((s) => (
@@ -67,11 +66,11 @@ export function DiyGuideDialog({
           </div>
           <div className="rounded-xl border border-border p-3 text-xs text-muted-foreground">
             <p>
-              <span className="font-semibold text-foreground">DIY vs. pro:</span>{" "}
+              <span className="font-semibold text-foreground">{t("next.dialog.diy")}</span>{" "}
               {guide.diy}
             </p>
             <p className="mt-1">
-              <span className="font-semibold text-foreground">Typical cost:</span>{" "}
+              <span className="font-semibold text-foreground">{t("next.dialog.cost")}</span>{" "}
               {guide.cost}
             </p>
           </div>
@@ -82,7 +81,7 @@ export function DiyGuideDialog({
               onClick={() => onOpenChange(false)}
               className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft"
             >
-              Get quotes from a SuCasa pro <ArrowRight className="h-4 w-4" />
+              {t("next.dialog.cta")} <ArrowRight className="h-4 w-4" />
             </Link>
           )}
         </div>
@@ -98,6 +97,7 @@ export function DiyGuideButton({
   target: DiyGuideTarget;
   variant?: "outline" | "ghost" | "secondary";
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const guide = useGuide(target);
   if (!guide) return null;
@@ -109,7 +109,7 @@ export function DiyGuideButton({
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold"
       >
-        <BookOpen className="h-3.5 w-3.5" /> Do it yourself
+        <BookOpen className="h-3.5 w-3.5" /> {t("next.btn.how")}
       </Button>
       <DiyGuideDialog open={open} onOpenChange={setOpen} target={target} />
     </>
