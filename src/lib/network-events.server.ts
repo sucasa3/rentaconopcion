@@ -34,7 +34,19 @@ export type NetworkEventAction =
   | "homeowner_relationship_rejected"
   | "homeowner_relationship_unknown"
   | "homeowner_connection_granted"
-  | "homeowner_connection_declined";
+  | "homeowner_connection_declined"
+  // Public agent acquisition and activation funnel. No homeowner PII.
+  | "agent_landing_view"
+  | "agent_start_clicked"
+  | "agent_deck_viewed"
+  | "agent_pricing_clicked"
+  | "agent_signin_clicked"
+  | "agent_signup_started"
+  | "agent_signup_completed"
+  | "agent_workspace_activated"
+  | "agent_import_started"
+  | "agent_import_completed"
+  | "agent_first_profile_created";
 
 export interface NetworkEventInput {
   action: NetworkEventAction;
@@ -81,5 +93,26 @@ export async function logNetworkEvents(admin: any, inputs: NetworkEventInput[]):
     );
   } catch {
     /* ignore */
+  }
+}
+
+/** Idempotent funnel milestone keyed by action + entity identity. */
+export async function logNetworkEventOnce(admin: any, input: NetworkEventInput): Promise<void> {
+  try {
+    if (input.entityType && input.entityId) {
+      const { data } = await admin
+        .from("compliance_audit_events")
+        .select("id")
+        .eq("category", "network_growth")
+        .eq("action", input.action)
+        .eq("entity_type", input.entityType)
+        .eq("entity_id", input.entityId)
+        .limit(1)
+        .maybeSingle();
+      if (data) return;
+    }
+    await logNetworkEvent(admin, input);
+  } catch {
+    /* observability must never fail the caller */
   }
 }
