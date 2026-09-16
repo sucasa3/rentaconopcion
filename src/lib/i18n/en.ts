@@ -561,6 +561,8 @@ export const en = {
   "home.thinking.unsure": "Not sure yet",
   "plan.done_toast": "Taken care of",
   "plan.done_toast_sub": "Your Home Plan has been updated.",
+  "plan.coming.label": "What's coming",
+  "plan.coming.sub": "Forward-looking items based on your home's age and records.",
 } as const;
 
 export type TranslationKey = keyof typeof en;
