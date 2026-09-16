@@ -83,12 +83,12 @@ function AgentsLandingPage() {
             <h2 className="mt-3 max-w-3xl text-3xl font-semibold sm:text-4xl">Know why the conversation matters before you reach out.</h2>
             <div className="mt-9 grid gap-4 lg:grid-cols-4">
               {[
-                ["01", "Who deserves attention?", "Jordan Lee", UserRoundCheck],
-                ["02", "Why now?", "A recent permit and updated home facts create a useful reason to reconnect.", Lightbulb],
-                ["03", "What could I say?", "Ask how the project is going and offer a fresh home-value conversation.", MessageCircle],
-                ["04", "What should I do next?", "Review the supporting facts, then call or draft a personal note.", ArrowRight],
-              ].map(([n, title, copy, Icon]) => (
-                <article key={String(n)} className="rounded-lg border border-primary-foreground/20 bg-primary-foreground/10 p-5">
+                { n: "01", title: "Who deserves attention?", copy: "Jordan Lee", Icon: UserRoundCheck },
+                { n: "02", title: "Why now?", copy: "A recent permit and updated home facts create a useful reason to reconnect.", Icon: Lightbulb },
+                { n: "03", title: "What could I say?", copy: "Ask how the project is going and offer a fresh home-value conversation.", Icon: MessageCircle },
+                { n: "04", title: "What should I do next?", copy: "Review the supporting facts, then call or draft a personal note.", Icon: ArrowRight },
+              ].map(({ n, title, copy, Icon }) => (
+                <article key={n} className="rounded-lg border border-primary-foreground/20 bg-primary-foreground/10 p-5">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4"><span className="text-xs font-semibold text-primary-foreground/60">{n}</span><Icon className="h-5 w-5 shrink-0 text-sucasa-orange" /></div>
                   <h3 className="mt-7 font-semibold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-primary-foreground/70">{copy}</p>
                 </article>
@@ -102,8 +102,8 @@ function AgentsLandingPage() {
           <div className="mx-auto max-w-6xl px-5">
             <SectionIntro eyebrow="Presence beats prospecting" title="Stay useful enough to become the first call." copy="Homeownership creates questions long before a transaction. SuCasa helps you stay relevant with practical context—not manufactured urgency." />
             <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-              {[[Home,"Value"],[TrendingUp,"Equity"],[Wrench,"Maintenance"],[Sparkles,"Improvements"],[Lightbulb,"Financing needs"],[Home,"Property changes"],[ArrowRight,"Moves"],[UserRoundCheck,"Referrals"]].map(([Icon,label]) => (
-                <div key={String(label)} className="rounded-lg border border-border bg-card p-4"><Icon className="h-5 w-5 text-intelligence-accent" /><p className="mt-4 text-sm font-semibold">{label}</p></div>
+              {[{Icon:Home,label:"Value"},{Icon:TrendingUp,label:"Equity"},{Icon:Wrench,label:"Maintenance"},{Icon:Sparkles,label:"Improvements"},{Icon:Lightbulb,label:"Financing needs"},{Icon:Home,label:"Property changes"},{Icon:ArrowRight,label:"Moves"},{Icon:UserRoundCheck,label:"Referrals"}].map(({ Icon, label }) => (
+                <div key={label} className="rounded-lg border border-border bg-card p-4"><Icon className="h-5 w-5 text-intelligence-accent" /><p className="mt-4 text-sm font-semibold">{label}</p></div>
               ))}
             </div>
           </div>
@@ -114,12 +114,12 @@ function AgentsLandingPage() {
             <SectionIntro eyebrow="Built around trust" title="Your relationships remain yours." copy="SuCasa helps you coordinate around the home without quietly changing who can see homeowner information." />
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                [ShieldCheck,"You stay in control","The agent remains responsible for their professional relationships."],
-                [UserRoundCheck,"Homeowners choose","Homeowners retain their own choices, permissions, and consent."],
-                [LockKeyhole,"No automatic access","Creating or uploading a Home Profile does not give a lender, provider, sponsor, or other professional access."],
-                [Database,"Your database is not sold","Professional visibility follows SuCasa’s existing relationship, role, permission, consent, and access rules."],
-              ].map(([Icon,title,copy]) => (
-                <article key={String(title)} className="rounded-lg border border-border bg-card p-5"><Icon className="h-6 w-6 text-status-positive" /><h3 className="mt-5 font-semibold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy}</p></article>
+                {Icon:ShieldCheck,title:"You stay in control",copy:"The agent remains responsible for their professional relationships."},
+                {Icon:UserRoundCheck,title:"Homeowners choose",copy:"Homeowners retain their own choices, permissions, and consent."},
+                {Icon:LockKeyhole,title:"No automatic access",copy:"Creating or uploading a Home Profile does not give a lender, provider, sponsor, or other professional access."},
+                {Icon:Database,title:"Your database is not sold",copy:"Professional visibility follows SuCasa’s existing relationship, role, permission, consent, and access rules."},
+              ].map(({ Icon, title, copy }) => (
+                <article key={title} className="rounded-lg border border-border bg-card p-5"><Icon className="h-6 w-6 text-status-positive" /><h3 className="mt-5 font-semibold">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{copy}</p></article>
               ))}
             </div>
           </div>

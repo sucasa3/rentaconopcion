@@ -21,6 +21,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LendersRouteImport } from './routes/lenders'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as AgentStartRouteImport } from './routes/agent-start'
 import { Route as AgentInviteRouteImport } from './routes/agent-invite'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -131,6 +132,11 @@ const AuthRoute = AuthRouteImport.update({
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentStartRoute = AgentStartRouteImport.update({
+  id: '/agent-start',
+  path: '/agent-start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentInviteRoute = AgentInviteRouteImport.update({
@@ -414,6 +420,7 @@ const AuthenticatedLenderPortfolioIdCampaignsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agent-invite': typeof AgentInviteRoute
+  '/agent-start': typeof AgentStartRoute
   '/agents': typeof AgentsRouteWithChildren
   '/auth': typeof AuthRoute
   '/lenders': typeof LendersRoute
@@ -478,6 +485,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agent-invite': typeof AgentInviteRoute
+  '/agent-start': typeof AgentStartRoute
   '/agents': typeof AgentsRouteWithChildren
   '/auth': typeof AuthRoute
   '/lenders': typeof LendersRoute
@@ -541,6 +549,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/agent-invite': typeof AgentInviteRoute
+  '/agent-start': typeof AgentStartRoute
   '/agents': typeof AgentsRouteWithChildren
   '/auth': typeof AuthRoute
   '/lenders': typeof LendersRoute
@@ -607,6 +616,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agent-invite'
+    | '/agent-start'
     | '/agents'
     | '/auth'
     | '/lenders'
@@ -671,6 +681,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agent-invite'
+    | '/agent-start'
     | '/agents'
     | '/auth'
     | '/lenders'
@@ -733,6 +744,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/agent-invite'
+    | '/agent-start'
     | '/agents'
     | '/auth'
     | '/lenders'
@@ -799,6 +811,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AgentInviteRoute: typeof AgentInviteRoute
+  AgentStartRoute: typeof AgentStartRoute
   AgentsRoute: typeof AgentsRouteWithChildren
   AuthRoute: typeof AuthRoute
   LendersRoute: typeof LendersRoute
@@ -909,6 +922,13 @@ declare module '@tanstack/react-router' {
       path: '/agents'
       fullPath: '/agents'
       preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent-start': {
+      id: '/agent-start'
+      path: '/agent-start'
+      fullPath: '/agent-start'
+      preLoaderRoute: typeof AgentStartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agent-invite': {
@@ -1407,6 +1427,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AgentInviteRoute: AgentInviteRoute,
+  AgentStartRoute: AgentStartRoute,
   AgentsRoute: AgentsRouteWithChildren,
   AuthRoute: AuthRoute,
   LendersRoute: LendersRoute,
