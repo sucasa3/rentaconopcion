@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { template as campaignUpdateTemplate } from './campaign-update'
 import { template as agentInviteTemplate } from './agent-invite'
 import { template as professionalInviteTemplate } from './professional-invite'
+import { template as lenderPilotRequestTemplate } from './lender-pilot-request'
 
 
 
@@ -27,6 +28,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'campaign-update': campaignUpdateTemplate,
   'agent-invite': agentInviteTemplate,
   'professional-invite': professionalInviteTemplate,
+  'lender-pilot-request': lenderPilotRequestTemplate,
 }
+
 
 

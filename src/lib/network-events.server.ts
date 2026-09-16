@@ -45,6 +45,7 @@ export type NetworkEventAction =
   // Public lender acquisition funnel. No homeowner PII.
   | "lender_landing_view"
   | "lender_pilot_clicked"
+  | "lender_pilot_submitted"
   | "lender_deck_viewed"
   | "lender_pricing_clicked"
   | "lender_signin_clicked"
