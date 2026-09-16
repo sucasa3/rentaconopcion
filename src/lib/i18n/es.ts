@@ -366,6 +366,54 @@ export const es: Dictionary = {
   "guide.siding.cost":
     "Las reparaciones puntuales cuestan unos cientos de dólares; pintar todo el exterior, de $4,000 a $12,000.",
 
+  "guide.hvac_filter.what":
+    "Un filtro sucio hace que el sistema trabaje más, acorta su vida y aumenta la factura.",
+  "guide.hvac_filter.step1": "Apaga el sistema y localiza la ranura del filtro cerca de la unidad interior o la rejilla de retorno.",
+  "guide.hvac_filter.step2": "Verifica la flecha del filtro viejo e inserta el nuevo en la misma dirección.",
+  "guide.hvac_filter.step3": "Configura un recordatorio en tu teléfono para revisarlo de nuevo en 1–3 meses.",
+  "guide.hvac_filter.diy": "Es una tarea del hogar; solo necesitas una linterna.",
+  "guide.hvac_filter.cost": "Los filtros cuestan $10–$40; hacerlo tú mismo es el ahorro.",
+
+  "guide.gutters.what":
+    "Las canaletas tapadas se desbordan, pudren la fascia, dañan cimientos y atraen plagas.",
+  "guide.gutters.step1": "Usa una escalera firme en superficie nivelada y saca los desechos a un balde.",
+  "guide.gutters.step2": "Enjuaga el bajante con una manguera y despeja obstrucciones desde arriba.",
+  "guide.gutters.step3": "Inspecciona colgadores y uniones mientras estás allí arriba.",
+  "guide.gutters.diy": "Es seguro si te sientes cómodo en escalera; para dos o más pisos, contrata un profesional.",
+  "guide.gutters.cost": "Hacerlo tú cuesta solo tiempo; limpieza profesional $100–$250.",
+
+  "guide.water_heater_flush.what":
+    "El sedimento se acumula en el fondo del tanque y reduce capacidad y eficiencia.",
+  "guide.water_heater_flush.step1": "Apaga la energía o el gas y deja enfriar el agua.",
+  "guide.water_heater_flush.step2": "Conecta una manguera a la válvula de drenaje y llévala a un desagüe o afuera.",
+  "guide.water_heater_flush.step3": "Abre la válvula despacio, ciérrala, vuelve a llenar el tanque y restaura la energía.",
+  "guide.water_heater_flush.diy": "Muchos dueños pueden hacerlo; si la válvula parece corroída, llama a un profesional.",
+  "guide.water_heater_flush.cost": "Hacerlo tú es gratis; descarga profesional $75–$150.",
+
+  "guide.dryer_vent.what":
+    "La acumulación de pelusa en el conducto es una causa principal de incendios domésticos.",
+  "guide.dryer_vent.step1": "Desconecta la secadora y desconecta el conducto de la parte trasera.",
+  "guide.dryer_vent.step2": "Usa un cepillo o aspiradora para quitar pelusa del ducto y la tapa exterior.",
+  "guide.dryer_vent.step3": "Vuelve a conectar firmemente y enciéndela sin calor para comprobar el flujo.",
+  "guide.dryer_vent.diy": "Es seguro hacerlo en casa; conductos largos o en techo pueden necesitar un profesional.",
+  "guide.dryer_vent.cost": "Cepillo DIY $15–$30; limpieza profesional $80–$150.",
+
+  "guide.smoke_detectors.what":
+    "Las alarmas solo te protegen si las baterías y los sensores funcionan.",
+  "guide.smoke_detectors.step1": "Presiona el botón de prueba en cada alarma y reemplaza las que no suenen.",
+  "guide.smoke_detectors.step2": "Cambia las baterías dos veces al año o cuando empiece el pitido.",
+  "guide.smoke_detectors.step3": "Escribe la fecha de instalación y reemplaza el detector completo después de 10 años.",
+  "guide.smoke_detectors.diy": "Pruebas y cambio de baterías son tareas del hogar; las conectadas a la red pueden necesitar electricista.",
+  "guide.smoke_detectors.cost": "Las baterías cuestan unos dólares; detectores nuevos $15–$30 cada uno.",
+
+  "guide.exterior_caulk.what":
+    "Huecos alrededor de ventanas y puertas dejan escapar aire acondicionado y dejan entrar agua.",
+  "guide.exterior_caulk.step1": "Quita la masilla vieja y agrietada con una espátula y limpia la superficie.",
+  "guide.exterior_caulk.step2": "Aplica masilla para exteriores en un cordón continuo y alisa con el dedo mojado.",
+  "guide.exterior_caulk.step3": "Revisa después de 24 horas y retoca si hay encogimiento antes de pintar si es necesario.",
+  "guide.exterior_caulk.diy": "Un mantenimiento fácil de hacer en casa; áreas altas o difíciles pueden necesitar profesional.",
+  "guide.exterior_caulk.cost": "Tubo DIY $5–$15; re-masillado profesional $100–$400.",
+
   // -------------------------------------------------------------- documentos
   "docs.hero.eyebrow": "Documentos",
   "docs.hero.title": "Documentos",
@@ -586,4 +634,6 @@ export const es: Dictionary = {
   "home.thinking.unsure": "Aún no lo sé",
   "plan.done_toast": "Atendido",
   "plan.done_toast_sub": "Tu Plan de Casa se ha actualizado.",
+  "plan.coming.label": "Lo que viene",
+  "plan.coming.sub": "Tareas futuras basadas en la edad y registros de tu casa.",
 };

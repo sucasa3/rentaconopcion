@@ -349,6 +349,48 @@ export const en = {
   "guide.siding.diy": "Washing and spot-caulking are homeowner-friendly; ladder work is not.",
   "guide.siding.cost": "Spot repairs a few hundred dollars; full exterior paint $4,000–$12,000.",
 
+  "guide.hvac_filter.what": "A dirty filter makes the system work harder, shortens its life and raises bills.",
+  "guide.hvac_filter.step1": "Turn off the system and find the filter slot near the indoor unit or return grille.",
+  "guide.hvac_filter.step2": "Check the arrow on the old filter and slide the new one in the same direction.",
+  "guide.hvac_filter.step3": "Set a phone reminder to check it again in 1–3 months.",
+  "guide.hvac_filter.diy": "A fully homeowner task — no tools beyond a flashlight needed.",
+  "guide.hvac_filter.cost": "Filters cost $10–$40; doing it yourself is the savings.",
+
+  "guide.gutters.what": "Clogged gutters overflow and rot fascia, damage foundations and invite pests.",
+  "guide.gutters.step1": "Use a sturdy ladder on level ground and scoop debris into a bucket.",
+  "guide.gutters.step2": "Flush the downspout with a hose and clear any clogs from the top.",
+  "guide.gutters.step3": "Inspect hangers and seams while you are up there.",
+  "guide.gutters.diy": "Cleaning is homeowner-friendly if you are comfortable on a ladder; hire a pro for two+ stories.",
+  "guide.gutters.cost": "DIY costs nothing but time; pro cleaning is usually $100–$250.",
+
+  "guide.water_heater_flush.what": "Sediment collects at the bottom of the tank and reduces capacity and efficiency.",
+  "guide.water_heater_flush.step1": "Turn off the power or gas and let the water cool.",
+  "guide.water_heater_flush.step2": "Attach a garden hose to the drain valve and run it to a floor drain or outside.",
+  "guide.water_heater_flush.step3": "Open the valve slowly, then close it and refill the tank before restoring power.",
+  "guide.water_heater_flush.diy": "Many homeowners can flush a tank; if the valve looks corroded, call a pro.",
+  "guide.water_heater_flush.cost": "DIY is free; a pro flush is typically $75–$150.",
+
+  "guide.dryer_vent.what": "Lint buildup in the vent is a leading cause of house fires and lengthens drying time.",
+  "guide.dryer_vent.step1": "Pull the dryer out and disconnect the vent from the back.",
+  "guide.dryer_vent.step2": "Use a vent brush or vacuum to clear lint from the duct and outside cap.",
+  "guide.dryer_vent.step3": "Reattach securely and run a no-heat cycle to check airflow.",
+  "guide.dryer_vent.diy": "A safe homeowner task; deep or roof-vented ducts may need a pro.",
+  "guide.dryer_vent.cost": "DIY costs $15–$30 for a brush; pro cleaning is $80–$150.",
+
+  "guide.smoke_detectors.what": "Alarms only protect you if the batteries and sensors are working.",
+  "guide.smoke_detectors.step1": "Press the test button on every alarm and replace any that do not sound.",
+  "guide.smoke_detectors.step2": "Replace batteries twice a year or when the low-battery chirp starts.",
+  "guide.smoke_detectors.step3": "Write the install date on the unit and replace the whole detector after 10 years.",
+  "guide.smoke_detectors.diy": "Testing and battery swaps are homeowner tasks; hardwired units may need an electrician.",
+  "guide.smoke_detectors.cost": "Batteries are a few dollars; detectors are $15–$30 each.",
+
+  "guide.exterior_caulk.what": "Gaps around windows and doors let conditioned air escape and water enter.",
+  "guide.exterior_caulk.step1": "Remove old, cracked caulk with a putty knife and clean the surface.",
+  "guide.exterior_caulk.step2": "Apply exterior-grade caulk in one continuous bead and smooth with a wet finger.",
+  "guide.exterior_caulk.step3": "Check after 24 hours and touch up any shrinkage before painting if needed.",
+  "guide.exterior_caulk.diy": "An easy homeowner maintenance win; high or hard-to-reach areas may need a pro.",
+  "guide.exterior_caulk.cost": "DIY caulk runs $5–$15 per tube; pro re-caulking is $100–$400.",
+
   // -------------------------------------------------------------- documents
   "docs.hero.eyebrow": "Documents",
   "docs.hero.title": "Documents",
@@ -561,6 +603,8 @@ export const en = {
   "home.thinking.unsure": "Not sure yet",
   "plan.done_toast": "Taken care of",
   "plan.done_toast_sub": "Your Home Plan has been updated.",
+  "plan.coming.label": "What's coming",
+  "plan.coming.sub": "Forward-looking items based on your home's age and records.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

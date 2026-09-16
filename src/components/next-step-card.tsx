@@ -11,55 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { getRecommendedPros } from "@/lib/pros.functions";
 import type { TimelineItem } from "@/lib/maintenance-rules";
+import { CATEGORY_SLUG, buildTimelineGuide } from "@/lib/diy-guides";
 import { useT, type TranslationKey } from "@/lib/i18n";
-
-/** Maintenance category → service request category slug. */
-const CATEGORY_SLUG: Record<string, string> = {
-  Roofing: "roofing",
-  HVAC: "hvac",
-  Plumbing: "plumbing",
-  Windows: "handyman",
-  Electrical: "electrical",
-  Exterior: "painting",
-};
-
-type Guide = { what: string; steps: string[]; diy: string; cost: string };
-
-/** How many steps each guide has in the dictionary. */
-const GUIDE_STEPS: Record<string, number> = {
-  roof: 4,
-  hvac: 4,
-  water_heater: 4,
-  windows: 4,
-  electrical: 4,
-  siding: 4,
-};
-
-type Translate = (key: TranslationKey, vars?: Record<string, string | number>) => string;
-
-function buildGuide(item: TimelineItem, t: Translate): Guide {
-  const stepCount = GUIDE_STEPS[item.key];
-  if (!stepCount) {
-    return {
-      what: t("guide.fallback.what", { label: item.label, year: item.expectedYear }),
-      steps: [
-        t("guide.fallback.step1"),
-        t("guide.fallback.step2"),
-        t("guide.fallback.step3"),
-      ],
-      diy: t("guide.fallback.diy"),
-      cost: t("guide.fallback.cost"),
-    };
-  }
-  return {
-    what: t(`guide.${item.key}.what` as TranslationKey),
-    steps: Array.from({ length: stepCount }, (_, i) =>
-      t(`guide.${item.key}.step${i + 1}` as TranslationKey),
-    ),
-    diy: t(`guide.${item.key}.diy` as TranslationKey),
-    cost: t(`guide.${item.key}.cost` as TranslationKey),
-  };
-}
 
 export function NextStepCard({
   item,
@@ -71,10 +24,8 @@ export function NextStepCard({
   const t = useT();
   const [open, setOpen] = useState(false);
   const slug = CATEGORY_SLUG[item.category] ?? "handyman";
-  const guide = buildGuide(item, t);
-  const systemLabel = GUIDE_STEPS[item.key]
-    ? t(`care.system.${item.key}` as TranslationKey)
-    : item.label;
+  const guide = buildTimelineGuide(item, t);
+  const systemLabel = t(`care.system.${item.key}` as TranslationKey) ?? item.label;
 
   const fetchPros = useServerFn(getRecommendedPros);
   const { data: pros } = useQuery({

@@ -81,7 +81,7 @@ export function HomeAlerts({
         lead.type === "component_due_soon" ||
         lead.type === "inspection_findings"
       ) {
-        void navigate({ to: "/home-plan" });
+        void navigate({ to: "/home-care" });
         return;
       }
     }
