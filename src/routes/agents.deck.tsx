@@ -3,6 +3,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Printer, Maximize2 } from "lucide-react";
 import { ScaledSlide } from "@/components/deck/slide-layout";
 import { AGENT_SLIDES } from "@/components/deck/agent-slides";
+import { useServerFn } from "@tanstack/react-start";
+import { getAgentAttribution } from "@/lib/agent-funnel.client";
+import { recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 
 type Search = { slide?: number; print?: boolean };
 
@@ -38,6 +41,11 @@ function AgentDeck() {
   const navigate = useNavigate({ from: Route.fullPath });
   const total = AGENT_SLIDES.length;
   const index = Math.min(Math.max((slide ?? 1) - 1, 0), total - 1);
+  const record = useServerFn(recordPublicAgentEvent);
+
+  useEffect(() => {
+    void record({ data: { action: "agent_deck_viewed", ...getAgentAttribution() } });
+  }, [record]);
 
   const go = useCallback(
     (next: number) => {
