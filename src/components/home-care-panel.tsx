@@ -15,7 +15,11 @@ import {
   HeartPulse,
 } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { buildMaintenanceTimeline, type TimelineItem } from "@/lib/maintenance-rules";
+import {
+  buildMaintenanceTimeline,
+  buildUnknownSystemItem,
+  type TimelineItem,
+} from "@/lib/maintenance-rules";
 import { toCategorySlug } from "@/lib/mock-data";
 import { buildSeasonalTasks, SEASONAL_PREFIX } from "@/lib/seasonal-tasks";
 import { NextStepCard } from "@/components/next-step-card";
@@ -353,7 +357,13 @@ export function HomeCarePanel({
               <p className="mt-2 text-sm text-muted-foreground">{t("care.focus.no_info")}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button
-                  onClick={() => navigate({ to: "/onboarding" })}
+                  onClick={() => {
+                    const synthetic = buildUnknownSystemItem(focusKey);
+                    if (synthetic) {
+                      setMarkNeedsYear(true);
+                      setMarkItem(synthetic);
+                    }
+                  }}
                   className="inline-flex min-h-[44px] items-center rounded-full border border-border bg-background px-4 text-sm font-semibold hover:bg-secondary"
                 >
                   {t("care.focus.add_details", { system: focusLabel })}
@@ -508,9 +518,16 @@ export function HomeCarePanel({
 
       {markItem && (
         <MarkComponentDoneDialog
+          key={`${markItem.key}-${markNeedsYear ? "new" : "log"}`}
           item={markItem}
+          requireYearConfirm={markNeedsYear}
           open={!!markItem}
-          onOpenChange={(o) => !o && setMarkItem(null)}
+          onOpenChange={(o) => {
+            if (!o) {
+              setMarkItem(null);
+              setMarkNeedsYear(false);
+            }
+          }}
         />
       )}
     </div>

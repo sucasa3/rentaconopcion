@@ -80,6 +80,30 @@ export type ServiceLogLike = {
   warrantyYears?: number | null;
 };
 
+/**
+ * Presentation-only stand-in for a tracked system that has no canonical record
+ * yet. It exists purely so the "add details" dialog can open pre-labelled; it
+ * is never persisted, never fed into the timeline, and never influences status,
+ * Home Score, or system health. Install/expected years are 0 so nothing can
+ * read a fabricated date out of it.
+ */
+export function buildUnknownSystemItem(key: string): TimelineItem | null {
+  const cfg = LIFESPANS.find((l) => l.key === key);
+  if (!cfg) return null;
+  return {
+    key: cfg.key,
+    label: cfg.label,
+    category: cfg.category,
+    installedYear: 0,
+    expectedYear: 0,
+    yearsLeft: 0,
+    source: "year_built",
+    status: "healthy",
+    logId: null,
+    loggedDetail: null,
+  };
+}
+
 export function classifyLifespan(yearsLeft: number): TimelineItem["status"] {
   if (yearsLeft < 0) return "overdue";
   if (yearsLeft <= 2) return "due_soon";
