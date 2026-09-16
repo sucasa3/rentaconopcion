@@ -344,7 +344,7 @@ function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | nu
       {systems.length ? (
         <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {systems.map((system) => (
-            <div key={system.key} className={`min-w-0 rounded-xl border border-l-2 bg-card p-2.5 shadow-soft sm:p-3 ${system.status === "overdue" ? "border-status-risk/55 border-l-status-risk" : system.status === "due_soon" ? "border-status-attention/55 border-l-status-attention" : "border-status-positive/55 border-l-status-positive"}`}>
+            <Link key={system.key} to="/home-care" search={{ system: system.key }} aria-label={`${system.label} — open in Home Care`} className={`block min-w-0 rounded-xl border border-l-2 bg-card p-2.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-3 ${system.status === "overdue" ? "border-status-risk/55 border-l-status-risk" : system.status === "due_soon" ? "border-status-attention/55 border-l-status-attention" : "border-status-positive/55 border-l-status-positive"}`}>
               <div className="flex items-center gap-2">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-intelligence-accent text-primary-foreground shadow-soft">{systemIcon(system.key)}</span>
                 <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-sucasa-navy sm:text-sm">{system.label}</span>
