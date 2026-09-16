@@ -167,18 +167,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const access = await agentOrgIds(context.supabase, context.userId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
-    const orgId = access.ids[0] ?? null;
-    await logNetworkEvent(supabaseAdmin, {
-      action: "agent_import_started",
-      actorUserId: context.userId,
-      orgId,
-      entityType: "agent_portfolio",
-      entityId: data.portfolioId,
-      metadata: { method: "manual" },
-    });
+    await agentOrgIds(context.supabase, context.userId);
 
     const { data: portfolio, error } = await context.supabase
       .from("lender_portfolios")
@@ -722,7 +711,18 @@ export const setListingStatus = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await agentOrgIds(context.supabase, context.userId);
+    const access = await agentOrgIds(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
+    const orgId = access.ids[0] ?? null;
+    await logNetworkEvent(supabaseAdmin, {
+      action: "agent_import_started",
+      actorUserId: context.userId,
+      orgId,
+      entityType: "agent_portfolio",
+      entityId: data.portfolioId,
+      metadata: { method: "manual" },
+    });
     const { error } = await context.supabase.from("property_listing_status").upsert(
       {
         portfolio_client_id: data.clientId,

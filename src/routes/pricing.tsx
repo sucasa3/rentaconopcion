@@ -98,7 +98,7 @@ function PricingPage() {
                   <li>Up to {p.agents} agent collaborations</li>
                 </ul>
                 <Button asChild className="w-full">
-                  <Link to="/agent-start" search={{ source: "pricing" }}>Get started</Link>
+                  <Link to="/auth">Get started</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -127,7 +127,7 @@ function PricingPage() {
                   <li>{p.profiles} Home Profiles</li>
                 </ul>
                 <Button asChild variant="outline" className="w-full">
-                  <Link to="/auth">Get started</Link>
+                  <Link to="/agent-start" search={{ source: "pricing" }}>Get started</Link>
                 </Button>
               </CardContent>
             </Card>
