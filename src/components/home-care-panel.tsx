@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHomeIntel } from "@/hooks/use-home-intel";
 import {
   getMyComponentServiceLog,
@@ -67,6 +67,21 @@ export function HomeCarePanel({
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const { intel: okIntel, isLoading } = useHomeIntel();
+
+  // Focused system (?system=): scroll it into view and flash a strong accent once.
+  const focusRef = useRef<HTMLDivElement | null>(null);
+  const [focusFlash, setFocusFlash] = useState(false);
+  useEffect(() => {
+    if (!focusSystem || isLoading) return;
+    setFocusFlash(true);
+    const node = focusRef.current;
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      node.focus({ preventScroll: true });
+    }
+    const timer = window.setTimeout(() => setFocusFlash(false), 2600);
+    return () => window.clearTimeout(timer);
+  }, [focusSystem, isLoading]);
 
   const { data: findings } = useQuery({
     queryKey: ["inspection-findings"],
