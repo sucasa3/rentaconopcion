@@ -1504,6 +1504,111 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_read_sends: {
+        Row: {
+          audience: string
+          clicked_at: string | null
+          client_ids: Json
+          created_at: string
+          error_message: string | null
+          fingerprints: Json
+          id: string
+          item_count: number
+          new_count: number
+          opened_at: string | null
+          opportunity_ids: Json
+          org_id: string
+          send_date: string
+          sent_at: string | null
+          state: string
+          status: string
+          unresolved_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          audience: string
+          clicked_at?: string | null
+          client_ids?: Json
+          created_at?: string
+          error_message?: string | null
+          fingerprints?: Json
+          id?: string
+          item_count?: number
+          new_count?: number
+          opened_at?: string | null
+          opportunity_ids?: Json
+          org_id: string
+          send_date: string
+          sent_at?: string | null
+          state: string
+          status?: string
+          unresolved_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          audience?: string
+          clicked_at?: string | null
+          client_ids?: Json
+          created_at?: string
+          error_message?: string | null
+          fingerprints?: Json
+          id?: string
+          item_count?: number
+          new_count?: number
+          opened_at?: string | null
+          opportunity_ids?: Json
+          org_id?: string
+          send_date?: string
+          sent_at?: string | null
+          state?: string
+          status?: string
+          unresolved_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_read_signals: {
+        Row: {
+          audience: string
+          category: string | null
+          fingerprint: string
+          first_surfaced_at: string
+          id: string
+          last_surfaced_at: string
+          opportunity_id: string | null
+          org_id: string
+          portfolio_client_id: string | null
+          surface_count: number
+          user_id: string
+        }
+        Insert: {
+          audience: string
+          category?: string | null
+          fingerprint: string
+          first_surfaced_at?: string
+          id?: string
+          last_surfaced_at?: string
+          opportunity_id?: string | null
+          org_id: string
+          portfolio_client_id?: string | null
+          surface_count?: number
+          user_id: string
+        }
+        Update: {
+          audience?: string
+          category?: string | null
+          fingerprint?: string
+          first_surfaced_at?: string
+          id?: string
+          last_surfaced_at?: string
+          opportunity_id?: string | null
+          org_id?: string
+          portfolio_client_id?: string | null
+          surface_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_provider_health: {
         Row: {
           created_at: string
@@ -4251,6 +4356,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      professional_notification_prefs: {
+        Row: {
+          audience: string
+          created_at: string
+          daily_read_email_enabled: boolean
+          id: string
+          org_id: string
+          timezone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audience: string
+          created_at?: string
+          daily_read_email_enabled?: boolean
+          id?: string
+          org_id: string
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          daily_read_email_enabled?: boolean
+          id?: string
+          org_id?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       professionals: {
         Row: {

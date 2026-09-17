@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { BusinessShell } from "@/components/business-shell";
 import { AgentToday } from "@/components/agent-today";
 import { AgentContinuationCard } from "@/components/agent-continuation-card";
+import { DailyReadPreference } from "@/components/daily-read-preference";
 
 import { getBusinessOverview } from "@/lib/business.functions";
 
@@ -40,6 +41,11 @@ function AgentHome() {
         </div>
       )}
       <AgentToday />
+      {orgId && (
+        <div className="px-4 pb-6 sm:px-5">
+          <DailyReadPreference orgId={orgId} audience="agent" />
+        </div>
+      )}
     </BusinessShell>
   );
 }

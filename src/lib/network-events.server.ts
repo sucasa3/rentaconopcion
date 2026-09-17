@@ -71,7 +71,13 @@ export type NetworkEventAction =
   | "agent_reveal_upgrade_clicked"
   | "agent_import_started"
   | "agent_import_completed"
-  | "agent_first_profile_created";
+  | "agent_first_profile_created"
+  // SuCasa Daily Read email to professionals. No homeowner PII.
+  | "daily_read_generated"
+  | "daily_read_sent"
+  | "daily_read_opened"
+  | "daily_read_cta_clicked"
+  | "daily_read_opportunity_clicked";
 
 export interface NetworkEventInput {
   action: NetworkEventAction;
