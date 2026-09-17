@@ -87,32 +87,36 @@ function LendersLandingPage() {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-status-opportunity">SuCasa for mortgage lenders</p>
               <h1 className="mt-3 max-w-3xl text-[2.45rem] font-semibold leading-[1.04] sm:text-5xl lg:text-6xl">
-                Your agents already have the customers. SuCasa helps them know who to call, and why.
+                Your past-client database already has opportunities inside it.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                SuCasa helps the agents your loan officers already work with find meaningful reasons
-                to reconnect with the homeowners in their database — so financing conversations start
-                earlier, and the agent keeps the relationship.
+                Upload up to 100 past clients. SuCasa reads the public property record for each home
+                and shows you which of those relationships is worth a call today — and the reason
+                why. Free, no card, no contract.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
-                  <Button
-                    size="lg"
-                    className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                <Button
+                  asChild
+                  size="lg"
+                  className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                >
+                  <Link
+                    to="/lender-start"
+                    search={{ source: "lenders_hero" }}
+                    onClick={() => track("lender_discovery_cta_clicked")}
                   >
-                    Talk to us about a pilot <ArrowRight />
-                  </Button>
-                </PilotRequestDialog>
+                    Discover opportunities in my database <ArrowRight />
+                  </Link>
+                </Button>
                 <Button asChild size="lg" variant="outline" className="min-h-12">
                   <Link to="/lenders/deck" onClick={() => track("lender_deck_viewed")}>
-                    View presentation
+                    See how SuCasa works
                   </Link>
                 </Button>
               </div>
 
               <p className="mt-3 text-sm text-muted-foreground">
-                A 90-day, measurable pilot with a defined group of loan officers and their agent
-                partners.
+                No homeowner is contacted, and uploading a list creates no access to anyone.
               </p>
               <Link
                 to="/auth"
