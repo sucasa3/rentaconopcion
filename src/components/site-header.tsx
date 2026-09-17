@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,7 +96,7 @@ export function SiteHeader() {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ professionalExtra }: { professionalExtra?: ReactNode } = {}) {
   return (
     <footer className="border-t border-border bg-surface">
       <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
@@ -104,7 +105,10 @@ export function SiteFooter() {
           <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
         </div>
         <FooterCol title="Homeowners" links={[["Browse Homes", IDX_BASE_URL], ["Create Profile", "/onboarding"], ["My home", "/dashboard"], ["Request Service", "/request"]]} />
-        <FooterCol title="Professionals" links={[["For Agents", "/agents"], ["Agent pricing", "/agents/pricing"], ["For Lenders", "/lenders"], ["Lender pricing", "/lenders/pricing"], ["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
+        <div>
+          <FooterCol title="Professionals" links={[["For Agents", "/agents"], ["Agent pricing", "/agents/pricing"], ["Agent presentation", "/agents/deck"], ["For Lenders", "/lenders"], ["Lender pricing", "/lenders/pricing"], ["Lender presentation", "/lenders/deck"], ["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
+          {professionalExtra && <div className="mt-2">{professionalExtra}</div>}
+        </div>
         <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
       </div>
       <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} SuCasa. All rights reserved.</div>

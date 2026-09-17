@@ -1,7 +1,7 @@
 export const AGENT_PUBLIC_PLANS = [
-  { key: "free", name: "Start Free", price: "$0", description: "Your first 100 Home Profiles", features: ["100 Home Profiles", "Agent Today prioritization", "No lender relationship required"] },
-  { key: "agent", name: "Agent", price: "$49/month", description: "For an established client book", features: ["250 Home Profiles", "Full home intelligence", "Relationship opportunities"] },
-  { key: "agent_growth", name: "Agent Growth", price: "$99/month", description: "For a larger past-client database", features: ["1,000 Home Profiles", "Bulk import and CRM sync", "Advanced opportunity intelligence"] },
+  { key: "free", name: "Free", price: "$0", description: "100 Home Profiles", features: ["Agent Today", "Property intelligence", "Opportunity prioritization", "Reasons to reconnect", "Suggested outreach"] },
+  { key: "agent", name: "Agent", price: "$49/month", description: "250 Home Profiles", features: ["The full SuCasa Agent experience", "More room for your homeowner relationships"] },
+  { key: "agent_growth", name: "Agent Growth", price: "$99/month", description: "1,000 Home Profiles", features: ["The full SuCasa Agent experience", "Capacity for a larger past-client book"] },
 ] as const;
 
 export const LENDER_PUBLIC_PLANS = [
