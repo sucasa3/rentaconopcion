@@ -416,8 +416,15 @@ describe("first-run baseline", () => {
 
   it("a later genuinely new signal is still new after the baseline", () => {
     const baseline = items.map((i) => i.fingerprint);
+    const permit = { reason: "A permit was filed at the property this month." };
     const [marked] = markNewItems(
-      [item({ clientId: "c1", reason: "A permit was filed at the property this month." })],
+      [
+        item({
+          clientId: "c1",
+          ...permit,
+          fingerprint: fp({ clientId: "c1", reason: permit.reason }),
+        }),
+      ],
       baseline,
     );
     expect(marked?.isNew).toBe(true);
