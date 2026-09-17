@@ -1,66 +1,77 @@
-# Lender Opportunity Discovery — free proof before the pilot
+# SuCasa Daily Read email for Agents and Lenders
 
-Goal: a loan officer uploads up to 100 past clients, SuCasa analyses them with the same engine the paid product uses, reveals how many are worth a call today, unlocks the top 5 in full, previews the rest, and offers the 90-day pilot as the natural next step.
+A morning email that answers "Who in my book deserves attention today, why, and what should I do next?" — built on the intelligence SuCasa already produces, never a second engine.
 
-## What exists today (verified)
+## What already exists (findings from the code)
 
-- Lender import, CSV parsing, address de-duplication and portfolio clients already exist (`lender.functions.ts`, `lender.server.ts`, `BulkClientUpload`).
-- Property enrichment is already cached per normalized address and idempotent, so a repeated address costs nothing extra.
-- The canonical opportunity engine, priority ranking, conversation openers, next steps and channel permissions already exist (`opportunities.*`, `lender-daily.ts`, `lender-workspace.server.ts`).
-- Lender plans live in the plan catalogue: MLO $79/mo, Branch $499/mo, Branch Pro $799/mo. There is **no** pilot product and no $149 tier yet — both are created by this plan.
-- The lender page currently leads with "Talk to us about a pilot" and a request form; the presentation ends on the paid pilot.
+1. **The intelligence is already built, for both roles.**
+   - Agents: one ranked queue builder produces every item Today shows — the person, the reason, the suggested next step, the temperature, and the counts. The Today copy itself (headline, "start with X, then Y", supporting lines) comes from pure helper functions with no screen dependency, so an email can call them and produce identical wording.
+   - Lenders: the same shape exists on the lender side, including the permission classifier that decides whether a lender may see a homeowner by name at all, and which facts (value, mortgage, equity, engagement) they may see.
+2. **Reusable directly:** the ranked queue, the reason/why text, the suggested opener and next step, temperature and counts, the lender access classifier and per-fact scopes, contact-channel eligibility, the branded email wrapper and template registry, the send helper, and the existing open/click tracking with its signed opaque tokens.
+3. **Email + scheduling infrastructure exists.** Emails send through the managed sender on the verified SuCasa sending domain, using a registry of branded templates. Scheduled jobs follow one established shape: a small POST endpoint that authenticates the caller, then calls one server function; the daily campaign job already runs at 9:00 on this exact pattern. No new scheduler is needed.
+4. **What genuinely does not exist yet:**
+   - No per-professional email preference anywhere (no "Daily Read: on/off").
+   - No record of "a Daily Read was already sent to this professional on this date, containing these people" — every existing send log is keyed to a homeowner recipient, not to a professional recipient.
 
-Discovery reuses all of the above. No second scoring engine, no demo opportunities, no parallel client table.
+## What will be added (small and specific)
 
-## The flow
+- **One new table** recording each Daily Read send: recipient user, org, role, send date, state (new-signals / lighter / suppressed), the exact people included, status, sent/opened/clicked timestamps. Unique per recipient per date, so a retry can never double-send.
+- **One preference field per professional**: Daily Read email on/off, default on, exposed as a single toggle in the existing agent and lender settings area. Nothing about homeowner marketing permissions is touched.
+- **One eligibility function**, `shouldSendDailyRead(...)`, pure and unit-tested.
+- **Two email templates** (agent, lender) registered alongside the existing ones.
+- **One new scheduled endpoint** plus one schedule entry for a morning run.
 
-1. **Landing page** — hero becomes "Your past-client database already has opportunities inside it." Primary action: *Discover opportunities in my database*. Secondary: *See how SuCasa works* (presentation). Sign in stays. Adds the 3-step section (upload 100 → SuCasa finds the signals → see who to call and why). No mention of data vendors, AVMs or AI.
-2. **Frictionless signup** — work email, magic link only. No password, no company profile, no billing. Creates the lender organization and a Discovery portfolio behind the scenes.
-3. **Upload** — up to 100 past clients by CSV or paste, using the existing importer. Over 100 rows: keep the first 100 and say so.
-4. **Processing screen** — honest progress (properties recognised, analysis running). Enrichment is de-duplicated and cached; failures retry without re-purchasing.
-5. **The reveal** — a full-screen, progressively animated result, not a dashboard: "We analysed 100 of your past clients. 31 have signals worth reviewing right now," then the category breakdown (high priority / mortgage reviews / equity / other), then "Your database was sitting on 31 conversations. SuCasa just found them." Real counts from their own data; if the count is low, the copy stays truthful rather than inflated.
-6. **Top 5 unlocked** — the five highest-priority clients in full, using the existing opportunity card and detail view: who, why they deserve attention, what changed, canonical property/mortgage context, suggested opener, recommended next step, permitted channels.
-7. **The rest previewed** — the true total is always shown. Remaining opportunities appear as category counts and priority distribution with initials-only, address-less preview cards: enough to see the value, not enough to work the list.
-8. **Pilot offer** — "You found opportunities today. Now keep SuCasa watching for the next one." Everything uploaded, enriched and scored carries into the paid workspace; no re-upload, ever.
+## New vs existing intelligence
 
-Compliance language is unchanged: signals and reasons to reconnect, never qualification, approval, guaranteed savings, or a prediction that someone will transact.
+An item counts as **new** when it has not been included in any Daily Read sent to that same professional in the last 7 days, or when its underlying reason materially changed since the last time it was sent (a different opportunity, a higher urgency band, or a fresh engagement signal). Everything else is **existing**. The send record's stored list of included people is what makes this determination, which is why the table is required. Nothing is re-scored for email.
 
-## Pricing (new, as agreed)
+## The three states
 
-- **90-Day SuCasa Pilot — $447 once**, up to 1,000 monitored Home Profiles.
-- After 90 days it rolls automatically into **MLO Growth — $149/month**, 1,000 profiles, cancellable.
-- Existing **MLO $79/month** stays as the 250-profile entry tier. Branch tiers untouched.
-- Checkout uses the existing Stripe checkout path; new products/prices are created for the pilot and MLO Growth.
+- **State 1 — new actionable intelligence.** At least one new item. Subject names the count; body gives the one-line summary, a short category breakdown, the top three people with why-now and suggested next step, and a single primary action into Today.
+- **State 2 — quiet, but unresolved work remains.** No new items, but worthwhile unresolved ones exist. Lighter version, reassuring tone, up to three names with their reason, one action.
+- **State 3 — nothing worth acting on.** No email at all. Nothing is manufactured to keep a daily cadence.
 
-## Account states
+## Preventing noise
 
-Discovery state is tracked on the lender organization as its own field — `discovery_not_started`, `discovery_processing`, `discovery_complete`, `pilot_available`, `paid_active` — alongside, not inside, the existing subscription status. Buying the pilot flips billing state normally and the Discovery workspace simply becomes the real workspace.
+- One send per professional per day, enforced by the table's uniqueness.
+- An unchanged item cannot be presented as new; after being emailed it only reappears in the lighter state.
+- A professional who received a lighter (state 2) email is not sent another lighter email for at least 3 days, so unresolved work does not nag daily.
+- The toggle being off, or the address being suppressed by the mail system, ends the send quietly.
 
-## Abuse and cost control
+## Role separation
 
-- One free Discovery per lender organization, capped at 100 properties.
-- Repeat attempts from the same email domain or the same address set are flagged and require review rather than silently re-enriching.
-- Enrichment stays cached and idempotent; retries don't repurchase unchanged records; no expensive reverse look-ups are used just to finish a Discovery.
+- **Agent emails** use only agent-appropriate reasons: property or value change, listing/status change, homeowner engagement, tenure and anniversary moments, overdue relationship follow-up. No refinance, HELOC, cash-out, qualification or loan language appears anywhere in the agent templates or copy helpers.
+- **Lender emails** run entirely through the existing lender access classifier: only homeowners the lender may see by name are ever named, and each stated fact is checked against that lender's permitted scopes. Sponsored-only and agent-connected-only homeowners are never named, never counted by name, and never linked.
 
-## Internal economics (never shown to the lender)
+## Permission and compliance notes
 
-A configurable `discovery_enrichment_cost_per_property` (default $0.0155) drives internal cost tracking only. Actual provider calls, matches and failures are recorded per Discovery. The existing $0.10 assumption elsewhere is left alone pending a separate audit.
+- The recipient is the professional, so homeowner contact consent does not authorize this send; the professional's own toggle plus the platform's unsubscribe handling govern it. The managed sender appends its unsubscribe footer, as with every app email.
+- Every homeowner name in a lender email passes the same gate the dashboard uses — the job reuses the workspace reader rather than reading client records directly, so the email cannot become a privacy back door.
+- Tracking is limited to what the current infrastructure genuinely supports: generated, sent, opened, primary-action clicked, individual person clicked, and the resulting session and recorded outcome through existing event logging. Nothing is fabricated. Send/open/click land on the send record; clicks and sessions log through the existing first-party event ledger with no homeowner personal data.
 
-## Analytics
+## Design
 
-First-party events only, no vendor, no homeowner PII: `lender_landing_viewed`, `discovery_cta_clicked`, `discovery_account_created`, `upload_started`, `upload_completed`, `unique_properties`, `properties_matched`, `enrichment_cost`, `opportunities_found`, `top5_viewed`, `additional_opportunities_previewed`, `pilot_cta_clicked`, `checkout_started`, `pilot_started`, `paid_conversion`. An internal view reports Discovery completion rate, matches per 100, opportunities per 100, cost per Discovery, share viewing all five, Discovery→pilot and pilot→retained conversion.
+White and warm-neutral dominant, deep navy type, SuCasa orange reserved for the single primary action and small emphasis marks, mobile-first single column, concise person cards with a clear hierarchy of name → why now → next step. Built on the existing branded email wrapper so it matches the invitation and campaign emails, and verified to render in Apple Mail and Gmail widths.
 
-## Presentation update
+## Implementation sequence
 
-The deck at `/lenders/deck` is re-sequenced: problem → "let's test SuCasa with 100 of your actual past clients" → proof → the top 5 experience → continuous monitoring across the whole book → then the pilot offer. Navigation, print/PDF and links are preserved.
+1. Migration: the send-record table (with grants and policies) and the preference field.
+2. `daily-read.ts` — pure derivation and `shouldSendDailyRead(...)`, with tests: three states, new-vs-existing, suppression windows, role-correct categories, no lender language in agent output.
+3. `daily-read.server.ts` — per-recipient build using the existing agent queue and lender workspace readers, then render and send, recording the send.
+4. The two templates plus registry entries.
+5. The scheduled endpoint following the existing tick pattern, and a morning schedule.
+6. The single on/off toggle in agent and lender settings.
+7. Verify: typecheck, the full test suite, a dry-run of the job producing correct states without sending, one real send to your own address, and a rendering check at phone width.
 
-## Privacy guarantees kept
+## Technical detail
 
-Discovery reads only the clients that lender uploaded. No agent-only, sponsored-only or unrelated homeowner data is exposed. Uploading grants no contact rights; homeowner consent remains the only authority for homeowner-level sharing. Canonical value and equity calculations are used as-is — no Discovery-specific maths, no hard-coded mortgage rates. Homeowner and agent experiences are untouched.
+- Reused: `buildActionQueue` (`src/lib/nba.server.ts`) and `agent-daily.ts` for agents; `readLenderWorkspace` (`src/lib/lender-workspace.server.ts`) with `classifyLenderAccess` / scope checks and `lender-daily.ts` for lenders; `EmailBrand` + `TEMPLATES` + `sendTemplateEmail`; `signToken` / `openPixelUrl` / `clickUrl` from `src/lib/tracking.server.ts`, extended to resolve digest ids; `logNetworkEvent` for funnel events.
+- New files: `src/lib/daily-read.ts`, `src/lib/daily-read.test.ts`, `src/lib/daily-read.server.ts`, `src/lib/email-templates/daily-read-agent.tsx`, `src/lib/email-templates/daily-read-lender.tsx`, `src/routes/api/public/daily-read.tick.ts`.
+- New table `daily_read_sends (id, user_id, org_id, audience, send_date, state, item_ids jsonb, opportunity_ids jsonb, status, error_message, sent_at, opened_at, clicked_at, created_at)`, unique `(user_id, send_date)`, RLS: recipient may read own rows, service role full.
+- Preference column on the professional profile record, `daily_read_email_enabled boolean not null default true`.
+- Batched send per tick with a limit parameter and a `dryRun` flag, matching the existing tick jobs; schedule `0 11 * * *` UTC (7am Eastern) via the same `cron.schedule` + `net.http_post` pattern as the campaigns job.
+- Ranking, scoring, narrative generation and channel eligibility are untouched.
 
-## Technical notes
+## Not included
 
-- New: `lender_discoveries` + `lender_discovery_results` tables (org-scoped RLS, grants), `src/lib/discovery.server.ts` / `discovery.functions.ts`, magic-link route `/lender-start`, Discovery routes under `_authenticated/lender/discovery` (upload, processing, reveal), `discovery_state` on `lender_orgs`, `discovery_enrichment_cost_per_property` in `platform_config`, two new plan-catalogue rows + Stripe prices.
-- Reused: `parseClientCsv`, `ingestPortfolioCsv`/`addPortfolioClient`, `BulkClientUpload`, property enrichment queue and cache, `opportunities.*`, `lender-daily.ts` ranking/openers/next steps, `readLenderWorkspace` permissions, existing opportunity card/detail components, `startCheckout`, `logNetworkEvent`.
-- Email/magic-link sign-in enabled for the lender signup path; `/lender-start` and Discovery routes exempted from legacy IDX redirects.
-- Verification: typecheck plus the existing suite, new tests for the 100 cap, de-duplication, one-Discovery-per-org, top-5 selection, preview redaction, carry-over into paid, and no cross-org leakage; mobile and desktop passes on the landing page and reveal.
+Homeowner-facing digests, weekly or SMS variants, any change to homeowner marketing permissions, and any change to ranking or opportunity generation.
