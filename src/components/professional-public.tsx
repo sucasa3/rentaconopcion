@@ -1,4 +1,4 @@
-import { ArrowRight, Check, LockKeyhole, MessageCircle, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
