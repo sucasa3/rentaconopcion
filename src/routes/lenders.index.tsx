@@ -438,14 +438,27 @@ function LendersLandingPage() {
                 </div>
               ))}
             </div>
-            <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
+                asChild
                 size="lg"
-                className="mt-7 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
               >
-                Talk to us about a pilot <ArrowRight />
+                <Link
+                  to="/lender-start"
+                  search={{ source: "lenders_pilot" }}
+                  onClick={() => track("lender_discovery_cta_clicked")}
+                >
+                  Discover opportunities in my database <ArrowRight />
+                </Link>
               </Button>
-            </PilotRequestDialog>
+              <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+                <Button size="lg" variant="outline" className="min-h-12 bg-transparent">
+                  Talk to us about a team pilot
+                </Button>
+              </PilotRequestDialog>
+            </div>
+
 
             <div className="mt-5 flex flex-wrap justify-center gap-5 text-sm">
               <Link
