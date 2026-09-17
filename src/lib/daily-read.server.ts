@@ -11,11 +11,13 @@ import {
   isDeliveryHour,
   localDateIn,
   markNewItems,
+  passesDailyReadThreshold,
   shouldSendDailyRead,
   signalFingerprint,
   unresolvedSetHash,
   agentGroupFor,
   AGENT_GROUP_LABEL,
+  DAILY_READ_EXCLUDED_GROUPS,
   DEFAULT_DAILY_READ_TIMEZONE,
   type DailyReadAudience,
   type DailyReadItem,
@@ -104,18 +106,36 @@ async function listRecipients(admin: any, userIds?: string[]): Promise<Recipient
   return out;
 }
 
+interface SkipStats {
+  missingReasonOrNextStep: number;
+}
+
 /** Agent items — straight from the canonical action queue, agent groups only. */
-async function agentItems(admin: any, r: Recipient): Promise<DailyReadItem[]> {
+async function agentItems(
+  admin: any,
+  r: Recipient,
+  stats: SkipStats,
+): Promise<DailyReadItem[]> {
   const { buildActionQueue } = await import("@/lib/nba.server");
   const queue = await buildActionQueue(admin, r.userId, "agent", 60);
   const out: DailyReadItem[] = [];
   for (const item of queue.items) {
     if (item.orgId !== r.orgId) continue;
-    const group = agentGroupFor(item.category, { engagedRecently: item.engagedRecently });
+    const group = agentGroupFor(item.category, {
+      engagedRecently: item.engagedRecently,
+      play: item.narrative?.play ?? null,
+    });
     if (!group) continue; // lender-only category: never shown to an agent
+    // Standing home-care work belongs in Today, not in a morning email.
+    if (DAILY_READ_EXCLUDED_GROUPS.has(group)) continue;
     const reason = item.narrative?.whyNow || item.why;
     const nextStep = item.narrative?.howToBeUseful || item.ask || item.headline;
-    if (!reason) continue;
+    // A card without both a canonical reason and a canonical next step is never
+    // rendered blank — it is excluded here.
+    if (!reason?.trim() || !nextStep?.trim()) {
+      stats.missingReasonOrNextStep += 1;
+      continue;
+    }
     out.push({
       clientId: item.clientId,
       opportunityId: item.opportunityId ?? null,
@@ -124,6 +144,7 @@ async function agentItems(admin: any, r: Recipient): Promise<DailyReadItem[]> {
       categoryLabel: AGENT_GROUP_LABEL[group],
       temperature: temperature(item.temperature),
       rank: item.rank ?? 0,
+      strength: item.strength ?? "emerging",
       reason,
       nextStep,
       href: item.portfolioId
@@ -145,7 +166,11 @@ async function agentItems(admin: any, r: Recipient): Promise<DailyReadItem[]> {
  * Lender items — read through the gated workspace, so only homeowners this
  * lender may see by name can ever reach the inbox, with only permitted facts.
  */
-async function lenderItems(admin: any, r: Recipient): Promise<DailyReadItem[]> {
+async function lenderItems(
+  admin: any,
+  r: Recipient,
+  stats: SkipStats,
+): Promise<DailyReadItem[]> {
   const { readLenderWorkspace } = await import("@/lib/lender-workspace.server");
   const ws = await readLenderWorkspace(admin, r.userId, { orgId: r.orgId });
   if (!ws) return [];
@@ -155,7 +180,11 @@ async function lenderItems(admin: any, r: Recipient): Promise<DailyReadItem[]> {
     const review = row.reviews?.[0];
     const categoryKey = review?.type ?? "relationship_follow_up";
     const reason = row.whyToday;
-    if (!reason) continue;
+    const nextStep = row.recommendedAction || row.objective;
+    if (!reason?.trim() || !nextStep?.trim()) {
+      stats.missingReasonOrNextStep += 1;
+      continue;
+    }
     out.push({
       clientId: row.id,
       opportunityId: null,
@@ -164,8 +193,11 @@ async function lenderItems(admin: any, r: Recipient): Promise<DailyReadItem[]> {
       categoryLabel: review?.label ?? "Relationship follow-up",
       temperature: temperature(row.temperature),
       rank: row.rank ?? 0,
+      // The gated lender workspace exposes no opportunity strength, so lender
+      // items qualify on canonical urgency only.
+      strength: "",
       reason,
-      nextStep: row.recommendedAction || row.objective,
+      nextStep,
       href: `${site()}/lender/portfolio/${row.portfolioId}?client=${row.id}`,
       fingerprint: signalFingerprint({
         clientId: row.id,
@@ -187,8 +219,14 @@ export interface DailyReadOutcome {
   localDate: string;
   state: string;
   reason: string;
+  /** Canonical opportunities available for this recipient before the threshold. */
+  available: number;
+  /** Opportunities that passed the Daily Read threshold. */
   items: number;
   newItems: number;
+  /** Why the below-threshold opportunities were excluded, by canonical reason. */
+  excluded: { belowThreshold: number; missingReasonOrNextStep: number };
+  breakdown?: { label: string; count: number }[];
   sent: boolean;
   error?: string;
   top?: { name: string; why: string; next: string }[];
@@ -210,7 +248,11 @@ export async function buildDailyReadFor(
   const now = opts.now ?? new Date();
   const localDate = localDateIn(r.timezone, now);
 
-  const raw = r.audience === "agent" ? await agentItems(admin, r) : await lenderItems(admin, r);
+  const stats: SkipStats = { missingReasonOrNextStep: 0 };
+  const raw =
+    r.audience === "agent"
+      ? await agentItems(admin, r, stats)
+      : await lenderItems(admin, r, stats);
 
   const [{ data: seen }, { data: priors }] = await Promise.all([
     admin
@@ -230,10 +272,13 @@ export async function buildDailyReadFor(
       .limit(10),
   ]);
 
-  const items = markNewItems(
+  const marked = markNewItems(
     raw,
     ((seen ?? []) as any[]).map((s) => s.fingerprint),
   );
+  // The quality gate: canonical urgency, or a genuinely new signal at the
+  // engine's own strong strength. Every count below is post-gate.
+  const items = marked.filter(passesDailyReadThreshold);
   const priorSends: PriorSend[] = ((priors ?? []) as any[]).map((p) => ({
     sendDate: p.send_date,
     state: p.state,
@@ -255,8 +300,13 @@ export async function buildDailyReadFor(
     localDate,
     state: decision.state,
     reason: decision.reason,
+    available: marked.length + stats.missingReasonOrNextStep,
     items: items.length,
     newItems: decision.newCount,
+    excluded: {
+      belowThreshold: marked.length - items.length,
+      missingReasonOrNextStep: stats.missingReasonOrNextStep,
+    },
     sent: false,
   };
 
@@ -269,6 +319,7 @@ export async function buildDailyReadFor(
     items,
   });
   outcome.top = content.top.map((t) => ({ name: t.name, why: t.reason, next: t.nextStep }));
+  outcome.breakdown = content.breakdown;
   return { outcome, content, items };
 }
 
@@ -398,7 +449,15 @@ export async function runDailyReadTick(
               orgName: r.orgName,
               ctaUrl: clickUrl(send.id, `${site()}/${r.audience}`),
               trackingPixelUrl: openPixelUrl(send.id),
-              top: content.top.map((t) => ({ ...t, href: clickUrl(send.id, t.href) })),
+              // The email layout reads `why` / `next`; the canonical item
+              // carries `reason` / `nextStep`. Map explicitly so a reason can
+              // never go missing in the inbox.
+              top: content.top.map((t) => ({
+                name: t.name,
+                why: t.reason,
+                next: t.nextStep,
+                href: clickUrl(send.id, t.href),
+              })),
               preferencesUrl: `${site()}/${r.audience}`,
             },
           },
@@ -446,8 +505,10 @@ export async function runDailyReadTick(
         localDate: localDateIn(r.timezone, now),
         state: "none",
         reason: "error",
+        available: 0,
         items: 0,
         newItems: 0,
+        excluded: { belowThreshold: 0, missingReasonOrNextStep: 0 },
         sent: false,
         error: String(err?.message ?? err).slice(0, 300),
       });

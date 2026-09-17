@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  AGENT_GROUP_LABEL,
   agentGroupFor,
   buildDailyReadEmail,
   fingerprintBaseKey,
   isDeliveryHour,
+  isFeaturable,
   localDateIn,
   localHourIn,
   markNewItems,
+  passesDailyReadThreshold,
   shouldSendDailyRead,
   signalFingerprint,
   unresolvedSetHash,
@@ -28,9 +31,10 @@ function item(over: Partial<DailyReadItem> = {}): DailyReadItem {
     opportunityId: "o1",
     name: "Maria Delgado",
     categoryKey: "lifecycle",
-    categoryLabel: "Anniversary or long tenure",
+    categoryLabel: "Ownership milestone",
     temperature: "warm",
     rank: 50,
+    strength: "moderate",
     reason: "Ownership anniversary this month",
     nextStep: "Send a market + equity update",
     href: "/agent",
@@ -176,7 +180,8 @@ describe("role separation", () => {
     for (const c of ["heloc", "refinance_review", "mortgage_review", "mortgage_age"]) {
       expect(agentGroupFor(c)).toBeNull();
     }
-    expect(agentGroupFor("permit_activity")).toBe("property_change");
+    expect(agentGroupFor("permit_activity")).toBe("permit_activity");
+    expect(agentGroupFor("home_condition")).toBe("home_care");
     expect(agentGroupFor("equity")).toBe("value_change");
     expect(agentGroupFor("move_up", { engagedRecently: true })).toBe("engagement");
   });
@@ -259,5 +264,91 @@ describe("morning delivery", () => {
 
   it("uses the local calendar date for one-per-day uniqueness", () => {
     expect(localDateIn("America/New_York", new Date("2026-09-18T02:00:00Z"))).toBe("2026-09-17");
+  });
+});
+
+describe("daily read threshold", () => {
+  it("includes anything the canonical engine marked urgent", () => {
+    for (const t of ["hot", "warm"] as const) {
+      expect(
+        passesDailyReadThreshold({ temperature: t, strength: "emerging", isNew: false }),
+      ).toBe(true);
+    }
+  });
+
+  it("includes a genuinely new signal at the engine's own strong strength", () => {
+    expect(
+      passesDailyReadThreshold({ temperature: "nurture", strength: "strong", isNew: true }),
+    ).toBe(true);
+  });
+
+  it("excludes routine low-urgency work, however strong or new alone", () => {
+    expect(
+      passesDailyReadThreshold({ temperature: "nurture", strength: "strong", isNew: false }),
+    ).toBe(false);
+    expect(
+      passesDailyReadThreshold({ temperature: "nurture", strength: "moderate", isNew: true }),
+    ).toBe(false);
+  });
+});
+
+describe("featured card completeness", () => {
+  it("needs a name, a reason and a next step", () => {
+    expect(isFeaturable({ name: "Maria", reason: "Permit filed", nextStep: "Call" })).toBe(true);
+    expect(isFeaturable({ name: "Maria", reason: "", nextStep: "Call" })).toBe(false);
+    expect(isFeaturable({ name: "Maria", reason: "Permit filed", nextStep: "  " })).toBe(false);
+    expect(isFeaturable({ name: "", reason: "Permit filed", nextStep: "Call" })).toBe(false);
+  });
+
+  it("never features an incomplete opportunity", () => {
+    const c = buildDailyReadEmail({
+      state: "new_signals",
+      audience: "agent",
+      recipientName: "Neil",
+      items: [
+        item({ clientId: "blank", nextStep: "", rank: 99 }),
+        item({ clientId: "ok", rank: 10 }),
+      ],
+    });
+    expect(c.top.map((t) => t.clientId)).toEqual(["ok"]);
+    for (const t of c.top) {
+      expect(t.name.trim()).not.toBe("");
+      expect(t.reason.trim()).not.toBe("");
+      expect(t.nextStep.trim()).not.toBe("");
+    }
+  });
+});
+
+describe("factual category labels", () => {
+  it("never predicts homeowner intent and is never vague", () => {
+    const labels = Object.values(AGENT_GROUP_LABEL).join(" ").toLowerCase();
+    for (const phrase of ["thinking about", "may be", "something changed", "planning to sell"]) {
+      expect(labels).not.toContain(phrase);
+    }
+  });
+});
+
+describe("remainder line", () => {
+  it("only counts opportunities that passed the threshold", () => {
+    const items = [1, 2, 3, 4, 5].map((n) => item({ clientId: `c${n}`, rank: n }));
+    expect(
+      buildDailyReadEmail({
+        state: "new_signals",
+        audience: "agent",
+        recipientName: "Neil",
+        items,
+      }).remainingLabel,
+    ).toBe("2 more prioritized opportunities are waiting inside SuCasa.");
+  });
+
+  it("makes no claim when nothing remains", () => {
+    expect(
+      buildDailyReadEmail({
+        state: "new_signals",
+        audience: "agent",
+        recipientName: "Neil",
+        items: [item()],
+      }).remainingLabel,
+    ).toBe("See all prioritized opportunities in SuCasa.");
   });
 });

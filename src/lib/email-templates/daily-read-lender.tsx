@@ -29,6 +29,7 @@ export const template = {
       },
     ],
     remaining: 2,
+    remainingLabel: '2 more prioritized opportunities are waiting inside SuCasa.',
     ctaLabel: "Open Today's Opportunities",
     ctaUrl: 'https://sucasa.com/lender',
     preferencesUrl: 'https://sucasa.com/lender',

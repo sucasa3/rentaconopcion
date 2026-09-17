@@ -16,9 +16,9 @@ export const template = {
     greeting: 'Good morning, Neil',
     summary: '4 relationships deserve attention today.',
     breakdown: [
-      { label: 'Something changed at the property', count: 2 },
-      { label: 'Active on their home right now', count: 1 },
-      { label: 'Anniversary or long tenure', count: 1 },
+      { label: 'Permit activity recorded', count: 2 },
+      { label: 'New homeowner engagement', count: 1 },
+      { label: 'Ownership milestone', count: 1 },
     ],
     top: [
       {
@@ -35,6 +35,7 @@ export const template = {
       },
     ],
     remaining: 2,
+    remainingLabel: '2 more prioritized opportunities are waiting inside SuCasa.',
     ctaLabel: "Open Today's Opportunities",
     ctaUrl: 'https://sucasa.com/agent',
     preferencesUrl: 'https://sucasa.com/agent',

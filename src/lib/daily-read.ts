@@ -37,6 +37,11 @@ export interface DailyReadItem {
   temperature: DailyReadTemperature;
   /** Canonical rank from the engine. Never recomputed here. */
   rank: number;
+  /**
+   * Canonical `homeowner_opportunities.strength` as stored by the engine
+   * ("strong" | "moderate" | "emerging"). Read, never recomputed.
+   */
+  strength: string;
   /** Canonical why-now text, exactly as Today shows it. */
   reason: string;
   /** Canonical suggested next step. */
@@ -45,6 +50,41 @@ export interface DailyReadItem {
   href: string;
   fingerprint: string;
   isNew: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Quality threshold — which canonical opportunities are worth an email
+// ---------------------------------------------------------------------------
+
+/**
+ * The only canonical strength value that counts as strong. It is the engine's
+ * own stored `strength` (see `bandStrength` in src/lib/opportunities.ts, score
+ * >= 70). No email-only score or confidence system exists.
+ */
+export const DAILY_READ_STRONG_STRENGTH = "strong";
+
+/**
+ * A relationship earns a place in the Daily Read when the canonical engine
+ * already marked it urgent, or when a genuinely new signal arrives at the
+ * engine's own strong strength. Everything else is routine work that belongs in
+ * Today, not in an inbox.
+ */
+export function passesDailyReadThreshold(item: {
+  temperature: DailyReadTemperature;
+  strength: string;
+  isNew: boolean;
+}): boolean {
+  if (item.temperature === "hot" || item.temperature === "warm") return true;
+  return item.isNew && item.strength === DAILY_READ_STRONG_STRENGTH;
+}
+
+/** A featured card is only renderable with a name, a reason and a next step. */
+export function isFeaturable(item: {
+  name?: string | null;
+  reason?: string | null;
+  nextStep?: string | null;
+}): boolean {
+  return Boolean(item.name?.trim() && item.reason?.trim() && item.nextStep?.trim());
 }
 
 // ---------------------------------------------------------------------------
@@ -262,47 +302,88 @@ export const LENDER_ONLY_CATEGORIES = new Set([
 ]);
 
 export const AGENT_GROUPS = [
-  "move_signals",
   "engagement",
-  "property_change",
+  "requested",
+  "permit_activity",
   "value_change",
+  "equity_position",
+  "no_value_update",
+  "market_activity",
+  "home_care",
+  "recent_purchase",
   "lifecycle",
   "follow_up",
 ] as const;
 
 export type AgentGroup = (typeof AGENT_GROUPS)[number];
 
+/**
+ * Factual descriptions of what SuCasa knows. No label predicts what a homeowner
+ * will do, and none is vaguer than the canonical fact behind it.
+ */
 export const AGENT_GROUP_LABEL: Record<AgentGroup, string> = {
-  move_signals: "May be thinking about a move",
-  engagement: "Active on their home right now",
-  property_change: "Something changed at the property",
-  value_change: "Home value or equity moved",
-  lifecycle: "Anniversary or long tenure",
-  follow_up: "A useful reason to reach out",
-};
-
-const AGENT_CATEGORY_GROUP: Record<string, AgentGroup> = {
-  move_up: "move_signals",
-  investment: "move_signals",
-  market_timing: "move_signals",
-  distress: "move_signals",
-  permit_activity: "property_change",
-  home_condition: "property_change",
-  equity: "value_change",
-  free_and_clear: "value_change",
-  recent_purchase: "lifecycle",
+  engagement: "New homeowner engagement",
+  requested: "Homeowner asked for help",
+  permit_activity: "Permit activity recorded",
+  value_change: "Home value or equity changed",
+  equity_position: "Long tenure with significant equity",
+  no_value_update: "No recent home-value update",
+  market_activity: "Neighborhood market activity",
+  home_care: "Home care recommendation due",
+  recent_purchase: "Recent purchase on record",
+  lifecycle: "Ownership milestone",
+  follow_up: "Relationship follow-up overdue",
 };
 
 /**
- * Maps a canonical category to the agent-facing group, or null when the
- * category is lender-only and must not be shown to an agent at all.
+ * The canonical narrative play the engine chose for this homeowner — the same
+ * story the "why now" sentence comes from. Grouping on the play is what keeps
+ * the category summary and the reason describing the same fact.
+ */
+const AGENT_PLAY_GROUP: Record<string, AgentGroup> = {
+  requested: "requested",
+  requested_financing: "requested",
+  move_up: "equity_position",
+  home_value_update: "no_value_update",
+  market_update: "market_activity",
+  improvements: "permit_activity",
+  home_care: "home_care",
+  new_homeowner: "recent_purchase",
+  milestone: "lifecycle",
+  check_in: "follow_up",
+};
+
+const AGENT_CATEGORY_GROUP: Record<string, AgentGroup> = {
+  market_timing: "market_activity",
+  permit_activity: "permit_activity",
+  equity: "value_change",
+  free_and_clear: "value_change",
+  move_up: "equity_position",
+  investment: "equity_position",
+  home_condition: "home_care",
+  recent_purchase: "recent_purchase",
+};
+
+/**
+ * Standing home-care work is real, but it is not news: it lives in Today and in
+ * the homeowner's own Home Care plan rather than in a morning email.
+ */
+export const DAILY_READ_EXCLUDED_GROUPS = new Set<AgentGroup>(["home_care"]);
+
+/**
+ * Maps a canonical opportunity to the agent-facing group, or null when the
+ * category is lender-only and must not be shown to an agent at all. The
+ * narrative play wins, because it is the story whose reason the email prints.
  */
 export function agentGroupFor(
   category: string,
-  opts: { engagedRecently?: boolean } = {},
+  opts: { engagedRecently?: boolean; play?: string | null } = {},
 ): AgentGroup | null {
-  if (LENDER_ONLY_CATEGORIES.has(category)) return null;
+  const byPlay = opts.play ? AGENT_PLAY_GROUP[opts.play] : undefined;
+  if (!byPlay && LENDER_ONLY_CATEGORIES.has(category)) return null;
+  if (byPlay === "requested") return byPlay;
   if (opts.engagedRecently) return "engagement";
+  if (byPlay) return byPlay;
   return AGENT_CATEGORY_GROUP[category] ?? "follow_up";
 }
 
@@ -329,6 +410,8 @@ export interface DailyReadEmailContent {
   breakdown: DailyReadBreakdownRow[];
   top: DailyReadItem[];
   remaining: number;
+  /** Remainder line. Only states a number for items that passed the threshold. */
+  remainingLabel: string;
   ctaLabel: string;
 }
 
@@ -361,6 +444,14 @@ export function buildDailyReadEmail(input: {
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 
   const greeting = `Good morning, ${firstNameOf(input.recipientName)}`;
+  // A featured card needs a name, a canonical reason and a canonical next step.
+  const top = ordered.filter(isFeaturable).slice(0, TOP_ITEMS);
+  const remaining = Math.max(0, total - top.length);
+  const remainingLabel = remaining
+    ? `${remaining} more prioritized ${
+        remaining === 1 ? "opportunity is" : "opportunities are"
+      } waiting inside SuCasa.`
+    : "See all prioritized opportunities in SuCasa.";
 
   if (input.state === "new_signals") {
     return {
@@ -370,8 +461,9 @@ export function buildDailyReadEmail(input: {
       summary: `${total} ${plural} deserve attention today.`,
       supporting: null,
       breakdown,
-      top: ordered.slice(0, TOP_ITEMS),
-      remaining: Math.max(0, total - TOP_ITEMS),
+      top,
+      remaining,
+      remainingLabel,
       ctaLabel: "Open Today's Opportunities",
     };
   }
@@ -385,8 +477,9 @@ export function buildDailyReadEmail(input: {
       total === 1 ? "this relationship is" : `these ${total} ${plural} are`
     } still worth attention.`,
     breakdown,
-    top: ordered.slice(0, TOP_ITEMS),
-    remaining: Math.max(0, total - TOP_ITEMS),
+    top,
+    remaining,
+    remainingLabel,
     ctaLabel: "Review Your Opportunities",
   };
 }
