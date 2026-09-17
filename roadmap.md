@@ -227,3 +227,11 @@
 - [ ] Let the homeowner confirm or reject relationship truth
 - [ ] Keep private homeowner data behind explicit, scope-based consent
 - [ ] Support revocation and disconnection without erasing relationship evidence
+
+## Agent + Lender public conversion redesign (approved 2026-09-17)
+- [x] Shorten `/agents` and `/lenders` to product preview, four-answer value, trust, conversion, and low-priority resources
+- [x] Add dedicated `/agents/pricing` and `/lenders/pricing` pages with role-correct conversion paths
+- [x] Replace mixed `/pricing` with an Agent/Lender role gateway
+- [x] Preserve direct free CTAs, attribution, decks, pilot inquiry, signup, Discovery, billing, permissions, and private workspaces
+- [x] Verify canonical lender commercial offer and make the $447 pilot → $149/month path unambiguous
+- [x] Verify mobile first viewport, desktop, accessibility, routes, deck/print, CTA behavior, console, and regression tests
