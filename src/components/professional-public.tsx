@@ -19,7 +19,7 @@ const previewCopy = {
     label: "LENDER TODAY",
     person: "Riley Ortega",
     initials: "RO",
-    context: "Property + mortgage context",
+    context: "Est. value $486K · Est. equity $214K",
     why: "The loan has been in place about six years. A factual review may be useful.",
     opener: "“Would a quick review of where the home and loan stand today be helpful?”",
     next: "Review context → Start conversation",
@@ -83,22 +83,22 @@ export function ProfessionalPreview({ kind }: { kind: PreviewKind }) {
 export function FourAnswers({ audience }: { audience: PreviewKind }) {
   const items = audience === "agent"
     ? [
-        ["WHO", "The relationship most worth your attention"],
-        ["WHY NOW", "The canonical facts behind the moment"],
-        ["WHAT TO SAY", "A concise, natural way to reconnect"],
-        ["WHAT TO DO NEXT", "One clear next action"],
+        ["KNOW WHO", "Prioritize the homeowners worth your attention."],
+        ["KNOW WHY", "Understand the property or relationship fact behind the conversation."],
+        ["KNOW WHAT TO SAY", "Start with relevant context instead of a generic check-in."],
+        ["KNOW WHAT TO DO NEXT", "Review, call, text or email from one focused workflow."],
       ]
     : [
-        ["WHO", "The person in your book to review first"],
-        ["WHY NOW", "The property and mortgage context behind it"],
-        ["WHAT TO SAY", "A factual opening for the conversation"],
-        ["WHAT TO DO NEXT", "One clear next move"],
+        ["FIND THE OPPORTUNITY", "SuCasa organizes useful home and relationship signals."],
+        ["UNDERSTAND WHY NOW", "See the actual fact behind the priority."],
+        ["KNOW HOW TO APPROACH IT", "Get context and a relevant suggested opener."],
+        ["TAKE THE NEXT STEP", "Move from intelligence into a real conversation."],
       ];
   return (
     <section className="border-y border-border bg-background py-12 sm:py-16">
       <div className="mx-auto max-w-6xl px-5">
-        <p className="text-sm font-semibold text-status-opportunity">One daily rhythm</p>
-        <h2 className="mt-2 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">WHO → WHY NOW → WHAT TO SAY → WHAT TO DO NEXT</h2>
+        <p className="text-sm font-semibold text-status-opportunity">One focused workflow</p>
+        <h2 className="mt-2 max-w-3xl text-3xl font-semibold leading-tight sm:text-4xl">{audience === "agent" ? "Turn your database into a daily plan." : "Turn your book into conversations."}</h2>
         <div className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
           {items.map(([title, copy], index) => (
             <article key={title} className="bg-card p-5">
@@ -115,15 +115,13 @@ export function FourAnswers({ audience }: { audience: PreviewKind }) {
 
 export function TrustStatement({ kind }: { kind: PreviewKind }) {
   return (
-    <section className="bg-surface-warm py-10 sm:py-12">
-      <div className="mx-auto grid max-w-6xl gap-6 px-5 lg:grid-cols-[0.7fr_1.3fr] lg:items-center">
+    <section className="bg-surface-warm py-9 sm:py-10">
+      <div className="mx-auto grid max-w-6xl gap-4 px-5 md:grid-cols-[auto_minmax(0,1fr)] md:items-center md:gap-8">
+        <ShieldCheck className="h-7 w-7 text-status-positive" />
         <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-status-positive"><ShieldCheck className="h-4 w-4" /> Built around trust</p>
-          <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">One home. Private professional workspaces.</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <p className="flex gap-3 text-sm leading-relaxed text-muted-foreground"><LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{kind === "agent" ? "Your relationships remain yours. Your database is not sold, and adding a Home Profile creates no new access rights." : "Uploading a list creates no relationship, permission, or homeowner access. Connected professionals do not automatically receive homeowner information."}</p>
-          <p className="flex gap-3 text-sm leading-relaxed text-muted-foreground"><MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />Property intelligence is different from homeowner-provided information. Private information remains governed by explicit permissions and consent.</p>
+          <h2 className="text-2xl font-semibold">{kind === "agent" ? "Your relationships stay yours." : "Your book stays yours."}</h2>
+          <p className="mt-2 max-w-4xl text-sm leading-relaxed text-muted-foreground">{kind === "agent" ? "Uploading a homeowner gives another professional no automatic access to your client, notes or private workspace." : "SuCasa keeps professional workspaces separate. Uploading a relationship creates no permission to another professional’s private client information or homeowner-private data."}</p>
+          {kind === "lender" && <p className="mt-2 max-w-4xl text-sm leading-relaxed text-muted-foreground">SuCasa can also help you bring more value to the agents you already work with—without giving you automatic access to their databases.</p>}
         </div>
       </div>
     </section>
@@ -135,7 +133,6 @@ export function PlanCard({ name, price, description, features, featured, footer 
     <article className={cn("flex h-full flex-col rounded-lg border bg-card p-5 shadow-soft", featured ? "border-sucasa-orange" : "border-border")}>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0"><h2 className="text-lg font-semibold">{name}</h2><p className="mt-1 text-sm text-muted-foreground">{description}</p></div>
-        {featured && <span className="shrink-0 rounded-full bg-sucasa-orange px-2 py-1 text-[10px] font-semibold text-sucasa-orange-foreground">RECOMMENDED</span>}
       </div>
       <p className="mt-6 text-3xl font-semibold tabular-nums">{price}</p>
       <ul className="mt-5 space-y-2">
