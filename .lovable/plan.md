@@ -1,77 +1,85 @@
-# SuCasa Daily Read email for Agents and Lenders
+# Daily Read — intelligence and content quality fix
 
-A morning email that answers "Who in my book deserves attention today, why, and what should I do next?" — built on the intelligence SuCasa already produces, never a second engine.
+Production sending stays off. This pass fixes what the email says, not how it looks.
 
-## What already exists (findings from the code)
+## 1. Blank "Why now" — root cause found
 
-1. **The intelligence is already built, for both roles.**
-   - Agents: one ranked queue builder produces every item Today shows — the person, the reason, the suggested next step, the temperature, and the counts. The Today copy itself (headline, "start with X, then Y", supporting lines) comes from pure helper functions with no screen dependency, so an email can call them and produce identical wording.
-   - Lenders: the same shape exists on the lender side, including the permission classifier that decides whether a lender may see a homeowner by name at all, and which facts (value, mortgage, equity, engagement) they may see.
-2. **Reusable directly:** the ranked queue, the reason/why text, the suggested opener and next step, temperature and counts, the lender access classifier and per-fact scopes, contact-channel eligibility, the branded email wrapper and template registry, the send helper, and the existing open/click tracking with its signed opaque tokens.
-3. **Email + scheduling infrastructure exists.** Emails send through the managed sender on the verified SuCasa sending domain, using a registry of branded templates. Scheduled jobs follow one established shape: a small POST endpoint that authenticates the caller, then calls one server function; the daily campaign job already runs at 9:00 on this exact pattern. No new scheduler is needed.
-4. **What genuinely does not exist yet:**
-   - No per-professional email preference anywhere (no "Daily Read: on/off").
-   - No record of "a Daily Read was already sent to this professional on this date, containing these people" — every existing send log is keyed to a homeowner recipient, not to a professional recipient.
+Not a data problem and not a design problem. The email is handed each person's
+reason under the field names `reason` / `nextStep`, but the email layout reads
+`why` / `next`. The labels render, the sentences fall on the floor. The reasons
+themselves already exist and are the same ones Today shows.
 
-## What will be added (small and specific)
+Fix: pass the fields the layout expects, and drop any person from the featured
+cards who lacks both a reason and a next step, so a blank card can never render
+again. A test will assert every featured card carries a name, a reason and a
+next step.
 
-- **One new table** recording each Daily Read send: recipient user, org, role, send date, state (new-signals / lighter / suppressed), the exact people included, status, sent/opened/clicked timestamps. Unique per recipient per date, so a retry can never double-send.
-- **One preference field per professional**: Daily Read email on/off, default on, exposed as a single toggle in the existing agent and lender settings area. Nothing about homeowner marketing permissions is touched.
-- **One eligibility function**, `shouldSendDailyRead(...)`, pure and unit-tested.
-- **Two email templates** (agent, lender) registered alongside the existing ones.
-- **One new scheduled endpoint** plus one schedule entry for a morning run.
+## 2. Why 43 relationships "deserve attention today"
 
-## New vs existing intelligence
+Checked the actual records: those 43 are all *home maintenance recommendations
+coming due* — currently grouped under the catch-all label "Something changed at
+the property". Nothing changed at those properties. The single "May be thinking
+about a move" item is a long-tenure-plus-equity record.
 
-An item counts as **new** when it has not been included in any Daily Read sent to that same professional in the last 7 days, or when its underlying reason materially changed since the last time it was sent (a different opportunity, a higher urgency band, or a fresh engagement signal). Everything else is **existing**. The send record's stored list of included people is what makes this determination, which is why the table is required. Nothing is re-scored for email.
+Fix: add one quality gate used only by the email (no new scoring engine — it
+reads the urgency and strength the existing engine already assigned):
 
-## The three states
+- Include a relationship when the canonical engine marked it urgent (hot or
+  warm), or when it is genuinely newly surfaced at strong confidence.
+- Exclude routine, low-urgency, unchanged records — most of the 43 will drop
+  out.
+- Every count, category total and the remainder line is computed *after* this
+  gate, so the email's numbers and Today's list can never disagree about why
+  someone matters.
 
-- **State 1 — new actionable intelligence.** At least one new item. Subject names the count; body gives the one-line summary, a short category breakdown, the top three people with why-now and suggested next step, and a single primary action into Today.
-- **State 2 — quiet, but unresolved work remains.** No new items, but worthwhile unresolved ones exist. Lighter version, reassuring tone, up to three names with their reason, one action.
-- **State 3 — nothing worth acting on.** No email at all. Nothing is manufactured to keep a daily cadence.
+Today itself is unchanged; it still shows the full working list.
 
-## Preventing noise
+## 3 & 4. Factual wording, specific categories
 
-- One send per professional per day, enforced by the table's uniqueness.
-- An unchanged item cannot be presented as new; after being emailed it only reappears in the lighter state.
-- A professional who received a lighter (state 2) email is not sent another lighter email for at least 3 days, so unresolved work does not nag daily.
-- The toggle being off, or the address being suppressed by the mail system, ends the send quietly.
+Replace the intent-flavoured and vague labels with what SuCasa actually knows:
 
-## Role separation
+| Today's canonical record | New email category |
+| --- | --- |
+| maintenance recommendation due | Home care recommendation due |
+| permit activity | Permit activity recorded |
+| listing / status change | Listing status changed |
+| value / equity change | Home value or equity changed |
+| homeowner engagement | New homeowner engagement |
+| purchase anniversary / tenure | Ownership milestone |
+| overdue check-in | Relationship follow-up overdue |
 
-- **Agent emails** use only agent-appropriate reasons: property or value change, listing/status change, homeowner engagement, tenure and anniversary moments, overdue relationship follow-up. No refinance, HELOC, cash-out, qualification or loan language appears anywhere in the agent templates or copy helpers.
-- **Lender emails** run entirely through the existing lender access classifier: only homeowners the lender may see by name are ever named, and each stated fact is checked against that lender's permitted scopes. Sponsored-only and agent-connected-only homeowners are never named, never counted by name, and never linked.
+"May be thinking about a move" is removed entirely. No category implies
+prediction of what a homeowner will do, and no category exposes a fact the
+recipient is not permitted to see (the lender path keeps reading through the
+permission-gated workspace, unchanged).
 
-## Permission and compliance notes
+## 5 & 6. Cards and the remainder line
 
-- The recipient is the professional, so homeowner contact consent does not authorize this send; the professional's own toggle plus the platform's unsubscribe handling govern it. The managed sender appends its unsubscribe footer, as with every app email.
-- Every homeowner name in a lender email passes the same gate the dashboard uses — the job reuses the workspace reader rather than reading client records directly, so the email cannot become a privacy back door.
-- Tracking is limited to what the current infrastructure genuinely supports: generated, sent, opened, primary-action clicked, individual person clicked, and the resulting session and recorded outcome through existing event logging. Nothing is fabricated. Send/open/click land on the send record; clicks and sessions log through the existing first-party event ledger with no homeowner personal data.
+Featured cards stay at three, each name / one-sentence reason / one-sentence
+next step, no scripts or openers. The remainder line only states a number when
+those items actually passed the gate; otherwise it reads "See all prioritized
+opportunities in SuCasa".
 
-## Design
+## 7. Visual shell
 
-White and warm-neutral dominant, deep navy type, SuCasa orange reserved for the single primary action and small emphasis marks, mobile-first single column, concise person cards with a clear hierarchy of name → why now → next step. Built on the existing branded email wrapper so it matches the invitation and campaign emails, and verified to render in Apple Mail and Gmail widths.
+Untouched.
 
-## Implementation sequence
+## 8. Re-test, then wait for your review
 
-1. Migration: the send-record table (with grants and policies) and the preference field.
-2. `daily-read.ts` — pure derivation and `shouldSendDailyRead(...)`, with tests: three states, new-vs-existing, suppression windows, role-correct categories, no lender language in agent output.
-3. `daily-read.server.ts` — per-recipient build using the existing agent queue and lender workspace readers, then render and send, recording the send.
-4. The two templates plus registry entries.
-5. The scheduled endpoint following the existing tick pattern, and a morning schedule.
-6. The single on/off toggle in agent and lender settings.
-7. Verify: typecheck, the full test suite, a dry-run of the job producing correct states without sending, one real send to your own address, and a rendering check at phone width.
+Run the tests, then a dry run for your agent account and report, before
+sending: total opportunities available, how many passed the gate, the category
+breakdown, the exact three "Why now" sentences, the exact three next steps, and
+why the rest were excluded. Then send one agent test email to your account and
+check it on mobile. Scheduled production sending stays off until you approve
+the revised email.
 
-## Technical detail
+## Technical notes
 
-- Reused: `buildActionQueue` (`src/lib/nba.server.ts`) and `agent-daily.ts` for agents; `readLenderWorkspace` (`src/lib/lender-workspace.server.ts`) with `classifyLenderAccess` / scope checks and `lender-daily.ts` for lenders; `EmailBrand` + `TEMPLATES` + `sendTemplateEmail`; `signToken` / `openPixelUrl` / `clickUrl` from `src/lib/tracking.server.ts`, extended to resolve digest ids; `logNetworkEvent` for funnel events.
-- New files: `src/lib/daily-read.ts`, `src/lib/daily-read.test.ts`, `src/lib/daily-read.server.ts`, `src/lib/email-templates/daily-read-agent.tsx`, `src/lib/email-templates/daily-read-lender.tsx`, `src/routes/api/public/daily-read.tick.ts`.
-- New table `daily_read_sends (id, user_id, org_id, audience, send_date, state, item_ids jsonb, opportunity_ids jsonb, status, error_message, sent_at, opened_at, clicked_at, created_at)`, unique `(user_id, send_date)`, RLS: recipient may read own rows, service role full.
-- Preference column on the professional profile record, `daily_read_email_enabled boolean not null default true`.
-- Batched send per tick with a limit parameter and a `dryRun` flag, matching the existing tick jobs; schedule `0 11 * * *` UTC (7am Eastern) via the same `cron.schedule` + `net.http_post` pattern as the campaigns job.
-- Ranking, scoring, narrative generation and channel eligibility are untouched.
-
-## Not included
-
-Homeowner-facing digests, weekly or SMS variants, any change to homeowner marketing permissions, and any change to ranking or opportunity generation.
+- `src/lib/daily-read.server.ts`: correct the template payload field names; add
+  the featured-card completeness guard.
+- `src/lib/daily-read.ts`: new pure `passesDailyReadThreshold` gate applied
+  before counting/grouping; revised agent group map and labels.
+- Tests in `src/lib/daily-read.test.ts` for the gate, the new labels, and the
+  payload contract.
+- No schema change, no new scoring, no change to Today, permissions, consent or
+  the send schedule.
