@@ -285,11 +285,16 @@ export async function buildDailyReadFor(
     unresolvedHash: p.unresolved_hash ?? null,
   }));
 
+  // Nothing has ever been surfaced to this professional in this role yet, so the
+  // existing book is a baseline to record — not activity that happened today.
+  const hasHistory = (seen?.length ?? 0) > 0 || priorSends.length > 0;
+
   const decision = shouldSendDailyRead({
     enabled: r.enabled,
     today: localDate,
     items,
     priorSends,
+    hasHistory,
   });
 
   const outcome: DailyReadOutcome = {
