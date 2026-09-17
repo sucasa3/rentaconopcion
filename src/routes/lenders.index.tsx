@@ -131,6 +131,51 @@ function LendersLandingPage() {
           </div>
         </section>
 
+        {/* How Discovery works */}
+        <section className="border-b border-border bg-background py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5">
+            <SectionIntro
+              eyebrow="How it works"
+              title="Three steps, about ten minutes."
+              copy="Nothing to install, nobody to call, and no homeowner hears from us."
+            />
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {[
+                [
+                  "1. Sign in with your email",
+                  "One link to your inbox. No password, no company forms, no billing.",
+                ],
+                [
+                  "2. Upload up to 100 past clients",
+                  "A CSV or Excel export from your CRM. Rows without a usable address, and repeats of the same property, don't count against your 100.",
+                ],
+                [
+                  "3. See who's worth a call",
+                  "A count of the opportunities we found, why each one exists, and your top five unlocked in full.",
+                ],
+              ].map(([t, d]) => (
+                <div key={t} className="rounded-2xl border border-border bg-card p-5">
+                  <p className="text-sm font-semibold text-foreground">{t}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{d}</p>
+                </div>
+              ))}
+            </div>
+            <Button
+              asChild
+              size="lg"
+              className="mt-8 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+            >
+              <Link
+                to="/lender-start"
+                search={{ source: "lenders_how_it_works" }}
+                onClick={() => track("lender_discovery_cta_clicked")}
+              >
+                Discover opportunities in my database <ArrowRight />
+              </Link>
+            </Button>
+          </div>
+        </section>
+
         {/* The problem */}
         <section className="border-b border-border bg-background py-14 sm:py-20">
           <div className="mx-auto max-w-6xl px-5">
