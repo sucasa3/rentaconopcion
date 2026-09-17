@@ -17,8 +17,11 @@
 export type DailyReadAudience = "agent" | "lender";
 export type DailyReadTemperature = "hot" | "warm" | "nurture";
 
-/** State 3 ("none") means: send nothing at all. */
-export type DailyReadState = "new_signals" | "unresolved" | "none";
+/**
+ * "baseline" is the first-ever Daily Read: the existing book is discovered, not
+ * new activity. "none" means send nothing at all.
+ */
+export type DailyReadState = "baseline" | "new_signals" | "unresolved" | "none";
 
 export type DailyReadSuppression =
   | "preference_off"
@@ -194,7 +197,7 @@ export interface PriorSend {
 
 export interface DailyReadDecision {
   state: DailyReadState;
-  reason: DailyReadSuppression | "new_intelligence" | "unresolved_work";
+  reason: DailyReadSuppression | "first_run_baseline" | "new_intelligence" | "unresolved_work";
   newCount: number;
 }
 
