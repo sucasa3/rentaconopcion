@@ -101,6 +101,7 @@ describe("shouldSendDailyRead", () => {
       today,
       items: [item({ isNew: true }), item({ isNew: false })],
       priorSends: [],
+      hasHistory: true,
     });
     expect(d.state).toBe("new_signals");
     expect(d.newCount).toBe(1);
@@ -108,8 +109,13 @@ describe("shouldSendDailyRead", () => {
 
   it("sends State 2 when nothing is new but work remains", () => {
     expect(
-      shouldSendDailyRead({ enabled: true, today, items: [item({ isNew: false })], priorSends: [] })
-        .state,
+      shouldSendDailyRead({
+        enabled: true,
+        today,
+        items: [item({ isNew: false })],
+        priorSends: [],
+        hasHistory: true,
+      }).state,
     ).toBe("unresolved");
   });
 
