@@ -40,6 +40,9 @@ export type NetworkEventAction =
   | "agent_start_clicked"
   | "agent_deck_viewed"
   | "agent_pricing_clicked"
+  | "agent_pricing_viewed"
+  | "agent_pricing_start_clicked"
+  | "agent_pricing_upgrade_clicked"
   | "agent_signin_clicked"
   | "agent_signup_started"
   // Public lender acquisition funnel. No homeowner PII.
@@ -48,6 +51,9 @@ export type NetworkEventAction =
   | "lender_pilot_submitted"
   | "lender_deck_viewed"
   | "lender_pricing_clicked"
+  | "lender_pricing_viewed"
+  | "lender_pricing_discovery_clicked"
+  | "lender_pricing_subscribe_clicked"
   | "lender_signin_clicked"
   // Lender Opportunity Discovery funnel. No homeowner PII.
   | "lender_discovery_cta_clicked"
