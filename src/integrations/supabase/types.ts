@@ -2904,6 +2904,163 @@ export type Database = {
           },
         ]
       }
+      lender_discoveries: {
+        Row: {
+          allowance: number
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          duplicate_rows: number
+          id: string
+          invalid_rows: number
+          opportunity_clients: number
+          org_id: string
+          over_allowance_rows: number
+          portfolio_id: string | null
+          properties_matched: number
+          properties_unresolved: number
+          property_set_hash: string | null
+          provider_calls: number
+          provider_cost_ten_thousandths: number
+          revealed_count: number
+          risk_flags: Json
+          started_at: string | null
+          status: string
+          submitted_rows: number
+          unique_properties: number
+          updated_at: string
+        }
+        Insert: {
+          allowance?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duplicate_rows?: number
+          id?: string
+          invalid_rows?: number
+          opportunity_clients?: number
+          org_id: string
+          over_allowance_rows?: number
+          portfolio_id?: string | null
+          properties_matched?: number
+          properties_unresolved?: number
+          property_set_hash?: string | null
+          provider_calls?: number
+          provider_cost_ten_thousandths?: number
+          revealed_count?: number
+          risk_flags?: Json
+          started_at?: string | null
+          status?: string
+          submitted_rows?: number
+          unique_properties?: number
+          updated_at?: string
+        }
+        Update: {
+          allowance?: number
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duplicate_rows?: number
+          id?: string
+          invalid_rows?: number
+          opportunity_clients?: number
+          org_id?: string
+          over_allowance_rows?: number
+          portfolio_id?: string | null
+          properties_matched?: number
+          properties_unresolved?: number
+          property_set_hash?: string | null
+          provider_calls?: number
+          provider_cost_ten_thousandths?: number
+          revealed_count?: number
+          risk_flags?: Json
+          started_at?: string | null
+          status?: string
+          submitted_rows?: number
+          unique_properties?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_discoveries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lender_discoveries_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_discovery_results: {
+        Row: {
+          created_at: string
+          discovery_id: string
+          id: string
+          opportunity_id: string | null
+          portfolio_client_id: string
+          primary_category: string
+          primary_group: string
+          rank: number
+          revealed: boolean
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discovery_id: string
+          id?: string
+          opportunity_id?: string | null
+          portfolio_client_id: string
+          primary_category: string
+          primary_group: string
+          rank?: number
+          revealed?: boolean
+          score?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discovery_id?: string
+          id?: string
+          opportunity_id?: string | null
+          portfolio_client_id?: string
+          primary_category?: string
+          primary_group?: string
+          rank?: number
+          revealed?: boolean
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_discovery_results_discovery_id_fkey"
+            columns: ["discovery_id"]
+            isOneToOne: false
+            referencedRelation: "lender_discoveries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lender_discovery_results_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "homeowner_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lender_discovery_results_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lender_member_profiles: {
         Row: {
           contact_name: string | null
@@ -3002,6 +3159,7 @@ export type Database = {
           contact_title: string | null
           created_at: string
           current_period_end: string | null
+          discovery_state: string
           id: string
           license_number: string | null
           logo_url: string | null
@@ -3037,6 +3195,7 @@ export type Database = {
           contact_title?: string | null
           created_at?: string
           current_period_end?: string | null
+          discovery_state?: string
           id?: string
           license_number?: string | null
           logo_url?: string | null
@@ -3072,6 +3231,7 @@ export type Database = {
           contact_title?: string | null
           created_at?: string
           current_period_end?: string | null
+          discovery_state?: string
           id?: string
           license_number?: string | null
           logo_url?: string | null
