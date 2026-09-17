@@ -64,7 +64,6 @@
   --color-surface-intelligence-border: var(--surface-intelligence-border);
   --color-surface-intelligence-foreground: var(--surface-intelligence-foreground);
   --color-intelligence-accent: var(--intelligence-accent);
-  --color-home-team-avatar: var(--home-team-avatar);
   --color-hero-glass: var(--hero-glass);
   --color-hero-glass-positive: var(--hero-glass-positive);
   --color-text-primary: var(--foreground);
@@ -140,7 +139,6 @@
   --surface-intelligence-border: oklch(0.9 0.035 250);
   --surface-intelligence-foreground: oklch(0.32 0.09 255);
   --intelligence-accent: oklch(0.5561 0.0899 246.4);
-  --home-team-avatar: oklch(0.9366 0.0149 251.2);
   /* Hero intelligence strip: pale frosted intelligence surface. */
   --hero-glass: oklch(0.985 0.012 245 / 0.9);
   --hero-glass-positive: oklch(0.78 0.11 165);
@@ -215,7 +213,6 @@
   --surface-intelligence-border: oklch(0.36 0.06 255);
   --surface-intelligence-foreground: oklch(0.9 0.05 250);
   --intelligence-accent: oklch(0.72 0.09 246.4);
-  --home-team-avatar: oklch(0.3 0.04 251.2);
   --text-secondary: oklch(0.74 0.02 250);
   --border-subtle: oklch(1 0 0 / 12%);
   --status-opportunity: oklch(0.76 0.15 40);
@@ -266,7 +263,6 @@
   --surface-intelligence-border: oklch(0.5663 0.1627 252.6);
   --surface-intelligence-foreground: oklch(0.3102 0.059 250.3);
   --intelligence-accent: oklch(0.5663 0.1627 252.6);
-  --home-team-avatar: oklch(0.5663 0.1627 252.6);
   --text-secondary: oklch(0.5444 0.035 265.1);
   --border-subtle: oklch(0.9104 0.0087 247.9);
   --status-opportunity: oklch(0.6181 0.1755 35.5);

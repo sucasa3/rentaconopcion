@@ -15,7 +15,6 @@ import {
   Zap,
   ShieldCheck,
   Sparkles,
-  UserRound,
 } from "lucide-react";
 
 import { HomeownerShell } from "@/components/homeowner-shell";
@@ -33,8 +32,6 @@ import { buildHomePlan, planCounts } from "@/lib/home-plan";
 import { getMyComponentServiceLog } from "@/lib/home-maintenance.functions";
 import { listInspectionFindings } from "@/lib/inspection.functions";
 import { listHomeDocuments } from "@/lib/home-documents.functions";
-import { getMyHomeTeamSummary } from "@/lib/professional-invitations.functions";
-import type { HomeTeamMemberSummary } from "@/lib/home-team-summary";
 import { useHomeIntel } from "@/hooks/use-home-intel";
 import { useLanguage } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +111,6 @@ function Dashboard() {
   const fetchLog = useServerFn(getMyComponentServiceLog);
   const fetchFindings = useServerFn(listInspectionFindings);
   const fetchDocs = useServerFn(listHomeDocuments);
-  const fetchHomeTeam = useServerFn(getMyHomeTeamSummary);
   const { data: serviceLog } = useQuery({
     queryKey: ["component-service-log"],
     queryFn: () => fetchLog(undefined),
@@ -128,11 +124,6 @@ function Dashboard() {
   const { data: docs } = useQuery({
     queryKey: ["home-documents"],
     queryFn: () => fetchDocs(undefined),
-    staleTime: 5 * 60_000,
-  });
-  const { data: homeTeam } = useQuery({
-    queryKey: ["home-team-summary"],
-    queryFn: () => fetchHomeTeam(),
     staleTime: 5 * 60_000,
   });
 
@@ -192,8 +183,6 @@ function Dashboard() {
     ...findingList.map((row: any) => row.updated_at ?? row.created_at),
     ...docList.map((row: any) => row.updated_at ?? row.created_at),
   ]);
-  const previewTeam = developmentHomeTeamPreview();
-
   return (
     <HomeownerShell
       premium
@@ -227,9 +216,7 @@ function Dashboard() {
             historyCount={(serviceLog ?? []).length}
           />
 
-          <HomeTeamCard team={previewTeam ?? homeTeam ?? { agent: null, lender: null }} />
-
-            <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-sucasa-navy bg-sucasa-navy p-4 shadow-elevated transition-all hover:-translate-y-0.5 sm:gap-6 sm:p-5">
+          <section className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 overflow-hidden rounded-2xl border border-sucasa-navy bg-sucasa-navy p-4 shadow-elevated transition-all hover:-translate-y-0.5 sm:gap-6 sm:p-5">
             <div className="relative min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-primary-foreground sm:text-base"><Sparkles className="h-4 w-4 shrink-0 text-sucasa-orange" /> Ask SuCasa</p>
               <p className="mt-1 text-xs leading-snug text-primary-foreground/70 sm:text-sm">Get answers about your home, records and next steps.</p>
@@ -253,32 +240,6 @@ function latestDate(values: Array<string | null | undefined>) {
     .sort((a, b) => b.getTime() - a.getTime());
   if (!dates[0]) return null;
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(dates[0]);
-}
-
-/** Development-only presentation fixtures. They never write relationship data or ship as canonical records. */
-function developmentHomeTeamPreview(): { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } | null {
-  if (!import.meta.env.DEV || typeof window === "undefined") return null;
-  const state = new URLSearchParams(window.location.search).get("teamPreview");
-  const agent: HomeTeamMemberSummary = {
-    relationshipId: "preview-agent",
-    professionalId: "preview-agent",
-    displayName: "Alex M.",
-    organizationName: null,
-    role: "agent",
-    state: "confirmed",
-  };
-  const lender: HomeTeamMemberSummary = {
-    relationshipId: "preview-lender",
-    professionalId: "preview-lender",
-    displayName: "Jordan T.",
-    organizationName: null,
-    role: "lender",
-    state: state === "pending" ? "pending" : "confirmed",
-  };
-  if (state === "confirmed") return { agent, lender };
-  if (state === "one") return { agent, lender: null };
-  if (state === "pending") return { agent: null, lender };
-  return null;
 }
 
 function HomeHealth({ score, updatedAt, systems }: { score: HomeScoreResult | null; updatedAt: string | null; systems: Array<{ key: string; label: string; status: TimelineItem["status"]; detail: string }> }) {
@@ -388,52 +349,6 @@ function CareCard({ topPlanItem, planCount, documentCount, historyCount }: { top
         <TabsContent value="history" className="mt-3"><PreviewRow icon={<History className="h-4 w-4" />} title={`${historyCount} service record${historyCount === 1 ? "" : "s"}`} detail="Your home’s maintenance history" to="/timeline" /></TabsContent>
       </Tabs>
     </section>
-  );
-}
-
-function HomeTeamCard({ team }: { team: { agent: HomeTeamMemberSummary | null; lender: HomeTeamMemberSummary | null } }) {
-  return (
-    <section className="rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-       <div className="flex min-w-0 items-center gap-2"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-intelligence-accent shadow-soft"><ShieldCheck className="h-4 w-4 text-primary-foreground" /></span><p className="truncate text-lg font-bold text-sucasa-navy sm:text-xl">Home Team</p></div>
-        <Button asChild variant="ghost" size="sm" className="min-h-11 shrink-0 px-1 text-action-primary"><Link to="/home-team" aria-label="Manage Home Team"><ChevronRight className="h-4 w-4" /></Link></Button>
-      </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-2 sm:gap-3">
-        <TeamMemberCard member={team.agent} role="agent" />
-        <TeamMemberCard member={team.lender} role="lender" />
-      </div>
-    </section>
-  );
-}
-
-function TeamMemberCard({ member, role }: { member: HomeTeamMemberSummary | null; role: "agent" | "lender" }) {
-  const roleLabel = role === "agent" ? "agent" : "lender";
-  const initials = member?.displayName
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-  return (
-    <Link
-      to="/home-team"
-      className="grid min-h-16 min-w-0 grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-card p-2.5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated sm:p-3"
-    >
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-home-team-avatar text-xs font-bold text-primary-foreground shadow-soft sm:text-sm">
-        {member ? initials : <UserRound className="h-5 w-5" />}
-      </div>
-      {member ? (
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-foreground sm:text-base">{member.displayName}</p>
-          <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
-            {member.state === "confirmed" ? `Your ${roleLabel}` : "Pending confirmation"}
-          </p>
-        </div>
-      ) : (
-        <div className="min-w-0"><p className="truncate text-xs font-semibold text-foreground sm:text-base">Add {role === "agent" ? "an" : "a"} {roleLabel}</p><p className="text-[10px] text-muted-foreground sm:text-xs">Not connected</p></div>
-      )}
-      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-    </Link>
   );
 }
 
