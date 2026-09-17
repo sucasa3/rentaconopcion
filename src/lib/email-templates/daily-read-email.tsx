@@ -27,12 +27,18 @@ export interface DailyReadEmailProps {
   breakdown?: { label: string; count: number }[]
   top?: DailyReadPerson[]
   remaining?: number
+  remainingLabel?: string
   ctaLabel?: string
   ctaUrl?: string
   preview?: string
   trackingPixelUrl?: string
   preferencesUrl?: string
 }
+
+/** A featured card needs all three fields; otherwise it is not rendered. */
+const isRenderable = (p: DailyReadPerson) =>
+  Boolean(p?.name?.trim() && p?.why?.trim() && p?.next?.trim())
+
 
 /**
  * One layout for both roles. Copy and people are passed in already built from
@@ -45,6 +51,7 @@ export const DailyReadEmail = ({
   breakdown = [],
   top = [],
   remaining = 0,
+  remainingLabel = '',
   ctaLabel = "Open Today's Opportunities",
   ctaUrl = 'https://sucasa.com',
   preview,
@@ -69,9 +76,10 @@ export const DailyReadEmail = ({
       </Section>
     ) : null}
 
-    {top.length ? <Hr style={rule} /> : null}
+    {top.filter(isRenderable).length ? <Hr style={rule} /> : null}
 
-    {top.map((person) => (
+    {/* A card renders only with a name, a Why now and a next step. */}
+    {top.filter(isRenderable).map((person: DailyReadPerson) => (
       <Section key={`${person.name}-${person.why}`} style={card}>
         <Text style={personName}>
           {person.href ? (
@@ -84,20 +92,12 @@ export const DailyReadEmail = ({
         </Text>
         <Text style={whyLabel}>Why now</Text>
         <Text style={whyText}>{person.why}</Text>
-        {person.next ? (
-          <>
-            <Text style={whyLabel}>Suggested next step</Text>
-            <Text style={nextText}>{person.next}</Text>
-          </>
-        ) : null}
+        <Text style={whyLabel}>Next step</Text>
+        <Text style={nextText}>{person.next}</Text>
       </Section>
     ))}
 
-    {remaining > 0 ? (
-      <Text style={remainingText}>
-        {remaining} more {remaining === 1 ? 'is' : 'are'} waiting inside SuCasa.
-      </Text>
-    ) : null}
+    {remainingLabel ? <Text style={remainingText}>{remainingLabel}</Text> : null}
 
     <Section style={ctaWrap}>
       <Button href={ctaUrl} style={ctaButton}>
