@@ -1,0 +1,2 @@
+UPDATE public.plan_tiers SET stripe_price_id = 'price_1UGWLiC1chCB63tpTmWbQSKx' WHERE key = 'pilot_90';
+UPDATE public.plan_tiers SET stripe_price_id = 'price_1UGWLzC1chCB63tptgjVN33k' WHERE key = 'mlo_growth';

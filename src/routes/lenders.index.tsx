@@ -66,7 +66,8 @@ type PublicAction =
   | "lender_pilot_clicked"
   | "lender_deck_viewed"
   | "lender_pricing_clicked"
-  | "lender_signin_clicked";
+  | "lender_signin_clicked"
+  | "lender_discovery_cta_clicked";
 
 function LendersLandingPage() {
   const record = useServerFn(recordPublicAgentEvent);
@@ -87,32 +88,36 @@ function LendersLandingPage() {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-status-opportunity">SuCasa for mortgage lenders</p>
               <h1 className="mt-3 max-w-3xl text-[2.45rem] font-semibold leading-[1.04] sm:text-5xl lg:text-6xl">
-                Your agents already have the customers. SuCasa helps them know who to call, and why.
+                Your past-client database already has opportunities inside it.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                SuCasa helps the agents your loan officers already work with find meaningful reasons
-                to reconnect with the homeowners in their database — so financing conversations start
-                earlier, and the agent keeps the relationship.
+                Upload up to 100 past clients. SuCasa reads the public property record for each home
+                and shows you which of those relationships is worth a call today — and the reason
+                why. Free, no card, no contract.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
-                  <Button
-                    size="lg"
-                    className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                <Button
+                  asChild
+                  size="lg"
+                  className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                >
+                  <Link
+                    to="/lender-start"
+                    search={{ source: "lenders_hero" }}
+                    onClick={() => track("lender_discovery_cta_clicked")}
                   >
-                    Talk to us about a pilot <ArrowRight />
-                  </Button>
-                </PilotRequestDialog>
+                    Discover opportunities in my database <ArrowRight />
+                  </Link>
+                </Button>
                 <Button asChild size="lg" variant="outline" className="min-h-12">
                   <Link to="/lenders/deck" onClick={() => track("lender_deck_viewed")}>
-                    View presentation
+                    See how SuCasa works
                   </Link>
                 </Button>
               </div>
 
               <p className="mt-3 text-sm text-muted-foreground">
-                A 90-day, measurable pilot with a defined group of loan officers and their agent
-                partners.
+                No homeowner is contacted, and uploading a list creates no access to anyone.
               </p>
               <Link
                 to="/auth"
@@ -123,6 +128,51 @@ function LendersLandingPage() {
               </Link>
             </div>
             <LoanOfficerPreview />
+          </div>
+        </section>
+
+        {/* How Discovery works */}
+        <section className="border-b border-border bg-background py-14 sm:py-20">
+          <div className="mx-auto max-w-6xl px-5">
+            <SectionIntro
+              eyebrow="How it works"
+              title="Three steps, about ten minutes."
+              copy="Nothing to install, nobody to call, and no homeowner hears from us."
+            />
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {[
+                [
+                  "1. Sign in with your email",
+                  "One link to your inbox. No password, no company forms, no billing.",
+                ],
+                [
+                  "2. Upload up to 100 past clients",
+                  "A CSV or Excel export from your CRM. Rows without a usable address, and repeats of the same property, don't count against your 100.",
+                ],
+                [
+                  "3. See who's worth a call",
+                  "A count of the opportunities we found, why each one exists, and your top five unlocked in full.",
+                ],
+              ].map(([t, d]) => (
+                <div key={t} className="rounded-2xl border border-border bg-card p-5">
+                  <p className="text-sm font-semibold text-foreground">{t}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">{d}</p>
+                </div>
+              ))}
+            </div>
+            <Button
+              asChild
+              size="lg"
+              className="mt-8 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+            >
+              <Link
+                to="/lender-start"
+                search={{ source: "lenders_how_it_works" }}
+                onClick={() => track("lender_discovery_cta_clicked")}
+              >
+                Discover opportunities in my database <ArrowRight />
+              </Link>
+            </Button>
           </div>
         </section>
 
@@ -388,14 +438,27 @@ function LendersLandingPage() {
                 </div>
               ))}
             </div>
-            <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
+                asChild
                 size="lg"
-                className="mt-7 min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
+                className="min-h-12 bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90"
               >
-                Talk to us about a pilot <ArrowRight />
+                <Link
+                  to="/lender-start"
+                  search={{ source: "lenders_pilot" }}
+                  onClick={() => track("lender_discovery_cta_clicked")}
+                >
+                  Discover opportunities in my database <ArrowRight />
+                </Link>
               </Button>
-            </PilotRequestDialog>
+              <PilotRequestDialog onOpen={() => track("lender_pilot_clicked")}>
+                <Button size="lg" variant="outline" className="min-h-12 bg-transparent">
+                  Talk to us about a team pilot
+                </Button>
+              </PilotRequestDialog>
+            </div>
+
 
             <div className="mt-5 flex flex-wrap justify-center gap-5 text-sm">
               <Link
