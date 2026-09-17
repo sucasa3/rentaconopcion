@@ -1,85 +1,88 @@
-# Daily Read — intelligence and content quality fix
+# Homeowner-initiated Home Team: add your agent or lender
 
-Production sending stays off. This pass fixes what the email says, not how it looks.
+## What exists today
 
-## 1. Blank "Why now" — root cause found
+`/home-team` is a confirmation screen only. A professional appears there when an
+agent workspace asserted the relationship (`relationships` row, type
+`agent_homeowner` or `professional_homeowner_lender`, status `asserted`), and
+the homeowner confirms truth ("Is this your lender?") then separately chooses
+whether to share. There is no homeowner-initiated add anywhere.
 
-Not a data problem and not a design problem. The email is handed each person's
-reason under the field names `reason` / `nextStep`, but the email layout reads
-`why` / `next`. The labels render, the sentences fall on the floor. The reasons
-themselves already exist and are the same ones Today shows.
+## What we build
 
-Fix: pass the fields the layout expects, and drop any person from the featured
-cards who lacks both a reason and a next step, so a blank card can never render
-again. A test will assert every featured card carries a name, a reason and a
-next step.
+A homeowner can add their own agent or lender from the Home Team page, with the
+same safety rules as the existing invitation flow.
 
-## 2. Why 43 relationships "deserve attention today"
+### 1. "Add" entry points on the Home Team page
 
-Checked the actual records: those 43 are all *home maintenance recommendations
-coming due* — currently grouped under the catch-all label "Something changed at
-the property". Nothing changed at those properties. The single "May be thinking
-about a move" item is a long-tenure-plus-equity record.
+- The empty state gains two actions: "Add your agent" and "Add your lender".
+- When pending confirmations exist, the same two actions appear at the bottom.
+- The dashboard Home Team card's empty slots (agent / lender) link here too.
+- Bilingual (English/Spanish), matching the existing page copy.
 
-Fix: add one quality gate used only by the email (no new scoring engine — it
-reads the urgency and strength the existing engine already assigned):
+### 2. Add dialog (name + email, one at a time)
 
-- Include a relationship when the canonical engine marked it urgent (hot or
-  warm), or when it is genuinely newly surfaced at strong confidence.
-- Exclude routine, low-urgency, unchanged records — most of the 43 will drop
-  out.
-- Every count, category total and the remainder line is computed *after* this
-  gate, so the email's numbers and Today's list can never disagree about why
-  someone matters.
+- Fields: role (agent or lender, preselected by which button was tapped),
+  professional's name, professional's email, optional personal note.
+- Plain-language framing: "We'll invite them to SuCasa and ask you to confirm
+  before anything is shared."
 
-Today itself is unchanged; it still shows the full working list.
+### 3. Server flow — reuse, don't reinvent
 
-## 3 & 4. Factual wording, specific categories
+- New server function `homeownerInviteProfessional` in
+  `src/lib/professional-invitations.functions.ts`, authenticated, homeowner
+  scoped to their own user id.
+- Identity resolution stays conservative: look up `professionals` by
+  `email_normalized` only. Exact email match on an unclaimed record → reuse it.
+  No match → create a new unclaimed professional record. No fuzzy matching, no
+  auto-claiming, no merging (same wrong-John safeguards as Stage 1).
+- Create the relationship edge as `asserted` with evidence noting the homeowner
+  self-reported it (`source: "homeowner_asserted"`) — evidence, not permission.
+  The homeowner's own assertion means the relationship is treated as
+  homeowner-confirmed from the start (they told us), but confirming truth still
+  shares nothing.
+- Send an invitation email to the professional through the existing
+  `professional-invite` template + typed HMAC token flow, with invitation
+  context `homeowner_invites_professional`. Claiming still requires a signed-in,
+  verified, matching email — and grants no access to anything.
+- One live invitation per professional per homeowner; re-running reuses or
+  supersedes exactly like the agent flow.
 
-Replace the intent-flavoured and vague labels with what SuCasa actually knows:
+### 4. What the homeowner sees after adding
 
-| Today's canonical record | New email category |
-| --- | --- |
-| maintenance recommendation due | Home care recommendation due |
-| permit activity | Permit activity recorded |
-| listing / status change | Listing status changed |
-| value / equity change | Home value or equity changed |
-| homeowner engagement | New homeowner engagement |
-| purchase anniversary / tenure | Ownership milestone |
-| overdue check-in | Relationship follow-up overdue |
+- The professional appears on the Home Team page as "Invited — waiting for them
+  to join" (status from the invitation ledger, no new tables).
+- Once the professional claims their profile, they show as "On SuCasa".
+- The separate share question ("Would you like to connect and share anything?")
+  is offered only after the professional is on SuCasa — same scopes, nothing
+  pre-selected, homeowner can change their mind later.
 
-"May be thinking about a move" is removed entirely. No category implies
-prediction of what a homeowner will do, and no category exposes a fact the
-recipient is not permitted to see (the lender path keeps reading through the
-permission-gated workspace, unchanged).
+### 5. What this never does
 
-## 5 & 6. Cards and the remainder line
-
-Featured cards stay at three, each name / one-sentence reason / one-sentence
-next step, no scripts or openers. The remainder line only states a number when
-those items actually passed the gate; otherwise it reads "See all prioritized
-opportunities in SuCasa".
-
-## 7. Visual shell
-
-Untouched.
-
-## 8. Re-test, then wait for your review
-
-Run the tests, then a dry run for your agent account and report, before
-sending: total opportunities available, how many passed the gate, the category
-breakdown, the exact three "Why now" sentences, the exact three next steps, and
-why the rest were excluded. Then send one agent test email to your account and
-check it on mobile. Scheduled production sending stays off until you approve
-the revised email.
+- No homeowner access is granted to anyone by adding or inviting.
+- The invited professional sees no homeowner, property, mortgage, or
+  opportunity data — the invite email stays relationship-only.
+- `classifyLenderAccess()` + `consent_records` remain the only access authority.
+- No change to the agent-side flows, the agent invitation context, capacity
+  counting, or the Daily Read.
 
 ## Technical notes
 
-- `src/lib/daily-read.server.ts`: correct the template payload field names; add
-  the featured-card completeness guard.
-- `src/lib/daily-read.ts`: new pure `passesDailyReadThreshold` gate applied
-  before counting/grouping; revised agent group map and labels.
-- Tests in `src/lib/daily-read.test.ts` for the gate, the new labels, and the
-  payload contract.
-- No schema change, no new scoring, no change to Today, permissions, consent or
-  the send schedule.
+- `src/lib/professional-invitations.server.ts`: extend invitation context to a
+  second value; the ledger/unique index is per (context, inviter, professional)
+  so homeowner invitations don't collide with agent ones. Reuse
+  `inviteProfessional` internals with a homeowner variant (inviter = homeowner
+  user id, no org). Homeowner org requirement (`requireAgentOrg`) does not
+  apply; authorization = the signed-in user inviting for their own home.
+- `src/lib/professional-invitations.ts`: add the new context to
+  `invitationDisplayState`/`mayResend` handling.
+- `pendingValidations`/`homeTeamSummary` need to also read
+  homeowner-asserted edges (they already read `asserted` status, so mainly the
+  inviter/evidence shape differs).
+- Homeowner Home Team page: list invited-but-not-yet-on-SuCasa professionals
+  alongside pending confirmations; resend/withdraw for the homeowner's own
+  invitations.
+- Events logged in `compliance_audit_events`, no homeowner PII.
+- Tests: homeowner can invite; duplicate invite doesn't double-send; wrong
+  account can't claim; claiming grants no access; homeowner-asserted edge shows
+  on Home Team; consent scopes unchanged.
