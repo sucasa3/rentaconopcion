@@ -73,6 +73,7 @@ import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl
 import { Route as ApiPublicEnrichTickRouteImport } from './routes/api/public/enrich.tick'
 import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
+import { Route as AuthenticatedAgentRevealIdRouteImport } from './routes/_authenticated/agent/reveal.$id'
 import { Route as AuthenticatedAgentPortfolioIdRouteImport } from './routes/_authenticated/agent/portfolio.$id'
 import { Route as AuthenticatedAgentAddClientIdRouteImport } from './routes/_authenticated/agent/add-client.$id'
 import { Route as AuthenticatedLenderPortfolioIdIndexRouteImport } from './routes/_authenticated/lender/portfolio.$id.index'
@@ -417,6 +418,12 @@ const AuthenticatedLenderPortfolioIdRoute =
     path: '/portfolio/$id',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
+const AuthenticatedAgentRevealIdRoute =
+  AuthenticatedAgentRevealIdRouteImport.update({
+    id: '/reveal/$id',
+    path: '/reveal/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
 const AuthenticatedAgentPortfolioIdRoute =
   AuthenticatedAgentPortfolioIdRouteImport.update({
     id: '/portfolio/$id',
@@ -506,6 +513,7 @@ export interface FileRoutesByFullPath {
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
+  '/agent/reveal/$id': typeof AuthenticatedAgentRevealIdRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRouteWithChildren
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
@@ -573,6 +581,7 @@ export interface FileRoutesByTo {
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
+  '/agent/reveal/$id': typeof AuthenticatedAgentRevealIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
@@ -645,6 +654,7 @@ export interface FileRoutesById {
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
   '/_authenticated/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
+  '/_authenticated/agent/reveal/$id': typeof AuthenticatedAgentRevealIdRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRouteWithChildren
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
@@ -718,6 +728,7 @@ export interface FileRouteTypes {
     | '/lender/'
     | '/agent/add-client/$id'
     | '/agent/portfolio/$id'
+    | '/agent/reveal/$id'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
     | '/api/public/enrich/tick'
@@ -785,6 +796,7 @@ export interface FileRouteTypes {
     | '/lender'
     | '/agent/add-client/$id'
     | '/agent/portfolio/$id'
+    | '/agent/reveal/$id'
     | '/api/public/campaigns/tick'
     | '/api/public/enrich/tick'
     | '/api/public/ghl/billing'
@@ -856,6 +868,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lender/'
     | '/_authenticated/agent/add-client/$id'
     | '/_authenticated/agent/portfolio/$id'
+    | '/_authenticated/agent/reveal/$id'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
     | '/api/public/enrich/tick'
@@ -1359,6 +1372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderPortfolioIdRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
+    '/_authenticated/agent/reveal/$id': {
+      id: '/_authenticated/agent/reveal/$id'
+      path: '/reveal/$id'
+      fullPath: '/agent/reveal/$id'
+      preLoaderRoute: typeof AuthenticatedAgentRevealIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
     '/_authenticated/agent/portfolio/$id': {
       id: '/_authenticated/agent/portfolio/$id'
       path: '/portfolio/$id'
@@ -1414,6 +1434,7 @@ interface AuthenticatedAgentRouteRouteChildren {
   AuthenticatedAgentIndexRoute: typeof AuthenticatedAgentIndexRoute
   AuthenticatedAgentAddClientIdRoute: typeof AuthenticatedAgentAddClientIdRoute
   AuthenticatedAgentPortfolioIdRoute: typeof AuthenticatedAgentPortfolioIdRoute
+  AuthenticatedAgentRevealIdRoute: typeof AuthenticatedAgentRevealIdRoute
 }
 
 const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren =
@@ -1427,6 +1448,7 @@ const AuthenticatedAgentRouteRouteChildren: AuthenticatedAgentRouteRouteChildren
     AuthenticatedAgentIndexRoute: AuthenticatedAgentIndexRoute,
     AuthenticatedAgentAddClientIdRoute: AuthenticatedAgentAddClientIdRoute,
     AuthenticatedAgentPortfolioIdRoute: AuthenticatedAgentPortfolioIdRoute,
+    AuthenticatedAgentRevealIdRoute: AuthenticatedAgentRevealIdRoute,
   }
 
 const AuthenticatedAgentRouteRouteWithChildren =

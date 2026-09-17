@@ -29,6 +29,8 @@ export const publicAgentEventSchema = z.object({
 const authenticatedAgentEventSchema = z.object({
   action: z.enum([
     "agent_signup_completed",
+    "agent_reveal_viewed",
+    "agent_reveal_upgrade_clicked",
     "lender_discovery_signup_completed",
     "lender_discovery_processing_viewed",
     "lender_discovery_completed",

@@ -71,6 +71,7 @@ function AddAgentClient() {
       });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
       qc.invalidateQueries({ queryKey: ["agent-credits"] });
+      if (r.inserted > 0) navigate({ to: "/agent/reveal/$id", params: { id } });
     },
     onError: (e: any) => toast.error(e.message),
   });

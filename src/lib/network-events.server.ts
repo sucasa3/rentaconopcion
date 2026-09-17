@@ -67,6 +67,8 @@ export type NetworkEventAction =
   | "lender_discovery_export_requested"
   | "agent_signup_completed"
   | "agent_workspace_activated"
+  | "agent_reveal_viewed"
+  | "agent_reveal_upgrade_clicked"
   | "agent_import_started"
   | "agent_import_completed"
   | "agent_first_profile_created";
