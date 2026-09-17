@@ -101,6 +101,7 @@ describe("shouldSendDailyRead", () => {
       today,
       items: [item({ isNew: true }), item({ isNew: false })],
       priorSends: [],
+      hasHistory: true,
     });
     expect(d.state).toBe("new_signals");
     expect(d.newCount).toBe(1);
@@ -108,8 +109,13 @@ describe("shouldSendDailyRead", () => {
 
   it("sends State 2 when nothing is new but work remains", () => {
     expect(
-      shouldSendDailyRead({ enabled: true, today, items: [item({ isNew: false })], priorSends: [] })
-        .state,
+      shouldSendDailyRead({
+        enabled: true,
+        today,
+        items: [item({ isNew: false })],
+        priorSends: [],
+        hasHistory: true,
+      }).state,
     ).toBe("unresolved");
   });
 
@@ -350,5 +356,79 @@ describe("remainder line", () => {
         items: [item()],
       }).remainingLabel,
     ).toBe("See all prioritized opportunities in SuCasa.");
+  });
+});
+
+describe("first-run baseline", () => {
+  const items = [1, 2, 3, 4, 5].map((n) => item({ clientId: `c${n}`, rank: n }));
+
+  it("treats the first-ever read as discovery, not today's activity", () => {
+    const d = shouldSendDailyRead({
+      enabled: true,
+      today: "2026-09-17",
+      items,
+      priorSends: [],
+      hasHistory: false,
+    });
+    expect(d.state).toBe("baseline");
+    expect(d.reason).toBe("first_run_baseline");
+  });
+
+  it("never uses baseline again once signals have been surfaced", () => {
+    const d = shouldSendDailyRead({
+      enabled: true,
+      today: "2026-09-17",
+      items,
+      priorSends: [],
+      hasHistory: true,
+    });
+    expect(d.state).toBe("new_signals");
+  });
+
+  it("frames the total as discovered and features only the top 3", () => {
+    const c = buildDailyReadEmail({
+      state: "baseline",
+      audience: "agent",
+      recipientName: "Neil",
+      items,
+    });
+    expect(c.summary).toBe("SuCasa found 5 prioritized relationships in your book.");
+    expect(c.subject).toBe("SuCasa found 5 prioritized relationships in your book");
+    expect(c.supporting).toBe("Start with these 3 today.");
+    expect(c.top).toHaveLength(3);
+    expect(c.remainingLabel).toBe("2 more prioritized relationships are available inside SuCasa.");
+    expect(c.summary.toLowerCase()).not.toContain("today");
+    expect(c.summary.toLowerCase()).not.toContain("new");
+  });
+
+  it("orders the baseline by canonical priority alone", () => {
+    const c = buildDailyReadEmail({
+      state: "baseline",
+      audience: "agent",
+      recipientName: "Neil",
+      items: [
+        item({ clientId: "low-new", rank: 10, isNew: true }),
+        item({ clientId: "high-old", rank: 90, isNew: false }),
+      ],
+    });
+    expect(c.top[0]?.clientId).toBe("high-old");
+  });
+
+  it("a later genuinely new signal is still new after the baseline", () => {
+    const baseline = items.map((i) => i.fingerprint);
+    const permit = { reason: "A permit was filed at the property this month." };
+    const [marked] = markNewItems(
+      [
+        item({
+          clientId: "c1",
+          ...permit,
+          fingerprint: fp({ clientId: "c1", reason: permit.reason }),
+        }),
+      ],
+      baseline,
+    );
+    expect(marked?.isNew).toBe(true);
+    const [unchanged] = markNewItems([items[0]!], baseline);
+    expect(unchanged?.isNew).toBe(false);
   });
 });

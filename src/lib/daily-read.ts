@@ -17,8 +17,11 @@
 export type DailyReadAudience = "agent" | "lender";
 export type DailyReadTemperature = "hot" | "warm" | "nurture";
 
-/** State 3 ("none") means: send nothing at all. */
-export type DailyReadState = "new_signals" | "unresolved" | "none";
+/**
+ * "baseline" is the first-ever Daily Read: the existing book is discovered, not
+ * new activity. "none" means send nothing at all.
+ */
+export type DailyReadState = "baseline" | "new_signals" | "unresolved" | "none";
 
 export type DailyReadSuppression =
   | "preference_off"
@@ -194,7 +197,7 @@ export interface PriorSend {
 
 export interface DailyReadDecision {
   state: DailyReadState;
-  reason: DailyReadSuppression | "new_intelligence" | "unresolved_work";
+  reason: DailyReadSuppression | "first_run_baseline" | "new_intelligence" | "unresolved_work";
   newCount: number;
 }
 
@@ -212,6 +215,11 @@ export function shouldSendDailyRead(input: {
   today: string;
   items: { isNew: boolean; fingerprint: string }[];
   priorSends: PriorSend[];
+  /**
+   * False only before anything has ever been surfaced to this professional in
+   * this role. The existing backlog is then discovery, not today's activity.
+   */
+  hasHistory?: boolean;
 }): DailyReadDecision {
   const newCount = input.items.filter((i) => i.isNew).length;
   const none = (reason: DailyReadSuppression): DailyReadDecision => ({
@@ -223,6 +231,11 @@ export function shouldSendDailyRead(input: {
   if (!input.enabled) return none("preference_off");
   if (input.priorSends.some((s) => s.sendDate === input.today)) return none("already_sent_today");
   if (!input.items.length) return none("nothing_to_act_on");
+
+  const hasHistory = input.hasHistory ?? input.priorSends.length > 0;
+  if (!hasHistory) {
+    return { state: "baseline", reason: "first_run_baseline", newCount };
+  }
 
   if (newCount > 0) return { state: "new_signals", reason: "new_intelligence", newCount };
 
@@ -428,9 +441,12 @@ export function buildDailyReadEmail(input: {
   recipientName: string | null;
   items: DailyReadItem[];
 }): DailyReadEmailContent {
-  const ordered = [...input.items].sort(
-    (a, b) => Number(b.isNew) - Number(a.isNew) || b.rank - a.rank,
-  );
+  // On the first run nothing is "newer" than anything else — the whole book is
+  // being discovered — so priority alone orders it.
+  const ordered =
+    input.state === "baseline"
+      ? [...input.items].sort((a, b) => b.rank - a.rank)
+      : [...input.items].sort((a, b) => Number(b.isNew) - Number(a.isNew) || b.rank - a.rank);
   const total = ordered.length;
   const noun = input.audience === "agent" ? "relationship" : "homeowner";
   const plural = total === 1 ? noun : `${noun}s`;
@@ -452,6 +468,27 @@ export function buildDailyReadEmail(input: {
         remaining === 1 ? "opportunity is" : "opportunities are"
       } waiting inside SuCasa.`
     : "See all prioritized opportunities in SuCasa.";
+
+  if (input.state === "baseline") {
+    // First-ever Daily Read: this is discovery of an existing book, so nothing
+    // here claims that these relationships became actionable today.
+    return {
+      subject: `SuCasa found ${total} prioritized ${plural} in your book`,
+      preview: `Your first SuCasa Daily Read — ${total} prioritized ${plural}, starting with 3.`,
+      greeting,
+      summary: `SuCasa found ${total} prioritized ${plural} in your book.`,
+      supporting: top.length ? `Start with ${top.length === 1 ? "this one" : `these ${top.length}`} today.` : null,
+      breakdown,
+      top,
+      remaining,
+      remainingLabel: remaining
+        ? `${remaining} more prioritized ${
+            remaining === 1 ? `${noun} is` : `${noun}s are`
+          } available inside SuCasa.`
+        : "See all prioritized opportunities in SuCasa.",
+      ctaLabel: "Open Today's Opportunities",
+    };
+  }
 
   if (input.state === "new_signals") {
     return {
