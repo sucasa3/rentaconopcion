@@ -235,3 +235,4 @@
 - [x] Preserve direct free CTAs, attribution, decks, pilot inquiry, signup, Discovery, billing, permissions, and private workspaces
 - [x] Verify canonical lender commercial offer and make the $447 pilot → $149/month path unambiguous
 - [x] Verify mobile first viewport, desktop, accessibility, routes, deck/print, CTA behavior, console, and regression tests
+- [ ] Final refinement: keep each landing page to Hero/Product Proof → four-answer flow → concise trust → final CTA → footer, with no added marketing sections
