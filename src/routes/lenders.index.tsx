@@ -66,7 +66,8 @@ type PublicAction =
   | "lender_pilot_clicked"
   | "lender_deck_viewed"
   | "lender_pricing_clicked"
-  | "lender_signin_clicked";
+  | "lender_signin_clicked"
+  | "lender_discovery_cta_clicked";
 
 function LendersLandingPage() {
   const record = useServerFn(recordPublicAgentEvent);
