@@ -1,61 +1,66 @@
-# What "access to the homeowner" means — and making it visible in the UI
+# Lender Opportunity Discovery — free proof before the pilot
 
-Today the rules exist and are enforced, but the agent screens don't state which
-tier a record sits in. An agent can therefore read "I have this homeowner" as
-"I may do anything with this homeowner". This plan names the tiers in plain
-language and shows them on the record.
+Goal: a loan officer uploads up to 100 past clients, SuCasa analyses them with the same engine the paid product uses, reveals how many are worth a call today, unlocks the top 5 in full, previews the rest, and offers the 90-day pilot as the natural next step.
 
-## The four tiers (already how the system behaves)
+## What exists today (verified)
 
-1. **Property intelligence** — facts about the house, keyed to the address:
-   estimated value, estimated equity, characteristics, mortgage-age context.
-   Available to any agent who has that address in their own book. Shared across
-   workspaces because it describes the property, not a person. Never implies
-   anything about the homeowner's plans.
-2. **The agent's own client information** — what the agent themselves put in:
-   name, contact details from their upload, notes, their own activity. Private
-   to that workspace. Another agent with the same address never sees it.
-3. **Homeowner-provided information** — anything the homeowner entered in
-   SuCasa: documents, home profile answers, maintenance records, their own
-   detailed activity. Requires the homeowner's participation and permission.
-   Agents currently see only aggregate engagement counts, never the raw log.
-4. **Permission to contact** — decided per channel (Call / Text / Email), and
-   separately from all of the above. A documented client relationship plus the
-   contact detail allows manual one-to-one contact; any recorded opt-out blocks
-   that channel outright; campaigns and automation need explicit recorded
-   permission.
+- Lender import, CSV parsing, address de-duplication and portfolio clients already exist (`lender.functions.ts`, `lender.server.ts`, `BulkClientUpload`).
+- Property enrichment is already cached per normalized address and idempotent, so a repeated address costs nothing extra.
+- The canonical opportunity engine, priority ranking, conversation openers, next steps and channel permissions already exist (`opportunities.*`, `lender-daily.ts`, `lender-workspace.server.ts`).
+- Lender plans live in the plan catalogue: MLO $79/mo, Branch $499/mo, Branch Pro $799/mo. There is **no** pilot product and no $149 tier yet — both are created by this plan.
+- The lender page currently leads with "Talk to us about a pilot" and a request form; the presentation ends on the paid pilot.
 
-Lender access is a separate gate again: homeowner consent is the only authority,
-and nothing an agent does grants it.
+Discovery reuses all of the above. No second scoring engine, no demo opportunities, no parallel client table.
 
-## What to build
+## The flow
 
-**A. Access summary on the client record**
-On the agent client detail page, add a compact "What you can see" strip with the
-four tiers as small labelled rows: Property facts (always), Your notes
-(private to you), Homeowner-shared (present / not shared yet), Contact
-(the permitted channels). Each row has a short one-line explanation behind a
-"Why?" affordance, reusing the reasons the channel evaluator already returns.
+1. **Landing page** — hero becomes "Your past-client database already has opportunities inside it." Primary action: *Discover opportunities in my database*. Secondary: *See how SuCasa works* (presentation). Sign in stays. Adds the 3-step section (upload 100 → SuCasa finds the signals → see who to call and why). No mention of data vendors, AVMs or AI.
+2. **Frictionless signup** — work email, magic link only. No password, no company profile, no billing. Creates the lender organization and a Discovery portfolio behind the scenes.
+3. **Upload** — up to 100 past clients by CSV or paste, using the existing importer. Over 100 rows: keep the first 100 and say so.
+4. **Processing screen** — honest progress (properties recognised, analysis running). Enrichment is de-duplicated and cached; failures retry without re-purchasing.
+5. **The reveal** — a full-screen, progressively animated result, not a dashboard: "We analysed 100 of your past clients. 31 have signals worth reviewing right now," then the category breakdown (high priority / mortgage reviews / equity / other), then "Your database was sitting on 31 conversations. SuCasa just found them." Real counts from their own data; if the count is low, the copy stays truthful rather than inflated.
+6. **Top 5 unlocked** — the five highest-priority clients in full, using the existing opportunity card and detail view: who, why they deserve attention, what changed, canonical property/mortgage context, suggested opener, recommended next step, permitted channels.
+7. **The rest previewed** — the true total is always shown. Remaining opportunities appear as category counts and priority distribution with initials-only, address-less preview cards: enough to see the value, not enough to work the list.
+8. **Pilot offer** — "You found opportunities today. Now keep SuCasa watching for the next one." Everything uploaded, enriched and scored carries into the paid workspace; no re-upload, ever.
 
-**B. Clearer empty state for homeowner-shared information**
-Where the record has no homeowner-provided data, say so explicitly — "This
-homeowner hasn't shared their home information with you" — instead of showing
-an ambiguous blank section.
+Compliance language is unchanged: signals and reasons to reconnect, never qualification, approval, guaranteed savings, or a prediction that someone will transact.
 
-**C. Contact row consistency**
-Blocked channels stay visible but disabled with their existing reason, so the
-distinction between "no phone on file" and "asked not to be called" is legible.
+## Pricing (new, as agreed)
 
-**D. Bilingual copy** for all new strings, matching the existing pattern.
+- **90-Day SuCasa Pilot — $447 once**, up to 1,000 monitored Home Profiles.
+- After 90 days it rolls automatically into **MLO Growth — $149/month**, 1,000 profiles, cancellable.
+- Existing **MLO $79/month** stays as the 250-profile entry tier. Branch tiers untouched.
+- Checkout uses the existing Stripe checkout path; new products/prices are created for the pilot and MLO Growth.
 
-## Not in scope
-No change to any rule, gate, scope, or query. No new data, no new access. This
-is labelling and empty-state work on top of the existing evaluators
-(`contact-channels.ts`, `lender-access.ts`) — display only.
+## Account states
+
+Discovery state is tracked on the lender organization as its own field — `discovery_not_started`, `discovery_processing`, `discovery_complete`, `pilot_available`, `paid_active` — alongside, not inside, the existing subscription status. Buying the pilot flips billing state normally and the Discovery workspace simply becomes the real workspace.
+
+## Abuse and cost control
+
+- One free Discovery per lender organization, capped at 100 properties.
+- Repeat attempts from the same email domain or the same address set are flagged and require review rather than silently re-enriching.
+- Enrichment stays cached and idempotent; retries don't repurchase unchanged records; no expensive reverse look-ups are used just to finish a Discovery.
+
+## Internal economics (never shown to the lender)
+
+A configurable `discovery_enrichment_cost_per_property` (default $0.0155) drives internal cost tracking only. Actual provider calls, matches and failures are recorded per Discovery. The existing $0.10 assumption elsewhere is left alone pending a separate audit.
+
+## Analytics
+
+First-party events only, no vendor, no homeowner PII: `lender_landing_viewed`, `discovery_cta_clicked`, `discovery_account_created`, `upload_started`, `upload_completed`, `unique_properties`, `properties_matched`, `enrichment_cost`, `opportunities_found`, `top5_viewed`, `additional_opportunities_previewed`, `pilot_cta_clicked`, `checkout_started`, `pilot_started`, `paid_conversion`. An internal view reports Discovery completion rate, matches per 100, opportunities per 100, cost per Discovery, share viewing all five, Discovery→pilot and pilot→retained conversion.
+
+## Presentation update
+
+The deck at `/lenders/deck` is re-sequenced: problem → "let's test SuCasa with 100 of your actual past clients" → proof → the top 5 experience → continuous monitoring across the whole book → then the pilot offer. Navigation, print/PDF and links are preserved.
+
+## Privacy guarantees kept
+
+Discovery reads only the clients that lender uploaded. No agent-only, sponsored-only or unrelated homeowner data is exposed. Uploading grants no contact rights; homeowner consent remains the only authority for homeowner-level sharing. Canonical value and equity calculations are used as-is — no Discovery-specific maths, no hard-coded mortgage rates. Homeowner and agent experiences are untouched.
 
 ## Technical notes
-- Tier state derives from data the client detail loader already returns
-  (relationship basis, engagement aggregate presence, channel options); no new
-  server function or column.
-- Contact row renders from `evaluateAgentChannels` output via the existing
-  `channel-actions` component; do not re-derive availability in the view.
+
+- New: `lender_discoveries` + `lender_discovery_results` tables (org-scoped RLS, grants), `src/lib/discovery.server.ts` / `discovery.functions.ts`, magic-link route `/lender-start`, Discovery routes under `_authenticated/lender/discovery` (upload, processing, reveal), `discovery_state` on `lender_orgs`, `discovery_enrichment_cost_per_property` in `platform_config`, two new plan-catalogue rows + Stripe prices.
+- Reused: `parseClientCsv`, `ingestPortfolioCsv`/`addPortfolioClient`, `BulkClientUpload`, property enrichment queue and cache, `opportunities.*`, `lender-daily.ts` ranking/openers/next steps, `readLenderWorkspace` permissions, existing opportunity card/detail components, `startCheckout`, `logNetworkEvent`.
+- Email/magic-link sign-in enabled for the lender signup path; `/lender-start` and Discovery routes exempted from legacy IDX redirects.
+- Verification: typecheck plus the existing suite, new tests for the 100 cap, de-duplication, one-Discovery-per-org, top-5 selection, preview redaction, carry-over into paid, and no cross-org leakage; mobile and desktop passes on the landing page and reveal.
