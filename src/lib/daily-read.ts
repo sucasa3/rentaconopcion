@@ -441,9 +441,12 @@ export function buildDailyReadEmail(input: {
   recipientName: string | null;
   items: DailyReadItem[];
 }): DailyReadEmailContent {
-  const ordered = [...input.items].sort(
-    (a, b) => Number(b.isNew) - Number(a.isNew) || b.rank - a.rank,
-  );
+  // On the first run nothing is "newer" than anything else — the whole book is
+  // being discovered — so priority alone orders it.
+  const ordered =
+    input.state === "baseline"
+      ? [...input.items].sort((a, b) => b.rank - a.rank)
+      : [...input.items].sort((a, b) => Number(b.isNew) - Number(a.isNew) || b.rank - a.rank);
   const total = ordered.length;
   const noun = input.audience === "agent" ? "relationship" : "homeowner";
   const plural = total === 1 ? noun : `${noun}s`;
