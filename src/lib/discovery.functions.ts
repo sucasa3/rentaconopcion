@@ -29,10 +29,11 @@ export const startDiscovery = createServerFn({ method: "POST" })
     const email = (context.claims as any)?.email ?? null;
     const ws = await ensureDiscoveryWorkspace(context.userId, { email });
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEvent } = await import("./network-events.server");
-    await logNetworkEvent({
+    await logNetworkEvent(supabaseAdmin, {
       action: "lender_discovery_started",
-      actorId: context.userId,
+      actorUserId: context.userId,
       orgId: ws.orgId,
       entityType: "lender_discovery",
       entityId: ws.discoveryId,
@@ -63,10 +64,11 @@ export const uploadDiscoveryCsv = createServerFn({ method: "POST" })
       csv: data.csv,
     });
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEvent } = await import("./network-events.server");
-    await logNetworkEvent({
+    await logNetworkEvent(supabaseAdmin, {
       action: "lender_discovery_uploaded",
-      actorId: context.userId,
+      actorUserId: context.userId,
       orgId: ws.orgId,
       entityType: "lender_discovery",
       entityId: ws.discoveryId,
@@ -307,9 +309,9 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
     });
 
     const { logNetworkEvent } = await import("./network-events.server");
-    await logNetworkEvent({
+    await logNetworkEvent(supabaseAdmin, {
       action: "lender_pilot_checkout_started",
-      actorId: context.userId,
+      actorUserId: context.userId,
       orgId,
       entityType: "lender_org",
       entityId: orgId,
