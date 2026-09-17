@@ -469,6 +469,27 @@ export function buildDailyReadEmail(input: {
       } waiting inside SuCasa.`
     : "See all prioritized opportunities in SuCasa.";
 
+  if (input.state === "baseline") {
+    // First-ever Daily Read: this is discovery of an existing book, so nothing
+    // here claims that these relationships became actionable today.
+    return {
+      subject: `SuCasa found ${total} prioritized ${plural} in your book`,
+      preview: `Your first SuCasa Daily Read — ${total} prioritized ${plural}, starting with 3.`,
+      greeting,
+      summary: `SuCasa found ${total} prioritized ${plural} in your book.`,
+      supporting: top.length ? `Start with ${top.length === 1 ? "this one" : `these ${top.length}`} today.` : null,
+      breakdown,
+      top,
+      remaining,
+      remainingLabel: remaining
+        ? `${remaining} more prioritized ${
+            remaining === 1 ? `${noun} is` : `${noun}s are`
+          } available inside SuCasa.`
+        : "See all prioritized opportunities in SuCasa.",
+      ctaLabel: "Open Today's Opportunities",
+    };
+  }
+
   if (input.state === "new_signals") {
     return {
       subject: `${total} ${plural} deserve your attention today`,
