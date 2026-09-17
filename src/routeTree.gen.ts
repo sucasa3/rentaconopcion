@@ -19,6 +19,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LendersRouteImport } from './routes/lenders'
+import { Route as LenderStartRouteImport } from './routes/lender-start'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as AgentStartRouteImport } from './routes/agent-start'
@@ -126,6 +127,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const LendersRoute = LendersRouteImport.update({
   id: '/lenders',
   path: '/lenders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LenderStartRoute = LenderStartRouteImport.update({
+  id: '/lender-start',
+  path: '/lender-start',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -447,6 +453,7 @@ export interface FileRoutesByFullPath {
   '/agent-start': typeof AgentStartRoute
   '/agents': typeof AgentsRouteWithChildren
   '/auth': typeof AuthRoute
+  '/lender-start': typeof LenderStartRoute
   '/lenders': typeof LendersRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
@@ -515,6 +522,7 @@ export interface FileRoutesByTo {
   '/agent-invite': typeof AgentInviteRoute
   '/agent-start': typeof AgentStartRoute
   '/auth': typeof AuthRoute
+  '/lender-start': typeof LenderStartRoute
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
   '/pricing': typeof PricingRoute
@@ -582,6 +590,7 @@ export interface FileRoutesById {
   '/agent-start': typeof AgentStartRoute
   '/agents': typeof AgentsRouteWithChildren
   '/auth': typeof AuthRoute
+  '/lender-start': typeof LenderStartRoute
   '/lenders': typeof LendersRouteWithChildren
   '/onboarding': typeof OnboardingRoute
   '/partner': typeof PartnerRoute
@@ -653,6 +662,7 @@ export interface FileRouteTypes {
     | '/agent-start'
     | '/agents'
     | '/auth'
+    | '/lender-start'
     | '/lenders'
     | '/onboarding'
     | '/partner'
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/agent-invite'
     | '/agent-start'
     | '/auth'
+    | '/lender-start'
     | '/onboarding'
     | '/partner'
     | '/pricing'
@@ -787,6 +798,7 @@ export interface FileRouteTypes {
     | '/agent-start'
     | '/agents'
     | '/auth'
+    | '/lender-start'
     | '/lenders'
     | '/onboarding'
     | '/partner'
@@ -858,6 +870,7 @@ export interface RootRouteChildren {
   AgentStartRoute: typeof AgentStartRoute
   AgentsRoute: typeof AgentsRouteWithChildren
   AuthRoute: typeof AuthRoute
+  LenderStartRoute: typeof LenderStartRoute
   LendersRoute: typeof LendersRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
   PartnerRoute: typeof PartnerRoute
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       path: '/lenders'
       fullPath: '/lenders'
       preLoaderRoute: typeof LendersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lender-start': {
+      id: '/lender-start'
+      path: '/lender-start'
+      fullPath: '/lender-start'
+      preLoaderRoute: typeof LenderStartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1518,6 +1538,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentStartRoute: AgentStartRoute,
   AgentsRoute: AgentsRouteWithChildren,
   AuthRoute: AuthRoute,
+  LenderStartRoute: LenderStartRoute,
   LendersRoute: LendersRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
   PartnerRoute: PartnerRoute,
