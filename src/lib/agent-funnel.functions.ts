@@ -16,6 +16,8 @@ export const publicAgentEventSchema = z.object({
     "lender_deck_viewed",
     "lender_pricing_clicked",
     "lender_signin_clicked",
+    "lender_discovery_cta_clicked",
+    "lender_discovery_signup_started",
   ]),
   visitId: z.string().uuid(),
   source: z.string().trim().max(80).optional(),
@@ -25,7 +27,17 @@ export const publicAgentEventSchema = z.object({
 });
 
 const authenticatedAgentEventSchema = z.object({
-  action: z.enum(["agent_signup_completed"]),
+  action: z.enum([
+    "agent_signup_completed",
+    "lender_discovery_signup_completed",
+    "lender_discovery_processing_viewed",
+    "lender_discovery_completed",
+    "lender_discovery_revealed",
+    "lender_discovery_opportunity_opened",
+    "lender_discovery_empty_result",
+    "lender_pilot_offer_viewed",
+    "lender_discovery_export_requested",
+  ]),
   visitId: z.string().uuid().optional(),
   source: z.string().trim().max(80).optional(),
   campaign: z.string().trim().max(120).optional(),
