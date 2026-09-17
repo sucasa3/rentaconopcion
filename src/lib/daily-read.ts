@@ -215,6 +215,11 @@ export function shouldSendDailyRead(input: {
   today: string;
   items: { isNew: boolean; fingerprint: string }[];
   priorSends: PriorSend[];
+  /**
+   * False only before anything has ever been surfaced to this professional in
+   * this role. The existing backlog is then discovery, not today's activity.
+   */
+  hasHistory?: boolean;
 }): DailyReadDecision {
   const newCount = input.items.filter((i) => i.isNew).length;
   const none = (reason: DailyReadSuppression): DailyReadDecision => ({
@@ -226,6 +231,11 @@ export function shouldSendDailyRead(input: {
   if (!input.enabled) return none("preference_off");
   if (input.priorSends.some((s) => s.sendDate === input.today)) return none("already_sent_today");
   if (!input.items.length) return none("nothing_to_act_on");
+
+  const hasHistory = input.hasHistory ?? input.priorSends.length > 0;
+  if (!hasHistory) {
+    return { state: "baseline", reason: "first_run_baseline", newCount };
+  }
 
   if (newCount > 0) return { state: "new_signals", reason: "new_intelligence", newCount };
 
