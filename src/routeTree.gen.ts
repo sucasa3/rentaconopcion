@@ -28,7 +28,9 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LendersIndexRouteImport } from './routes/lenders.index'
 import { Route as AgentsIndexRouteImport } from './routes/agents.index'
+import { Route as LendersPricingRouteImport } from './routes/lenders.pricing'
 import { Route as LendersDeckRouteImport } from './routes/lenders.deck'
+import { Route as AgentsPricingRouteImport } from './routes/agents.pricing'
 import { Route as AgentsDeckRouteImport } from './routes/agents.deck'
 import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
 import { Route as AuthenticatedMoneyRouteImport } from './routes/_authenticated/money'
@@ -175,10 +177,20 @@ const AgentsIndexRoute = AgentsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AgentsRoute,
 } as any)
+const LendersPricingRoute = LendersPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => LendersRoute,
+} as any)
 const LendersDeckRoute = LendersDeckRouteImport.update({
   id: '/deck',
   path: '/deck',
   getParentRoute: () => LendersRoute,
+} as any)
+const AgentsPricingRoute = AgentsPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => AgentsRoute,
 } as any)
 const AgentsDeckRoute = AgentsDeckRouteImport.update({
   id: '/deck',
@@ -490,7 +502,9 @@ export interface FileRoutesByFullPath {
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
+  '/agents/pricing': typeof AgentsPricingRoute
   '/lenders/deck': typeof LendersDeckRoute
+  '/lenders/pricing': typeof LendersPricingRoute
   '/agents/': typeof AgentsIndexRoute
   '/lenders/': typeof LendersIndexRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -558,7 +572,9 @@ export interface FileRoutesByTo {
   '/money': typeof AuthenticatedMoneyRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
+  '/agents/pricing': typeof AgentsPricingRoute
   '/lenders/deck': typeof LendersDeckRoute
+  '/lenders/pricing': typeof LendersPricingRoute
   '/agents': typeof AgentsIndexRoute
   '/lenders': typeof LendersIndexRoute
   '/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -631,7 +647,9 @@ export interface FileRoutesById {
   '/_authenticated/money': typeof AuthenticatedMoneyRoute
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
+  '/agents/pricing': typeof AgentsPricingRoute
   '/lenders/deck': typeof LendersDeckRoute
+  '/lenders/pricing': typeof LendersPricingRoute
   '/agents/': typeof AgentsIndexRoute
   '/lenders/': typeof LendersIndexRoute
   '/_authenticated/agent/campaigns': typeof AuthenticatedAgentCampaignsRoute
@@ -705,7 +723,9 @@ export interface FileRouteTypes {
     | '/money'
     | '/timeline'
     | '/agents/deck'
+    | '/agents/pricing'
     | '/lenders/deck'
+    | '/lenders/pricing'
     | '/agents/'
     | '/lenders/'
     | '/agent/campaigns'
@@ -773,7 +793,9 @@ export interface FileRouteTypes {
     | '/money'
     | '/timeline'
     | '/agents/deck'
+    | '/agents/pricing'
     | '/lenders/deck'
+    | '/lenders/pricing'
     | '/agents'
     | '/lenders'
     | '/agent/campaigns'
@@ -845,7 +867,9 @@ export interface FileRouteTypes {
     | '/_authenticated/money'
     | '/_authenticated/timeline'
     | '/agents/deck'
+    | '/agents/pricing'
     | '/lenders/deck'
+    | '/lenders/pricing'
     | '/agents/'
     | '/lenders/'
     | '/_authenticated/agent/campaigns'
@@ -1058,12 +1082,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsIndexRouteImport
       parentRoute: typeof AgentsRoute
     }
+    '/lenders/pricing': {
+      id: '/lenders/pricing'
+      path: '/pricing'
+      fullPath: '/lenders/pricing'
+      preLoaderRoute: typeof LendersPricingRouteImport
+      parentRoute: typeof LendersRoute
+    }
     '/lenders/deck': {
       id: '/lenders/deck'
       path: '/deck'
       fullPath: '/lenders/deck'
       preLoaderRoute: typeof LendersDeckRouteImport
       parentRoute: typeof LendersRoute
+    }
+    '/agents/pricing': {
+      id: '/agents/pricing'
+      path: '/pricing'
+      fullPath: '/agents/pricing'
+      preLoaderRoute: typeof AgentsPricingRouteImport
+      parentRoute: typeof AgentsRoute
     }
     '/agents/deck': {
       id: '/agents/deck'
@@ -1550,11 +1588,13 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AgentsRouteChildren {
   AgentsDeckRoute: typeof AgentsDeckRoute
+  AgentsPricingRoute: typeof AgentsPricingRoute
   AgentsIndexRoute: typeof AgentsIndexRoute
 }
 
 const AgentsRouteChildren: AgentsRouteChildren = {
   AgentsDeckRoute: AgentsDeckRoute,
+  AgentsPricingRoute: AgentsPricingRoute,
   AgentsIndexRoute: AgentsIndexRoute,
 }
 
@@ -1563,11 +1603,13 @@ const AgentsRouteWithChildren =
 
 interface LendersRouteChildren {
   LendersDeckRoute: typeof LendersDeckRoute
+  LendersPricingRoute: typeof LendersPricingRoute
   LendersIndexRoute: typeof LendersIndexRoute
 }
 
 const LendersRouteChildren: LendersRouteChildren = {
   LendersDeckRoute: LendersDeckRoute,
+  LendersPricingRoute: LendersPricingRoute,
   LendersIndexRoute: LendersIndexRoute,
 }
 
