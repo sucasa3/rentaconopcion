@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
-import { Home, HeartPulse, FileText, Wrench, BarChart3, History, Landmark, MoreHorizontal, ShieldCheck, Sparkles } from "lucide-react";
+import { Home, HeartPulse, FileText, Wrench, BarChart3, History, Landmark, MoreHorizontal, Sparkles } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { Button } from "@/components/ui/button";
@@ -89,13 +89,6 @@ const MOBILE_ITEMS: Item[] = [
     to: "/home-care",
     icon: <HeartPulse className="h-5 w-5" />,
     match: (p) => p.startsWith("/home-care"),
-  },
-  {
-    key: "team",
-    labelKey: "nav.team",
-    to: "/home-team",
-    icon: <ShieldCheck className="h-5 w-5" />,
-    match: (p) => p.startsWith("/home-team"),
   },
 ];
 

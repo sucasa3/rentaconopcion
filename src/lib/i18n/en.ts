@@ -33,7 +33,6 @@ export const en = {
   "nav.timeline_long": "Home history",
   "nav.value": "Value",
   "nav.care": "Care",
-  "nav.team": "Team",
   "nav.more": "More",
 
   // ----------------------------------------------------------------- alerts

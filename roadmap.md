@@ -219,3 +219,11 @@
 - [x] Open / CTA-click tracking on the send record; PII-free funnel events
 - [x] Tests (25 new, 276 total), dry run across all agent + lender accounts, one agent + one lender email to Neil, 390px render check
 - [ ] AWAITING GO-AHEAD: schedule the hourly production cron (`/api/public/daily-read/tick`) — deliberately not scheduled yet
+
+## Home Team v2 (future — not part of the current release)
+- [ ] Reconcile an authenticated homeowner with the correct portfolio-client record conservatively
+- [ ] Create agent relationships without granting access or exposing another professional's workspace
+- [ ] Create lender relationships without granting access or exposing another professional's workspace
+- [ ] Let the homeowner confirm or reject relationship truth
+- [ ] Keep private homeowner data behind explicit, scope-based consent
+- [ ] Support revocation and disconnection without erasing relationship evidence
