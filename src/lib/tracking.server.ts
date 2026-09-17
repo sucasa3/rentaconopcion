@@ -75,7 +75,12 @@ export async function recordTrackedEvent(
     .select("id, org_id, portfolio_client_id, opportunity_id")
     .eq("id", messageId)
     .maybeSingle();
-  if (!msg) return;
+  if (!msg) {
+    // Daily Read digests are addressed to the professional, not a homeowner,
+    // so their engagement lands on the send record instead.
+    await recordDailyReadEvent(messageId, event);
+    return;
+  }
 
   const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { data: recent } = await supabaseAdmin
@@ -94,5 +99,38 @@ export async function recordTrackedEvent(
     message_id: msg.id,
     event,
     detail: detail ? String(detail).slice(0, 300) : null,
+  });
+}
+
+/**
+ * Engagement on a Daily Read digest. The recipient is the professional, so the
+ * event lands on the send record — never on a homeowner's outreach history.
+ */
+async function recordDailyReadEvent(sendId: string, event: "open" | "click"): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: send } = await supabaseAdmin
+    .from("daily_read_sends")
+    .select("id, user_id, org_id, audience, opened_at, clicked_at")
+    .eq("id", sendId)
+    .maybeSingle();
+  if (!send) return;
+
+  const now = new Date().toISOString();
+  const already = event === "open" ? send.opened_at : send.clicked_at;
+  if (!already) {
+    await supabaseAdmin
+      .from("daily_read_sends")
+      .update(event === "open" ? { opened_at: now } : { clicked_at: now })
+      .eq("id", sendId);
+  }
+
+  const { logNetworkEvent } = await import("@/lib/network-events.server");
+  await logNetworkEvent(supabaseAdmin, {
+    action: event === "open" ? "daily_read_opened" : "daily_read_cta_clicked",
+    actorUserId: send.user_id,
+    orgId: send.org_id,
+    entityType: "daily_read_send",
+    entityId: send.id,
+    metadata: { audience: send.audience },
   });
 }

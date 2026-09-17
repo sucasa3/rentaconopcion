@@ -71,6 +71,7 @@ import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/lead
 import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
 import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
 import { Route as ApiPublicEnrichTickRouteImport } from './routes/api/public/enrich.tick'
+import { Route as ApiPublicDailyReadTickRouteImport } from './routes/api/public/daily-read.tick'
 import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
 import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
 import { Route as AuthenticatedAgentRevealIdRouteImport } from './routes/_authenticated/agent/reveal.$id'
@@ -407,6 +408,11 @@ const ApiPublicEnrichTickRoute = ApiPublicEnrichTickRouteImport.update({
   path: '/api/public/enrich/tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDailyReadTickRoute = ApiPublicDailyReadTickRouteImport.update({
+  id: '/api/public/daily-read/tick',
+  path: '/api/public/daily-read/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCampaignsTickRoute = ApiPublicCampaignsTickRouteImport.update({
   id: '/api/public/campaigns/tick',
   path: '/api/public/campaigns/tick',
@@ -516,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/agent/reveal/$id': typeof AuthenticatedAgentRevealIdRoute
   '/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRouteWithChildren
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
+  '/api/public/daily-read/tick': typeof ApiPublicDailyReadTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
@@ -583,6 +590,7 @@ export interface FileRoutesByTo {
   '/agent/portfolio/$id': typeof AuthenticatedAgentPortfolioIdRoute
   '/agent/reveal/$id': typeof AuthenticatedAgentRevealIdRoute
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
+  '/api/public/daily-read/tick': typeof ApiPublicDailyReadTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
@@ -657,6 +665,7 @@ export interface FileRoutesById {
   '/_authenticated/agent/reveal/$id': typeof AuthenticatedAgentRevealIdRoute
   '/_authenticated/lender/portfolio/$id': typeof AuthenticatedLenderPortfolioIdRouteWithChildren
   '/api/public/campaigns/tick': typeof ApiPublicCampaignsTickRoute
+  '/api/public/daily-read/tick': typeof ApiPublicDailyReadTickRoute
   '/api/public/enrich/tick': typeof ApiPublicEnrichTickRoute
   '/api/public/ghl/billing': typeof ApiPublicGhlBillingRoute
   '/api/public/ghl/drain': typeof ApiPublicGhlDrainRoute
@@ -731,6 +740,7 @@ export interface FileRouteTypes {
     | '/agent/reveal/$id'
     | '/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
+    | '/api/public/daily-read/tick'
     | '/api/public/enrich/tick'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
@@ -798,6 +808,7 @@ export interface FileRouteTypes {
     | '/agent/portfolio/$id'
     | '/agent/reveal/$id'
     | '/api/public/campaigns/tick'
+    | '/api/public/daily-read/tick'
     | '/api/public/enrich/tick'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
@@ -871,6 +882,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agent/reveal/$id'
     | '/_authenticated/lender/portfolio/$id'
     | '/api/public/campaigns/tick'
+    | '/api/public/daily-read/tick'
     | '/api/public/enrich/tick'
     | '/api/public/ghl/billing'
     | '/api/public/ghl/drain'
@@ -908,6 +920,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
+  ApiPublicDailyReadTickRoute: typeof ApiPublicDailyReadTickRoute
   ApiPublicEnrichTickRoute: typeof ApiPublicEnrichTickRoute
   ApiPublicGhlBillingRoute: typeof ApiPublicGhlBillingRoute
   ApiPublicGhlDrainRoute: typeof ApiPublicGhlDrainRoute
@@ -1358,6 +1371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicEnrichTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/daily-read/tick': {
+      id: '/api/public/daily-read/tick'
+      path: '/api/public/daily-read/tick'
+      fullPath: '/api/public/daily-read/tick'
+      preLoaderRoute: typeof ApiPublicDailyReadTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/campaigns/tick': {
       id: '/api/public/campaigns/tick'
       path: '/api/public/campaigns/tick'
@@ -1594,6 +1614,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,
+  ApiPublicDailyReadTickRoute: ApiPublicDailyReadTickRoute,
   ApiPublicEnrichTickRoute: ApiPublicEnrichTickRoute,
   ApiPublicGhlBillingRoute: ApiPublicGhlBillingRoute,
   ApiPublicGhlDrainRoute: ApiPublicGhlDrainRoute,

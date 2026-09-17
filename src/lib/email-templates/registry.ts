@@ -3,6 +3,8 @@ import { template as campaignUpdateTemplate } from './campaign-update'
 import { template as agentInviteTemplate } from './agent-invite'
 import { template as professionalInviteTemplate } from './professional-invite'
 import { template as lenderPilotRequestTemplate } from './lender-pilot-request'
+import { template as dailyReadAgentTemplate } from './daily-read-agent'
+import { template as dailyReadLenderTemplate } from './daily-read-lender'
 
 
 
@@ -29,6 +31,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'agent-invite': agentInviteTemplate,
   'professional-invite': professionalInviteTemplate,
   'lender-pilot-request': lenderPilotRequestTemplate,
+  'daily-read-agent': dailyReadAgentTemplate,
+  'daily-read-lender': dailyReadLenderTemplate,
 }
 
 

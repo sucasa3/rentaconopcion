@@ -206,3 +206,16 @@
 - [x] Add PII-free lender funnel events; exempt `/lenders*` from legacy IDX redirects
 - [ ] PRODUCT DECISION: does one physical property consume a profile slot in every workspace that holds it, or count once globally? (currently per-organization)
 - [ ] FUTURE: homeowner-confirmed agent relationship resolution when two agents assert the same homeowner
+
+## SuCasa Daily Read email — Agents + Lenders (approved with adjustments 2026-09-17)
+- [x] Reuse canonical agent action queue and gated lender workspace; no second engine
+- [x] Stable signal fingerprint (homeowner + canonical opportunity + canonical reason + urgency); NEW is never "not emailed for N days"
+- [x] Granular signal history (`daily_read_signals`), so a new opportunity for a previously surfaced homeowner still counts as new
+- [x] Send ledger unique per (user, org, audience, send_date)
+- [x] Three states + 3-day quiet-day cooldown + same-set suppression
+- [x] Role-correct copy; no lender vocabulary in agent emails; lender gated by access classifier and fact scopes
+- [x] Timezone-aware morning delivery via one hourly tick (recipient local 7am, DST-safe)
+- [x] Professional Daily Read on/off preference with captured browser timezone
+- [x] Open / CTA-click tracking on the send record; PII-free funnel events
+- [x] Tests (25 new, 276 total), dry run across all agent + lender accounts, one agent + one lender email to Neil, 390px render check
+- [ ] AWAITING GO-AHEAD: schedule the hourly production cron (`/api/public/daily-read/tick`) — deliberately not scheduled yet
