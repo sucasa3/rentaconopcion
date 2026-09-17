@@ -25,12 +25,6 @@ import {
   type RankedClient,
 } from "./discovery";
 
-function admin() {
-  // Imported lazily by callers; see functions module.
-  throw new Error("use adminClient()");
-}
-void admin;
-
 async function adminClient() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin as any;
