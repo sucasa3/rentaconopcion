@@ -259,6 +259,13 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
+/**
+ * Anonymous opportunities inside a connected agent's book.
+ *
+ * A lender sees a broad category and a count — nothing else. There are no rows
+ * to open, no geography, no bands, no scores and no timestamps, so a count can
+ * never be narrowed down to a person. Small populations are withheld entirely.
+ */
 function OpportunityList({
   lenderOrgId,
   agentOrgId,
@@ -266,96 +273,76 @@ function OpportunityList({
   lenderOrgId: string;
   agentOrgId: string;
 }) {
-  const listFn = useServerFn(listNetworkOpportunities);
-  const requestFn = useServerFn(requestIntroduction);
+  const listFn = useServerFn(lenderAggregateOpportunities);
+  const requestFn = useServerFn(requestCategoryIntroduction);
   const qc = useQueryClient();
-  const key = ["network-opportunities", lenderOrgId, agentOrgId];
+  const key = ["network-aggregate", lenderOrgId, agentOrgId];
 
   const { data, isLoading } = useQuery({
     queryKey: key,
-    queryFn: () => listFn({ data: { lenderOrgId, agentOrgId, limit: 100 } }),
+    queryFn: () => listFn({ data: { lenderOrgId, agentOrgId } }),
   });
 
   const ask = useMutation({
-    mutationFn: (opportunityId: string) =>
-      requestFn({ data: { lenderOrgId, opportunityId } }),
+    mutationFn: (category: string) =>
+      requestFn({ data: { lenderOrgId, agentOrgId, category: category as any } }),
     onSuccess: () => {
-      toast.success("Introduction requested — the agent decides what's shared");
+      toast.success("The agent has your request. They decide whether to offer an introduction.");
       qc.invalidateQueries({ queryKey: key });
+      qc.invalidateQueries({ queryKey: ["lender-introductions", lenderOrgId] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const rows = data?.opportunities ?? [];
+  const rows = data?.categories ?? [];
 
   return (
     <div className="border-t border-border px-5 py-4">
-      <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-        <Lock className="h-3 w-3" /> De-identified. No name, address, email, or phone until the
-        agent approves.
+      <p className="flex items-start gap-1 text-[11px] text-muted-foreground">
+        <Lock className="mt-0.5 h-3 w-3 shrink-0" /> Anonymous opportunities. You can tell this agent
+        you're available for a type of conversation. No homeowner is identified to you unless a
+        homeowner accepts an introduction.
       </p>
 
       {isLoading && <p className="mt-3 text-sm text-muted-foreground">Loading opportunities…</p>}
       {!isLoading && rows.length === 0 && (
-        <p className="mt-3 text-sm text-muted-foreground">No open opportunities in this book yet.</p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          No anonymous opportunities in this book right now.
+        </p>
       )}
 
       <div className="mt-3 space-y-2">
         {rows.map((o: any) => (
           <div
-            key={o.id}
+            key={o.category}
             className="rounded-2xl border border-border p-4 sm:flex sm:items-start sm:justify-between sm:gap-4"
           >
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold">{o.category_label}</p>
-                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
-                  {strengthLabel(o.strength)}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">{o.headline}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-muted-foreground">
-                <Chip>Equity {o.equity_band}</Chip>
-                <Chip>LTV {o.ltv_band}</Chip>
-                <Chip>Owned {o.tenure_band}</Chip>
-                {(o.city || o.zip) && (
-                  <Chip>
-                    <MapPin className="mr-1 inline h-3 w-3" />
-                    {[o.city, o.state].filter(Boolean).join(", ")} {o.zip ?? ""}
-                  </Chip>
-                )}
-              </div>
-              {o.reasons?.length > 0 && (
-                <ul className="mt-2 list-disc space-y-0.5 pl-4 text-[11px] text-muted-foreground">
-                  {o.reasons.slice(0, 3).map((r: string, i: number) => (
-                    <li key={i}>{r}</li>
-                  ))}
-                </ul>
+              <p className="text-sm font-semibold">
+                {o.suppressed
+                  ? o.label
+                  : `${o.count} ${o.count === 1 ? "client" : "clients"} · ${o.label}`}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{o.explanation}</p>
+              {o.suppressed && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  The count is withheld because the group is too small to stay anonymous.
+                </p>
               )}
             </div>
 
             <div className="mt-3 shrink-0 sm:mt-0">
-              {o.request_status ? (
-                <span className="inline-flex rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                  Introduction {o.request_status}
-                </span>
-              ) : (
-                <button
-                  onClick={() => ask.mutate(o.id)}
-                  disabled={ask.isPending}
-                  className="inline-flex items-center gap-1 rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-                >
-                  <Handshake className="h-3 w-3" /> Request introduction
-                </button>
-              )}
+              <button
+                onClick={() => ask.mutate(o.category)}
+                disabled={ask.isPending}
+                className="inline-flex items-center gap-1 rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+              >
+                <Handshake className="h-3 w-3" /> Request an introduction
+              </button>
             </div>
           </div>
         ))}
       </div>
     </div>
   );
-}
-
-function Chip({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-full border border-border px-2 py-0.5">{children}</span>;
 }
