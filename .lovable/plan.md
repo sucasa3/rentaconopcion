@@ -1,71 +1,55 @@
-# SuCasa Agent + Lender Public Conversion Refinement
+# Spanish: public pages + critical system emails
 
-## Goal
-Finish the coordinated public conversion system across `/agents`, `/agents/pricing`, `/lenders`, `/lenders/pricing`, and the `/pricing` role gateway so each audience understands SuCasa within 10–15 seconds.
+Scope approved: translate the public acquisition surface and critical system emails into Spanish. Agent/lender dashboards and presentations stay English-only. The homeowner app is already bilingual — no changes there.
 
-## Locked conversion paths
+## 1. Public pages (English ↔ Spanish)
 
-```text
-Agent: Understand → Start free
-                   ↘ Review pricing → Start free / request upgrade
+Add a language toggle to the site header (desktop + mobile) so any visitor can switch instantly, no account needed. The choice already persists via the existing language layer (`localStorage` + browser fallback), so it works for anonymous visitors.
 
-Lender: Understand → Run free Discovery
-                    ↘ Review pricing → Discovery → $447 pilot → $149/month
-```
+Translated via the existing i18n dictionary (extend `src/lib/i18n/en.ts` / `es.ts`):
 
-- Keep direct free CTAs on both landing pages, with pricing as the secondary path.
-- Keep the configured lender pilot as the primary paid progression: free 100-client Discovery, $447 for 90 days, then $149/month unless cancelled.
-- Keep the $79 MLO and larger team plans visible as secondary alternatives.
-- Preserve attribution on all signup, Discovery, pricing, and paid-interest actions.
+- Homepage `/`
+- `/agents` and `/agents/pricing`
+- `/lenders` and `/lenders/pricing`
+- `/pricing` role gateway
+- Site header + footer (nav labels, CTAs, footer columns)
+- `/services` and `/partner` (part of the public funnel)
 
-## Landing pages
+Not translated (stays English): agent/lender dashboards, `/agents/deck`, `/lenders/deck`, `/agent-start` and `/lender-start` signup flows get Spanish too **only if trivial** — flag at build time; otherwise they stay English this phase.
 
-### `/agents`
-- Update the hero to the approved relationship-prioritization message while retaining direct `Start Free` and secondary `View pricing` actions.
-- Keep the fictional, labeled Agent Today visual immediately beneath the copy on mobile and beside it on desktop.
-- Refine the four-step flow to: Know who → Know why → Know what to say → Know what to do next.
-- Reduce trust to the concise “Your relationships stay yours” strip.
-- Use the approved first-100 closing message and keep the presentation only as a low-priority resource.
+## 2. SEO for bilingual public pages
 
-### `/lenders`
-- Update the hero to begin with the lender’s past-client book while retaining direct `Start Free Discovery` and secondary `View pricing` actions.
-- Refine the fictional, labeled Lender Today visual to include qualified estimated property/value context without intent claims.
-- Use one concise four-step flow, a compact Discovery conversion band, one sentence about agent relationship value, and a short private-workspace trust statement.
-- Keep the presentation and team-pilot inquiry as low-priority resources.
+- `<html lang>` updates with the toggle (already handled by the language layer).
+- Each public page keeps one URL (no `/es` duplicates); `og:` metadata stays English to avoid duplicate-content issues.
+- Verified: no canonical/hreflang changes needed since content swaps client-side on the same URL.
 
-## Pricing pages
+## 3. Critical system emails
 
-### `/agents/pricing`
-- Use the approved headline and make Free a full, visually important card without unsupported popularity labels.
-- Show exactly three choices: Free/100, Agent/$49/250, Agent Growth/$99/1,000.
-- Keep paid CTAs honest: the current agent system records upgrade requests rather than taking payment on the public page.
-- Add a compact Agent Today product-proof block and four-question summary.
-- Only show an additional-capacity message if supported by the existing agent upgrade experience.
+Spanish versions selected from the recipient's saved profile language (fall back to English):
 
-### `/lenders/pricing`
-- Lead with Free Discovery → $447 90-Day Pilot → $149/month continuation.
-- Feature MLO $79 and MLO Growth $149 as secondary individual options; emphasize Growth without an unsupported popularity claim.
-- Present Branch $499, Branch Pro $799, and Network $1,499 in a quieter team-capacity band with configured limits.
-- Route new visitors through lender signup/Discovery; preserve protected manager-only checkout in Plan & Billing.
-- Add the compact book-to-action product proof and final Free Discovery CTA.
+- Welcome / signup confirmation
+- Magic link (sign-in)
+- Password recovery
+- Email change confirmation
 
-### `/pricing`
-- Keep it pricing-free and reduce it to two premium role cards: Loan Officers and Real Estate Agents.
+Implementation: templates in `src/lib/email-templates/` take a `language` prop (pattern already proven in campaign emails); the auth-email webhook resolves the profile language before rendering. If no profile exists yet (brand-new signup), default English.
 
-## Shared presentation and navigation
-- Reuse the public-safe Agent Today/Lender Today preview system and semantic SuCasa tokens.
-- Remove the unsupported “Recommended” badge from the free Agent card.
-- Keep white/warm-neutral surfaces, deep navy typography, restrained orange actions, subtle depth, and reduced-motion support.
-- Ensure professional landing and footer navigation expose each dedicated pricing page while preserving Sign In and deck routes.
+## 4. Guardrails
 
-## Preserved behavior
-- No changes to authentication, signup activation, Discovery logic, imports, permissions, private workspaces, consent, database schema, or payment logic.
-- No claims of predicted moving, refinancing, selling, borrowing intent, guaranteed transactions, or automatic access.
-- No public checkout promise where the existing application only supports a signed-in upgrade request or protected organization-manager checkout.
+- No new marketing sections; translation only — page structure, CTAs, and the approved short-page design stay identical.
+- No machine-translation of partner-written copy.
+- Existing homeowner bilingual experience untouched.
+- Professional dashboards and decks remain English.
+
+## Technical notes
+
+- Extend `en.ts`/`es.ts` with new key groups (`public.home.*`, `public.agents.*`, `public.lenders.*`, `public.pricing.*`, `public.nav.*`); missing keys are a build error (typed union already enforced).
+- Add `<LanguageSwitcher />` (compact variant) to `site-header.tsx`.
+- Pages listed above swap hardcoded strings for `t()` calls; pricing values stay sourced from `public-plans.ts`.
+- Email templates: add `language` prop and `es` copy for signup, magic-link, recovery, email-change; webhook looks up `profiles.language`.
 
 ## Verification
-- Confirm every primary and secondary CTA destination and attribution source.
-- Verify all five public pages at phone and desktop widths, including first-viewport comprehension, no overflow, keyboard focus, reduced motion, and readable contrast.
-- Verify both presentation routes and their print behavior remain intact.
-- Run type checks and the complete test suite covering Discovery, billing, permissions, imports, and existing application behavior.
-- Report changed routes, CTA destinations, reused product visuals, mobile behavior, pricing-source constraints, and confirmation that `/pricing` is role selection only.
+
+- Toggle every public page at 390px and 1280px in Spanish: no overflow, no untranslated strings, CTAs unchanged.
+- Render each system email in both languages; confirm correct language picked from profile.
+- Typecheck + full test suite; existing 289 tests must stay green.
