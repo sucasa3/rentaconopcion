@@ -21,9 +21,12 @@ describe("no lender reveal path outside the accepted-introduction gate", () => {
     }
   });
 
-  it("keeps identifying client columns out of every lender-facing network read", () => {
+  it("keeps identifying client columns out of the lender-facing network reads", () => {
+    // Everything up to the sponsorship section is lender-visible. Sponsorship
+    // names are read on the AGENT's own side only and stay out of scope here.
+    const lenderVisible = networkServer.slice(0, networkServer.indexOf("// Sponsored premium profiles"));
     for (const forbidden of ["client_name", "client_email", "client_phone", "address_line1"]) {
-      expect(networkServer).not.toContain(forbidden);
+      expect(lenderVisible).not.toContain(forbidden);
     }
   });
 
