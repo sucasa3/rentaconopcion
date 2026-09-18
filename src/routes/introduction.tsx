@@ -103,7 +103,7 @@ function IntroductionPage() {
   const [channels, setChannels] = useState<IntroductionChannel[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["introduction-link", token],
     queryFn: () => readFn({ data: { token: token! } }),
     enabled: !!token,
@@ -179,7 +179,7 @@ function IntroductionPage() {
         </div>
 
         <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-          {!token || (data && !data.ok) ? (
+          {!token || isError || (data && !data.ok) ? (
             <>
               <h1 className="text-xl font-semibold tracking-tight">{c.badLink}</h1>
               <p className="mt-2 text-sm text-muted-foreground">{c.badLinkHint}</p>
