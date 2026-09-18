@@ -935,6 +935,7 @@ export const es: Dictionary = {
   "pub.lpricing.gets_title": "Tu cartera → Quién → Por qué ahora → Qué decir → Siguiente acción",
   "pub.lpricing.gets_body": "La inteligencia de propiedades, la detección de oportunidades y el contexto de contacto se unen en una sola vista de trabajo. La información privada del propietario sigue sujeta a las reglas de acceso existentes de SuCasa.",
   "pub.lpricing.final_title": "¿No estás listo para elegir un plan? Comienza con 100.",
+  "pub.lpricing.final_cta": "Ejecutar Discovery gratis",
   "pub.lpricing.mlo.desc": "Para un oficial de préstamos que está comenzando",
   "pub.lpricing.mlo_growth.desc": "Para una cartera en crecimiento y una pequeña red de agentes",
   "pub.lpricing.branch.desc": "Para un equipo de sucursal con una red activa de referidos",
