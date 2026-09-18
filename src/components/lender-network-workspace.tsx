@@ -5,15 +5,12 @@ import { toast } from "sonner";
 import { LenderIntroductionsPanel } from "@/components/lender-introductions-panel";
 import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
 import { LenderCampaignProposalsPanel } from "@/components/lender-campaign-proposals-panel";
+import { getLenderNetwork, inviteAgent, listMyOrgs } from "@/lib/network.functions";
 import {
-  getLenderNetwork,
-  inviteAgent,
-  listMyOrgs,
-  listNetworkOpportunities,
-  requestIntroduction,
-} from "@/lib/network.functions";
-import { categoryLabel, strengthLabel } from "@/lib/opportunities";
-import { ChevronRight, Gift, Handshake, Lock, Mail, MapPin, Users } from "lucide-react";
+  lenderAggregateOpportunities,
+  requestCategoryIntroduction,
+} from "@/lib/introductions.functions";
+import { ChevronRight, Gift, Handshake, Lock, Mail, Users } from "lucide-react";
 
 /**
  * The full agent-network workspace (agents, introductions, co-branded campaigns,
