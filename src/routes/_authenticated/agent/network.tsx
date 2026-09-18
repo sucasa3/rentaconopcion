@@ -225,83 +225,182 @@ function StatusPill({ status }: { status: string }) {
 
 // --- Introductions ---------------------------------------------------------
 
+/**
+ * The agent's private decision surface.
+ *
+ * A lender asks about a category, never about a person. Choosing a client here
+ * asks THAT CLIENT whether they want the conversation; it discloses nothing to
+ * the lender. Declining costs nothing and offering earns nothing — SuCasa pays
+ * no credit, capacity, discount or reward for introductions, in either
+ * direction.
+ */
 function Introductions({ orgId, rows }: { orgId: string; rows: any[] }) {
-  const respondFn = useServerFn(respondToIntroduction);
+  const respondFn = useServerFn(agentRespondToIntroduction);
+  const candidatesFn = useServerFn(introductionCandidates);
   const qc = useQueryClient();
   const [note, setNote] = useState<Record<string, string>>({});
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [choice, setChoice] = useState<Record<string, string>>({});
+
+  const { data: candidateData, isFetching: loadingCandidates } = useQuery({
+    queryKey: ["introduction-candidates", openId],
+    queryFn: () => candidatesFn({ data: { introductionId: openId! } }),
+    enabled: !!openId,
+  });
 
   const respond = useMutation({
-    mutationFn: (v: { requestId: string; approve: boolean }) =>
+    mutationFn: (v: { id: string; action: "offer" | "not_now" | "decline" }) =>
       respondFn({
-        data: { requestId: v.requestId, approve: v.approve, responseNote: note[v.requestId] || undefined },
+        data: {
+          introductionId: v.id,
+          action: v.action,
+          portfolioClientId: v.action === "offer" ? choice[v.id] : undefined,
+          note: note[v.id] || undefined,
+        },
       }),
     onSuccess: (r: any) => {
-      toast.success(
-        r.status === "approved"
-          ? "Approved — the lender can now see this client's contact details"
-          : "Declined — nothing was shared",
-      );
+      if (r.state === "agent_offered") {
+        toast.success(
+          r.emailed
+            ? "Sent to your client. Nothing is shared with the lender unless they accept."
+            : "Offer recorded. Your client could not be emailed — check their email on file.",
+        );
+      } else if (r.state === "agent_declined") {
+        toast.success("Declined. Nothing was shared, and nothing changes for your account.");
+      } else {
+        toast.success("Left for later. Nothing was shared.");
+      }
+      setOpenId(null);
       qc.invalidateQueries({ queryKey: ["agent-introductions", orgId] });
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const pending = rows.filter((r) => r.status === "pending");
-  const answered = rows.filter((r) => r.status !== "pending");
+  const pending = rows.filter((r) => r.can_respond);
+  const answered = rows.filter((r) => !r.can_respond);
 
   if (!rows.length) {
     return (
       <Empty
         icon={Handshake}
         title="No introduction requests yet"
-        hint="When a connected lender spots an opportunity in your book, the request lands here for your approval."
+        hint="SuCasa can identify when clients in your book may benefit from a financing conversation. Connected lenders see only anonymous opportunity counts. If a lender requests a connection, you decide whether to offer the introduction to your client. Their information isn't shared unless they accept."
       />
     );
   }
+
+  const candidates = (candidateData?.candidates ?? []) as any[];
 
   return (
     <div className="space-y-3">
       {pending.map((r) => (
         <Card key={r.id}>
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold">{r.client_name ?? "Your client"}</p>
-            <StatusPill status={r.status} />
-            {r.category && (
-              <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
-                {categoryLabel(r.category)}
-              </span>
-            )}
+            <p className="text-sm font-semibold">{r.lender_org_name}</p>
+            <span className="rounded-full border border-status-attention/30 bg-status-attention/10 px-2 py-0.5 text-[11px] font-medium text-status-attention">
+              Needs your decision
+            </span>
+            <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+              {r.category_label}
+            </span>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {r.lender_org_name} asked for an introduction ·{" "}
-            {new Date(r.created_at).toLocaleDateString()}
+            Available for a {String(r.category_label).toLowerCase()} conversation ·{" "}
+            {new Date(r.requested_at).toLocaleDateString()}
           </p>
           {r.message && <p className="mt-2 text-sm">{r.message}</p>}
+          <p className="mt-2 text-xs text-muted-foreground">
+            The lender has not been shown any of your clients. If you offer the introduction, SuCasa
+            asks that client whether they want the conversation.
+          </p>
 
-          <textarea
-            value={note[r.id] ?? ""}
-            onChange={(e) => setNote({ ...note, [r.id]: e.target.value })}
-            placeholder="Optional note back to the lender"
-            rows={2}
-            className="mt-3 w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm"
-          />
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={() => respond.mutate({ requestId: r.id, approve: true })}
-              disabled={respond.isPending}
-              className="inline-flex items-center gap-1 rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
-            >
-              <Check className="h-3 w-3" /> Approve introduction
-            </button>
-            <button
-              onClick={() => respond.mutate({ requestId: r.id, approve: false })}
-              disabled={respond.isPending}
-              className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-muted disabled:opacity-60"
-            >
-              <X className="h-3 w-3" /> Decline
-            </button>
-          </div>
+          {openId !== r.id ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                onClick={() => setOpenId(r.id)}
+                className="inline-flex items-center gap-1 rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white"
+              >
+                <Check className="h-3 w-3" /> Offer an introduction
+              </button>
+              <button
+                onClick={() => respond.mutate({ id: r.id, action: "not_now" })}
+                disabled={respond.isPending}
+                className="rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-muted disabled:opacity-60"
+              >
+                Not now
+              </button>
+              <button
+                onClick={() => respond.mutate({ id: r.id, action: "decline" })}
+                disabled={respond.isPending}
+                className="inline-flex items-center gap-1 rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-muted disabled:opacity-60"
+              >
+                <X className="h-3 w-3" /> Decline request
+              </button>
+            </div>
+          ) : (
+            <div className="mt-3 space-y-3 rounded-2xl border border-border bg-muted/30 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Choose one of your clients — only they will be asked
+              </p>
+              {loadingCandidates && (
+                <p className="text-sm text-muted-foreground">Looking at your book…</p>
+              )}
+              {!loadingCandidates && candidates.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No client in your book matches this type of conversation right now.
+                </p>
+              )}
+              <div className="space-y-2">
+                {candidates.map((c) => (
+                  <label
+                    key={c.portfolio_client_id}
+                    className="flex cursor-pointer items-start gap-2 rounded-xl border border-border bg-background p-3 text-sm"
+                  >
+                    <input
+                      type="radio"
+                      name={`cand-${r.id}`}
+                      className="mt-1"
+                      checked={choice[r.id] === c.portfolio_client_id}
+                      onChange={() => setChoice({ ...choice, [r.id]: c.portfolio_client_id })}
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium">{c.client_name ?? "Client"}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {c.reason}
+                        {!c.has_email && " · no email on file"}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <textarea
+                value={note[r.id] ?? ""}
+                onChange={(e) => setNote({ ...note, [r.id]: e.target.value })}
+                placeholder="Optional private note for your own records"
+                rows={2}
+                className="w-full rounded-2xl border border-border bg-background px-3 py-2 text-sm"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => respond.mutate({ id: r.id, action: "offer" })}
+                  disabled={respond.isPending || !choice[r.id]}
+                  className="rounded-full gradient-brand px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                >
+                  Ask this client
+                </button>
+                <button
+                  onClick={() => setOpenId(null)}
+                  className="rounded-full border border-border px-4 py-2 text-xs font-medium hover:bg-muted"
+                >
+                  Cancel
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Your client decides. If they say no, ignore it, or change their mind later, the
+                lender never receives their information.
+              </p>
+            </div>
+          )}
         </Card>
       ))}
 
@@ -316,23 +415,19 @@ function Introductions({ orgId, rows }: { orgId: string; rows: any[] }) {
               className="rounded-2xl border border-border p-4 text-sm sm:flex sm:items-center sm:justify-between sm:gap-3"
             >
               <div className="min-w-0">
-                <p className="font-medium">{r.client_name ?? "Your client"}</p>
+                <p className="font-medium">{r.client_name ?? r.lender_org_name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {r.lender_org_name}
-                  {r.category ? ` · ${categoryLabel(r.category)}` : ""}
+                  {r.lender_org_name} · {r.category_label}
                   {r.responded_at ? ` · ${new Date(r.responded_at).toLocaleDateString()}` : ""}
+                  {r.authorized_channels?.length
+                    ? ` · authorized: ${r.authorized_channels.join(", ")}`
+                    : ""}
                 </p>
-                {r.outcome_note && (
-                  <p className="mt-1 text-xs text-muted-foreground">{r.outcome_note}</p>
-                )}
               </div>
               <div className="mt-2 flex items-center gap-2 sm:mt-0">
-                {r.outcome && (
-                  <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
-                    {r.outcome}
-                  </span>
-                )}
-                <StatusPill status={r.status} />
+                <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {AGENT_STATE_LABEL[r.state as IntroductionState] ?? r.state}
+                </span>
               </div>
             </div>
           ))}
