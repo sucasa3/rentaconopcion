@@ -6,6 +6,7 @@ import { LenderIntroductionsPanel } from "@/components/lender-introductions-pane
 import { LenderSponsorshipsPanel } from "@/components/lender-sponsorships-panel";
 import { LenderCampaignProposalsPanel } from "@/components/lender-campaign-proposals-panel";
 import { getLenderNetwork, inviteAgent, listMyOrgs } from "@/lib/network.functions";
+import { lenderCategoryLabel } from "@/lib/introductions";
 import {
   lenderAggregateOpportunities,
   requestCategoryIntroduction,
@@ -212,7 +213,7 @@ function AgentCard({
                   key={k}
                   className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground"
                 >
-                  {categoryLabel(k)} · {v}
+                  {lenderCategoryLabel(k)} · {v}
                 </span>
               ))}
             </div>

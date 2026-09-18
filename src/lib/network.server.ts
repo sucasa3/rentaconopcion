@@ -17,6 +17,7 @@
  * every call.
  */
 
+import { ANONYMITY_THRESHOLD, lenderCategoryFor } from "./introductions";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { CATEGORY_META, equityBand, ltvBand, tenureBand } from "./opportunities";
 
