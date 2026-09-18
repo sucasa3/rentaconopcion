@@ -154,7 +154,7 @@ function AgentNetwork() {
               </nav>
 
               {tab === "people" && <MyPeople orgId={activeOrgId} />}
-              {tab === "intros" && <Introductions orgId={activeOrgId} rows={intros?.requests ?? []} />}
+              {tab === "intros" && <Introductions orgId={activeOrgId} rows={introRows} />}
               {tab === "campaigns" && <CampaignApprovals orgId={activeOrgId} />}
               {tab === "connections" && <Connections agentOrgId={activeOrgId} />}
               {tab === "sponsorships" && <Sponsorships orgId={activeOrgId} />}
