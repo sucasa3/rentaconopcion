@@ -25,7 +25,7 @@ async function lookupLanguage(email: string | undefined): Promise<AuthLang> {
     const { data } = await supabaseAdmin
       .from('profiles')
       .select('language')
-      .eq('email', email.toLowerCase())
+      .ilike('email', email)
       .maybeSingle()
     return data?.language === 'es' ? 'es' : 'en'
   } catch {
