@@ -114,48 +114,32 @@ export async function buildBusinessTasks(
   }
 
   // --- 2 & 4. Introductions ------------------------------------------------
+  // Only the AGENT side gets an introduction task. A lender request names no
+  // homeowner at all, and a lender must never be handed a client name here.
   const { data: intros } = await supabase
-    .from("introduction_requests")
-    .select(
-      "id, status, outcome, category, message, agent_org_id, lender_org_id, portfolio_client_id, created_at",
-    )
-    .or(`agent_org_id.in.(${orgIds.join(",")}),lender_org_id.in.(${orgIds.join(",")})`)
+    .from("introductions")
+    .select("id, state, category, message, agent_org_id, portfolio_client_id, created_at")
+    .in("agent_org_id", orgIds)
+    .eq("state", "lender_requested")
     .limit(100);
 
   for (const r of intros ?? []) {
-    const mineAsAgent = orgIds.includes(r.agent_org_id);
-    const c: any = clientById.get(r.portfolio_client_id);
-    if (r.status === "pending" && mineAsAgent) {
-      tasks.push({
-        key: `intro:${r.id}`,
-        orgId: r.agent_org_id,
-        title: "Respond to an introduction request",
-        who: c?.client_name ?? "A homeowner in your book",
-        why: r.message?.trim() || "A partner asked to be introduced to this homeowner.",
-        urgency: "now",
-        actionLabel: "Open request",
-        to: `${base}/network`,
-        params: null,
-        search: null,
-        done: false,
-        completedAt: null,
-      });
-    } else if (r.status === "approved" && !r.outcome) {
-      tasks.push({
-        key: `intro-followup:${r.id}`,
-        orgId: mineAsAgent ? r.agent_org_id : r.lender_org_id,
-        title: "Log the outcome of an introduction",
-        who: c?.client_name ?? "Homeowner",
-        why: "This introduction was accepted but no outcome has been recorded yet.",
-        urgency: "later",
-        actionLabel: "Open network",
-        to: `${base}/network`,
-        params: null,
-        search: null,
-        done: false,
-        completedAt: null,
-      });
-    }
+    tasks.push({
+      key: `intro:${r.id}`,
+      orgId: r.agent_org_id,
+      title: "Decide on an introduction request",
+      who: "A connected lender",
+      why:
+        r.message?.trim() ||
+        "A lender is available if one of your clients would like a financing conversation. You decide whether to offer it.",
+      urgency: "now",
+      actionLabel: "Open request",
+      to: `${base}/network`,
+      params: null,
+      search: null,
+      done: false,
+      completedAt: null,
+    });
   }
 
   // --- 3. Campaign approvals waiting on this org ---------------------------

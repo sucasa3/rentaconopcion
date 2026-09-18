@@ -111,7 +111,12 @@ export function emailMatchesInvite(
  */
 export const INVITE_TOKEN_VERSION = 1;
 
-export type InvitationContext = "agent_invites_professional";
+export type InvitationContext = "agent_invites_professional" | "homeowner_introduction";
+
+const SUPPORTED_CONTEXTS = new Set<string>([
+  "agent_invites_professional",
+  "homeowner_introduction",
+]);
 
 export interface TypedInviteClaims {
   invitationId: string;
@@ -119,12 +124,22 @@ export interface TypedInviteClaims {
   email: string;
   expiresAt: number;
   version: number;
+  /** Single-use nonce, when the issuing flow binds one. */
+  nonce?: string;
 }
 
 const TYPED_TTL_MS = 21 * 24 * 60 * 60 * 1000;
 
 export function signTypedInviteToken(
-  input: { invitationId: string; context: InvitationContext; email: string },
+  input: {
+    invitationId: string;
+    context: InvitationContext;
+    email: string;
+    /** Bind a stored nonce so the link can be invalidated after a single use. */
+    nonce?: string;
+    /** Override the default expiry window, in milliseconds. */
+    ttlMs?: number;
+  },
   now = Date.now(),
 ): string {
   const payload = JSON.stringify({
@@ -132,7 +147,8 @@ export function signTypedInviteToken(
     i: input.invitationId,
     k: input.context,
     e: input.email.trim().toLowerCase(),
-    x: now + TYPED_TTL_MS,
+    n: input.nonce ?? undefined,
+    x: now + (input.ttlMs ?? TYPED_TTL_MS),
   });
   const body = b64url(payload);
   return `${body}.${sign(body)}`;
@@ -161,7 +177,7 @@ export function verifyTypedInviteToken(
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return { ok: false, reason: "invalid" };
 
-  let parsed: { v?: number; i?: string; k?: string; e?: string; x?: number };
+  let parsed: { v?: number; i?: string; k?: string; e?: string; n?: string; x?: number };
   try {
     parsed = JSON.parse(fromB64url(body));
   } catch {
@@ -169,17 +185,18 @@ export function verifyTypedInviteToken(
   }
   if (!parsed.i || !parsed.k || !parsed.e || !parsed.x) return { ok: false, reason: "malformed" };
   if (parsed.v !== INVITE_TOKEN_VERSION) return { ok: false, reason: "unsupported_version" };
-  if (parsed.k !== "agent_invites_professional") return { ok: false, reason: "invalid" };
+  if (!SUPPORTED_CONTEXTS.has(parsed.k)) return { ok: false, reason: "invalid" };
   if (now > parsed.x) return { ok: false, reason: "expired" };
 
   return {
     ok: true,
     claims: {
       invitationId: parsed.i,
-      context: parsed.k,
+      context: parsed.k as InvitationContext,
       email: parsed.e,
       expiresAt: parsed.x,
       version: parsed.v,
+      ...(parsed.n ? { nonce: parsed.n } : {}),
     },
   };
 }

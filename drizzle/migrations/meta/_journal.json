@@ -15,6 +15,13 @@
       "when": 1789691033120,
       "tag": "0001_outreach_channel_permissions_require_consent",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789702031609,
+      "tag": "0002_introductions_lifecycle",
+      "breakpoints": true
     }
   ]
 }
