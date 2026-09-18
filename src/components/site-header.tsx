@@ -6,7 +6,7 @@ import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { IDX_BASE_URL } from "@/lib/site-urls";
-import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 export function SiteHeader() {
