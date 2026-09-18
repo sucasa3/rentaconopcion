@@ -10,12 +10,16 @@ import {
   getAgentNetwork,
   getSponsorships,
   listCampaignApprovals,
-  listIntroductions,
   listMyOrgs,
   respondToCampaignAudience,
   respondToConnectionInvite,
-  respondToIntroduction,
 } from "@/lib/network.functions";
+import {
+  agentRespondToIntroduction,
+  introductionCandidates,
+  listAgentIntroductions,
+} from "@/lib/introductions.functions";
+import { AGENT_STATE_LABEL, type IntroductionState } from "@/lib/introductions";
 import {
   addProfessionalToNetwork,
   listMyProfessionalNetwork,
@@ -63,14 +67,15 @@ function AgentNetwork() {
   const [orgId, setOrgId] = useState("");
   const activeOrgId = orgId || agentOrgs[0]?.id || "";
 
-  const introsFn = useServerFn(listIntroductions);
+  const introsFn = useServerFn(listAgentIntroductions);
   const { data: intros } = useQuery({
     queryKey: ["agent-introductions", activeOrgId],
-    queryFn: () => introsFn({ data: { orgId: activeOrgId } }),
+    queryFn: () => introsFn({ data: { agentOrgId: activeOrgId } }),
     enabled: !!activeOrgId,
   });
 
-  const pending = (intros?.requests ?? []).filter((r: any) => r.status === "pending");
+  const introRows = (intros?.rows ?? []) as any[];
+  const pending = introRows.filter((r: any) => r.can_respond);
   const [tab, setTab] = useState<Tab>("people");
 
   return (
