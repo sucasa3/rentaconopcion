@@ -106,7 +106,7 @@ function LenderStartPage() {
   return (
     <div className="min-h-screen bg-surface">
       <SiteHeader />
-      <main className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(380px,0.65fr)] lg:items-start lg:py-16">
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(380px,0.65fr)] lg:items-start lg:py-16">
         <section className="pt-2 lg:pt-6">
           <p className="text-sm font-semibold text-status-opportunity">{t("pub.lstart.eyebrow")}</p>
           <h1 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
