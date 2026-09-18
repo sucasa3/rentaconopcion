@@ -158,7 +158,20 @@ export async function lenderNetworkSummary(
   }
 
   const agents: AgentNetworkSummary[] = rows.map((c: any) => {
-    const byCategory = (c.agent_org_id && oppCounts.get(c.agent_org_id)) || {};
+    const rawByCategory = (c.agent_org_id && oppCounts.get(c.agent_org_id)) || {};
+    // Narrow internal categories are collapsed into broad lender-facing ones and
+    // small groups are withheld, so a lender cannot narrow a population down to
+    // an individual by combining category views.
+    const broad: Record<string, number> = {};
+    for (const [key, n] of Object.entries(rawByCategory)) {
+      const lenderKey = lenderCategoryFor(key);
+      if (!lenderKey) continue;
+      broad[lenderKey] = (broad[lenderKey] ?? 0) + (n as number);
+    }
+    const byCategory: Record<string, number> = {};
+    for (const [key, n] of Object.entries(broad)) {
+      if (n >= ANONYMITY_THRESHOLD) byCategory[key] = n;
+    }
     return {
       connection_id: c.id,
       agent_org_id: c.agent_org_id ?? null,
@@ -167,7 +180,7 @@ export async function lenderNetworkSummary(
       invited_email: c.invited_email ?? null,
       invited_name: c.invited_name ?? null,
       homeowner_count: (c.agent_org_id && homeownerCounts.get(c.agent_org_id)) || 0,
-      opportunity_count: Object.values(byCategory).reduce((a: number, b: any) => a + b, 0),
+      opportunity_count: Object.values(broad).reduce((a: number, b: number) => a + b, 0),
       by_category: byCategory,
       created_at: c.created_at,
     };
