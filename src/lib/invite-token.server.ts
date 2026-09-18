@@ -111,7 +111,12 @@ export function emailMatchesInvite(
  */
 export const INVITE_TOKEN_VERSION = 1;
 
-export type InvitationContext = "agent_invites_professional";
+export type InvitationContext = "agent_invites_professional" | "homeowner_introduction";
+
+const SUPPORTED_CONTEXTS = new Set<string>([
+  "agent_invites_professional",
+  "homeowner_introduction",
+]);
 
 export interface TypedInviteClaims {
   invitationId: string;
@@ -119,12 +124,22 @@ export interface TypedInviteClaims {
   email: string;
   expiresAt: number;
   version: number;
+  /** Single-use nonce, when the issuing flow binds one. */
+  nonce?: string;
 }
 
 const TYPED_TTL_MS = 21 * 24 * 60 * 60 * 1000;
 
 export function signTypedInviteToken(
-  input: { invitationId: string; context: InvitationContext; email: string },
+  input: {
+    invitationId: string;
+    context: InvitationContext;
+    email: string;
+    /** Bind a stored nonce so the link can be invalidated after a single use. */
+    nonce?: string;
+    /** Override the default expiry window, in milliseconds. */
+    ttlMs?: number;
+  },
   now = Date.now(),
 ): string {
   const payload = JSON.stringify({
@@ -132,7 +147,8 @@ export function signTypedInviteToken(
     i: input.invitationId,
     k: input.context,
     e: input.email.trim().toLowerCase(),
-    x: now + TYPED_TTL_MS,
+    n: input.nonce ?? undefined,
+    x: now + (input.ttlMs ?? TYPED_TTL_MS),
   });
   const body = b64url(payload);
   return `${body}.${sign(body)}`;
