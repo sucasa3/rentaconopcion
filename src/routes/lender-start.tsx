@@ -117,8 +117,9 @@ function LenderStartPage() {
           </p>
           <ul className="mt-7 space-y-3 text-sm text-foreground">
             {[t("pub.lstart.b1"), t("pub.lstart.b2"), t("pub.lstart.b3"), t("pub.lstart.b4")].map((item) => (
-              <li key={item} className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-status-positive" /> {item}
+              <li key={item} className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-status-positive" />
+                <span className="min-w-0 break-words">{item}</span>
               </li>
             ))}
           </ul>
