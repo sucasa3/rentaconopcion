@@ -15,6 +15,24 @@ const ROOT_DOMAIN = "sucasa.com"
 const FROM_DOMAIN = "notify.sucasa.com"
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
+// The visitor's language choice made before signup is stored on their profile;
+// auth emails render in that language. English is the fallback with no signal.
+type AuthLang = 'en' | 'es'
+async function lookupLanguage(email: string | undefined): Promise<AuthLang> {
+  if (!email) return 'en'
+  try {
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+    const { data } = await supabaseAdmin
+      .from('profiles')
+      .select('language')
+      .eq('email', email.toLowerCase())
+      .maybeSingle()
+    return data?.language === 'es' ? 'es' : 'en'
+  } catch {
+    return 'en'
+  }
+}
+
 // The SDK handler owns verification, dispatch, and retry semantics; this file
 // owns only the email decisions: subjects, templates, and per-type props.
 export const Route = createFileRoute("/lovable/email/auth/webhook")({
@@ -29,13 +47,16 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
           emails: {
             signup: {
               subject: 'Confirm your email',
-              render: (data) =>
-                React.createElement(SignupEmail, {
+              render: async (data) => {
+                const language = await lookupLanguage(data.email)
+                return React.createElement(SignupEmail, {
                   siteName: SITE_NAME,
                   siteUrl: SITE_URL,
                   recipient: data.email,
                   confirmationUrl: data.url,
-                }),
+                  language,
+                })
+              },
             },
             invite: {
               subject: "You've been invited",
@@ -48,30 +69,39 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
             },
             magiclink: {
               subject: 'Your login link',
-              render: (data) =>
-                React.createElement(MagicLinkEmail, {
+              render: async (data) => {
+                const language = await lookupLanguage(data.email)
+                return React.createElement(MagicLinkEmail, {
                   siteName: SITE_NAME,
                   confirmationUrl: data.url,
-                }),
+                  language,
+                })
+              },
             },
             recovery: {
               subject: 'Reset your password',
-              render: (data) =>
-                React.createElement(RecoveryEmail, {
+              render: async (data) => {
+                const language = await lookupLanguage(data.email)
+                return React.createElement(RecoveryEmail, {
                   siteName: SITE_NAME,
                   confirmationUrl: data.url,
-                }),
+                  language,
+                })
+              },
             },
             email_change: {
               subject: 'Confirm your new email',
-              render: (data) =>
-                React.createElement(EmailChangeEmail, {
+              render: async (data) => {
+                const language = await lookupLanguage(data.email)
+                return React.createElement(EmailChangeEmail, {
                   siteName: SITE_NAME,
                   oldEmail: data.old_email ?? '',
                   email: data.email,
                   newEmail: data.new_email ?? '',
                   confirmationUrl: data.url,
-                }),
+                  language,
+                })
+              },
             },
             reauthentication: {
               subject: 'Your verification code',
