@@ -1,7 +1,7 @@
 import { ArrowRight, Check, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 
 export type PreviewKind = "agent" | "lender";
 
@@ -63,7 +63,7 @@ export function ProfessionalPreview({ kind }: { kind: PreviewKind }) {
 
 export function FourAnswers({ audience }: { audience: PreviewKind }) {
   const { t } = useLanguage();
-  const items: [string, string][] = (
+  const keyPairs: [TranslationKey, TranslationKey][] =
     audience === "agent"
       ? [
           ["pub.four.agent1_title", "pub.four.agent1_desc"],
@@ -76,8 +76,8 @@ export function FourAnswers({ audience }: { audience: PreviewKind }) {
           ["pub.four.lender2_title", "pub.four.lender2_desc"],
           ["pub.four.lender3_title", "pub.four.lender3_desc"],
           ["pub.four.lender4_title", "pub.four.lender4_desc"],
-        ]
-  ).map(([titleKey, descKey]) => [t(titleKey), t(descKey)]);
+        ];
+  const items: [string, string][] = keyPairs.map(([titleKey, descKey]) => [t(titleKey), t(descKey)]);
   return (
     <section className="border-y border-border bg-background py-12 sm:py-16">
       <div className="mx-auto max-w-6xl px-5">
