@@ -5,6 +5,7 @@ import { template as professionalInviteTemplate } from './professional-invite'
 import { template as lenderPilotRequestTemplate } from './lender-pilot-request'
 import { template as dailyReadAgentTemplate } from './daily-read-agent'
 import { template as dailyReadLenderTemplate } from './daily-read-lender'
+import { template as introductionInviteTemplate } from './introduction-invite'
 
 
 
@@ -33,6 +34,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'lender-pilot-request': lenderPilotRequestTemplate,
   'daily-read-agent': dailyReadAgentTemplate,
   'daily-read-lender': dailyReadLenderTemplate,
+  'introduction-invite': introductionInviteTemplate,
 }
 
 

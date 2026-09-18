@@ -58,7 +58,7 @@ export function IntroductionInviteEmail({
           See the request
         </Button>
         <Text style={mutedText}>
-          Or open this link: <span style={{ color: brandColors.primary }}>{acceptUrl}</span>
+          Or open this link: <span style={{ color: brandColors.NAVY }}>{acceptUrl}</span>
         </Text>
         <Hr style={hairlineRule} />
         <Text style={mutedText}>
