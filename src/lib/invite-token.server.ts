@@ -177,7 +177,7 @@ export function verifyTypedInviteToken(
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return { ok: false, reason: "invalid" };
 
-  let parsed: { v?: number; i?: string; k?: string; e?: string; x?: number };
+  let parsed: { v?: number; i?: string; k?: string; e?: string; n?: string; x?: number };
   try {
     parsed = JSON.parse(fromB64url(body));
   } catch {
@@ -185,17 +185,18 @@ export function verifyTypedInviteToken(
   }
   if (!parsed.i || !parsed.k || !parsed.e || !parsed.x) return { ok: false, reason: "malformed" };
   if (parsed.v !== INVITE_TOKEN_VERSION) return { ok: false, reason: "unsupported_version" };
-  if (parsed.k !== "agent_invites_professional") return { ok: false, reason: "invalid" };
+  if (!SUPPORTED_CONTEXTS.has(parsed.k)) return { ok: false, reason: "invalid" };
   if (now > parsed.x) return { ok: false, reason: "expired" };
 
   return {
     ok: true,
     claims: {
       invitationId: parsed.i,
-      context: parsed.k,
+      context: parsed.k as InvitationContext,
       email: parsed.e,
       expiresAt: parsed.x,
       version: parsed.v,
+      ...(parsed.n ? { nonce: parsed.n } : {}),
     },
   };
 }
