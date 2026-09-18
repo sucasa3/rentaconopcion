@@ -147,7 +147,7 @@ export async function listIntroductionsForLender(
   supabase: any,
   lenderOrgId: string,
 ): Promise<LenderIntroductionRow[]> {
-  await assertMember(supabase, lenderOrgId ? lenderOrgId : "", await callerId(supabase));
+  await assertMember(supabase, await callerId(supabase), lenderOrgId);
   const { data, error } = await supabaseAdmin
     .from("introductions")
     .select("id, agent_org_id, category, state, lender_requested_at, homeowner_responded_at")
@@ -348,10 +348,10 @@ export async function respondToIntroductionAsAgent(
   if (!client) throw new Error("Client not found");
   const { data: portfolio } = await supabaseAdmin
     .from("lender_portfolios")
-    .select("id, org_id")
+    .select("id, lender_org_id")
     .eq("id", client.portfolio_id)
     .maybeSingle();
-  if (!portfolio || portfolio.org_id !== intro.agent_org_id) {
+  if (!portfolio || portfolio.lender_org_id !== intro.agent_org_id) {
     throw new Error("That client is not in your book");
   }
   if (!client.client_email && !client.homeowner_id) {
@@ -698,11 +698,7 @@ export async function acceptedIntroductionForLender(
   }
   const channels = authorizedChannels(grants);
 
-  const { data: client } = await supabaseAdmin
-    .from("lender_portfolio_clients")
-    .select("client_name, client_email, client_phone")
-    .eq("id", intro.portfolio_client_id)
-    .maybeSingle();
+  const client = await clientContact(intro.portfolio_client_id);
 
   await recordConsentEvent(intro.id, "lender_viewed_contact", {
     lender_org_id: intro.lender_org_id,
