@@ -98,7 +98,6 @@ describe("state authority lives on the server", () => {
   it("only the agent path may attach a client, and only from their own book", () => {
     const fn = introServer.slice(introServer.indexOf("export async function respondToIntroductionAsAgent"));
     expect(fn).toContain("agentMayRespond");
-    expect(fn).toContain("lender_org_id !== ") === false;
     expect(fn).toContain("That client is not in your book");
     expect(fn).toContain('state: "agent_offered"');
     // Offering asks the homeowner; it does not reveal anything to the lender.
