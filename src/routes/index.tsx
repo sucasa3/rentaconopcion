@@ -3,6 +3,7 @@ import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { SERVICE_CATEGORIES } from "@/lib/mock-data";
 import { HomeHero } from "@/components/home-hero/HomeHero";
 import { HOME_HERO } from "@/lib/home-hero-data";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { ArrowRight, ShieldCheck, TrendingUp, Sparkles, CheckCircle2, Star, FileText, Wallet, Bell } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -16,6 +17,17 @@ export const Route = createFileRoute("/")({
   }),
   component: Home,
 });
+
+/** Maps a service-category slug to its translation-key prefix (dashes → underscores). */
+function svcKey(slug: string, field: "name" | "desc"): TranslationKey {
+  return `pub.svc.${slug.replace(/-/g, "_")}.${field}` as TranslationKey;
+}
+
+/** "2h avg response" → translated label keeping the time value. */
+function responseLabel(t: (k: TranslationKey, v?: Record<string, string | number>) => string, raw: string) {
+  const time = raw.replace(/\s*avg response\s*$/i, "");
+  return t("pub.svc.avg_response", { time });
+}
 
 function Home() {
   return (
@@ -37,31 +49,32 @@ function Home() {
 }
 
 function Hero() {
+  const { t } = useLanguage();
   return (
     <section className="gradient-hero relative overflow-hidden">
       <div className="mx-auto max-w-6xl px-5 pb-20 pt-16 sm:pt-24 md:pb-28">
         <div className="mx-auto max-w-3xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-growth" /> Your home, organized and protected
+            <Sparkles className="h-3.5 w-3.5 text-growth" /> {t("pub.home.badge")}
           </span>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight text-foreground sm:text-6xl">
-            Own Your Home With <span className="bg-gradient-to-r from-primary to-growth bg-clip-text text-transparent">Confidence.</span>
+            {t("pub.home.h1_a")} <span className="bg-gradient-to-r from-primary to-growth bg-clip-text text-transparent">{t("pub.home.h1_b")}</span>
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Manage your home, track its value, stay organized, and connect with trusted professionals—all in one place.
+            {t("pub.home.sub")}
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link to="/onboarding" className="inline-flex w-full items-center justify-center gap-2 rounded-full gradient-brand px-6 py-3.5 text-sm font-semibold text-white shadow-elevated sm:w-auto">
-              Create Free Home Profile <ArrowRight className="h-4 w-4" />
+              {t("pub.home.cta_primary")} <ArrowRight className="h-4 w-4" />
             </Link>
             <Link to="/services" className="inline-flex w-full items-center justify-center rounded-full border border-border bg-background/80 px-6 py-3.5 text-sm font-semibold text-foreground backdrop-blur sm:w-auto">
-              Find a Trusted Professional
+              {t("pub.home.cta_secondary")}
             </Link>
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> Vetted pros</span>
-            <span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-growth" /> Value tracking</span>
-            <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-primary" /> 4.9 avg rating</span>
+            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> {t("pub.home.trust_vetted")}</span>
+            <span className="inline-flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 text-growth" /> {t("pub.home.trust_value")}</span>
+            <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 text-primary" /> {t("pub.home.trust_rating")}</span>
           </div>
         </div>
 
@@ -74,17 +87,18 @@ function Hero() {
 }
 
 function HowItWorks() {
+  const { t } = useLanguage();
   const steps = [
-    { n: "01", title: "Create your Home Profile", desc: "Add your address and goals in under 2 minutes.", icon: FileText, tone: "growth" as const },
-    { n: "02", title: "Get matched with trusted pros", desc: "We route you to vetted, local professionals.", icon: ShieldCheck, tone: "primary" as const },
-    { n: "03", title: "Manage and grow your home", desc: "Track value, tasks, documents and requests.", icon: TrendingUp, tone: "growth" as const },
+    { n: "01", title: t("pub.home.how.s1_title"), desc: t("pub.home.how.s1_desc"), icon: FileText, tone: "growth" as const },
+    { n: "02", title: t("pub.home.how.s2_title"), desc: t("pub.home.how.s2_desc"), icon: ShieldCheck, tone: "primary" as const },
+    { n: "03", title: t("pub.home.how.s3_title"), desc: t("pub.home.how.s3_desc"), icon: TrendingUp, tone: "growth" as const },
   ];
   return (
     <section className="px-5 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold uppercase tracking-widest text-growth">How it works</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-growth">{t("pub.home.how.eyebrow")}</p>
         <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-          A calmer way <span className="text-muted-foreground">to own a home</span>
+          {t("pub.home.how.title_a")} <span className="text-muted-foreground">{t("pub.home.how.title_b")}</span>
         </h2>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -122,18 +136,19 @@ function HowItWorks() {
 }
 
 function Benefits() {
+  const { t } = useLanguage();
   const items = [
-    { icon: Wallet, title: "Save money", desc: "Track spend, warranties, and get member pricing.", tone: "growth" as const },
-    { icon: ShieldCheck, title: "Protect your investment", desc: "Stay on top of maintenance before it costs you.", tone: "primary" as const },
-    { icon: TrendingUp, title: "Grow home value", desc: "Improvement suggestions with ROI estimates.", tone: "growth" as const },
-    { icon: Bell, title: "Never miss a task", desc: "Smart reminders tailored to your home.", tone: "primary" as const },
+    { icon: Wallet, title: t("pub.home.benefits.b1_title"), desc: t("pub.home.benefits.b1_desc"), tone: "growth" as const },
+    { icon: ShieldCheck, title: t("pub.home.benefits.b2_title"), desc: t("pub.home.benefits.b2_desc"), tone: "primary" as const },
+    { icon: TrendingUp, title: t("pub.home.benefits.b3_title"), desc: t("pub.home.benefits.b3_desc"), tone: "growth" as const },
+    { icon: Bell, title: t("pub.home.benefits.b4_title"), desc: t("pub.home.benefits.b4_desc"), tone: "primary" as const },
   ];
   return (
     <section className="px-5 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">For homeowners</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">{t("pub.home.benefits.eyebrow")}</p>
         <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-          Everything your home needs, <span className="text-muted-foreground">in one place</span>
+          {t("pub.home.benefits.title_a")} <span className="text-muted-foreground">{t("pub.home.benefits.title_b")}</span>
         </h2>
 
         <div className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -161,7 +176,7 @@ function Benefits() {
             to="/onboarding"
             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 text-sm font-semibold text-primary-foreground shadow-elevated transition-transform duration-200 active:scale-[0.98] sm:w-auto sm:min-w-[280px]"
           >
-            Start your journey <ArrowRight className="h-4 w-4" />
+            {t("pub.home.benefits.cta")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
@@ -171,46 +186,48 @@ function Benefits() {
 
 
 function ServicesGrid() {
+  const { t } = useLanguage();
   return (
-    <Section eyebrow="Home services" title="From HVAC to handyman, request in seconds">
+    <Section eyebrow={t("pub.home.services.eyebrow")} title={t("pub.home.services.title")}>
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {SERVICE_CATEGORIES.map(c => (
           <Link key={c.slug} to="/request" search={{ category: c.slug }} className="group rounded-2xl border border-border bg-card p-4 transition hover:shadow-elevated">
             <span className={`grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br ${c.color} text-white`}>
               <c.icon className="h-5 w-5" />
             </span>
-            <p className="mt-3 text-sm font-semibold">{c.name}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{c.avgResponse}</p>
+            <p className="mt-3 text-sm font-semibold">{t(svcKey(c.slug, "name"))}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{responseLabel(t, c.avgResponse)}</p>
           </Link>
         ))}
       </div>
       <div className="mt-8 text-center">
-        <Link to="/services" className="inline-flex items-center gap-1 text-sm font-medium text-primary">See all services <ArrowRight className="h-4 w-4" /></Link>
+        <Link to="/services" className="inline-flex items-center gap-1 text-sm font-medium text-primary">{t("pub.home.services.see_all")} <ArrowRight className="h-4 w-4" /></Link>
       </div>
     </Section>
   );
 }
 
 function ProNetwork() {
+  const { t } = useLanguage();
   return (
-    <Section eyebrow="Trusted Professional Network" title="Only vetted, local, insured pros">
+    <Section eyebrow={t("pub.home.pros.eyebrow")} title={t("pub.home.pros.title")}>
       <div className="mt-10 grid gap-6 md:grid-cols-2 md:items-center">
         <div className="rounded-3xl border border-border bg-card p-6">
           <ul className="space-y-3 text-sm">
-            {["License and insurance verified","Background checked owners","Membership held to quality standards","Real reviews from real neighbors"].map(t => (
-              <li key={t} className="flex items-start gap-3">
+            {[t("pub.home.pros.b1"), t("pub.home.pros.b2"), t("pub.home.pros.b3"), t("pub.home.pros.b4")].map(txt => (
+              <li key={txt} className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-growth" />
-                <span>{t}</span>
+                <span>{txt}</span>
               </li>
             ))}
           </ul>
         </div>
         <div className="rounded-3xl gradient-growth p-8 text-white shadow-elevated">
-          <p className="text-xs uppercase tracking-wider opacity-80">Are you a pro?</p>
-          <h3 className="mt-2 text-2xl font-semibold">Grow your business with SuCasa</h3>
-          <p className="mt-2 text-sm opacity-90">Monthly membership. Real homeowners. Fair claim system.</p>
+          <p className="text-xs uppercase tracking-wider opacity-80">{t("pub.home.pros.card_eyebrow")}</p>
+          <h3 className="mt-2 text-2xl font-semibold">{t("pub.home.pros.card_title")}</h3>
+          <p className="mt-2 text-sm opacity-90">{t("pub.home.pros.card_sub")}</p>
           <Link to="/partner" className="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-foreground">
-            Become a Founding Partner <ArrowRight className="h-4 w-4" />
+            {t("pub.home.pros.card_cta")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
@@ -219,23 +236,24 @@ function ProNetwork() {
 }
 
 function IntelligencePreview() {
+  const { t } = useLanguage();
   return (
-    <Section eyebrow="Home Intelligence" title="Your home’s personal financial picture">
+    <Section eyebrow={t("pub.home.intel.eyebrow")} title={t("pub.home.intel.title")}>
       <div className="mt-10 grid gap-4 md:grid-cols-3">
         <div className="rounded-3xl gradient-brand p-6 text-white shadow-elevated">
-          <p className="text-xs opacity-80">Estimated value</p>
+          <p className="text-xs opacity-80">{t("pub.home.intel.value")}</p>
           <p className="mt-1 text-3xl font-semibold">$482,300</p>
-          <p className="mt-1 text-xs opacity-90">Updated weekly</p>
+          <p className="mt-1 text-xs opacity-90">{t("pub.home.intel.value_sub")}</p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-6">
-          <p className="text-xs text-muted-foreground">Estimated equity</p>
+          <p className="text-xs text-muted-foreground">{t("pub.home.intel.equity")}</p>
           <p className="mt-1 text-3xl font-semibold text-growth">$186,000</p>
-          <p className="mt-1 text-xs text-muted-foreground">Based on mortgage balance</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("pub.home.intel.equity_sub")}</p>
         </div>
         <div className="rounded-3xl border border-border bg-card p-6">
-          <p className="text-xs text-muted-foreground">ROI opportunities</p>
+          <p className="text-xs text-muted-foreground">{t("pub.home.intel.roi")}</p>
           <p className="mt-1 text-3xl font-semibold">$14.8k</p>
-          <p className="mt-1 text-xs text-muted-foreground">3 recommendations available</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("pub.home.intel.roi_sub")}</p>
         </div>
       </div>
     </Section>
@@ -243,21 +261,22 @@ function IntelligencePreview() {
 }
 
 function Testimonials() {
+  const { t } = useLanguage();
   const items = [
-    { name: "Sarah K.", quote: "SuCasa turned home maintenance from stress into a checklist I actually enjoy." },
-    { name: "Marcus D.", quote: "Found a plumber in 20 minutes. He was licensed, on time, and fair priced." },
-    { name: "Elena R.", quote: "The value tracker is the closest thing I have to a home CFO." },
+    { name: "Sarah K.", quote: t("pub.home.stories.q1") },
+    { name: "Marcus D.", quote: t("pub.home.stories.q2") },
+    { name: "Elena R.", quote: t("pub.home.stories.q3") },
   ];
   return (
-    <Section eyebrow="Homeowners love SuCasa" title="Real stories from real neighbors">
+    <Section eyebrow={t("pub.home.stories.eyebrow")} title={t("pub.home.stories.title")}>
       <div className="mt-10 grid gap-4 md:grid-cols-3">
-        {items.map(t => (
-          <div key={t.name} className="rounded-3xl border border-border bg-card p-6">
+        {items.map(story => (
+          <div key={story.name} className="rounded-3xl border border-border bg-card p-6">
             <div className="flex gap-0.5 text-primary">
               {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
             </div>
-            <p className="mt-4 text-sm leading-relaxed">“{t.quote}”</p>
-            <p className="mt-4 text-xs font-medium text-muted-foreground">— {t.name}</p>
+            <p className="mt-4 text-sm leading-relaxed">“{story.quote}”</p>
+            <p className="mt-4 text-xs font-medium text-muted-foreground">— {story.name}</p>
           </div>
         ))}
       </div>
@@ -266,16 +285,17 @@ function Testimonials() {
 }
 
 function FinalCta() {
+  const { t } = useLanguage();
   return (
     <section className="px-5 pb-20">
       <div className="mx-auto max-w-5xl overflow-hidden rounded-[2rem] gradient-brand p-8 text-white shadow-elevated sm:p-12">
         <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <h3 className="text-2xl font-semibold sm:text-3xl">Start your free Home Profile today.</h3>
-            <p className="mt-2 max-w-xl text-sm opacity-90">It takes 2 minutes and unlocks your dashboard, value tracker, and trusted pro network.</p>
+            <h3 className="text-2xl font-semibold sm:text-3xl">{t("pub.home.final.title")}</h3>
+            <p className="mt-2 max-w-xl text-sm opacity-90">{t("pub.home.final.sub")}</p>
           </div>
           <Link to="/onboarding" className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-foreground">
-            Create Free Home Profile <ArrowRight className="h-4 w-4" />
+            {t("pub.home.cta_primary")} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
