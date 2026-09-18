@@ -239,7 +239,7 @@
 
 ## Spanish public pages + critical emails (done)
 
-## Lender → Agent Introductions hardening (in progress)
+## Lender → Agent Introductions hardening (complete)
 - [ ] Aggregate-only lender opportunity view (k=5, no geography/bands/deltas/timestamps)
 - [ ] `introductions` lifecycle table: lender_requested → agent_offered/declined → homeowner_accepted/declined → connection_active → permission_revoked
 - [ ] Per-channel homeowner consent grants + internal `introduction_consent_events` ledger
