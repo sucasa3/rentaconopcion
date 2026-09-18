@@ -6,16 +6,12 @@ import {
   allocateSponsorshipRow,
   assertConnection,
   assertMember,
-  createIntroductionRequest,
-  deidentifiedOpportunities,
   lenderNetworkSummary,
   listCampaignApprovalRows,
-  listIntroductionRows,
   myOrgs,
   pendingInvitesForUser,
   proposeCampaignAudienceRow,
   respondToInvite,
-  revealApprovedContact,
   sponsorshipSummary,
 } from "./network.server";
 
@@ -139,135 +135,13 @@ export const respondToConnectionInvite = createServerFn({ method: "POST" })
     );
   });
 
-// --- Discovery -------------------------------------------------------------
-
-/** De-identified opportunity rows inside a connected agent's book. */
-export const listNetworkOpportunities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        lenderOrgId: uuid,
-        agentOrgId: uuid,
-        category: z.string().max(40).optional(),
-        limit: z.number().int().min(1).max(500).optional(),
-      })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    await assertMember(context.supabase, context.userId, data.lenderOrgId);
-    const opportunities = await deidentifiedOpportunities(
-      context.supabase,
-      data.lenderOrgId,
-      data.agentOrgId,
-      { category: data.category, limit: data.limit },
-    );
-    return { opportunities };
-  });
-
-// --- Introductions ---------------------------------------------------------
-
-export const listIntroductions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ orgId: uuid }).parse(i))
-  .handler(async ({ data, context }) => {
-    const org = await assertMember(context.supabase, context.userId, data.orgId);
-    return { requests: await listIntroductionRows(context.supabase, data.orgId, org.org_type) };
-  });
-
-export const requestIntroduction = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({ lenderOrgId: uuid, opportunityId: uuid, note: z.string().max(600).optional() })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    await assertMember(context.supabase, context.userId, data.lenderOrgId);
-    return createIntroductionRequest(
-      context.supabase,
-      data.lenderOrgId,
-      data.opportunityId,
-      data.note ?? null,
-      context.userId,
-    );
-  });
-
-/** The agent approves or declines an introduction. Approval is the only unmask. */
-export const respondToIntroduction = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({ requestId: uuid, approve: z.boolean(), responseNote: z.string().max(600).optional() })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const { data: req, error: readErr } = await context.supabase
-      .from("introduction_requests")
-      .select("id, agent_org_id, portfolio_client_id, status")
-      .eq("id", data.requestId)
-      .maybeSingle();
-    if (readErr) throw new Error(readErr.message);
-    if (!req) throw new Error("Introduction request not found");
-    await assertMember(context.supabase, context.userId, req.agent_org_id);
-
-    const { error } = await context.supabase
-      .from("introduction_requests")
-      .update({
-        status: data.approve ? "approved" : "declined",
-        outcome_note: data.responseNote ?? null,
-        responded_by: context.userId,
-      })
-      .eq("id", data.requestId);
-    if (error) throw new Error(error.message);
-
-    // No capacity is awarded here: this outcome involves a lender, and an
-    // agent benefit may never follow from lender activity. See entitlements.ts.
-
-    return { id: data.requestId, status: data.approve ? "approved" : "declined" };
-  });
-
-/** Reveal homeowner contact for an agent-approved introduction (audited). */
-export const revealIntroduction = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ requestId: uuid }).parse(i))
-  .handler(async ({ data, context }) =>
-    revealApprovedContact(context.supabase, context.userId, data.requestId),
-  );
-
-/** The requesting lender records how an approved introduction turned out. */
-export const recordIntroductionOutcome = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        requestId: uuid,
-        outcome: z.enum(["connected", "meeting_set", "closed", "no_fit"]),
-        note: z.string().max(600).optional(),
-      })
-      .parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("introduction_requests")
-      .update({ outcome: data.outcome, outcome_note: data.note ?? null })
-      .eq("id", data.requestId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
-
-/** The requesting lender withdraws a still-pending introduction request. */
-export const withdrawIntroduction = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ requestId: uuid }).parse(i))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("introduction_requests")
-      .update({ status: "withdrawn" })
-      .eq("id", data.requestId);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+// --- Discovery & introductions --------------------------------------------
+//
+// Lender-facing opportunity reads and the whole introduction workflow now live
+// in introductions.functions.ts. The per-homeowner de-identified list and the
+// agent-approval reveal that used to sit here were removed deliberately: a
+// lender may only ever see aggregate counts, and identifying homeowner data is
+// unreachable until the homeowner affirmatively accepts an introduction.
 
 // --- Sponsored premium profiles -------------------------------------------
 
