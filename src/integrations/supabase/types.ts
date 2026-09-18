@@ -2582,6 +2582,136 @@ export type Database = {
           },
         ]
       }
+      introduction_channel_grants: {
+        Row: {
+          authorized_value: string | null
+          channel: string
+          created_at: string
+          disclosure_version: string
+          granted_at: string
+          id: string
+          introduction_id: string
+          language: string
+          revoked_at: string | null
+          status: string
+        }
+        Insert: {
+          authorized_value?: string | null
+          channel: string
+          created_at?: string
+          disclosure_version: string
+          granted_at?: string
+          id?: string
+          introduction_id: string
+          language?: string
+          revoked_at?: string | null
+          status?: string
+        }
+        Update: {
+          authorized_value?: string | null
+          channel?: string
+          created_at?: string
+          disclosure_version?: string
+          granted_at?: string
+          id?: string
+          introduction_id?: string
+          language?: string
+          revoked_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "introduction_channel_grants_introduction_id_fkey"
+            columns: ["introduction_id"]
+            isOneToOne: false
+            referencedRelation: "introductions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      introduction_consent_events: {
+        Row: {
+          agent_actor_id: string | null
+          agent_org_id: string | null
+          authorized_email: string | null
+          authorized_phone: string | null
+          channels: string[]
+          created_at: string
+          decision: string | null
+          delivered_to_email: string | null
+          disclosure_text: string | null
+          disclosure_version: string | null
+          event: string
+          homeowner_id: string | null
+          id: string
+          introduction_id: string
+          ip_address: string | null
+          language: string | null
+          lender_contact_name_shown: string | null
+          lender_org_id: string | null
+          lender_org_name_shown: string | null
+          occurred_at: string
+          portfolio_client_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          agent_actor_id?: string | null
+          agent_org_id?: string | null
+          authorized_email?: string | null
+          authorized_phone?: string | null
+          channels?: string[]
+          created_at?: string
+          decision?: string | null
+          delivered_to_email?: string | null
+          disclosure_text?: string | null
+          disclosure_version?: string | null
+          event: string
+          homeowner_id?: string | null
+          id?: string
+          introduction_id: string
+          ip_address?: string | null
+          language?: string | null
+          lender_contact_name_shown?: string | null
+          lender_org_id?: string | null
+          lender_org_name_shown?: string | null
+          occurred_at?: string
+          portfolio_client_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          agent_actor_id?: string | null
+          agent_org_id?: string | null
+          authorized_email?: string | null
+          authorized_phone?: string | null
+          channels?: string[]
+          created_at?: string
+          decision?: string | null
+          delivered_to_email?: string | null
+          disclosure_text?: string | null
+          disclosure_version?: string | null
+          event?: string
+          homeowner_id?: string | null
+          id?: string
+          introduction_id?: string
+          ip_address?: string | null
+          language?: string | null
+          lender_contact_name_shown?: string | null
+          lender_org_id?: string | null
+          lender_org_name_shown?: string | null
+          occurred_at?: string
+          portfolio_client_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "introduction_consent_events_introduction_id_fkey"
+            columns: ["introduction_id"]
+            isOneToOne: false
+            referencedRelation: "introductions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       introduction_requests: {
         Row: {
           agent_org_id: string
@@ -2730,6 +2860,122 @@ export type Database = {
           },
           {
             foreignKeyName: "introduction_reveals_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      introductions: {
+        Row: {
+          agent_note: string | null
+          agent_org_id: string
+          agent_responded_at: string | null
+          agent_responded_by: string | null
+          category: string
+          connection_id: string
+          created_at: string
+          homeowner_decision: string | null
+          homeowner_invited_at: string | null
+          homeowner_responded_at: string | null
+          id: string
+          invite_expires_at: string | null
+          invite_nonce: string | null
+          invite_used_at: string | null
+          invite_viewed_at: string | null
+          invited_email: string | null
+          legacy_migration_reason: string | null
+          legacy_request_id: string | null
+          lender_org_id: string
+          lender_requested_at: string
+          message: string | null
+          portfolio_client_id: string | null
+          requested_by: string | null
+          revoked_at: string | null
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          agent_note?: string | null
+          agent_org_id: string
+          agent_responded_at?: string | null
+          agent_responded_by?: string | null
+          category: string
+          connection_id: string
+          created_at?: string
+          homeowner_decision?: string | null
+          homeowner_invited_at?: string | null
+          homeowner_responded_at?: string | null
+          id?: string
+          invite_expires_at?: string | null
+          invite_nonce?: string | null
+          invite_used_at?: string | null
+          invite_viewed_at?: string | null
+          invited_email?: string | null
+          legacy_migration_reason?: string | null
+          legacy_request_id?: string | null
+          lender_org_id: string
+          lender_requested_at?: string
+          message?: string | null
+          portfolio_client_id?: string | null
+          requested_by?: string | null
+          revoked_at?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_note?: string | null
+          agent_org_id?: string
+          agent_responded_at?: string | null
+          agent_responded_by?: string | null
+          category?: string
+          connection_id?: string
+          created_at?: string
+          homeowner_decision?: string | null
+          homeowner_invited_at?: string | null
+          homeowner_responded_at?: string | null
+          id?: string
+          invite_expires_at?: string | null
+          invite_nonce?: string | null
+          invite_used_at?: string | null
+          invite_viewed_at?: string | null
+          invited_email?: string | null
+          legacy_migration_reason?: string | null
+          legacy_request_id?: string | null
+          lender_org_id?: string
+          lender_requested_at?: string
+          message?: string | null
+          portfolio_client_id?: string | null
+          requested_by?: string | null
+          revoked_at?: string | null
+          state?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "introductions_agent_org_id_fkey"
+            columns: ["agent_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "introductions_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "agent_lender_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "introductions_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "introductions_portfolio_client_id_fkey"
             columns: ["portfolio_client_id"]
             isOneToOne: false
             referencedRelation: "lender_portfolio_clients"
