@@ -17,9 +17,12 @@ const OPTIONS: { value: Language; label: string }[] = [
 export function LanguageSwitcher({
   className,
   showIcon = true,
+  compact = false,
 }: {
   className?: string;
   showIcon?: boolean;
+  /** Small inline variant for the public site header. */
+  compact?: boolean;
 }) {
   const { language, setLanguage, t } = useLanguage();
   const [busy, setBusy] = useState(false);
@@ -35,6 +38,30 @@ export function LanguageSwitcher({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (compact) {
+    return (
+      <div className={cn("flex items-center gap-1", className)} role="group" aria-label={t("common.language")}>
+        {OPTIONS.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => pick(o.value)}
+            aria-pressed={language === o.value}
+            disabled={busy}
+            className={cn(
+              "min-h-9 rounded-full px-2.5 text-xs font-semibold uppercase tracking-wide transition active:scale-[0.97]",
+              language === o.value
+                ? "bg-secondary text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {o.value === "en" ? "EN" : "ES"}
+          </button>
+        ))}
+      </div>
+    );
   }
 
   return (

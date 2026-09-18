@@ -12,6 +12,7 @@ import {
   recordPublicAgentEvent,
 } from "@/lib/agent-funnel.functions";
 import { startDiscovery } from "@/lib/discovery.functions";
+import { useLanguage } from "@/lib/i18n";
 
 const searchSchema = z.object({ source: z.string().max(80).optional() });
 
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/lender-start")({
 });
 
 function LenderStartPage() {
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const router = useRouter();
   const begin = useServerFn(startDiscovery);
@@ -60,14 +62,12 @@ function LenderStartPage() {
       void recordAuthenticated({
         data: { action: "lender_discovery_signup_completed", ...attribution },
       });
-      await begin({});
+      await begin({ data: { language } });
       await router.invalidate();
       navigate({ to: "/lender/discovery", replace: true });
     } catch (reason) {
       started.current = false;
-      setError(
-        reason instanceof Error ? reason.message : "We couldn't finish setting up your workspace.",
-      );
+      setError(reason instanceof Error ? reason.message : t("pub.lstart.error_workspace"));
       setBusy(false);
     }
   }
@@ -97,7 +97,7 @@ function LenderStartPage() {
       if (otpError) throw otpError;
       setSent(true);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "We couldn't send that link.");
+      setError(reason instanceof Error ? reason.message : t("pub.lstart.error_send"));
     } finally {
       setBusy(false);
     }
@@ -106,32 +106,26 @@ function LenderStartPage() {
   return (
     <div className="min-h-screen bg-surface">
       <SiteHeader />
-      <main className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(380px,0.65fr)] lg:items-start lg:py-16">
+      <main className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(380px,0.65fr)] lg:items-start lg:py-16">
         <section className="pt-2 lg:pt-6">
-          <p className="text-sm font-semibold text-status-opportunity">SuCasa for loan officers</p>
+          <p className="text-sm font-semibold text-status-opportunity">{t("pub.lstart.eyebrow")}</p>
           <h1 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
-            Let's look inside your past-client database together.
+            {t("pub.lstart.h1")}
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Upload up to 100 past clients. SuCasa reads the public property record for each home and
-            shows you which of those relationships is worth a call today, and why.
+            {t("pub.lstart.sub")}
           </p>
           <ul className="mt-7 space-y-3 text-sm text-foreground">
-            {[
-              "No card, no contract, no cost",
-              "Up to 100 valid, unique properties analyzed",
-              "Your list stays private to your own workspace",
-              "No homeowner is contacted and no homeowner data is shared",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-status-positive" /> {item}
+            {[t("pub.lstart.b1"), t("pub.lstart.b2"), t("pub.lstart.b3"), t("pub.lstart.b4")].map((item) => (
+              <li key={item} className="flex items-start gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-status-positive" />
+                <span className="min-w-0 break-words">{item}</span>
               </li>
             ))}
           </ul>
           <div className="mt-8 rounded-lg border border-surface-intelligence-border bg-surface-intelligence p-4 text-sm text-surface-intelligence-foreground">
             <ShieldCheck className="mb-2 h-5 w-5 text-intelligence-accent" />
-            Uploading a list creates no relationship, no permission and no access to any homeowner.
-            Anything homeowner-level still requires that homeowner's own choice.
+            {t("pub.lstart.shield")}
           </div>
         </section>
 
@@ -139,30 +133,24 @@ function LenderStartPage() {
           {sent ? (
             <div className="space-y-4 text-center">
               <Mail className="mx-auto h-10 w-10 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">Check your email</h2>
-              <p className="text-sm text-muted-foreground">
-                We sent a sign-in link to <span className="font-medium">{email}</span>. Open it on
-                this device and we'll take you straight to your upload.
-              </p>
+              <h2 className="text-lg font-semibold text-foreground">{t("pub.lstart.sent_title")}</h2>
+              <p className="text-sm text-muted-foreground">{t("pub.lstart.sent_body", { email })}</p>
               <button
                 type="button"
                 className="text-sm font-medium text-primary underline"
                 onClick={() => setSent(false)}
               >
-                Use a different email
+                {t("pub.lstart.sent_different")}
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Start your Discovery</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Enter your work email. We'll send a one-time sign-in link — no password to
-                  remember.
-                </p>
+                <h2 className="text-lg font-semibold text-foreground">{t("pub.lstart.form_title")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{t("pub.lstart.form_sub")}</p>
               </div>
               <label className="block text-sm font-medium text-foreground">
-                Work email
+                {t("pub.lstart.email_label")}
                 <input
                   type="email"
                   required
@@ -178,13 +166,13 @@ function LenderStartPage() {
                 ) : (
                   <ArrowRight className="mr-2 h-4 w-4" />
                 )}
-                Email me a sign-in link
+                {t("pub.lstart.submit")}
               </Button>
               {error ? <p className="text-sm text-status-attention">{error}</p> : null}
               <p className="text-xs text-muted-foreground">
-                Already using SuCasa?{" "}
+                {t("pub.lstart.signin_prompt")}{" "}
                 <Link to="/auth" className="font-medium text-primary underline">
-                  Sign in
+                  {t("pub.lstart.signin")}
                 </Link>
               </p>
             </form>

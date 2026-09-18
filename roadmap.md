@@ -236,3 +236,5 @@
 - [x] Verify canonical lender commercial offer and make the $447 pilot → $149/month path unambiguous
 - [x] Verify mobile first viewport, desktop, accessibility, routes, deck/print, CTA behavior, console, and regression tests
 - [x] Final refinement: keep each landing page to Hero/Product Proof → four-answer flow → concise trust → final CTA → footer, with no added marketing sections
+
+## Spanish public pages + critical emails (done)

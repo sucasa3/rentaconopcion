@@ -10,6 +10,7 @@ import { lovable } from "@/integrations/lovable";
 import { activateAgentWorkspace } from "@/lib/agent-onboarding.functions";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordAuthenticatedAgentEvent, recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
+import { useLanguage } from "@/lib/i18n";
 
 const searchSchema = z.object({ source: z.string().max(80).optional() });
 
@@ -32,6 +33,7 @@ export const Route = createFileRoute("/agent-start")({
 const AGENCY_KEY = "sucasa_agent_agency_v1";
 
 function AgentStartPage() {
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const router = useRouter();
   const activate = useServerFn(activateAgentWorkspace);
@@ -56,13 +58,13 @@ function AgentStartPage() {
       const attribution = getAgentAttribution();
       const storedAgency = agencyName.trim() || window.sessionStorage.getItem(AGENCY_KEY)?.trim() || undefined;
       await recordAuthenticated({ data: { action: "agent_signup_completed", ...attribution } });
-      await activate({ data: { agencyName: storedAgency } });
+      await activate({ data: { agencyName: storedAgency, language } });
       window.sessionStorage.removeItem(AGENCY_KEY);
       await router.invalidate();
       navigate({ to: "/agent", replace: true });
     } catch (reason) {
       activationStarted.current = false;
-      setError(reason instanceof Error ? reason.message : "We couldn't finish setting up your workspace.");
+      setError(reason instanceof Error ? reason.message : t("pub.astart.error_workspace"));
       setBusy(false);
     }
   }
@@ -100,7 +102,7 @@ function AgentStartPage() {
         });
         if (signupError) throw signupError;
         if (!data.session) {
-          setMessage("Check your email to confirm your address. Then we'll finish your agent workspace here.");
+          setMessage(t("pub.astart.confirm_body"));
           setBusy(false);
           return;
         }
@@ -111,14 +113,14 @@ function AgentStartPage() {
         await finishActivation();
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Something went wrong.");
+      setError(reason instanceof Error ? reason.message : t("pub.astart.error_generic"));
       setBusy(false);
     }
   }
 
   async function handleGoogle() {
     if (!agencyName.trim()) {
-      setError("Enter your brokerage or team name before continuing with Google.");
+      setError(t("pub.astart.google_needs_agency"));
       return;
     }
     setError(null);
@@ -130,7 +132,7 @@ function AgentStartPage() {
       redirect_uri: `${window.location.origin}/agent-start`,
     });
     if (result.error) {
-      setError(result.error.message ?? "Google sign-in failed.");
+      setError(result.error.message ?? t("pub.astart.error_google"));
       setBusy(false);
     }
   }
@@ -140,19 +142,15 @@ function AgentStartPage() {
       <SiteHeader />
       <main className="mx-auto grid max-w-6xl gap-10 px-5 py-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,0.7fr)] lg:items-start lg:py-16">
         <section className="pt-2 lg:pt-8">
-          <p className="text-sm font-semibold text-status-opportunity">SuCasa for real-estate agents</p>
+          <p className="text-sm font-semibold text-status-opportunity">{t("pub.astart.eyebrow")}</p>
           <h1 className="mt-3 max-w-2xl text-4xl font-semibold leading-tight text-foreground sm:text-5xl">
-            Turn the relationships you already have into a clear next move.
+            {t("pub.astart.h1")}
           </h1>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            Start with up to 100 Home Profiles free. Import when you're ready—not before you enter your workspace.
+            {t("pub.astart.sub")}
           </p>
           <ul className="mt-7 space-y-3 text-sm text-foreground">
-            {[
-              "No credit card required",
-              "Your own agent workspace",
-              "No lender, sponsor, or provider access created",
-            ].map((item) => (
+            {[t("pub.astart.b1"), t("pub.astart.b2"), t("pub.astart.b3")].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-status-positive" /> {item}
               </li>
@@ -160,51 +158,51 @@ function AgentStartPage() {
           </ul>
           <div className="mt-8 rounded-lg border border-surface-intelligence-border bg-surface-intelligence p-4 text-sm text-surface-intelligence-foreground">
             <ShieldCheck className="mb-2 h-5 w-5 text-intelligence-accent" />
-            Your homeowner relationships remain yours. Access still requires the existing relationship, permission, and consent rules.
+            {t("pub.astart.shield")}
           </div>
         </section>
 
         <section className="rounded-lg border border-border bg-card p-5 shadow-elevated sm:p-7" aria-labelledby="account-heading">
-          <h2 id="account-heading" className="text-2xl font-semibold">{mode === "signup" ? "Create your agent account" : "Sign in to your agent account"}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Your workspace is created after your account is confirmed.</p>
+          <h2 id="account-heading" className="text-2xl font-semibold">{mode === "signup" ? t("pub.astart.create") : t("pub.astart.signin_title")}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t("pub.astart.workspace_note")}</p>
           {message ? (
             <div className="mt-6 rounded-lg border border-surface-intelligence-border bg-surface-intelligence p-5">
               <CheckCircle2 className="h-6 w-6 text-status-positive" />
-              <p className="mt-3 font-semibold">Confirm your email</p>
+              <p className="mt-3 font-semibold">{t("pub.astart.confirm_title")}</p>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{message}</p>
             </div>
           ) : (
             <>
               <div className="mt-6">
-                <label className="text-sm font-medium" htmlFor="agency">Brokerage or team name</label>
+                <label className="text-sm font-medium" htmlFor="agency">{t("pub.astart.agency_label")}</label>
                 <div className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-md border border-input px-3 focus-within:ring-2 focus-within:ring-ring">
                   <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <input id="agency" required value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder="Your business name" className="min-h-12 min-w-0 bg-transparent text-sm outline-none" />
+                  <input id="agency" required value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder={t("pub.astart.agency_placeholder")} className="min-h-12 min-w-0 bg-transparent text-sm outline-none" />
                 </div>
               </div>
               <Button type="button" variant="outline" className="mt-4 min-h-12 w-full" onClick={handleGoogle} disabled={busy}>
-                Continue with Google
+                {t("pub.astart.google")}
               </Button>
-              <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or use email<span className="h-px flex-1 bg-border" /></div>
+              <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />{t("pub.astart.or_email")}<span className="h-px flex-1 bg-border" /></div>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === "signup" && (
-                  <label className="block text-sm font-medium">Full name<input required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-2 min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
+                  <label className="block text-sm font-medium">{t("pub.astart.full_name")}<input required value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-2 min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
                 )}
-                <label className="block text-sm font-medium">Email<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-2 min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
-                <label className="block text-sm font-medium">Password<input type="password" minLength={6} required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-2 min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
+                <label className="block text-sm font-medium">{t("pub.astart.email")}<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-2 min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
+                <label className="block text-sm font-medium">{t("pub.astart.password")}<input type="password" minLength={6} required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-2 min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" /></label>
                 {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="min-h-12 w-full bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90" disabled={busy || !agencyName.trim()}>
-                  {busy ? <Loader2 className="animate-spin" /> : mode === "signup" ? "Get 100 Home Profiles Free" : "Sign in and continue"}
+                  {busy ? <Loader2 className="animate-spin" /> : mode === "signup" ? t("pub.astart.submit_signup") : t("pub.astart.submit_signin")}
                   {!busy && <ArrowRight />}
                 </Button>
               </form>
               <button type="button" className="mt-5 min-h-11 w-full text-sm font-semibold text-primary" onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(null); }}>
-                {mode === "signup" ? "Already have an account? Sign in" : "New agent? Create an account"}
+                {mode === "signup" ? t("pub.astart.toggle_to_signin") : t("pub.astart.toggle_to_signup")}
               </button>
             </>
           )}
-          <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">By continuing, you agree to SuCasa's terms and privacy practices.</p>
-          <p className="mt-3 text-center text-xs text-muted-foreground"><Link to="/agents" className="font-semibold text-primary">Back to SuCasa for Agents</Link></p>
+          <p className="mt-5 text-center text-xs leading-relaxed text-muted-foreground">{t("pub.astart.terms")}</p>
+          <p className="mt-3 text-center text-xs text-muted-foreground"><Link to="/agents" className="font-semibold text-primary">{t("pub.astart.back")}</Link></p>
         </section>
       </main>
       <SiteFooter />

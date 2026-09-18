@@ -6,11 +6,14 @@ import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { IDX_BASE_URL } from "@/lib/site-urls";
+import { useLanguage } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -24,11 +27,11 @@ export function SiteHeader() {
   }
 
   const links = [
-    { to: "/services", label: "Services" },
-    { to: "/partner", label: "For Pros" },
-    { to: "/lenders", label: "For Lenders" },
-    { to: "/agents", label: "For Agents" },
-    { to: "/dashboard", label: "My home" },
+    { to: "/services", label: t("pub.nav.services") },
+    { to: "/partner", label: t("pub.nav.for_pros") },
+    { to: "/lenders", label: t("pub.nav.for_lenders") },
+    { to: "/agents", label: t("pub.nav.for_agents") },
+    { to: "/dashboard", label: t("pub.nav.my_home") },
   ] as const;
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -43,26 +46,30 @@ export function SiteHeader() {
             </Link>
           ))}
           <a href={IDX_BASE_URL} target="_blank" rel="noopener noreferrer" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
-            Browse Homes
+            {t("pub.nav.browse_homes")}
           </a>
+          <LanguageSwitcher compact className="ml-1" />
           {session ? (
             <button onClick={signOut} className="ml-2 rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-secondary">
-              Sign out
+              {t("pub.nav.sign_out")}
             </button>
           ) : (
             <>
               <Link to="/auth" className="ml-2 rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-secondary">
-                Sign in
+                {t("pub.nav.sign_in")}
               </Link>
               <Link to="/onboarding" className="rounded-full gradient-brand px-4 py-2 text-sm font-medium text-white shadow-soft">
-                Get Started
+                {t("pub.nav.get_started")}
               </Link>
             </>
           )}
         </nav>
-        <button onClick={() => setOpen(v => !v)} className="grid h-10 w-10 place-items-center rounded-full border border-border md:hidden" aria-label="Toggle menu">
-          {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <LanguageSwitcher compact />
+          <button onClick={() => setOpen(v => !v)} className="grid h-10 w-10 place-items-center rounded-full border border-border" aria-label={t("pub.nav.toggle_menu")}>
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
       {open && (
         <div className="border-t border-border bg-background md:hidden">
@@ -73,19 +80,19 @@ export function SiteHeader() {
               </Link>
             ))}
             <a href={IDX_BASE_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-sm text-foreground hover:bg-secondary">
-              Browse Homes
+              {t("pub.nav.browse_homes")}
             </a>
             {session ? (
               <button onClick={() => { setOpen(false); signOut(); }} className="mt-2 rounded-xl border border-border px-4 py-3 text-center text-sm font-medium">
-                Sign out
+                {t("pub.nav.sign_out")}
               </button>
             ) : (
               <>
                 <Link to="/auth" onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-center text-sm font-medium">
-                  Sign in
+                  {t("pub.nav.sign_in")}
                 </Link>
                 <Link to="/onboarding" onClick={() => setOpen(false)} className="mt-1 rounded-xl gradient-brand px-4 py-3 text-center text-sm font-medium text-white">
-                  Create Free Home Profile
+                  {t("pub.nav.create_profile")}
                 </Link>
               </>
             )}
@@ -97,21 +104,22 @@ export function SiteHeader() {
 }
 
 export function SiteFooter({ professionalExtra }: { professionalExtra?: ReactNode } = {}) {
+  const { t } = useLanguage();
   return (
     <footer className="border-t border-border bg-surface">
       <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-4">
         <div>
           <img src={logoAsset.url} alt="SuCasa" className="h-8 w-auto" />
-          <p className="mt-3 text-sm text-muted-foreground">The trusted operating system for homeownership.</p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("pub.footer.tagline")}</p>
         </div>
-        <FooterCol title="Homeowners" links={[["Browse Homes", IDX_BASE_URL], ["Create Profile", "/onboarding"], ["My home", "/dashboard"], ["Request Service", "/request"]]} />
+        <FooterCol title={t("pub.footer.homeowners")} links={[[t("pub.nav.browse_homes"), IDX_BASE_URL], [t("pub.footer.create_profile"), "/onboarding"], [t("pub.nav.my_home"), "/dashboard"], [t("pub.footer.request_service"), "/request"]]} />
         <div>
-          <FooterCol title="Professionals" links={[["For Agents", "/agents"], ["Agent pricing", "/agents/pricing"], ["Agent presentation", "/agents/deck"], ["For Lenders", "/lenders"], ["Lender pricing", "/lenders/pricing"], ["Lender presentation", "/lenders/deck"], ["Become a Partner", "/partner"], ["Pro Dashboard", "/pro"]]} />
+          <FooterCol title={t("pub.footer.professionals")} links={[[t("pub.footer.for_agents"), "/agents"], [t("pub.footer.agent_pricing"), "/agents/pricing"], [t("pub.footer.agent_deck"), "/agents/deck"], [t("pub.footer.for_lenders"), "/lenders"], [t("pub.footer.lender_pricing"), "/lenders/pricing"], [t("pub.footer.lender_deck"), "/lenders/deck"], [t("pub.footer.become_partner"), "/partner"], [t("pub.footer.pro_dashboard"), "/pro"]]} />
           {professionalExtra && <div className="mt-2">{professionalExtra}</div>}
         </div>
-        <FooterCol title="Company" links={[["Services", "/services"], ["Sign in", "/auth"]]} />
+        <FooterCol title={t("pub.footer.company")} links={[[t("pub.nav.services"), "/services"], [t("pub.nav.sign_in"), "/auth"]]} />
       </div>
-      <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">© {new Date().getFullYear()} SuCasa. All rights reserved.</div>
+      <div className="border-t border-border py-6 text-center text-xs text-muted-foreground">{t("pub.footer.rights", { year: new Date().getFullYear() })}</div>
     </footer>
   );
 }

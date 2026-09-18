@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { SERVICE_CATEGORIES } from "@/lib/mock-data";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
 import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/services")({
@@ -15,16 +16,21 @@ export const Route = createFileRoute("/services")({
   component: Services,
 });
 
+function svcKey(slug: string, field: "name" | "desc"): TranslationKey {
+  return `pub.svc.${slug.replace(/-/g, "_")}.${field}` as TranslationKey;
+}
+
 function Services() {
+  const { t } = useLanguage();
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1 px-5 py-12 md:py-16">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Home services</p>
-            <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">Get help from trusted pros</h1>
-            <p className="mt-3 text-muted-foreground">Choose a category to request service. We’ll match you with vetted, local professionals.</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">{t("pub.services.eyebrow")}</p>
+            <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">{t("pub.services.title")}</h1>
+            <p className="mt-3 text-muted-foreground">{t("pub.services.sub")}</p>
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -34,12 +40,14 @@ function Services() {
                   <span className={`grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
                     <c.icon className="h-5 w-5" />
                   </span>
-                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">{c.avgResponse}</span>
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-medium text-secondary-foreground">
+                    {t("pub.svc.avg_response", { time: c.avgResponse.replace(/\s*avg response\s*$/i, "") })}
+                  </span>
                 </div>
-                <h3 className="mt-4 text-lg font-semibold">{c.name}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{c.description}</p>
+                <h3 className="mt-4 text-lg font-semibold">{t(svcKey(c.slug, "name"))}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{t(svcKey(c.slug, "desc"))}</p>
                 <Link to="/request" search={{ category: c.slug }} className="mt-5 inline-flex items-center justify-center gap-2 rounded-full gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-soft">
-                  Request Service <ArrowRight className="h-4 w-4" />
+                  {t("pub.services.request")} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
             ))}

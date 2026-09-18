@@ -64,12 +64,23 @@ export const activateAgentWorkspace = createServerFn({ method: "POST" })
       .object({
         token: z.string().min(10).max(2048).optional(),
         agencyName: z.string().trim().min(2).max(120).optional(),
+        // Anonymous language selection carried through signup → profile.
+        language: z.enum(["en", "es"]).optional(),
       })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
     const email = ((context.claims as any)?.email as string | undefined) ?? null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Preserve the visitor's language choice on their profile.
+    if (data.language) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({ language: data.language })
+        .eq("id", context.userId)
+        .then(() => undefined, () => undefined);
+    }
 
     // 1. Reuse an existing agent organization when the caller already has one.
     const { data: memberships } = await supabaseAdmin

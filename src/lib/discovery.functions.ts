@@ -24,12 +24,27 @@ import {
 /** Create (or reuse) the lender's Discovery workspace. Never grants access. */
 export const startDiscovery = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        // Anonymous language selection carried through signup → profile.
+        language: z.enum(["en", "es"]).optional(),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { ensureDiscoveryWorkspace } = await import("./discovery.server");
     const email = (context.claims as any)?.email ?? null;
     const ws = await ensureDiscoveryWorkspace(context.userId, { email });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.language) {
+      await supabaseAdmin
+        .from("profiles")
+        .update({ language: data.language })
+        .eq("id", context.userId)
+        .then(() => undefined, () => undefined);
+    }
     const { logNetworkEvent } = await import("./network-events.server");
     await logNetworkEvent(supabaseAdmin, {
       action: "lender_discovery_started",
