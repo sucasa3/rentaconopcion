@@ -237,8 +237,4 @@
 - [x] Verify mobile first viewport, desktop, accessibility, routes, deck/print, CTA behavior, console, and regression tests
 - [x] Final refinement: keep each landing page to Hero/Product Proof → four-answer flow → concise trust → final CTA → footer, with no added marketing sections
 
-## Spanish public pages + critical emails (in progress)
-- Translate /, /agents(+pricing), /lenders(+pricing), /pricing, /services, /partner, header/footer via i18n
-- Spanish /agent-start + /lender-start signup flows; persist anonymous language choice into profiles.language at signup
-- Spanish auth emails (signup, magic link, recovery, email change) via language prop + profile lookup
-- QA: full Spanish journey homepage -> role -> pricing -> signup -> email -> workspace; 390/1280; tests green
+## Spanish public pages + critical emails (done)
