@@ -238,3 +238,12 @@
 - [x] Final refinement: keep each landing page to Hero/Product Proof → four-answer flow → concise trust → final CTA → footer, with no added marketing sections
 
 ## Spanish public pages + critical emails (done)
+
+## Lender → Agent Introductions hardening (in progress)
+- [ ] Aggregate-only lender opportunity view (k=5, no geography/bands/deltas/timestamps)
+- [ ] `introductions` lifecycle table: lender_requested → agent_offered/declined → homeowner_accepted/declined → connection_active → permission_revoked
+- [ ] Per-channel homeowner consent grants + internal `introduction_consent_events` ledger
+- [ ] Public token consent page (no account required) + in-app path for linked homeowners
+- [ ] Minimized lender reveal (name + authorized channels only), channel-scoped revocation/suppression
+- [ ] Economic guardrail tests (no agent or lender benefit from introduction activity)
+- [ ] Freeze legacy approved introduction_requests rows (no consent backfill)
