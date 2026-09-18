@@ -904,6 +904,7 @@ export const en = {
   "pub.lpricing.gets_title": "Your book → Who → Why now → What to say → Next action",
   "pub.lpricing.gets_body": "Property intelligence, opportunity detection and outreach context come together in one working view. Private homeowner information remains subject to SuCasa’s existing access rules.",
   "pub.lpricing.final_title": "Not ready to choose a plan? Start with 100.",
+  "pub.lpricing.final_cta": "Run Free Discovery",
   "pub.lpricing.mlo.desc": "For a single loan officer getting started",
   "pub.lpricing.mlo_growth.desc": "For a growing book and a small agent network",
   "pub.lpricing.branch.desc": "For a branch team with an active referral network",
