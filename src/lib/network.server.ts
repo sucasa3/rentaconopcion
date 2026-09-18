@@ -1,6 +1,6 @@
 /**
- * Agent <-> lender network: connections, de-identified opportunity discovery,
- * agent-approved introductions, sponsored profiles, and campaign approvals.
+ * Agent <-> lender network: connections, anonymous opportunity aggregates,
+ * sponsored profiles, and campaign approvals.
  *
  * PRIVACY INVARIANT
  * -----------------
@@ -8,13 +8,13 @@
  * security already blocks it from reading that agent's clients or
  * opportunities directly. Every lender-facing read in this module goes through
  * an elevated client ONLY after the caller's membership and an active
- * connection have been verified, and it projects a de-identified shape:
- * category, strength, banded equity/LTV/tenure, city/state/ZIP. Never a name,
- * street address, email, or phone.
+ * connection have been verified, and it projects an anonymous aggregate:
+ * a broad category and a count, with small groups withheld. Never a row, a
+ * name, an address, a band, a score, an email or a phone.
  *
- * The single exception is `revealApprovedContact`, which requires an
- * introduction request the AGENT has approved, and writes an audit row on
- * every call.
+ * There is no reveal path in this module. Identifiable homeowner data is
+ * reachable only through introductions.server.ts, and only after the homeowner
+ * has affirmatively accepted an introduction.
  */
 
 import { ANONYMITY_THRESHOLD, lenderCategoryFor } from "./introductions";
