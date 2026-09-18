@@ -63,10 +63,21 @@ export function ProfessionalPreview({ kind }: { kind: PreviewKind }) {
 
 export function FourAnswers({ audience }: { audience: PreviewKind }) {
   const { t } = useLanguage();
-  const items: [string, string][] = [1, 2, 3, 4].map((n) => [
-    t(`pub.four.${audience}${n}_title` as const),
-    t(`pub.four.${audience}${n}_desc` as const),
-  ]);
+  const items: [string, string][] = (
+    audience === "agent"
+      ? [
+          ["pub.four.agent1_title", "pub.four.agent1_desc"],
+          ["pub.four.agent2_title", "pub.four.agent2_desc"],
+          ["pub.four.agent3_title", "pub.four.agent3_desc"],
+          ["pub.four.agent4_title", "pub.four.agent4_desc"],
+        ]
+      : [
+          ["pub.four.lender1_title", "pub.four.lender1_desc"],
+          ["pub.four.lender2_title", "pub.four.lender2_desc"],
+          ["pub.four.lender3_title", "pub.four.lender3_desc"],
+          ["pub.four.lender4_title", "pub.four.lender4_desc"],
+        ]
+  ).map(([titleKey, descKey]) => [t(titleKey), t(descKey)]);
   return (
     <section className="border-y border-border bg-background py-12 sm:py-16">
       <div className="mx-auto max-w-6xl px-5">
