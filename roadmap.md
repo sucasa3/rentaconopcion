@@ -2,6 +2,7 @@
 
 ## Agent + Lender homeowner detail redesign (in progress)
 - [x] Reorder both detail views to Home → Opportunity → Why now → Intelligence → Conversation → Actions → Details
+- [x] Anchor compact professional property identity in the SuCasa Home Profile system; avoid generic lead-detail labels and unsupported shared claims
 - [x] Keep Agent listing/prep intelligence and Lender finance/review intelligence genuinely role-specific
 - [x] Preserve grounded facts, canonical calculations, access classification, and channel permissions
 - [x] Verify code, tests, and existing flow behavior; deliver through the preview link before publication

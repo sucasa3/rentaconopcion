@@ -1411,10 +1411,15 @@ function ClientDrawer({
       >
         <div className="relative overflow-hidden bg-sucasa-navy px-5 pb-5 pt-6 text-primary-foreground sm:px-7">
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 text-primary-foreground hover:bg-card/10 hover:text-primary-foreground"><X /></Button>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Property</p>
-          <h2 className="mt-2 pr-10 text-2xl font-semibold leading-tight">{client.name ?? "Household"}</h2>
-          <p className="mt-1 flex items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />{[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}</p>
-          <div className="mt-5 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-4">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 pr-8">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Agent home review</p>
+              <h2 className="mt-2 truncate text-2xl font-semibold leading-tight">{client.name ?? "Household"}</h2>
+              <p className="mt-1 flex min-w-0 items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="min-w-0">{[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}</span></p>
+            </div>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-foreground/10"><Home className="h-5 w-5" /></span>
+          </div>
+          <div className="mt-4 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-3">
             <HeroMetric label="Est. value" value={moneyCompact(client.estimated_value)} />
             <HeroMetric label="Net proceeds" value={moneyCompact(client.net_proceeds)} info={<NetProceedsInfo sellCostPct={sellCostPct} />} />
             <HeroMetric label="Tenure" value={client.tenure_years ? `${client.tenure_years.toFixed(1)} yr` : "—"} />
@@ -1457,15 +1462,18 @@ function ClientDrawer({
             Suggested opener
           </p>
           <p className="mt-2 text-[15px] leading-relaxed text-sucasa-navy">{client.opener}</p>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               navigator.clipboard.writeText(client.opener);
               toast.success("Copied");
             }}
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary"
+            className="mt-2 px-0 text-primary hover:bg-transparent"
           >
             <Copy className="h-3 w-3" /> Copy
-          </button>
+          </Button>
         </div>
 
         <Button
