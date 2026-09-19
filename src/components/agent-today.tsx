@@ -6,11 +6,8 @@ import { toast } from "sonner";
 import {
   ArrowRight,
   CheckCircle2,
-  ChevronRight,
+  ChevronDown,
   Loader2,
-  Mail,
-  MessageSquare,
-  Phone,
   Sparkles,
   Upload,
   UserPlus,
@@ -25,7 +22,6 @@ import {
   firstName,
   firstRunMode,
   handledToday,
-  intelligenceLines,
   nextMovePrompt,
   outcomeAcknowledgement,
 } from "@/lib/agent-daily";
@@ -33,6 +29,7 @@ import { ActionQueue } from "@/components/action-queue";
 import { ChannelActions } from "@/components/channel-actions";
 import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
+import { Button } from "@/components/ui/button";
 
 type QueueItem = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
@@ -138,43 +135,29 @@ export function AgentToday() {
   const handled = handledToday(queue?.recentOutcomes ?? []);
   const monitored = clientCount;
   const engagedCount = queue?.counts?.engaged ?? 0;
-  const lines = intelligenceLines({
-    monitored,
-    engaged: engagedCount,
-    worthAttention: items.length,
-    tasksDue,
-  });
   const quiet = items.length === 0;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
 
   return (
-    <div className="space-y-9 bg-surface-base px-4 pb-12 pt-6 sm:px-6">
-      <header className="-mx-4 rounded-b-[28px] border-b border-surface-warm-border bg-surface-warm px-4 pb-6 pt-1 sm:-mx-6 sm:px-6">
+    <div className="professional-detail space-y-6 bg-background px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
+      <header className="-mx-4 border-b border-border bg-surface-warm px-4 pb-4 pt-1 sm:-mx-6 sm:px-6">
         <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
           <OpportunityDot /> Daily Intelligence
         </p>
-        <h1 className="mt-2 text-[30px] font-semibold leading-[1.12] tracking-tight sm:text-[36px]">
+        <h1 className="mt-1.5 text-[27px] font-semibold leading-[1.12] tracking-tight sm:text-[34px]">
           {greeting}.
           <span className="block text-text-secondary">
             {quiet ? "Your book is steady today." : "Your relationships are moving."}
           </span>
         </h1>
-        <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-text-secondary">
-          {quiet
-            ? `Nothing needs immediate attention. SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and will surface the next useful moment.`
-            : `SuCasa is monitoring ${monitored.toLocaleString()} homeowner${monitored === 1 ? "" : "s"} and found ${items.length} relationship${items.length === 1 ? "" : "s"} worth your attention today.`}
-        </p>
-        <ul className="mt-4 space-y-1.5">
-          {lines.map((l) => (
-            <li key={l} className="flex gap-2 text-[13.5px] text-text-secondary">
-              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-text-secondary/50" />
-              {l}
-            </li>
-          ))}
-        </ul>
+        <dl className="mt-3 grid max-w-xl grid-cols-3 divide-x divide-border">
+          <DailyMetric value={items.length} label="Need attention" />
+          <DailyMetric value={tasksDue} label="Follow-ups due" />
+          <DailyMetric value={monitored} label="Monitored" />
+        </dl>
         {handled > 0 && (
-          <p className="mt-3 flex items-center gap-1.5 text-[14px] font-semibold text-status-positive">
+          <p className="mt-2.5 flex items-center gap-1.5 text-[13px] font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" /> {handled} relationship
             {handled === 1 ? "" : "s"} handled today
           </p>
@@ -182,27 +165,17 @@ export function AgentToday() {
       </header>
 
       {mode === "aha" && best && (
-        <IntelligenceSurface compact className="animate-in fade-in slide-in-from-top-1">
-          <p className="flex items-center gap-2 text-sm font-semibold text-surface-intelligence-foreground">
-            <Sparkles className="h-4 w-4" /> SuCasa found someone worth your attention
-          </p>
-          <p className="mt-1 text-sm text-text-secondary">
-            Here's {firstName(best.name)} — why now, what we noticed, and a way to open the
-            conversation.
-          </p>
-          <button
-            type="button"
-            onClick={dismissFirstRun}
-            className="mt-2 text-sm font-semibold text-primary"
-          >
+        <div className="-mt-2 flex items-center justify-between gap-3 text-xs text-text-secondary">
+          <span>SuCasa found the relationship most worth your attention.</span>
+          <Button variant="ghost" size="sm" onClick={dismissFirstRun} className="shrink-0 text-primary">
             Got it
-          </button>
-        </IntelligenceSurface>
+          </Button>
+        </div>
       )}
 
 
       {handledNote && (
-        <div className="animate-in fade-in rounded-3xl border border-status-positive/25 bg-status-positive/[0.06] p-4">
+        <div className="animate-in fade-in rounded-xl border border-status-positive/25 bg-status-positive/[0.06] p-3.5">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" /> {handledNote.name} is handled for today
           </p>
@@ -312,16 +285,18 @@ function NextRelationship({
   onAct: (channel: "call" | "text" | "email") => void;
 }) {
   return (
-    <li className="rounded-3xl border border-border-subtle bg-card p-4">
-      <button type="button" onClick={onFocus} className="w-full text-left">
-        <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-          <OpportunityDot /> #{rank} · {item.categoryLabel}
-        </p>
-        <p className="mt-1 truncate text-[17px] font-semibold tracking-tight">{item.name}</p>
-        <p className="mt-0.5 text-sm leading-snug text-text-secondary">{item.why}</p>
-        <p className="mt-2 text-sm font-medium">Suggested: {item.headline}</p>
-      </button>
-      <div className="mt-3">
+    <li className="rounded-xl border border-border bg-card p-3.5 shadow-soft">
+      <div className="flex items-start gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">
+          {rank}
+        </span>
+        <button type="button" onClick={onFocus} className="min-w-0 flex-1 text-left">
+          <p className="truncate text-[16px] font-semibold leading-tight">{item.name}</p>
+          <p className="mt-0.5 text-xs font-medium text-status-opportunity">{item.categoryLabel}</p>
+          <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-text-secondary">{item.why}</p>
+        </button>
+      </div>
+      <div className="mt-2.5 border-t border-border pt-2.5">
         <ChannelActions
           options={item.channels ?? []}
           phone={item.phone}
@@ -337,7 +312,7 @@ function NextRelationship({
               to="/agent/portfolio/$id"
               params={{ id: item.portfolioId }}
               search={{ client: item.clientId } as never}
-              className="inline-flex min-h-[38px] items-center rounded-full border border-border-subtle px-4 text-sm font-semibold"
+              className="inline-flex min-h-[38px] items-center rounded-md border border-border px-3 text-sm font-semibold text-primary"
             >
               View homeowner
             </Link>
@@ -358,6 +333,7 @@ function BestMove({
   onOutcome: (stage: OutcomeStage, note?: string) => void;
   pending: boolean;
 }) {
+  const [showOutcomes, setShowOutcomes] = useState(false);
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
   // The canonical narrative decides the opener. A cached draft is only used
@@ -365,67 +341,39 @@ function BestMove({
   const opener = n?.openerSeed || item.draftBody?.trim() || item.headline;
 
   return (
-    <section className="animate-in fade-in overflow-hidden rounded-[28px] border border-border-subtle bg-card shadow-elevated">
+    <section className="animate-in fade-in overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
       {/* 3px brand line — the only large-format orange on the page. */}
       <div className="h-[3px] w-full bg-sucasa-orange" aria-hidden />
-      <div className="border-b border-border-subtle bg-surface-warm px-5 py-4">
+      <div className="bg-surface-warm px-5 py-4">
         <p className="flex items-center gap-1.5 text-xs font-semibold text-status-opportunity">
           <OpportunityDot /> {item.categoryLabel}
         </p>
-        <h2 className="mt-1 text-[26px] font-semibold leading-tight tracking-tight">{item.name}</h2>
-        <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em]", meta.text)}>
+        <h2 className="mt-1 text-[25px] font-semibold leading-tight tracking-tight">{item.name}</h2>
+        <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] font-medium", meta.text)}>
           <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
           {meta.label}
         </p>
+        {n?.supportingSignals?.length ? (
+          <p className="mt-2 text-[13px] leading-snug text-text-secondary">
+            {n.supportingSignals.slice(0, 3).join(" · ")}
+          </p>
+        ) : null}
       </div>
 
-      <div className="space-y-4 px-5 py-4">
+      <div className="space-y-3.5 px-5 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             Why now
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed text-primary">{item.why}</p>
-          {n?.whyItMatters && (
-            <p className="mt-1 text-sm leading-relaxed text-text-secondary">{n.whyItMatters}</p>
-          )}
-          {item.engagementLine && (
-            <p className="mt-1 text-sm font-medium text-primary">{item.engagementLine}</p>
-          )}
         </div>
-
-        {n?.supportingSignals?.length ? (
-          <div className="flex flex-wrap gap-1.5">
-            {n.supportingSignals.map((s) => (
-              <span
-                key={s}
-                className="rounded-full bg-secondary px-2.5 py-1 text-[11px] text-text-secondary"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-        ) : null}
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            How to be useful
+            Recommended next step
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed">{n?.howToBeUseful ?? item.ask}</p>
-          {n?.cta && <p className="mt-0.5 text-sm leading-relaxed text-text-secondary">{n.cta}</p>}
         </div>
-
-        {n?.secondarySignals?.length ? (
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-              Also worth knowing
-            </p>
-            {n.secondarySignals.map((s) => (
-              <p key={s} className="mt-1 text-sm leading-relaxed text-text-secondary">
-                {s}
-              </p>
-            ))}
-          </div>
-        ) : null}
 
 
         {opener && (
@@ -460,23 +408,47 @@ function BestMove({
           )}
         </ChannelActions>
 
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-3">
-          <span className="text-xs text-muted-foreground">What happened?</span>
-          {OUTCOME_STAGES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              disabled={pending}
-              onClick={() => onOutcome(s)}
-              className="rounded-full border border-border/70 px-3 py-1.5 text-xs font-medium text-muted-foreground transition active:scale-95 disabled:opacity-50"
-            >
-              {outcomeLabel(s, "agent")}
-            </button>
-          ))}
-          {pending && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+        <div className="border-t border-border pt-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowOutcomes((v) => !v)}
+            aria-expanded={showOutcomes}
+            className="px-0 text-text-secondary hover:bg-transparent hover:text-primary"
+          >
+            Log outcome
+            {pending ? <Loader2 className="animate-spin" /> : <ChevronDown className={cn("transition-transform", showOutcomes && "rotate-180")} />}
+          </Button>
+          {showOutcomes && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {OUTCOME_STAGES.map((s) => (
+                <Button
+                  key={s}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => onOutcome(s)}
+                  className="rounded-full text-text-secondary shadow-none"
+                >
+                  {outcomeLabel(s, "agent")}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>
+  );
+}
+
+function DailyMetric({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="px-3 first:pl-0 last:pr-0">
+      <dd className="text-lg font-semibold leading-none text-primary">{value.toLocaleString()}</dd>
+      <dt className="mt-1 text-[11px] leading-tight text-text-secondary">{label}</dt>
+    </div>
   );
 }
 
