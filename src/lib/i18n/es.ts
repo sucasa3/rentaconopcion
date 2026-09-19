@@ -680,7 +680,7 @@ export const es: Dictionary = {
   "pub.home.demo.home_label": "Perfil de Casa",
   "pub.home.demo.address": "123 Main Street",
   "pub.home.demo.value": "Valor estimado",
-  "pub.home.demo.equity": "Plusvalía estimada",
+  "pub.home.demo.equity": "Plusvalía",
   "pub.home.demo.score": "Puntuación",
   "pub.home.demo.care_label": "Cuidado del hogar",
   "pub.home.demo.care_value": "Se acerca el servicio anual del aire acondicionado",
