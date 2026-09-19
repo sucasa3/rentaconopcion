@@ -136,12 +136,6 @@ function DemoLine({ label, value, intelligence = false }: { label: string; value
   );
 }
 
-export function ProductProofVisual({ kind }: { kind: "home" | "agent" | "lender" }) {
-  if (kind === "home") return <HomeProfileMoment />;
-  if (kind === "agent") return <AgentMoment />;
-  return <LenderMoment />;
-}
-
 export function ConnectedServicesVisual() {
   const { t } = useLanguage();
   const items = [
@@ -152,7 +146,7 @@ export function ConnectedServicesVisual() {
     [MessageSquareText, t("pub.home.connected.services")],
   ] as const;
   return (
-    <div className="relative mx-auto mt-10 max-w-3xl py-4 sm:py-8">
+    <div className="relative mx-auto mt-8 max-w-3xl py-3 sm:mt-10 sm:py-6">
       <div className="absolute inset-x-[15%] top-1/2 h-px bg-border" aria-hidden />
       <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-[repeat(5,minmax(0,1fr))] sm:items-center">
         {items.map(([Icon, label], index) => (
