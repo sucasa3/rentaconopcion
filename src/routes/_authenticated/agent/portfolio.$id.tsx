@@ -44,7 +44,12 @@ import {
   AlertCircle,
   Link2,
   Info,
+  MessageSquare,
+  Hammer,
+  MapPin,
+  CalendarDays,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -1374,6 +1379,21 @@ function ClientDrawer({
   );
   const [agentName, setAgentName] = useState<string>(client.listing?.listing_agent_name ?? "");
 
+  const opportunityHeadline =
+    client.band === "high" || client.band === "hot"
+      ? "Worth a conversation"
+      : client.readiness_label === "list-ready"
+        ? "Strong listing position"
+        : client.readiness_label === "prep-needed"
+          ? "Prep likely needed"
+          : "Future-plans opportunity";
+  const opportunityDetail =
+    client.signals?.[0]?.detail ??
+    client.readiness_checks?.find((check: any) => !check.ok)?.detail ??
+    "Review the supported property facts and relationship status before reaching out.";
+  const whyNow = (client.signals ?? []).slice(0, 5);
+  const prepRows = (client.recommendations ?? []).slice(0, 4);
+
   return (
     <div
       className={cn(
@@ -1384,112 +1404,55 @@ function ClientDrawer({
     >
       <aside
         className={cn(
-          "w-full overflow-y-auto bg-background p-6 shadow-soft",
+          "professional-detail w-full overflow-y-auto bg-background shadow-soft",
           isMobile
-            ? "max-h-[85vh] rounded-t-3xl sm:max-w-2xl"
-            : "h-full max-w-md",
+            ? "max-h-[94vh] rounded-t-3xl sm:max-w-2xl"
+            : "h-full max-w-xl",
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">{client.name ?? "Household"}</h2>
-            <p className="text-xs text-muted-foreground">
-              {[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}
-            </p>
+        <div className="relative overflow-hidden bg-sucasa-navy px-5 pb-5 pt-6 text-primary-foreground sm:px-7">
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 text-primary-foreground hover:bg-card/10 hover:text-primary-foreground"><X /></Button>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Property</p>
+          <h2 className="mt-2 pr-10 text-2xl font-semibold leading-tight">{client.name ?? "Household"}</h2>
+          <p className="mt-1 flex items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />{[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}</p>
+          <div className="mt-5 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-4">
+            <HeroMetric label="Est. value" value={moneyCompact(client.estimated_value)} />
+            <HeroMetric label="Net proceeds" value={moneyCompact(client.net_proceeds)} info={<NetProceedsInfo sellCostPct={sellCostPct} />} />
+            <HeroMetric label="Tenure" value={client.tenure_years ? `${client.tenure_years.toFixed(1)} yr` : "—"} />
+            <HeroMetric label="Readiness" value={`${client.readiness_score ?? "—"}`} />
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="rounded-full p-1 text-muted-foreground hover:bg-secondary"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <BandPill band={client.band} score={client.move_score} />
-          <IntentInfo />
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-              READINESS_META[client.readiness_label]?.tone
-            }`}
-          >
-            {READINESS_META[client.readiness_label]?.label} · {client.readiness_score}
-          </span>
-          <ReadinessInfo />
-        </div>
+        <div className="space-y-7 px-5 py-6 sm:px-7">
+          <section className="border-l-4 border-sucasa-orange pl-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-opportunity">Opportunity summary</p>
+            <h3 className="mt-1 text-xl font-semibold text-sucasa-navy">{opportunityHeadline}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{opportunityDetail}</p>
+          </section>
 
-        <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-          <Field label="Est. value" value={money(client.estimated_value)} />
-          <Field
-            label="Net proceeds"
-            value={money(client.net_proceeds)}
-            info={<NetProceedsInfo sellCostPct={sellCostPct} />}
-            tone={
-              client.net_proceeds == null
-                ? undefined
-                : client.net_proceeds > 0
-                  ? "text-growth"
-                  : "text-destructive"
-            }
-          />
-          <Field label="Equity" value={money(client.equity_dollars)} />
-          <Field
-            label="Tenure"
-            value={client.tenure_years ? `${client.tenure_years.toFixed(1)} yr` : "—"}
-          />
-          <Field
-            label="Beds / baths"
-            value={client.beds ? `${client.beds} / ${client.baths ?? "—"}` : "—"}
-          />
-          <Field label="Sqft" value={client.sqft ? client.sqft.toLocaleString() : "—"} />
-          <Field label="Year built" value={client.year_built ?? "—"} />
-          <Field
-            label="Permitted work"
-            value={money(client.permit_total_value)}
-            info={<PermitsInfo />}
-          />
-        </div>
+          <DetailSection title="Why now">
+            {whyNow.length ? whyNow.map((s: any, i: number) => (
+              <SignalRow key={`${s.label}-${i}`} icon={i === 0 ? <Sparkles /> : <CheckCircle2 />} title={s.label} detail={s.detail} tone={i === 0 ? "opportunity" : "positive"} />
+            )) : <p className="text-sm text-text-secondary">{client.has_intel ? "No movement signals yet." : "No property records pulled for this address yet."}</p>}
+          </DetailSection>
 
-        <h3 className="mt-6 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Listing readiness
-          <ReadinessInfo />
-        </h3>
-        <ul className="mt-2 space-y-1.5">
-          {client.readiness_checks?.map((c: any) => (
-            <li key={c.key} className="flex items-start gap-2 text-xs">
-              {c.ok ? (
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-growth" />
-              ) : (
-                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              )}
-              <span>
-                <span className="font-medium">{c.label}</span>
-                <span className="block text-muted-foreground">{c.detail}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Move signals
-        </h3>
-        <ul className="mt-2 space-y-2">
-          {client.signals.length === 0 && (
-            <li className="text-xs text-muted-foreground">
-              {client.has_intel
-                ? "No movement signals yet."
-                : "No property records pulled for this address yet."}
-            </li>
-          )}
-          {client.signals.map((s: any, i: number) => (
-            <li key={i} className="rounded-2xl border border-border bg-card p-3">
-              <p className="text-sm font-medium">{s.label}</p>
-              <p className="text-xs text-muted-foreground">{s.detail}</p>
-            </li>
-          ))}
-        </ul>
+          <section className="rounded-lg bg-surface-warm p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-attention">Agent intelligence</p><h3 className="mt-1 text-lg font-semibold text-sucasa-navy">Home Prep &amp; Listing Readiness</h3></div>
+              <Hammer className="h-5 w-5 text-sucasa-orange" />
+            </div>
+            <div className="mt-3 divide-y divide-surface-warm-border">
+              {(prepRows.length ? prepRows : (client.readiness_checks ?? []).filter((c: any) => !c.ok).slice(0, 4)).map((r: any, i: number) => (
+                <div key={r.id ?? r.key ?? i} className="flex items-start justify-between gap-4 py-3">
+                  <div><p className="text-sm font-semibold capitalize text-sucasa-navy">{String(r.system ?? r.label ?? "Property review").replace(/_/g, " ")}</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{r.recommended_action ?? r.detail}</p></div>
+                  <span className="shrink-0 text-xs font-semibold text-status-attention">{r.urgency === "medium" ? "Review due" : r.urgency === "high" ? "Worth checking" : "Prep likely"}</span>
+                </div>
+              ))}
+              {!prepRows.length && !(client.readiness_checks ?? []).some((c: any) => !c.ok) && <p className="py-3 text-sm text-text-secondary">No preparation items are currently supported by the information on file.</p>}
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">Property Records and homeowner-provided records</p>
+          </section>
 
         {client.referrals?.length > 0 && (
           <>
@@ -1581,26 +1544,26 @@ function ClientDrawer({
 
 
 
-        <div className="mt-5 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+        <div className="rounded-lg border-l-4 border-intelligence-accent bg-surface-intelligence p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
             Suggested opener
           </p>
-          <p className="mt-1 text-sm">{client.opener}</p>
+          <p className="mt-2 text-[15px] leading-relaxed text-sucasa-navy">{client.opener}</p>
           <button
             onClick={() => {
               navigator.clipboard.writeText(client.opener);
               toast.success("Copied");
             }}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary"
+            className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-primary"
           >
             <Copy className="h-3 w-3" /> Copy
           </button>
         </div>
 
-        <button
+        <Button
           onClick={onBrief}
           disabled={briefLoading}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          className="h-12 w-full rounded-lg bg-action-primary text-action-primary-foreground"
         >
           {briefLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1608,18 +1571,18 @@ function ClientDrawer({
             <Sparkles className="h-4 w-4" />
           )}
           Generate listing brief
-        </button>
+        </Button>
         {brief && (
           <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-border bg-card p-3 text-sm">
             {brief}
           </pre>
         )}
 
-        <div className="mt-5 flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {client.phone && (
             <a
               href={`tel:${String(client.phone).replace(/[^0-9+]/g, "")}`}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-border px-3 py-2 text-sm hover:border-primary"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
               <Phone className="h-4 w-4 text-primary" /> Call
             </a>
@@ -1627,20 +1590,31 @@ function ClientDrawer({
           {client.email && (
             <a
               href={`mailto:${client.email}`}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-border px-3 py-2 text-sm hover:border-primary"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
               <Mail className="h-4 w-4 text-primary" /> Email
             </a>
           )}
         </div>
 
-        <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <DetailSection title="Property details">
+          <div className="grid grid-cols-2 gap-x-5 gap-y-4">
+            <DetailFact label="Equity" value={money(client.equity_dollars)} />
+            <DetailFact label="Beds / baths" value={client.beds ? `${client.beds} / ${client.baths ?? "—"}` : "—"} />
+            <DetailFact label="Square feet" value={client.sqft ? client.sqft.toLocaleString() : "—"} />
+            <DetailFact label="Year built" value={client.year_built ?? "—"} />
+            <DetailFact label="Permitted work" value={money(client.permit_total_value)} info={<PermitsInfo />} />
+            <DetailFact label="Last permit" value={client.last_permit_date ? new Date(client.last_permit_date).toLocaleDateString() : "—"} />
+          </div>
+        </DetailSection>
+
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Listing status
         </h3>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="mt-2 w-full rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+          className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
@@ -1661,10 +1635,10 @@ function ClientDrawer({
             value={agentName}
             onChange={(e) => setAgentName(e.target.value)}
             placeholder="Listing agent name"
-            className="mt-2 w-full rounded-2xl border border-border bg-card px-3 py-2 text-sm"
+            className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
           />
         )}
-        <button
+        <Button
           onClick={() =>
             onSaveListing({
               status,
@@ -1673,16 +1647,30 @@ function ClientDrawer({
             })
           }
           disabled={saving}
-          className="mt-3 w-full rounded-full border border-border px-4 py-2 text-sm font-medium hover:border-primary disabled:opacity-60"
+          variant="outline"
+          className="mt-3 w-full rounded-lg"
         >
           {saving ? "Saving…" : "Save listing status"}
-        </button>
+        </Button>
+        </div>
       </aside>
     </div>
   );
 }
 
-function Field({
+function HeroMetric({ label, value, info }: { label: string; value: string; info?: ReactNode }) {
+  return <div className="min-w-0 px-2 first:pl-0 last:pr-0"><p className="flex items-center gap-1 text-[9px] leading-tight text-primary-foreground/60">{label}{info}</p><p className="mt-1 truncate text-sm font-semibold text-primary-foreground">{value}</p></div>;
+}
+
+function DetailSection({ title, children }: { title: string; children: ReactNode }) {
+  return <section><h3 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{title}</h3><div className="mt-3 divide-y divide-border">{children}</div></section>;
+}
+
+function SignalRow({ icon, title, detail, tone }: { icon: ReactNode; title: string; detail: string; tone: "opportunity" | "positive" }) {
+  return <div className="flex gap-3 py-3 first:pt-0 last:pb-0"><span className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full [&_svg]:h-4 [&_svg]:w-4", tone === "opportunity" ? "bg-sucasa-orange/10 text-status-opportunity" : "bg-status-positive/10 text-status-positive")}>{icon}</span><div><p className="text-sm font-semibold text-sucasa-navy">{title}</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{detail}</p></div></div>;
+}
+
+function DetailFact({
   label,
   value,
   info,
@@ -1694,12 +1682,12 @@ function Field({
   tone?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3">
+    <div>
       <p className="inline-flex items-center gap-1 text-[11px] uppercase tracking-wider text-muted-foreground">
         {label}
         {info}
       </p>
-      <p className={`mt-0.5 font-medium ${tone ?? ""}`}>{value}</p>
+      <p className={`mt-0.5 text-sm font-semibold text-sucasa-navy ${tone ?? ""}`}>{value}</p>
     </div>
   );
 }
