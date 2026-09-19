@@ -247,3 +247,10 @@
 - [ ] Minimized lender reveal (name + authorized channels only), channel-scoped revocation/suppression
 - [ ] Economic guardrail tests (no agent or lender benefit from introduction activity)
 - [ ] Freeze legacy approved introduction_requests rows (no consent backfill)
+
+## Public homepage — one home, connected action (in progress 2026-09-19)
+- [ ] Replace the current long homepage with the HOME → CHANGE → INTELLIGENCE → ACTION story
+- [ ] Make the fictional Home Profile the visual anchor with connected Agent Today and Lender Today outcomes
+- [ ] Preserve one restrained connected-services visual without reintroducing Home Team behavior
+- [ ] Keep every homepage string complete in English and Spanish
+- [ ] Verify phone, desktop, focus, contrast, reduced motion, routes, translations, tests, and preview-only delivery
