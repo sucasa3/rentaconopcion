@@ -263,3 +263,6 @@
 - [x] Follow with compact, distinct Agent Today and Lender Today benefit sections
 - [x] Remove repeated how-it-works, role-selection, and service-category sections
 - [x] Keep EN/ES complete and verify the full mobile preview, desktop, routes, accessibility, tests, and preview-only status
+- [ ] Compact the HVAC provider handoff into one Recommended professionals-style surface
+- [ ] Keep fictional providers non-actionable while preserving legitimate Browse services navigation
+- [ ] Re-verify the complete mobile sequence and preview-only delivery
