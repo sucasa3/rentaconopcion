@@ -4,7 +4,6 @@ import {
   FileText,
   House,
   MessageCircleQuestion,
-  ShieldCheck,
   Snowflake,
   Wrench,
   Zap,
@@ -58,7 +57,7 @@ function HomeProfileMoment() {
       <div className="relative -mt-10 mx-3 grid grid-cols-3 divide-x divide-border rounded-xl border border-border bg-hero-glass p-3 shadow-soft backdrop-blur-xl sm:mx-5 sm:p-4">
         <Metric label={t("pub.home.demo.value")} value="$482K" icon={<House />} />
         <Metric label={t("pub.home.demo.equity")} value="$186K" icon={<ChartNoAxesCombined />} />
-        <Metric label={t("pub.home.demo.score")} value="82" icon={<ShieldCheck />} />
+        <Metric label={t("pub.home.demo.score")} value="82" score={82} />
       </div>
       <div className="flex items-center gap-3 px-5 py-4 sm:px-6">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-warm text-status-attention"><Wrench className="h-4 w-4" /></span>
@@ -103,12 +102,25 @@ function QuietSummary({ icon, label, value }: { icon: React.ReactNode; label: st
   return <div className="flex min-h-20 items-center gap-3 rounded-xl border border-border p-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary text-sucasa-orange [&_svg]:h-4 [&_svg]:w-4">{icon}</span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p><p className="mt-1 text-xs font-semibold text-sucasa-navy">{value}</p></div></div>;
 }
 
-function Metric({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+function Metric({ label, value, icon, score }: { label: string; value: string; icon?: React.ReactNode; score?: number }) {
+  const circumference = 2 * Math.PI * 18;
   return (
-    <div className="min-w-0 px-2 text-center">
-      <span className="mx-auto hidden text-intelligence-accent sm:block [&_svg]:mx-auto [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
-      <p className="mt-1 truncate text-[8px] font-bold uppercase text-intelligence-accent sm:text-[9px]">{label}</p>
-      <p className="mt-0.5 text-base font-bold tabular-nums text-sucasa-navy sm:text-xl">{value}</p>
+    <div className={`min-w-0 px-2 ${score != null ? "flex items-center justify-center gap-1.5 text-left sm:gap-2" : "text-center"}`}>
+      {score != null ? (
+        <span className="relative grid h-10 w-10 shrink-0 place-items-center sm:h-12 sm:w-12">
+          <svg viewBox="0 0 44 44" className="absolute inset-0 -rotate-90" aria-hidden>
+            <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeWidth="4" className="text-secondary" />
+            <circle cx="22" cy="22" r="18" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - score / 100)} className="home-score-ring text-status-positive" />
+          </svg>
+          <span className="text-xs font-bold tabular-nums text-sucasa-navy sm:text-sm">{score}</span>
+        </span>
+      ) : (
+        <span className="mx-auto hidden text-intelligence-accent sm:block [&_svg]:mx-auto [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
+      )}
+      <div className="min-w-0">
+        <p className={`${score != null ? "whitespace-normal leading-tight" : "mt-1 truncate"} text-[8px] font-bold uppercase text-intelligence-accent sm:text-[9px]`}>{label}</p>
+        {score == null && <p className="mt-0.5 text-base font-bold tabular-nums text-sucasa-navy sm:text-xl">{value}</p>}
+      </div>
     </div>
   );
 }
