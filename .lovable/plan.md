@@ -1,27 +1,25 @@
-# Align the homepage My Home demo with the current dashboard
+# Polish the My Home demo hero card only
 
 ## Goal
-Make the public fictional My Home showcase visibly match the current homeowner dashboard shown in the reference, without changing the real dashboard, data, routes, or behavior.
+Update only the fictional My Home hero card on the public homepage so it matches the current homeowner dashboard’s hero treatment more closely. This is a visual alignment, not a homepage redesign.
 
 ## Changes
-- Rework the demo’s property-photo card to follow the current dashboard composition: address over the photo and an overlapping value/equity/Home Score tray.
-- Replace the plain score number in that tray with the green circular progress ring, using the demo’s existing score of 82.
-- Restyle the demo Home Health area to match the current dashboard hierarchy:
-  - Home Health heading and compact “What affects this?” treatment.
-  - A prominent bordered Home Score panel with the larger green ring, score label, and status.
-  - Compact system-status cards arranged like the current dashboard.
-- Rebalance the remaining Home Care, documents, history, and Ask SuCasa preview content beneath the Home Health area so the overall showcase reads like the current product while preserving all approved homepage content.
-- Keep the public preview isolated and static: no authenticated dashboard imports, live records, provider lookups, or new interactions.
+- Keep the existing fictional home photo, address, value, equity, and Home Score of 82.
+- Refine the photo-and-metrics composition to match the current dashboard: address over the photo and a compact overlapping value/equity/Home Score tray.
+- Replace the hero tray’s plain score number and shield icon with the green circular score ring used by the current dashboard.
+- Keep the implementation isolated inside the public fictional demo; do not import authenticated dashboard logic or connect live data.
 
-## Preserved
-- Existing fictional address, value, equity, score, and home-care content.
-- Fictional-demo labeling and English/Spanish support.
-- Homepage story, Home Services cards, professional previews, final call to action, navigation, routes, pricing, permissions, and backend behavior.
-- Preview-only delivery; nothing will be published.
+## Explicitly unchanged
+- The rest of the My Home showcase, including Home Health, Home Care, documents, history, and Ask SuCasa.
+- The already-approved mobile Home Services headline sizing, eight service categories, HVAC treatment, service actions, and disclosure.
+- The already-compressed Agent and Lender previews and their content.
+- “FOR AGENTS & LENDERS / Better context. Better-timed conversations.” and its spacing.
+- Homepage hero, page structure, copy, English/Spanish support, final CTA, footer, routes, `/agents`, `/lenders`, pricing, authenticated dashboards, backend logic, and permissions.
+- Preview-only status; nothing will be published.
 
 ## Verification
 - Check the homepage at 390px and 1280px in English and Spanish.
-- Confirm both score locations show the green ring and the Home Health layout matches the current dashboard’s visual hierarchy.
-- Confirm all existing demo content remains readable with no overflow or accessibility issues.
+- Confirm the green ring is clear, the three metrics remain readable, and the hero tray does not overflow.
+- Confirm all previously approved homepage polish and all eight service categories remain intact.
 - Confirm `/agents`, `/lenders`, and the authenticated homeowner dashboard remain unchanged.
-- Run the relevant type and test checks.
+- Run type, test, browser-console, overflow, and basic accessibility checks.
