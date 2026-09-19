@@ -104,31 +104,31 @@ function ProviderHelp() {
 function ProfessionalBenefits() {
   const { t } = useLanguage();
   return (
-    <section className="bg-surface-warm px-5 py-14 sm:py-20">
+    <section className="bg-surface-warm px-5 py-10 sm:py-14">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.pros.eyebrow_new")}</p>
-          <h2 className="mt-3 text-4xl font-semibold leading-tight text-sucasa-navy sm:text-5xl">{t("pub.home.pros.title_new")}</h2>
+          <h2 className="mt-2 text-2xl font-semibold leading-tight text-sucasa-navy sm:text-3xl">{t("pub.home.pros.title_new")}</h2>
         </div>
-        <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-2">
+        <div className="mt-6 grid gap-6 lg:mt-8 lg:grid-cols-2">
           <article className="min-w-0">
             <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.paths.agent_title")}</p>
-            <h3 className="mt-3 text-2xl font-semibold leading-snug text-sucasa-navy">{t("pub.home.paths.agent_body")}</h3>
-            <div className="mt-5"><PublicAgentTodayPreview /></div>
-            <Button asChild size="lg" className="mt-5 h-12 w-full justify-between rounded-full">
+            <h3 className="mt-2 text-2xl font-semibold leading-snug text-sucasa-navy">{t("pub.home.paths.agent_body")}</h3>
+            <div className="mt-4"><PublicAgentTodayPreview /></div>
+            <Button asChild size="lg" className="mt-4 h-12 w-full justify-between rounded-full">
               <Link to="/agents">{t("pub.home.pros.agent_cta")}<ArrowRight /></Link>
             </Button>
           </article>
           <article className="min-w-0">
             <p className="text-xs font-semibold uppercase text-muted-foreground">{t("pub.home.paths.lender_title")}</p>
-            <h3 className="mt-3 text-2xl font-semibold leading-snug text-sucasa-navy">{t("pub.home.paths.lender_body")}</h3>
-            <div className="mt-5"><PublicLenderTodayPreview /></div>
-            <Button asChild size="lg" className="mt-5 h-12 w-full justify-between rounded-full">
+            <h3 className="mt-2 text-2xl font-semibold leading-snug text-sucasa-navy">{t("pub.home.paths.lender_body")}</h3>
+            <div className="mt-4"><PublicLenderTodayPreview /></div>
+            <Button asChild size="lg" className="mt-4 h-12 w-full justify-between rounded-full">
               <Link to="/lenders">{t("pub.home.pros.lender_cta")}<ArrowRight /></Link>
             </Button>
           </article>
         </div>
-        <p className="mt-5 text-center text-[11px] text-muted-foreground">{t("pub.home.demo_all")}</p>
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">{t("pub.home.demo_all")}</p>
       </div>
     </section>
   );
