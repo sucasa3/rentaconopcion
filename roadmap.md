@@ -277,3 +277,11 @@
 - [x] Simplify professional sections to benefit → product teaser → large blue CTA while keeping homeowner content dominant
 - [x] Keep `/agents` and `/lenders` unchanged and verify 390px/1280px, routes, accessibility, console, types, and tests
 - [x] Keep the revision preview-only and do not publish
+
+## Public homepage — visual polish pass (complete 2026-09-19)
+- [x] Reduce Home Services headline scale on mobile only (smaller size + tighter line-height)
+- [x] Compress Agent and Lender previews ~20-25% vertically while preserving all core information
+- [x] Simplify professional-section intro to "For agents & lenders / Better context. Better-timed conversations." in EN/ES
+- [x] Verify 390px/1280px, EN/ES fictional labels, routes, types, tests, and no regressions
+- [x] Keep `/agents` and `/lenders` unchanged
+- [x] Keep preview-only, do not publish
