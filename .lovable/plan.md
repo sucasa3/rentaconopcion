@@ -1,52 +1,27 @@
-# Refine the homepage action layer and professional product proof
+# Align the homepage My Home demo with the current dashboard
 
-Keep the approved homeowner-first homepage, hero, complete fictional My Home showcase, navigation, final homeowner CTA, footer, and all existing destinations. Change only the Home Services handoff and the Agent/Lender product demonstrations.
+## Goal
+Make the public fictional My Home showcase visibly match the current homeowner dashboard shown in the reference, without changing the real dashboard, data, routes, or behavior.
 
-## Home Services action layer
+## Changes
+- Rework the demo’s property-photo card to follow the current dashboard composition: address over the photo and an overlapping value/equity/Home Score tray.
+- Replace the plain score number in that tray with the green circular progress ring, using the demo’s existing score of 82.
+- Restyle the demo Home Health area to match the current dashboard hierarchy:
+  - Home Health heading and compact “What affects this?” treatment.
+  - A prominent bordered Home Score panel with the larger green ring, score label, and status.
+  - Compact system-status cards arranged like the current dashboard.
+- Rebalance the remaining Home Care, documents, history, and Ask SuCasa preview content beneath the Home Health area so the overall showcase reads like the current product while preserving all approved homepage content.
+- Keep the public preview isolated and static: no authenticated dashboard imports, live records, provider lookups, or new interactions.
 
-- Preserve the eight existing service-category cards and their colorful category icons.
-- Replace the marketplace-style heading with:
-  - **Your home tells you what it needs. SuCasa helps you take care of it.**
-  - **Maintenance, repairs, improvements, and unexpected problems — get to the right help without starting from scratch.**
-- Make the transition from **Annual HVAC service is coming up** visually continuous and give HVAC a restrained recommended-next-step treatment.
-- Keep HVAC’s factual category description and its working **Request service** destination; present the other categories as help available when future needs arise.
-- Remove response-time badges from the homepage because the current values are static demonstration data, not verified partner performance.
-- Add the quiet disclosure: **Service requests may be fulfilled through SuCasa service partners.**
-- Preserve **Browse all services** and do not change the actual Home Services page or request behavior.
-- Do not add providers, ratings, reviews, availability, inventory, or live lookups.
-
-## Isolated Agent Today product preview
-
-- Replace the simple homepage Agent card with a reusable, isolated fictional miniature adapted from the real Agent Today hierarchy.
-- Show only a relationships-worth-attention count, one clearly prioritized homeowner, **Why now**, one short suggested opener, and one recommended next action.
-- Keep the promise focused on relationship timing: who needs attention, why now, what to say, and what to do next.
-- Use the established warm relationship surface, intelligence-blue interpretation surface, small orange opportunity marker, quiet status treatment, and one elevated priority card.
-
-## Isolated Lender Today product preview
-
-- Create a visually distinct fictional miniature dashboard adapted from the real Lender Today hierarchy.
-- Show only existing relationships worth attention, one priority client, factual **Why now**, concise home/mortgage context, and one clear next action.
-- Keep all language conditional and relationship-oriented; do not imply approval, savings, qualification, or guaranteed opportunity.
-- Use the same SuCasa visual system while making the lender view read as a monitored book, not a duplicate of the agent view.
-
-## Homepage integration and reuse
-
-- Keep the Agent and Lender marketing copy and CTAs concise; let the richer product previews carry the explanation.
-- Build the two previews as isolated public demo components using static fictional data and use them on the homepage only in this pass. Do not import authenticated dashboard logic or change `/agents` and `/lenders`.
-- Preserve the current homepage sequence and homeowner visual dominance; do not add sections or turn the page into three separate landing pages.
-- Keep every demo name, metric, home, and scenario visibly labeled fictional in English and Spanish.
-
-## Technical details
-
-- Update the homepage service treatment and replace the current simplified professional-demo components with reusable public preview components derived from existing Agent Today, Lender Today, priority-card, and intelligence-surface patterns.
-- Use existing semantic color tokens and design-system controls; no backend, permissions, pricing, authentication, or route changes.
-- Keep the current `/request?category=...`, `/services`, `/agents`, and `/lenders` destinations intact.
+## Preserved
+- Existing fictional address, value, equity, score, and home-care content.
+- Fictional-demo labeling and English/Spanish support.
+- Homepage story, Home Services cards, professional previews, final call to action, navigation, routes, pricing, permissions, and backend behavior.
+- Preview-only delivery; nothing will be published.
 
 ## Verification
-
-- Verify the complete English and Spanish homepage at 390px and 1280px, including text fit, hierarchy, keyboard focus, reduced motion, overflow, and browser errors.
-- Confirm the homepage contains all eight service categories, HVAC is the only contextual recommendation, no response-time claims remain there, and the partner disclosure is visible.
-- Confirm Agent and Lender previews are clearly fictional, visually distinct, and contain no unsupported claims or real account data.
-- Check all affected CTA destinations and verify `/agents` and `/lenders` remain intact if they adopt the shared preview.
-- Run type checks and the complete existing test suite.
-- Keep all changes at the preview URL only; do not publish.
+- Check the homepage at 390px and 1280px in English and Spanish.
+- Confirm both score locations show the green ring and the Home Health layout matches the current dashboard’s visual hierarchy.
+- Confirm all existing demo content remains readable with no overflow or accessibility issues.
+- Confirm `/agents`, `/lenders`, and the authenticated homeowner dashboard remain unchanged.
+- Run the relevant type and test checks.
