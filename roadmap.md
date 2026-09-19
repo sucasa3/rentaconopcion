@@ -285,3 +285,9 @@
 - [x] Verify 390px/1280px, EN/ES fictional labels, routes, types, tests, and no regressions
 - [x] Keep `/agents` and `/lenders` unchanged
 - [x] Keep preview-only, do not publish
+
+## Public homepage — My Home demo hero score alignment (in progress 2026-09-19)
+- [ ] Replace only the public hero tray’s plain score treatment with the green circular score ring showing 82
+- [ ] Preserve the public demo width, image crop, spacing, fictional data, translations, and downstream layout
+- [ ] Keep authenticated dashboard components and logic isolated and unchanged
+- [ ] Verify 390px/1280px, EN/ES, overflow, accessibility, console, types, tests, and preview-only delivery
