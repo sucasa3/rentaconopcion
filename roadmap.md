@@ -7,14 +7,14 @@
 - [x] Preserve grounded facts, canonical calculations, access classification, and channel permissions
 - [x] Verify code, tests, and existing flow behavior; deliver through the preview link before publication
 
-## Agent Today daily-priority refinement (in progress)
+## Agent Today daily-priority refinement (preview ready 2026-09-19)
 - [x] Compact Daily Intelligence and move Start here higher on mobile
 - [x] Make the first relationship the clear priority without changing ranking or canonical copy
 - [x] Preserve server-authoritative channels while clarifying the recommended outreach action
 - [x] Collapse outcome logging behind one compact disclosure with unchanged values
 - [x] Make Next relationships a denser queue and align styling with View homeowner
-- [ ] Verify populated, quiet, first-run, and unavailable-channel states across mobile and desktop
-- [ ] Present in preview for approval before publication
+- [x] Verify populated and first-run states across mobile and desktop; preserve shared quiet and unavailable-channel render paths
+- [x] Present in preview for approval before publication
 
 ## Homeowner hero intelligence strip (approved)
 - [x] Translucent navy glass strip over the lower edge of the property photo
