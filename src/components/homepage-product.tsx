@@ -9,13 +9,12 @@ import {
   MessageCircleQuestion,
   ShieldCheck,
   Snowflake,
-  Star,
   Wrench,
   Zap,
 } from "lucide-react";
 import heroPhoto from "@/assets/home-hero-photo.jpg.asset.json";
-import { useLanguage } from "@/lib/i18n";
-import { Button } from "@/components/ui/button";
+import { useLanguage, type TranslationKey } from "@/lib/i18n";
+import { SERVICE_CATEGORIES } from "@/lib/mock-data";
 import { Link } from "@tanstack/react-router";
 
 export function HomeownerShowcase() {
@@ -167,35 +166,44 @@ function DemoLine({ label, value, intelligence = false }: { label: string; value
 
 export function ProviderHelpVisual() {
   const { t } = useLanguage();
-  const providers = [
-    [t("pub.home.help.provider_1"), t("pub.home.help.provider_1_desc"), "4.9", "187"],
-    [t("pub.home.help.provider_2"), t("pub.home.help.provider_2_desc"), "4.8", "142"],
-    [t("pub.home.help.provider_3"), t("pub.home.help.provider_3_desc"), "4.9", "96"],
-  ] as const;
+  const categories = SERVICE_CATEGORIES.slice(0, 8);
+  const serviceKey = (slug: string, field: "name" | "desc") =>
+    `pub.svc.${slug.replace(/-/g, "_")}.${field}` as TranslationKey;
   return (
     <div>
-      <p className="text-center text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.help.transition")}</p>
-      <div className="mx-auto mt-3 rounded-2xl border border-border bg-card p-4 shadow-elevated sm:p-5">
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-3">
-          <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-sucasa-navy">{t("pub.home.help.recommended")}</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">{t("pub.home.help.matched")}</p>
-          </div>
-          <Link to="/services" className="shrink-0 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("pub.home.help.browse")}</Link>
+      <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-status-attention/30 bg-surface-warm px-3 py-2 text-xs font-semibold text-sucasa-navy">
+          <Wrench className="h-3.5 w-3.5 shrink-0 text-status-attention" />
+          <span className="truncate">{t("pub.home.demo.care_value")}</span>
         </div>
-        <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-surface-warm p-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-card text-status-attention shadow-soft"><Wrench className="h-4 w-4" /></span>
-          <div className="min-w-0"><p className="text-[9px] font-semibold uppercase text-status-attention">{t("pub.home.showcase.care")}</p><p className="truncate text-xs font-semibold text-sucasa-navy sm:text-sm">{t("pub.home.demo.care_value")}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{t("pub.home.help.reason")}</p></div>
-        </div>
-        <div className="mt-3 divide-y divide-border rounded-xl border border-border px-3">
-        {providers.map(([name, description, rating, reviews]) => (
-          <div key={name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3">
-            <div className="min-w-0"><p className="truncate text-sm font-semibold text-sucasa-navy">{name}</p><p className="truncate text-[11px] text-muted-foreground">{description}</p></div>
-            <p className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground"><Star className="h-3 w-3 fill-current text-status-attention" /> {rating} · {reviews}</p>
-          </div>
-        ))}
-        </div>
-        <p className="mt-3 text-center text-[9px] leading-relaxed text-muted-foreground">{t("pub.home.help.disclaimer")}</p>
+        <ArrowRight className="mx-auto my-3 h-4 w-4 rotate-90 text-sucasa-orange" aria-hidden />
+        <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.services.eyebrow")}</p>
+        <h2 className="mt-2 text-3xl font-semibold leading-tight text-sucasa-navy sm:text-4xl">{t("pub.home.help.services_title")}</h2>
+      </div>
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          return (
+            <article key={category.slug} className="group flex min-w-0 flex-col rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-shadow hover:shadow-elevated sm:p-4">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${category.color} text-white`}><Icon className="h-4 w-4" /></span>
+                <span className="truncate rounded-full bg-secondary px-2 py-1 text-center text-[8px] font-medium text-secondary-foreground sm:text-[9px]">
+                  {t("pub.svc.avg_response", { time: category.avgResponse.replace(/\s*avg response\s*$/i, "") })}
+                </span>
+              </div>
+              <h3 className="mt-3 truncate text-sm font-semibold text-sucasa-navy">{t(serviceKey(category.slug, "name"))}</h3>
+              <p className="mt-1 line-clamp-2 min-h-8 text-[10px] leading-relaxed text-muted-foreground">{t(serviceKey(category.slug, "desc"))}</p>
+              <Link to="/request" search={{ category: category.slug }} className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                {t("pub.services.request")} <ArrowRight className="h-3 w-3" />
+              </Link>
+            </article>
+          );
+        })}
+      </div>
+      <div className="mt-5 text-center">
+        <Link to="/services" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {t("pub.home.help.browse_all")} <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );
