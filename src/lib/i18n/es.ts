@@ -730,6 +730,8 @@ export const es: Dictionary = {
   "pub.home.help.matched": "Según lo que esta casa ficticia necesita ahora.",
   "pub.home.help.browse": "Ver servicios",
   "pub.home.help.reason": "Se acerca el servicio anual",
+  "pub.home.help.services_title": "De climatización a reparaciones, solicita ayuda en segundos",
+  "pub.home.help.browse_all": "Ver todos los servicios",
   "pub.home.help.provider_1": "Juniper HVAC",
   "pub.home.help.provider_1_desc": "Servicio de temporada para calefacción y aire",
   "pub.home.help.provider_2": "Northstar Home Comfort",
