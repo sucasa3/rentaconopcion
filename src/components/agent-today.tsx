@@ -336,6 +336,7 @@ function BestMove({
   const [showOutcomes, setShowOutcomes] = useState(false);
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
+  const supportingFacts = [...(n?.supportingSignals ?? []), ...(n?.secondarySignals ?? [])].slice(0, 3);
   // The canonical narrative decides the opener. A cached draft is only used
   // when the server has already validated it against the same fact snapshot.
   const opener = n?.openerSeed || item.draftBody?.trim() || item.headline;
@@ -353,9 +354,9 @@ function BestMove({
           <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
           {meta.label}
         </p>
-        {n?.supportingSignals?.length ? (
+        {supportingFacts.length ? (
           <p className="mt-2 text-[13px] leading-snug text-text-secondary">
-            {n.supportingSignals.slice(0, 3).join(" · ")}
+            {supportingFacts.join(" · ")}
           </p>
         ) : null}
       </div>
@@ -365,7 +366,9 @@ function BestMove({
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
             Why now
           </p>
-          <p className="mt-1 text-sm font-medium leading-relaxed text-primary">{item.why}</p>
+          <p className="mt-1 text-sm font-medium leading-relaxed text-primary">
+            {n?.whyItMatters ?? item.why}
+          </p>
         </div>
 
         <div>
