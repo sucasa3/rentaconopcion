@@ -127,7 +127,7 @@ export function ProviderHelpVisual() {
         </div>
         <ArrowRight className="mx-auto my-3 h-4 w-4 rotate-90 text-sucasa-orange" aria-hidden />
         <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.help.eyebrow")}</p>
-        <h2 className="mt-2 whitespace-pre-line text-3xl font-semibold leading-tight text-sucasa-navy sm:text-4xl">{t("pub.home.help.services_title")}</h2>
+        <h2 className="mt-2 whitespace-pre-line text-[26px] font-semibold leading-[1.15] text-sucasa-navy sm:text-4xl sm:leading-tight">{t("pub.home.help.services_title")}</h2>
         <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t("pub.home.help.services_body")}</p>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
