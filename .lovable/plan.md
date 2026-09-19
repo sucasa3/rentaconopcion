@@ -1,25 +1,35 @@
-# Polish the My Home demo hero card only
+# Confirm preview URL and resolve lingering pastel colors in My Home demo
 
-## Goal
-Update only the fictional My Home hero card on the public homepage so it matches the current homeowner dashboard’s hero treatment more closely. This is a visual alignment, not a homepage redesign.
+The user wants the updated preview link and reports that the My Home demo still shows pastel colors instead of the real homeowner product palette.
 
-## Changes
-- Keep the existing fictional home photo, address, value, equity, and Home Score of 82.
-- Refine the photo-and-metrics composition to match the current dashboard: address over the photo and a compact overlapping value/equity/Home Score tray.
-- Replace the hero tray’s plain score number and shield icon with the green circular score ring used by the current dashboard.
-- Keep the implementation isolated inside the public fictional demo; do not import authenticated dashboard logic or connect live data.
+## Current state
 
-## Explicitly unchanged
-- The rest of the My Home showcase, including Home Health, Home Care, documents, history, and Ask SuCasa.
-- The already-approved mobile Home Services headline sizing, eight service categories, HVAC treatment, service actions, and disclosure.
-- The already-compressed Agent and Lender previews and their content.
-- “FOR AGENTS & LENDERS / Better context. Better-timed conversations.” and its spacing.
-- Homepage hero, page structure, copy, English/Spanish support, final CTA, footer, routes, `/agents`, `/lenders`, pricing, authenticated dashboards, backend logic, and permissions.
-- Preview-only status; nothing will be published.
+- The public homepage (`src/routes/index.tsx`) renders the fictional **My Home** demo via `HomeownerShowcase` in `src/components/homepage-product.tsx`.
+- The demo wrapper already applies the `homeowner-premium` class, which overrides the global semantic tokens with the exact homeowner palette (white cards, saturated navy/orange/green, no pastels).
+- The preview URL for this draft has not changed with each edit; it is the same link.
 
-## Verification
-- Check the homepage at 390px and 1280px in English and Spanish.
-- Confirm the green ring is clear, the three metrics remain readable, and the hero tray does not overflow.
-- Confirm all previously approved homepage polish and all eight service categories remain intact.
-- Confirm `/agents`, `/lenders`, and the authenticated homeowner dashboard remain unchanged.
-- Run type, test, browser-console, overflow, and basic accessibility checks.
+## Plan
+
+1. **Provide the current preview URL**  
+   Confirm the single draft preview link is:  
+   `https://id-preview--94429f0c-1687-4b34-81a7-6195279589c3.lovable.app`
+
+2. **Verify the live preview matches the real product palette**  
+   - Check the rendered My Home demo at 390px and 1280px in English and Spanish.
+   - Compare it to the authenticated homeowner dashboard (`src/routes/_authenticated/dashboard.tsx` + `src/components/home-hero/HomeHero.tsx`) and the `homeowner-premium` token override in `src/styles.css`.
+   - Confirm the hero metric tray, Home Score ring, Home Health cards, Home Care card, and Ask SuCasa card use the same saturated tones as the real dashboard, not pastels.
+
+3. **If the preview still appears pastel, diagnose the cause**  
+   - Browser/service-worker cache on the existing preview tab.
+   - Stale preview build not yet flushed.
+   - A remaining token in `homepage-product.tsx` that bypasses the `homeowner-premium` override (e.g., hardcoded Tailwind utilities, non-semantic colors, or elements outside the override scope).
+
+4. **Fix any remaining color mismatch**  
+   - Align any leftover pastel/soft tokens inside the demo with the real homeowner semantic tokens.
+   - Keep all changes scoped to the public demo components; do not import or share authenticated dashboard logic.
+   - Preserve routes, English/Spanish copy, mobile-first layout, and all other approved homepage structure.
+
+5. **Verification**  
+   - Re-check the preview at 390px and 1280px, English and Spanish.
+   - Run typecheck and the full test suite to ensure no regressions.
+   - Keep changes preview-only; do not publish.
