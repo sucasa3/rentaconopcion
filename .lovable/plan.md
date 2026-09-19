@@ -1,49 +1,29 @@
-# Homepage refinement: homeowner journey first
+# Refine the homepage provider handoff
 
-Refine the current approved homepage rather than redesigning it. Keep the page preview-only and make the homeowner experience the dominant story before introducing professional benefits.
+Keep the current homeowner-first homepage structure and change only the provider moment directly below the fictional My Home showcase.
 
-## New page flow
+## Provider section
 
-1. **Short opening promise**
-   - Preserve the approved headline, subheadline, Start free action, See how it works link, navigation, sign-in, and EN/ES controls.
-   - Keep this opening compact so the homeowner product appears quickly.
+- Preserve the direct narrative from the fictional **Annual HVAC service is coming up** Home Care item into relevant help.
+- Restyle the section to closely match the existing homeowner **Recommended professionals** card:
+  - one compact parent surface;
+  - the surfaced HVAC need and reason at the top;
+  - two or three compact provider rows/cards inside it;
+  - fictional company name, HVAC specialty, fictional rating/review treatment;
+  - existing request-service pattern and a quiet Browse services route where appropriate.
+- Keep all provider information clearly labeled as fictional demonstration data and not an endorsement.
+- Do not add service-category tiles, a marketplace grid, live provider lookups, or authenticated data.
 
-2. **Full fictional “My Home” dashboard showcase**
-   - Replace the current partial Home Profile card with a polished, public-safe recreation of the full current homeowner dashboard.
-   - Preserve the real dashboard hierarchy: property-photo summary with estimated value, estimated equity, and Home Score; Home Health and key systems; Home Care with one timely item; documents/history context; and Ask SuCasa.
-   - Use one coherent fictional home and mark the entire showcase clearly as fictional demonstration data.
-   - On mobile, present it as a readable full-width product view rather than shrinking a desktop dashboard.
-   - Do not fetch authenticated data or change the actual homeowner dashboard.
+## Page rhythm
 
-3. **Relevant home-service providers**
-   - Follow the dashboard with a short visual bridge showing how a home need can lead to a useful resource.
-   - Reuse the existing recommended-professional card pattern for a few clearly fictional service providers, with concise specialty/rating treatment and existing request/browse destinations.
-   - Keep this small and curated, not a marketplace or directory wall. Do not imply that a provider is recommended without a demonstrated fictional home need.
-
-4. **Agent and lender benefits**
-   - Remove the current Agent Today and Lender Today cards from the top product showcase.
-   - Introduce two concise professional sections only after the homeowner and service story is established.
-   - Agent: emphasize who deserves attention, why now, what to say, and what to do next; route to `/agents`.
-   - Lender: emphasize relevant attention across existing client relationships, factual context, and better-timed outreach; route to `/lenders`.
-   - Use safe fictional UI excerpts based on the existing Agent Today and Lender Today patterns, with no intent, qualification, or outcome claims.
-
-5. **Conversion and footer**
-   - Keep one homeowner-first Start free action and clear Agent/Lender calls to action.
-   - Preserve the existing footer and all current destinations.
-   - Remove sections that repeat the same homeowner, service, agent, or lender message.
-
-## Visual and content rules
-
-- Keep the approved SuCasa visual system: warm neutrals, navy structure, restrained orange, property imagery, white product surfaces, subtle shadows, and premium spacing.
-- Maintain HOME → CHANGE → UNDERSTANDING → NEXT STEP as the narrative.
-- Keep the homeowner experience visually larger and earlier than professional content.
-- Complete all changed copy in English and Spanish.
-- No real homeowner/provider data, authenticated requests, new product behavior, Home Team changes, backend changes, or publishing.
+- Keep the provider section immediately below the full fictional My Home dashboard.
+- Reduce heading and spacing overhead so the provider handoff stays compact and transitions quickly into Agent and Lender benefits.
+- Preserve the current Agent and Lender excerpts, calls to action, routes, navigation, sign-in, footer, and homeowner-first visual weight.
+- Keep English and Spanish complete.
 
 ## Verification
 
-- Verify the full mobile sequence and desktop composition, including readability of the full dashboard recreation.
-- Confirm one fictional homeowner showcase, a short provider section, and distinct Agent/Lender benefit paths.
-- Check routes, language switching, keyboard focus, contrast, reduced motion, text fit, horizontal overflow, and browser errors.
-- Run the existing type checks and full test suite.
-- Deliver only at the existing preview URL for approval; do not publish.
+- Check the complete mobile page and desktop layout for text fit, hierarchy, keyboard focus, no overflow, and no browser errors.
+- Confirm the provider section contains only 2–3 fictional HVAC providers and no service-category grid.
+- Run the existing tests and type checks.
+- Keep the result at the preview URL only; do not publish.
