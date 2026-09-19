@@ -254,3 +254,5 @@
 - [x] Preserve one restrained connected-services visual without reintroducing Home Team behavior
 - [x] Keep every homepage string complete in English and Spanish
 - [x] Verify phone, desktop, focus, contrast, reduced motion, routes, translations, tests, and preview-only delivery
+- [x] Refine the approved mockup to one product demonstration and one homeowner-first role section
+- [x] Tighten mobile rhythm and relabel the center service as Mortgage & equity
