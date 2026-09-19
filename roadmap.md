@@ -1,11 +1,20 @@
 # Roadmap
 
-## Agent + Lender homeowner detail redesign (in progress)
+## Agent + Lender homeowner detail redesign (published 2026-09-19)
 - [x] Reorder both detail views to Home → Opportunity → Why now → Intelligence → Conversation → Actions → Details
 - [x] Anchor compact professional property identity in the SuCasa Home Profile system; avoid generic lead-detail labels and unsupported shared claims
 - [x] Keep Agent listing/prep intelligence and Lender finance/review intelligence genuinely role-specific
 - [x] Preserve grounded facts, canonical calculations, access classification, and channel permissions
 - [x] Verify code, tests, and existing flow behavior; deliver through the preview link before publication
+
+## Agent Today daily-priority refinement (in progress)
+- [x] Compact Daily Intelligence and move Start here higher on mobile
+- [x] Make the first relationship the clear priority without changing ranking or canonical copy
+- [x] Preserve server-authoritative channels while clarifying the recommended outreach action
+- [x] Collapse outcome logging behind one compact disclosure with unchanged values
+- [x] Make Next relationships a denser queue and align styling with View homeowner
+- [ ] Verify populated, quiet, first-run, and unavailable-channel states across mobile and desktop
+- [ ] Present in preview for approval before publication
 
 ## Homeowner hero intelligence strip (approved)
 - [x] Translucent navy glass strip over the lower edge of the property photo
