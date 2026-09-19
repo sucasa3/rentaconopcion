@@ -275,6 +275,41 @@
   color: var(--foreground);
 }
 
+.professional-detail {
+  /* Professional detail views intentionally share the approved Home Profile palette. */
+  --background: oklch(0.9759 0.0029 264.5);
+  --foreground: oklch(0.2494 0.0304 256.9);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2494 0.0304 256.9);
+  --secondary: oklch(0.9567 0.0052 247.9);
+  --secondary-foreground: oklch(0.3102 0.0590 250.3);
+  --muted: oklch(0.9567 0.0052 247.9);
+  --muted-foreground: oklch(0.5444 0.0350 265.1);
+  --primary: oklch(0.4182 0.0892 249.9);
+  --primary-foreground: oklch(1 0 0);
+  --border: oklch(0.9104 0.0087 247.9);
+  --input: oklch(0.9104 0.0087 247.9);
+  --ring: oklch(0.4182 0.0892 249.9);
+  --sucasa-navy: oklch(0.3102 0.0590 250.3);
+  --sucasa-orange: oklch(0.6181 0.1755 35.5);
+  --surface-warm: oklch(0.9599 0.0079 73.7);
+  --surface-warm-border: oklch(0.9104 0.0087 247.9);
+  --surface-intelligence: oklch(0.9489 0.0121 248.0);
+  --surface-intelligence-border: oklch(0.5561 0.0899 246.4);
+  --surface-intelligence-foreground: oklch(0.3102 0.0590 250.3);
+  --intelligence-accent: oklch(0.5561 0.0899 246.4);
+  --text-secondary: oklch(0.5444 0.0350 265.1);
+  --border-subtle: oklch(0.9104 0.0087 247.9);
+  --status-opportunity: oklch(0.6181 0.1755 35.5);
+  --status-positive: oklch(0.5351 0.0842 171.4);
+  --status-attention: oklch(0.6470 0.1196 74.2);
+  --status-risk: oklch(0.5565 0.1446 24.0);
+  --status-nurture: oklch(0.5444 0.0350 265.1);
+  --action-primary: oklch(0.4182 0.0892 249.9);
+  --action-primary-foreground: oklch(1 0 0);
+  color: var(--foreground);
+}
+
 @utility home-photo-vignette {
   background:
     linear-gradient(to top, oklch(0.08 0.01 250 / 0.94), transparent 62%),

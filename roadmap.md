@@ -1,5 +1,11 @@
 # Roadmap
 
+## Agent + Lender homeowner detail redesign (in progress)
+- [x] Reorder both detail views to Home → Opportunity → Why now → Intelligence → Conversation → Actions → Details
+- [x] Keep Agent listing/prep intelligence and Lender finance/review intelligence genuinely role-specific
+- [x] Preserve grounded facts, canonical calculations, access classification, and channel permissions
+- [x] Verify code, tests, and existing flow behavior; deliver through the preview link before publication
+
 ## Homeowner hero intelligence strip (approved)
 - [x] Translucent navy glass strip over the lower edge of the property photo
 - [x] Estimated Value, Estimated Equity, Home Score from canonical data only
