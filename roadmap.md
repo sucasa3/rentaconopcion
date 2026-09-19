@@ -291,3 +291,11 @@
 - [x] Preserve the public demo width, image crop, spacing, fictional data, translations, and downstream layout
 - [x] Keep authenticated dashboard components and logic isolated and unchanged
 - [x] Verify 390px/1280px, EN/ES, overflow, accessibility, console, types, tests, and preview-only delivery
+
+## Public homepage — mobile opening refinement (complete 2026-09-19)
+- [x] On mobile, keep the hero promise and move directly into the complete fictional My Home demo
+- [x] Hide the secondary subhead, hero buttons, and My Home section intro on mobile only
+- [x] Place the primary Start free CTA immediately after the My Home demo on mobile only
+- [x] Preserve the My Home → Home Services handoff and all existing service-category behavior
+- [x] Keep desktop hierarchy unchanged except minor spacing
+- [x] Verify 390px/1280px, EN/ES, routes, console, types, tests, and preview-only delivery

@@ -49,7 +49,7 @@ function Hero() {
   const { t } = useLanguage();
   return (
     <section className="relative bg-surface-warm">
-      <div className="mx-auto max-w-7xl px-5 pb-10 pt-12 sm:pb-14 sm:pt-20">
+      <div className="mx-auto max-w-7xl px-5 pb-8 pt-12 sm:pb-14 sm:pt-20">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.badge")}</p>
           <h1 className="mt-5 text-5xl font-semibold leading-[1.02] text-sucasa-navy sm:text-7xl">
@@ -58,10 +58,10 @@ function Hero() {
           <p className="mx-auto mt-5 max-w-3xl text-xl font-medium leading-snug text-foreground sm:text-3xl">
             {t("pub.home.hero_sub")}
           </p>
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          <p className="mx-auto mt-4 hidden max-w-xl text-sm leading-relaxed text-muted-foreground sm:block sm:text-base">
             {t("pub.home.sub")}
           </p>
-          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="mt-7 hidden flex-col items-center justify-center gap-3 sm:flex sm:flex-row">
             <Button asChild size="lg" className="h-12 w-full rounded-full px-7 shadow-elevated sm:w-auto">
               <Link to="/onboarding">{t("pub.home.cta_primary")} <ArrowRight /></Link>
             </Button>
@@ -80,12 +80,17 @@ function HomeownerProduct() {
   return (
     <section id="my-home-showcase" className="scroll-mt-20 border-b border-border bg-surface-warm px-5 pb-14 sm:pb-20">
       <div className="mx-auto max-w-6xl">
-        <div className="mx-auto mb-7 max-w-2xl text-center sm:mb-10">
+        <div className="mx-auto mb-7 hidden max-w-2xl text-center sm:mb-10 sm:block">
           <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.showcase.eyebrow")}</p>
           <h2 className="mt-3 text-4xl font-semibold leading-tight text-sucasa-navy sm:text-5xl">{t("pub.home.showcase.title")}</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t("pub.home.showcase.body")}</p>
         </div>
         <HomeownerShowcase />
+        <div className="mt-6 sm:hidden">
+          <Button asChild size="lg" className="h-12 w-full rounded-full px-7 shadow-elevated">
+            <Link to="/onboarding">{t("pub.home.cta_primary")} <ArrowRight /></Link>
+          </Button>
+        </div>
       </div>
     </section>
   );
