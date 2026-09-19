@@ -256,3 +256,10 @@
 - [x] Verify phone, desktop, focus, contrast, reduced motion, routes, translations, tests, and preview-only delivery
 - [x] Refine the approved mockup to one product demonstration and one homeowner-first role section
 - [x] Tighten mobile rhythm and relabel the center service as Mortgage & equity
+
+## Public homepage — homeowner product journey refinement (approved 2026-09-19)
+- [ ] Replace the three-role hero visual with one substantial fictional My Home showcase
+- [ ] Connect the fictional HVAC care need to 2–3 fictional provider cards
+- [ ] Follow with compact, distinct Agent Today and Lender Today benefit sections
+- [ ] Remove repeated how-it-works, role-selection, and service-category sections
+- [ ] Keep EN/ES complete and verify the full mobile preview, desktop, routes, accessibility, tests, and preview-only status
