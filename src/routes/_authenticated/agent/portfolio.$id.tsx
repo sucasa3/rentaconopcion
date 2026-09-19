@@ -44,10 +44,8 @@ import {
   AlertCircle,
   Link2,
   Info,
-  MessageSquare,
   Hammer,
   MapPin,
-  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -1454,96 +1452,6 @@ function ClientDrawer({
             <p className="mt-2 text-[10px] text-muted-foreground">Property Records and homeowner-provided records</p>
           </section>
 
-        {client.referrals?.length > 0 && (
-          <>
-            <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Service activity
-            </h3>
-            <ul className="mt-2 space-y-1.5">
-              {client.referrals.map((r: any) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-card px-3 py-2 text-xs"
-                >
-                  <span className="font-medium capitalize">
-                    {String(r.category).replace(/_/g, " ")}
-                  </span>
-                  <span className="capitalize text-muted-foreground">
-                    {String(r.status).replace(/_/g, " ")}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {client.recommendations?.length > 0 && (
-          <>
-            <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Recommendations due
-            </h3>
-            <ul className="mt-2 space-y-1.5">
-              {client.recommendations.map((r: any) => (
-                <li key={r.id} className="rounded-2xl border border-border bg-card px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-medium capitalize">
-                      {String(r.system).replace(/_/g, " ")}
-                      {r.recommended_category ? ` · ${r.recommended_category}` : ""}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1.5">
-                      <SourceBadge source={r.source} />
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] font-medium capitalize ${
-                          r.urgency === "high"
-                            ? "border-destructive/40 bg-destructive/10 text-destructive"
-                            : r.urgency === "medium"
-                              ? "border-status-attention/40 bg-status-attention/10 text-status-attention"
-                              : "border-border bg-secondary text-muted-foreground"
-                        }`}
-                      >
-                        {r.urgency}
-                      </span>
-                    </span>
-                  </div>
-                  {r.recommended_action && (
-                    <p className="mt-1 text-xs text-muted-foreground">{r.recommended_action}</p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {client.touches?.length > 0 && (
-          <>
-            <h3 className="mt-6 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Communicated
-            </h3>
-            <ul className="mt-2 space-y-1.5">
-              {client.touches.map((t: any) => (
-                <li
-                  key={t.id}
-                  className="flex items-center justify-between gap-2 rounded-2xl border border-border bg-card px-3 py-2 text-xs"
-                >
-                  <span className="font-medium">
-                    {t.campaign_name}
-                    <span className="ml-1 font-normal text-muted-foreground">
-                      {new Date(
-                        t.sent_at ?? t.scheduled_for ?? t.created_at,
-                      ).toLocaleDateString()}
-                    </span>
-                  </span>
-                  <span className="capitalize text-muted-foreground">
-                    {String(t.status).replace(/_/g, " ")}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-
-
         <div className="rounded-lg border-l-4 border-intelligence-accent bg-surface-intelligence p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
             Suggested opener
@@ -1607,6 +1515,23 @@ function ClientDrawer({
             <DetailFact label="Last permit" value={client.last_permit_date ? new Date(client.last_permit_date).toLocaleDateString() : "—"} />
           </div>
         </DetailSection>
+
+        {(client.referrals?.length > 0 || client.touches?.length > 0) && (
+          <DetailSection title="Supporting activity">
+            {client.referrals?.map((r: any) => (
+              <div key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <span className="font-medium capitalize text-sucasa-navy">{String(r.category).replace(/_/g, " ")}</span>
+                <span className="text-xs capitalize text-text-secondary">{String(r.status).replace(/_/g, " ")}</span>
+              </div>
+            ))}
+            {client.touches?.map((t: any) => (
+              <div key={t.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                <span className="font-medium text-sucasa-navy">{t.campaign_name}</span>
+                <span className="text-xs text-text-secondary">{new Date(t.sent_at ?? t.scheduled_for ?? t.created_at).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </DetailSection>
+        )}
 
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Listing status
