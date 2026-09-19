@@ -266,3 +266,6 @@
 - [x] Compact the HVAC provider handoff into one Recommended professionals-style surface
 - [x] Keep fictional providers non-actionable while preserving legitimate Browse services navigation
 - [x] Re-verify the complete mobile sequence and preview-only delivery
+- [x] Replace fictional provider recommendations with the existing Home Services category-card treatment
+- [x] Put HVAC first and preserve existing response-time labels, service routes, and EN/ES content
+- [x] Verify the full mobile sequence and keep the revision preview-only
