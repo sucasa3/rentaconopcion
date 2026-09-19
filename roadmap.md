@@ -269,3 +269,11 @@
 - [x] Replace fictional provider recommendations with the existing Home Services category-card treatment
 - [x] Put HVAC first and preserve existing response-time labels, service routes, and EN/ES content
 - [x] Verify the full mobile sequence and keep the revision preview-only
+
+## Public homepage — action layer and isolated professional teasers (complete 2026-09-19)
+- [x] Preserve eight Home Services category cards, connect HVAC to the fictional need, and remove unsupported homepage response times
+- [x] Add the approved action-layer headline, supporting copy, partner disclosure, request routes, and Browse all services link in EN/ES
+- [x] Build compact isolated static Agent and Lender public demo components for homepage use only
+- [x] Simplify professional sections to benefit → product teaser → large blue CTA while keeping homeowner content dominant
+- [x] Keep `/agents` and `/lenders` unchanged and verify 390px/1280px, routes, accessibility, console, types, and tests
+- [x] Keep the revision preview-only and do not publish

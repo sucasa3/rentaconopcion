@@ -2,11 +2,10 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, ChartNoAxesCombined } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import {
-  AgentBenefitVisual,
   HomeownerShowcase,
-  LenderBenefitVisual,
   ProviderHelpVisual,
 } from "@/components/homepage-product";
+import { PublicAgentTodayPreview, PublicLenderTodayPreview } from "@/components/public-professional-preview";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
 
@@ -107,24 +106,24 @@ function ProfessionalBenefits() {
   return (
     <section className="bg-surface-warm px-5 py-14 sm:py-20">
       <div className="mx-auto max-w-6xl">
-        <div className="max-w-3xl">
+        <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.pros.eyebrow_new")}</p>
           <h2 className="mt-3 text-4xl font-semibold leading-tight text-sucasa-navy sm:text-5xl">{t("pub.home.pros.title_new")}</h2>
         </div>
-        <div className="mt-8 grid gap-5 lg:mt-10 lg:grid-cols-2">
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-7">
+        <div className="mt-8 grid gap-6 lg:mt-10 lg:grid-cols-2">
+          <article className="min-w-0">
             <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.paths.agent_title")}</p>
             <h3 className="mt-3 text-2xl font-semibold leading-snug text-sucasa-navy">{t("pub.home.paths.agent_body")}</h3>
-            <div className="mt-6"><AgentBenefitVisual /></div>
-            <Button asChild className="mt-6 w-full justify-between rounded-full sm:w-auto">
+            <div className="mt-5"><PublicAgentTodayPreview /></div>
+            <Button asChild size="lg" className="mt-5 h-12 w-full justify-between rounded-full">
               <Link to="/agents">{t("pub.home.pros.agent_cta")}<ArrowRight /></Link>
             </Button>
           </article>
-          <article className="rounded-2xl border border-border bg-card p-5 shadow-soft sm:p-7">
+          <article className="min-w-0">
             <p className="text-xs font-semibold uppercase text-muted-foreground">{t("pub.home.paths.lender_title")}</p>
             <h3 className="mt-3 text-2xl font-semibold leading-snug text-sucasa-navy">{t("pub.home.paths.lender_body")}</h3>
-            <div className="mt-6"><LenderBenefitVisual /></div>
-            <Button asChild variant="outline" className="mt-6 w-full justify-between rounded-full sm:w-auto">
+            <div className="mt-5"><PublicLenderTodayPreview /></div>
+            <Button asChild size="lg" className="mt-5 h-12 w-full justify-between rounded-full">
               <Link to="/lenders">{t("pub.home.pros.lender_cta")}<ArrowRight /></Link>
             </Button>
           </article>

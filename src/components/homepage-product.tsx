@@ -1,9 +1,6 @@
 import {
   ArrowRight,
-  BriefcaseBusiness,
   ChartNoAxesCombined,
-  CheckCircle2,
-  CircleDollarSign,
   FileText,
   House,
   MessageCircleQuestion,
@@ -116,54 +113,6 @@ function Metric({ label, value, icon }: { label: string; value: string; icon: Re
   );
 }
 
-export function AgentBenefitVisual() {
-  const { t } = useLanguage();
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-      <DemoHeader icon={<BriefcaseBusiness />} title={t("pub.home.demo.agent_title")} />
-      <p className="mt-4 text-[10px] font-semibold uppercase text-status-opportunity">{t("pub.home.demo.who")}</p>
-      <p className="mt-1 text-lg font-semibold">{t("pub.home.demo.agent_person")}</p>
-      <p className="text-[10px] text-muted-foreground">{t("pub.home.demo.fictional_person")}</p>
-      <DemoLine label={t("pub.home.demo.why")} value={t("pub.home.demo.agent_why")} />
-      <DemoLine label={t("pub.home.demo.say")} value={t("pub.home.demo.agent_say")} intelligence />
-      <p className="mt-3 flex items-center gap-2 text-xs font-semibold text-sucasa-navy"><CheckCircle2 className="h-4 w-4 text-status-positive" /> {t("pub.home.demo.agent_next")}</p>
-    </div>
-  );
-}
-
-export function LenderBenefitVisual() {
-  const { t } = useLanguage();
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
-      <DemoHeader icon={<CircleDollarSign />} title={t("pub.home.demo.lender_title")} />
-      <p className="mt-4 text-[10px] font-semibold uppercase text-muted-foreground">{t("pub.home.demo.attention")}</p>
-      <p className="mt-1 text-3xl font-semibold text-sucasa-navy">3</p>
-      <p className="text-xs text-muted-foreground">{t("pub.home.demo.lender_context")}</p>
-      <DemoLine label={t("pub.home.demo.why")} value={t("pub.home.demo.lender_why")} />
-      <DemoLine label={t("pub.home.demo.next")} value={t("pub.home.demo.lender_next")} intelligence />
-    </div>
-  );
-}
-
-function DemoHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
-  const { t } = useLanguage();
-  return (
-    <div className="flex items-center gap-2 border-b border-border pb-3">
-      <span className="grid h-8 w-8 place-items-center rounded-full bg-sucasa-navy text-primary-foreground [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
-      <div><p className="text-xs font-semibold">{title}</p><p className="text-[9px] text-muted-foreground">{t("pub.home.demo_badge")}</p></div>
-    </div>
-  );
-}
-
-function DemoLine({ label, value, intelligence = false }: { label: string; value: string; intelligence?: boolean }) {
-  return (
-    <div className={`mt-3 rounded-md p-3 ${intelligence ? "bg-surface-intelligence" : "border-l-2 border-sucasa-orange bg-surface-warm"}`}>
-      <p className="text-[9px] font-semibold uppercase text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xs leading-relaxed">{value}</p>
-    </div>
-  );
-}
-
 export function ProviderHelpVisual() {
   const { t } = useLanguage();
   const categories = SERVICE_CATEGORIES.slice(0, 8);
@@ -171,26 +120,24 @@ export function ProviderHelpVisual() {
     `pub.svc.${slug.replace(/-/g, "_")}.${field}` as TranslationKey;
   return (
     <div>
-      <div className="mx-auto max-w-2xl text-center">
+      <div className="mx-auto max-w-3xl text-center">
         <div className="mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-status-attention/30 bg-surface-warm px-3 py-2 text-xs font-semibold text-sucasa-navy">
           <Wrench className="h-3.5 w-3.5 shrink-0 text-status-attention" />
           <span className="truncate">{t("pub.home.demo.care_value")}</span>
         </div>
         <ArrowRight className="mx-auto my-3 h-4 w-4 rotate-90 text-sucasa-orange" aria-hidden />
-        <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.services.eyebrow")}</p>
-        <h2 className="mt-2 text-3xl font-semibold leading-tight text-sucasa-navy sm:text-4xl">{t("pub.home.help.services_title")}</h2>
+        <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.help.eyebrow")}</p>
+        <h2 className="mt-2 whitespace-pre-line text-3xl font-semibold leading-tight text-sucasa-navy sm:text-4xl">{t("pub.home.help.services_title")}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t("pub.home.help.services_body")}</p>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {categories.map((category) => {
           const Icon = category.icon;
           return (
-            <article key={category.slug} className="group flex min-w-0 flex-col rounded-2xl border border-border bg-card p-3.5 shadow-soft transition-shadow hover:shadow-elevated sm:p-4">
-              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
-                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${category.color} text-white`}><Icon className="h-4 w-4" /></span>
-                <span className="truncate rounded-full bg-secondary px-2 py-1 text-center text-[8px] font-medium text-secondary-foreground sm:text-[9px]">
-                  <span className="sm:hidden">{t("pub.home.help.avg_short", { time: category.avgResponse.replace(/\s*avg response\s*$/i, "") })}</span>
-                  <span className="hidden sm:inline">{t("pub.svc.avg_response", { time: category.avgResponse.replace(/\s*avg response\s*$/i, "") })}</span>
-                </span>
+            <article key={category.slug} className={`group flex min-w-0 flex-col rounded-xl border bg-card p-3.5 shadow-soft transition-shadow hover:shadow-elevated sm:p-4 ${category.slug === "hvac" ? "border-sucasa-orange" : "border-border"}`}>
+              <div className="flex items-start justify-between gap-2">
+                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br ${category.color} text-primary-foreground`}><Icon className="h-4 w-4" /></span>
+                {category.slug === "hvac" && <span className="max-w-28 text-right text-[8px] font-semibold leading-tight text-status-opportunity sm:text-[9px]">{t("pub.home.help.next_step")}</span>}
               </div>
               <h3 className="mt-3 line-clamp-2 min-h-8 text-sm font-semibold leading-tight text-sucasa-navy">{t(serviceKey(category.slug, "name"))}</h3>
               <p className="mt-1 line-clamp-2 min-h-8 text-[10px] leading-relaxed text-muted-foreground">{t(serviceKey(category.slug, "desc"))}</p>
@@ -205,6 +152,7 @@ export function ProviderHelpVisual() {
         <Link to="/services" className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {t("pub.home.help.browse_all")} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
+        <p className="mx-auto mt-3 max-w-xl text-[10px] leading-relaxed text-muted-foreground">{t("pub.home.help.partner_disclosure")}</p>
       </div>
     </div>
   );

@@ -15,24 +15,24 @@ Keep the approved homeowner-first homepage, hero, complete fictional My Home sho
 - Preserve **Browse all services** and do not change the actual Home Services page or request behavior.
 - Do not add providers, ratings, reviews, availability, inventory, or live lookups.
 
-## Shared Agent Today product preview
+## Isolated Agent Today product preview
 
-- Replace the simple homepage Agent card with a reusable, fictional miniature dashboard adapted from the real Agent Today hierarchy.
-- Show a compact Daily Read, relationships-worth-attention count, one clearly prioritized homeowner, **Why now**, a suggested opener, recommended next action, and restrained quick-action affordances.
+- Replace the simple homepage Agent card with a reusable, isolated fictional miniature adapted from the real Agent Today hierarchy.
+- Show only a relationships-worth-attention count, one clearly prioritized homeowner, **Why now**, one short suggested opener, and one recommended next action.
 - Keep the promise focused on relationship timing: who needs attention, why now, what to say, and what to do next.
 - Use the established warm relationship surface, intelligence-blue interpretation surface, small orange opportunity marker, quiet status treatment, and one elevated priority card.
 
-## Shared Lender Today product preview
+## Isolated Lender Today product preview
 
 - Create a visually distinct fictional miniature dashboard adapted from the real Lender Today hierarchy.
-- Show a portfolio Daily Read, existing relationships worth attention, a few concise relationship categories, one priority client, factual **Why now**, useful home/mortgage context, and one clear next action.
+- Show only existing relationships worth attention, one priority client, factual **Why now**, concise home/mortgage context, and one clear next action.
 - Keep all language conditional and relationship-oriented; do not imply approval, savings, qualification, or guaranteed opportunity.
 - Use the same SuCasa visual system while making the lender view read as a monitored book, not a duplicate of the agent view.
 
 ## Homepage integration and reuse
 
 - Keep the Agent and Lender marketing copy and CTAs concise; let the richer product previews carry the explanation.
-- Build the two previews as shared public demo components so the same visual language can be reused on `/agents` and `/lenders` without touching authenticated data or changing the actual Agent Today and Lender Today behavior.
+- Build the two previews as isolated public demo components using static fictional data and use them on the homepage only in this pass. Do not import authenticated dashboard logic or change `/agents` and `/lenders`.
 - Preserve the current homepage sequence and homeowner visual dominance; do not add sections or turn the page into three separate landing pages.
 - Keep every demo name, metric, home, and scenario visibly labeled fictional in English and Spanish.
 
