@@ -188,10 +188,11 @@ export function ProviderHelpVisual() {
               <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
                 <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${category.color} text-white`}><Icon className="h-4 w-4" /></span>
                 <span className="truncate rounded-full bg-secondary px-2 py-1 text-center text-[8px] font-medium text-secondary-foreground sm:text-[9px]">
-                  {t("pub.svc.avg_response", { time: category.avgResponse.replace(/\s*avg response\s*$/i, "") })}
+                  <span className="sm:hidden">{t("pub.home.help.avg_short", { time: category.avgResponse.replace(/\s*avg response\s*$/i, "") })}</span>
+                  <span className="hidden sm:inline">{t("pub.svc.avg_response", { time: category.avgResponse.replace(/\s*avg response\s*$/i, "") })}</span>
                 </span>
               </div>
-              <h3 className="mt-3 truncate text-sm font-semibold text-sucasa-navy">{t(serviceKey(category.slug, "name"))}</h3>
+              <h3 className="mt-3 line-clamp-2 min-h-8 text-sm font-semibold leading-tight text-sucasa-navy">{t(serviceKey(category.slug, "name"))}</h3>
               <p className="mt-1 line-clamp-2 min-h-8 text-[10px] leading-relaxed text-muted-foreground">{t(serviceKey(category.slug, "desc"))}</p>
               <Link to="/request" search={{ category: category.slug }} className="mt-3 inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {t("pub.services.request")} <ArrowRight className="h-3 w-3" />

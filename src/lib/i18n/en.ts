@@ -701,6 +701,7 @@ export const en = {
   "pub.home.help.reason": "Annual service is coming up",
   "pub.home.help.services_title": "From HVAC to handyman, request in seconds",
   "pub.home.help.browse_all": "Browse all services",
+  "pub.home.help.avg_short": "Avg. {time}",
   "pub.home.help.provider_1": "Juniper HVAC",
   "pub.home.help.provider_1_desc": "Seasonal heating and cooling service",
   "pub.home.help.provider_2": "Northstar Home Comfort",
