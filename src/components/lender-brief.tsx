@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ShieldCheck, Sparkles, Quote, Mail, Phone, Copy, MapPin, Landmark, MessageSquare, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Sparkles, Quote, Mail, Phone, Copy, MapPin, Landmark, MessageSquare, CheckCircle2, House } from "lucide-react";
 import {
   generateHomeownerReviewBrief,
   getLenderQuickBrief,
@@ -140,21 +140,29 @@ function BriefBody({
 
   const quick = useQuery({
     queryKey: ["lender-quick-brief", clientId],
-    queryFn: () => quickFn({ data: { clientId: clientId! } }),
+    queryFn: () => {
+      if (!clientId) throw new Error("A homeowner is required.");
+      return quickFn({ data: { clientId } });
+    },
     enabled: Boolean(clientId),
     staleTime: 5 * 60_000,
   });
 
   const full = useQuery({
     queryKey: ["lender-brief", clientId],
-    queryFn: () => fullFn({ data: { clientId: clientId! } }),
+    queryFn: () => {
+      if (!clientId) throw new Error("A homeowner is required.");
+      return fullFn({ data: { clientId } });
+    },
     enabled: Boolean(clientId) && showFull,
     staleTime: 5 * 60_000,
   });
 
   const outcome = useMutation({
-    mutationFn: (stage: string) =>
-      outcomeFn({ data: { clientId: clientId!, stage: stage as never } }),
+    mutationFn: (stage: string) => {
+      if (!clientId) throw new Error("A homeowner is required.");
+      return outcomeFn({ data: { clientId, stage: stage as never } });
+    },
     onSuccess: (res: any) => {
       setLogged(res?.confirmation ?? "Logged.");
       toast.success(res?.confirmation ?? "Logged");
@@ -200,11 +208,16 @@ function BriefBody({
 
   return (
     <div>
-      <div className="bg-sucasa-navy px-5 pb-5 pt-7 text-primary-foreground sm:px-7">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Homeowner finance review</p>
-        <h2 className="mt-2 pr-8 text-2xl font-semibold leading-tight">{name ?? b.name}</h2>
-        <p className="mt-1 flex items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />{subtitle}</p>
-        <div className="mt-5 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-4">
+      <div className="bg-sucasa-navy px-5 pb-5 pt-6 text-primary-foreground sm:px-7">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Lender homeowner review</p>
+            <h2 className="mt-2 truncate text-2xl font-semibold leading-tight">{name ?? b.name}</h2>
+            <p className="mt-1 flex min-w-0 items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="min-w-0">{subtitle}</span></p>
+          </div>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-foreground/10"><House className="h-5 w-5" /></span>
+        </div>
+        <div className="mt-4 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-3">
           <HeroMetric label="Est. value" value={formatCents(m.estimatedValueCents)} />
           <HeroMetric label="Equity" value={formatCents(m.estimatedEquityCents)} />
           <HeroMetric label="Est. LTV" value={m.estimatedLtvPct != null ? `${m.estimatedLtvPct}%` : "—"} />
@@ -225,7 +238,7 @@ function BriefBody({
           </div>
         </Section>
 
-        <section className="rounded-lg bg-secondary p-4 sm:p-5">
+        <section className="rounded-lg bg-surface-intelligence p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-intelligence-accent">Lender intelligence</p><h3 className="mt-1 text-lg font-semibold text-sucasa-navy">Finance &amp; homeowner review</h3></div>
             <Landmark className="h-5 w-5 text-primary" />
