@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ShieldCheck, Sparkles, Quote, Mail, Phone, Copy, MapPin, Landmark, CalendarDays, ChartNoAxesCombined, CheckCircle2 } from "lucide-react";
+import { ShieldCheck, Sparkles, Quote, Mail, Phone, Copy, MapPin, Landmark, MessageSquare, CheckCircle2 } from "lucide-react";
 import {
   generateHomeownerReviewBrief,
   getLenderQuickBrief,
@@ -352,7 +352,7 @@ function QuickContact({
           <Phone className="h-4 w-4 text-primary" /> Call
         </a>
       )}
-      {allowText && phoneValue && <a href={`sms:${phoneValue}`} className="flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold transition hover:border-primary"><ChartNoAxesCombined className="h-4 w-4 text-primary" /> Text</a>}
+      {allowText && phoneValue && <a href={`sms:${phoneValue}`} className="flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-semibold transition hover:border-primary"><MessageSquare className="h-4 w-4 text-primary" /> Text</a>}
     </div>
   );
 }
