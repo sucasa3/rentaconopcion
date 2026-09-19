@@ -93,15 +93,9 @@ function HomeownerProduct() {
 }
 
 function ProviderHelp() {
-  const { t } = useLanguage();
   return (
-    <section className="border-b border-border bg-background px-5 py-14 sm:py-20">
-      <div className="mx-auto max-w-6xl">
-        <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.help.eyebrow")}</p>
-          <h2 className="mt-3 text-4xl font-semibold leading-tight text-sucasa-navy sm:text-5xl">{t("pub.home.help.title")}</h2>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">{t("pub.home.help.body")}</p>
-        </div>
+    <section className="border-b border-border bg-background px-5 py-10 sm:py-14">
+      <div className="mx-auto max-w-4xl">
         <ProviderHelpVisual />
       </div>
     </section>

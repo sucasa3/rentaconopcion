@@ -173,18 +173,30 @@ export function ProviderHelpVisual() {
     [t("pub.home.help.provider_3"), t("pub.home.help.provider_3_desc"), "4.9", "96"],
   ] as const;
   return (
-    <div className="mt-8">
-      <div className="flex items-center gap-3 rounded-xl border border-status-attention/40 bg-surface-warm p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-card text-status-attention shadow-soft"><Wrench className="h-5 w-5" /></span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase text-status-attention">{t("pub.home.showcase.care")}</p><p className="text-sm font-semibold text-sucasa-navy">{t("pub.home.demo.care_value")}</p></div><ArrowRight className="ml-auto h-4 w-4 shrink-0 text-sucasa-orange" /></div>
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+    <div>
+      <p className="text-center text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.help.transition")}</p>
+      <div className="mx-auto mt-3 rounded-2xl border border-border bg-card p-4 shadow-elevated sm:p-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border pb-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold text-sucasa-navy">{t("pub.home.help.recommended")}</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t("pub.home.help.matched")}</p>
+          </div>
+          <Link to="/services" className="shrink-0 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("pub.home.help.browse")}</Link>
+        </div>
+        <div className="mt-3 flex items-center gap-2.5 rounded-xl bg-surface-warm p-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-card text-status-attention shadow-soft"><Wrench className="h-4 w-4" /></span>
+          <div className="min-w-0"><p className="text-[9px] font-semibold uppercase text-status-attention">{t("pub.home.showcase.care")}</p><p className="truncate text-xs font-semibold text-sucasa-navy sm:text-sm">{t("pub.home.demo.care_value")}</p><p className="mt-0.5 text-[10px] text-muted-foreground">{t("pub.home.help.reason")}</p></div>
+        </div>
+        <div className="mt-3 divide-y divide-border rounded-xl border border-border px-3">
         {providers.map(([name, description, rating, reviews]) => (
-          <article key={name} className="rounded-xl border border-border bg-card p-4 shadow-soft">
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-sucasa-navy">{name}</p><p className="mt-1 text-xs text-muted-foreground">{description}</p></div><span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-warm text-sucasa-orange"><Snowflake className="h-4 w-4" /></span></div>
-            <p className="mt-3 flex items-center gap-1 text-xs text-muted-foreground"><Star className="h-3.5 w-3.5 fill-current text-status-attention" /> {rating} · {reviews} {t("pub.home.help.reviews")}</p>
-            <Button asChild variant="outline" size="sm" className="mt-4 w-full justify-between rounded-full"><Link to="/request" search={{ category: "hvac" }}>{t("pub.home.help.request")}<ArrowRight /></Link></Button>
-          </article>
+          <div key={name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3">
+            <div className="min-w-0"><p className="truncate text-sm font-semibold text-sucasa-navy">{name}</p><p className="truncate text-[11px] text-muted-foreground">{description}</p></div>
+            <p className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground"><Star className="h-3 w-3 fill-current text-status-attention" /> {rating} · {reviews}</p>
+          </div>
         ))}
+        </div>
+        <p className="mt-3 text-center text-[9px] leading-relaxed text-muted-foreground">{t("pub.home.help.disclaimer")}</p>
       </div>
-      <p className="mt-4 text-center text-[10px] text-muted-foreground">{t("pub.home.help.disclaimer")}</p>
     </div>
   );
 }
