@@ -16,7 +16,7 @@ import { Link } from "@tanstack/react-router";
 export function HomeownerShowcase() {
   const { t } = useLanguage();
   return (
-    <div className="home-ecosystem-home mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border bg-card shadow-elevated">
+    <div className="homeowner-premium home-ecosystem-home mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border bg-background shadow-elevated">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-3 sm:px-6">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-sucasa-navy">{t("pub.home.showcase.my_home")}</p>
@@ -74,15 +74,21 @@ function HomeProfileMoment() {
 function HomeHealthPreview() {
   const { t } = useLanguage();
   const systems = [
-    [Snowflake, t("pub.home.showcase.hvac"), t("pub.home.showcase.review_soon"), "text-status-attention"],
-    [House, t("pub.home.showcase.roof"), t("pub.home.showcase.good"), "text-status-positive"],
-    [Zap, t("pub.home.showcase.electrical"), t("pub.home.showcase.good"), "text-status-positive"],
+    [Snowflake, t("pub.home.showcase.hvac"), t("pub.home.showcase.review_soon"), "text-status-attention", "border-status-attention/55 border-l-status-attention", "bg-status-attention"],
+    [House, t("pub.home.showcase.roof"), t("pub.home.showcase.good"), "text-status-positive", "border-status-positive/55 border-l-status-positive", "bg-status-positive"],
+    [Zap, t("pub.home.showcase.electrical"), t("pub.home.showcase.good"), "text-status-positive", "border-status-positive/55 border-l-status-positive", "bg-status-positive"],
   ] as const;
   return (
     <section className="rounded-xl border border-border bg-card p-4 shadow-soft">
-      <div className="flex items-center justify-between"><h3 className="font-semibold text-sucasa-navy">{t("pub.home.showcase.health")}</h3><span className="text-xs font-semibold text-status-positive">82</span></div>
+      <div className="flex items-center justify-between border-b border-border pb-2"><h3 className="font-bold text-sucasa-navy">{t("pub.home.showcase.health")}</h3><span className="text-xs font-bold text-status-positive">82</span></div>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        {systems.map(([Icon, label, status, tone]) => <div key={label} className="min-w-0 rounded-lg bg-secondary p-2.5"><Icon className="h-4 w-4 text-intelligence-accent" /><p className="mt-2 truncate text-[10px] font-semibold text-sucasa-navy">{label}</p><p className={`mt-1 text-[9px] font-semibold ${tone}`}>{status}</p></div>)}
+        {systems.map(([Icon, label, status, tone, borderTone, dotTone]) => (
+          <div key={label} className={`min-w-0 rounded-lg border border-l-2 bg-card p-2.5 shadow-soft ${borderTone}`}>
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-intelligence-accent text-primary-foreground shadow-soft"><Icon className="h-4 w-4" /></span>
+            <p className="mt-2 truncate text-[10px] font-semibold text-sucasa-navy">{label}</p>
+            <p className={`mt-1 flex items-center gap-1 text-[9px] font-semibold ${tone}`}><span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotTone}`} aria-hidden />{status}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -92,14 +98,14 @@ function HomeCarePreview() {
   const { t } = useLanguage();
   return (
     <section className="rounded-xl border border-t-2 border-border border-t-sucasa-orange bg-card p-4 shadow-soft">
-      <p className="font-semibold text-sucasa-navy">{t("pub.home.showcase.care")}</p>
-      <div className="mt-3 flex items-start gap-3 rounded-lg bg-surface-warm p-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-card text-status-attention"><Wrench className="h-4 w-4" /></span><div className="min-w-0"><p className="text-xs font-semibold text-sucasa-navy">{t("pub.home.demo.care_value")}</p><p className="mt-1 text-[10px] leading-snug text-muted-foreground">{t("pub.home.showcase.care_context")}</p></div></div>
+      <p className="font-bold text-sucasa-navy">{t("pub.home.showcase.care")}</p>
+      <div className="mt-3 flex items-start gap-3 rounded-lg border border-border bg-card p-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-sucasa-orange text-sucasa-orange-foreground shadow-soft"><Wrench className="h-4 w-4" /></span><div className="min-w-0"><p className="text-xs font-semibold text-sucasa-navy">{t("pub.home.demo.care_value")}</p><p className="mt-1 text-[10px] leading-snug text-muted-foreground">{t("pub.home.showcase.care_context")}</p></div></div>
     </section>
   );
 }
 
 function QuietSummary({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return <div className="flex min-h-20 items-center gap-3 rounded-xl border border-border p-3"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-secondary text-sucasa-orange [&_svg]:h-4 [&_svg]:w-4">{icon}</span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p><p className="mt-1 text-xs font-semibold text-sucasa-navy">{value}</p></div></div>;
+  return <div className="flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-soft"><span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-card text-sucasa-orange shadow-soft [&_svg]:h-4 [&_svg]:w-4">{icon}</span><div className="min-w-0"><p className="text-[10px] font-semibold uppercase text-muted-foreground">{label}</p><p className="mt-1 text-xs font-semibold text-sucasa-navy">{value}</p></div></div>;
 }
 
 function Metric({ label, value, icon, score }: { label: string; value: string; icon?: React.ReactNode; score?: number }) {

@@ -299,3 +299,9 @@
 - [x] Preserve the My Home → Home Services handoff and all existing service-category behavior
 - [x] Keep desktop hierarchy unchanged except minor spacing
 - [x] Verify 390px/1280px, EN/ES, routes, console, types, tests, and preview-only delivery
+
+## Public homepage — My Home product-palette parity (complete 2026-09-19)
+- [x] Scope the isolated fictional My Home showcase to the authenticated homeowner palette tokens
+- [x] Match Home Health, Home Score, Home Care, Documents, History, and Ask SuCasa presentation without sharing authenticated logic
+- [x] Verify 390px/1280px in EN/ES, no surrounding homepage changes, console errors, overflow, type, or test regressions
+- [x] Keep preview-only and do not publish
