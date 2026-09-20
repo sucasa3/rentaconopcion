@@ -115,5 +115,11 @@
     "overrides": {
       "entities": "4.5.0"
     }
+  },
+  "overrides": {
+    "browserslist": "^4.28.9",
+    "baseline-browser-mapping": "^2.11.21",
+    "dompurify": "^3.4.14",
+    "mermaid": "^11.17.2"
   }
 }
