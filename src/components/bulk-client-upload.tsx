@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { fileToCsv } from "@/lib/spreadsheet-import";
 
 const TEMPLATE_HEADERS = [
   "full_name",
@@ -29,20 +30,7 @@ export function BulkClientUpload({ onCsv, busy, title = "Import a list", hint }:
   async function handleFile(f: File) {
     setReading(true);
     try {
-      const name = f.name.toLowerCase();
-      let csv: string;
-      if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-        const XLSX = await import("xlsx");
-        const buf = await f.arrayBuffer();
-        const wb = XLSX.read(buf, { type: "array" });
-        const sheetName = wb.SheetNames[0];
-        if (!sheetName) throw new Error("That workbook has no sheets");
-        csv = XLSX.utils.sheet_to_csv(wb.Sheets[sheetName]);
-      } else {
-        csv = await f.text();
-      }
-      if (!csv.trim()) throw new Error("That file looks empty");
-      onCsv(csv);
+      onCsv(await fileToCsv(f));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not read that file");
     } finally {
