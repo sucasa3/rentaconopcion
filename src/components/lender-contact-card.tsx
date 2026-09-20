@@ -72,20 +72,28 @@ function channelOptions(person: Person): ChannelOption[] {
   });
 }
 
-/** Up to three supporting facts that the workspace already permits. */
+/**
+ * Up to three supporting facts that the workspace already permits. Facts the
+ * canonical reason already states are skipped so the reason stays the story.
+ */
 function supportingFacts(person: Person): string[] {
+  const said = (person.whyToday ?? "").toLowerCase();
   const facts: string[] = [];
   if (person.askedToConnect) facts.push("Asked to connect");
-  if (person.estimatedEquityCents != null)
+  if (person.estimatedEquityCents != null && !said.includes("equity"))
     facts.push(
       `${formatMoney(person.estimatedEquityCents)} est. equity${
         person.estimatedLtvPct != null ? ` · ${person.estimatedLtvPct}% est. LTV` : ""
       }`,
     );
-  if (person.loanAgeYears != null) facts.push(`Mortgage about ${person.loanAgeYears} yrs old`);
+  else if (person.estimatedLtvPct != null && !said.includes("ltv"))
+    facts.push(`${person.estimatedLtvPct}% est. LTV`);
+  if (person.loanAgeYears != null && !said.includes("mortgage is"))
+    facts.push(`Mortgage about ${person.loanAgeYears} yrs old`);
   if (person.annualReviewDue) facts.push("Annual review due");
   if (person.engagementLine) facts.push(person.engagementLine);
-  if (person.tenureYears != null) facts.push(`${Math.round(person.tenureYears)} yrs in home`);
+  if (person.tenureYears != null && !said.includes("years in the home"))
+    facts.push(`${Math.round(person.tenureYears)} yrs in home`);
   if (!facts.length && person.dataGap) facts.push(person.dataGap);
   return facts.slice(0, 3);
 }
