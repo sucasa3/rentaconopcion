@@ -333,3 +333,9 @@
 - [x] Scoped to the approved professional-detail system; IntelligenceSurface and ChannelActions reused unmodified
 - [x] Typecheck + 321 tests pass; verified at 320/390/430px and desktop with no horizontal overflow
 - [ ] Publish after visual review and explicit approval
+
+## Dependency security remediation (preview, 2026-09-20)
+- [x] Stage 1: removed @react-three/drei and @streamdown/mermaid (mermaid plugin unregistered in message.tsx); overrides for browserslist, baseline-browser-mapping, dompurify, mermaid, js-yaml
+- [x] Stage 2: vendored SheetJS Community Edition 0.20.3 at src/vendor/xlsx/, removed xlsx@0.18.5 npm dep, new src/lib/spreadsheet-import.ts + 9 tests
+- [x] Stage 3: kept direct browserslist/js-yaml entries as intentional resolution anchors; dependency scan reports 0 vulnerabilities in 73 production deps
+- [ ] Publish pending explicit approval
