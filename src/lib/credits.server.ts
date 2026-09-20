@@ -193,7 +193,7 @@ export async function endAgentSeat(sponsorOrgId: string, seatId: string) {
 export async function seatAllowance(supabase: any, sponsorOrgId: string) {
   const { data: org } = await supabase
     .from("lender_orgs")
-    .select("plan_key, plan_tiers(sponsored_seats)")
+    .select("plan_key, plan_tiers!lender_orgs_plan_key_fkey(sponsored_seats)")
     .eq("id", sponsorOrgId)
     .maybeSingle();
   const included = (org as any)?.plan_tiers?.sponsored_seats ?? null;

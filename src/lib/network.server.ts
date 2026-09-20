@@ -302,7 +302,7 @@ export async function sponsorshipSummary(supabase: any, orgId: string, orgType: 
 
   const { data: org } = await supabase
     .from("lender_orgs")
-    .select("sponsored_allocation, plan_key, plan_tiers(sponsored_allocation)")
+    .select("sponsored_allocation, plan_key, plan_tiers!lender_orgs_plan_key_fkey(sponsored_allocation)")
     .eq("id", orgId)
     .maybeSingle();
 
