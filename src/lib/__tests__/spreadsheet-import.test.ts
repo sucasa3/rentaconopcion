@@ -61,12 +61,20 @@ describe("spreadsheet import", () => {
     expect(csv).not.toContain("Second Sheet Row");
   });
 
-  it("rejects a malformed workbook", async () => {
-    const junk = new TextEncoder().encode("this is not a workbook at all").buffer;
+  it("rejects a corrupt workbook", async () => {
+    // Valid ZIP signature, truncated/garbage body: a real corrupt .xlsx upload.
+    const bytes = new Uint8Array(200);
+    bytes.set([0x50, 0x4b, 0x03, 0x04]);
+    for (let i = 4; i < bytes.length; i += 1) bytes[i] = (i * 37) % 256;
     await expect(
-      fileToCsv({ name: "broken.xlsx", text: async () => "", arrayBuffer: async () => junk }),
+      fileToCsv({
+        name: "broken.xlsx",
+        text: async () => "",
+        arrayBuffer: async () => bytes.buffer,
+      }),
     ).rejects.toBeInstanceOf(Error);
   });
+
 
   it("rejects an empty workbook", async () => {
     const csv = workbookFile("empty.xlsx", "xlsx", [[]]);
