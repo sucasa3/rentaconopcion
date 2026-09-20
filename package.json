@@ -64,7 +64,7 @@
     "embla-carousel-react": "^8.6.0",
     "fflate": "^0.8.3",
     "input-otp": "^1.4.2",
-    "js-yaml": "^5.4.1",
+    "js-yaml": "^4.3.2",
     "lucide-react": "^0.575.0",
     "mermaid": "^11.17.2",
     "motion": "^12.42.2",
@@ -120,6 +120,7 @@
     "browserslist": "^4.28.9",
     "baseline-browser-mapping": "^2.11.21",
     "dompurify": "^3.4.14",
-    "mermaid": "^11.17.2"
+    "mermaid": "^11.17.2",
+    "js-yaml": "^4.3.2"
   }
 }
