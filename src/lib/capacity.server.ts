@@ -59,7 +59,7 @@ export async function poolInputFor(orgId: string): Promise<
   const { data: org } = await admin()
     .from("lender_orgs")
     .select(
-      "id, name, org_type, plan_key, profile_allowance, sponsored_allocation, reserved_profiles, subscription_status, current_period_end, commitment_ends_at, pending_plan_key, pending_plan_effective_at, plan_tiers(name, price_cents, profile_allowance, sponsored_seats)",
+      "id, name, org_type, plan_key, profile_allowance, sponsored_allocation, reserved_profiles, subscription_status, current_period_end, commitment_ends_at, pending_plan_key, pending_plan_effective_at, plan_tiers!lender_orgs_plan_key_fkey(name, price_cents, profile_allowance, sponsored_seats)",
     )
     .eq("id", orgId)
     .maybeSingle();

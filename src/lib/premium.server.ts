@@ -270,7 +270,7 @@ export async function sponsorshipsForOrg(orgId: string) {
       .limit(500),
     admin()
       .from("lender_orgs")
-      .select("profile_allowance, plan_key, plan_tiers(profile_allowance)")
+      .select("profile_allowance, plan_key, plan_tiers!lender_orgs_plan_key_fkey(profile_allowance)")
       .eq("id", orgId)
       .maybeSingle(),
   ]);

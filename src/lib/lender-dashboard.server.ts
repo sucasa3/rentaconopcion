@@ -21,7 +21,7 @@ export async function readLenderCommandCenter(orgId: string) {
     await Promise.all([
       admin()
         .from("lender_orgs")
-        .select("id, name, plan_key, profile_allowance, plan_tiers(profile_allowance)")
+        .select("id, name, plan_key, profile_allowance, plan_tiers!lender_orgs_plan_key_fkey(profile_allowance)")
         .eq("id", orgId)
         .maybeSingle(),
       admin().from("lender_portfolios").select("id, name").eq("lender_org_id", orgId),
