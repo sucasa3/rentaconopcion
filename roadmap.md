@@ -341,3 +341,9 @@
 - [ ] Publish pending explicit approval
 - [x] Verified vendored SheetJS CE 0.20.3 byte-identical to official cdn.sheetjs.com tarball; integrity recorded in src/vendor/xlsx/INTEGRITY.md
 - [x] Published to sucasa.com 2026-09-20 (release commit 01dbd8b; rollback point = 1e58429, the last pre-remediation production commit)
+
+## Plan lookup fix (2026-09-20)
+- Root cause: lender_orgs has two foreign keys to plan_tiers (plan_key, pending_plan_key), so the embedded plan read failed with "more than one relationship was found". This broke the capacity check used by list import, plus the lender dashboard allowance, credits, premium and network seat reads.
+- Fix: all five reads now use the explicit hint plan_tiers!lender_orgs_plan_key_fkey. No schema, RLS, ranking, permission or UI change.
+- Verified: plan data resolves (MLO / 250 allowance); import now returns the correct capacity message instead of an opaque failure. Demo lender book holds 987 profiles on a 250 plan, so imports there are legitimately blocked by the limit.
+- Typecheck clean, 330 tests pass. Not yet published.
