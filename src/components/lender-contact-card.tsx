@@ -58,17 +58,17 @@ function channelOptions(person: Person): ChannelOption[] {
     email: person.email,
   };
 
-  return (["call", "text", "email"] as const).map((channel) => {
-    const permitted = Boolean(person.channels[channel]) && Boolean(detail[channel]);
+  return (["call", "text", "email"] as const).map((channel): ChannelOption => {
+    const available = Boolean(person.channels[channel]) && Boolean(detail[channel]);
     return {
       channel,
-      permitted,
-      recommended: permitted && preferred === channel,
+      available,
+      recommended: available && preferred === channel,
       reason:
         person.channels[channel] && !detail[channel]
           ? "No contact detail on file."
           : (person.channelReasons[channel] ?? "Not permitted yet."),
-    } as ChannelOption;
+    };
   });
 }
 
