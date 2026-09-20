@@ -22,6 +22,13 @@
       "when": 1789702031609,
       "tag": "0002_introductions_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789865988177,
+      "tag": "0003_restrict_outreach_permissions_policy_to_authenticated",
+      "breakpoints": true
     }
   ]
 }
