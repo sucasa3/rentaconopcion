@@ -321,3 +321,15 @@
 - [x] Match Home Health, Home Score, Home Care, Documents, History, and Ask SuCasa presentation without sharing authenticated logic
 - [x] Verify 390px/1280px in EN/ES, no surrounding homepage changes, console errors, overflow, type, or test regressions
 - [x] Keep preview-only and do not publish
+
+## Lender Today — daily command center refinement (preview ready 2026-09-20)
+- [x] Compact Daily Read band with three inline totals and a quiet "Why these N?" disclosure
+- [x] Start here as the focal white/warm card: name, canonical reason, ≤3 supporting facts, Why now, Recommended next step, intelligence-blue opener
+- [x] Recommended permitted channel primary, others secondary, blocked channels keep their existing reasons
+- [x] Compact "Log outcome" disclosure with the same existing lender outcome values and behavior
+- [x] Dense secondary queue rows (rank, name, reason, strongest fact, channel, View homeowner)
+- [x] Homeowner-requested connections keep precedence and authorization disclosure
+- [x] Compact "SuCasa working for you" aggregate with the sponsored-only note unchanged
+- [x] Scoped to the approved professional-detail system; IntelligenceSurface and ChannelActions reused unmodified
+- [x] Typecheck + 321 tests pass; verified at 320/390/430px and desktop with no horizontal overflow
+- [ ] Publish after visual review and explicit approval
