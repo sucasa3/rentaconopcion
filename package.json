@@ -120,12 +120,6 @@
     "browserslist": "^4.28.9",
     "baseline-browser-mapping": "^2.11.21",
     "dompurify": "^3.4.14",
-    "mermaid": "^11.17.2",
-    "@eslint/eslintrc": {
-      "js-yaml": "^4.3.2"
-    },
-    "xmlbuilder2": {
-      "js-yaml": "^4.3.2"
-    }
+    "mermaid": "^11.17.2"
   }
 }
