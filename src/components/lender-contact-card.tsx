@@ -1,17 +1,9 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import {
-  ChevronDown,
-  FileText,
-  Lock,
-  Mail,
-  MessageSquare,
-  Phone,
-  CheckCircle2,
-  Quote,
-} from "lucide-react";
+import { ChevronDown, FileText, CheckCircle2 } from "lucide-react";
 import {
   getLenderWorkspace,
   logLenderOutcome,
@@ -20,31 +12,19 @@ import {
 import { PRIORITY_LABEL } from "@/lib/lender-access";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { IntelligenceSurface } from "@/components/intelligence-surface";
+import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-surface";
+import { ChannelActions } from "@/components/channel-actions";
+import { Button } from "@/components/ui/button";
+import type { ChannelOption, ContactChannel } from "@/lib/contact-channels";
 
 type Workspace = NonNullable<Awaited<ReturnType<typeof getLenderWorkspace>>>;
 export type Person = Workspace["book"][number];
 
-/** Temperature is quiet supporting metadata: a small dot and a light chip. */
+/** Temperature is quiet supporting metadata — the canonical band, restyled only. */
 const TEMP = {
-  hot: {
-    label: "Hot",
-    dot: "bg-sucasa-orange",
-    chip: "bg-sucasa-orange/12 text-status-opportunity",
-    card: "border-border-subtle",
-  },
-  warm: {
-    label: "Warm",
-    dot: "bg-status-attention",
-    chip: "bg-status-attention/12 text-status-attention",
-    card: "border-border-subtle",
-  },
-  nurture: {
-    label: "Nurture",
-    dot: "bg-status-nurture/60",
-    chip: "bg-secondary text-status-nurture",
-    card: "border-border-subtle",
-  },
+  hot: { label: "Hot", dot: "bg-sucasa-orange", text: "text-status-opportunity" },
+  warm: { label: "Warm", dot: "bg-status-attention", text: "text-status-attention" },
+  nurture: { label: "Nurture", dot: "bg-status-nurture/60", text: "text-text-secondary" },
 } as const;
 
 const OUTCOMES = [
@@ -59,29 +39,106 @@ const OUTCOMES = [
 ] as const;
 
 /**
- * One homeowner, one screenful of decision. Collapsed it answers who, why now
- * and what to do; the opener, facts and permissions live behind disclosure.
- *
- * `spotlight` is the "Start here" presentation — same data, more room. It never
- * changes ranking; the caller decides who is first.
+ * Presentation of the server's channel decision. The booleans and reasons are
+ * server-authoritative; the recommended action only decides visual emphasis.
  */
-export function LenderContactCard({
-  person,
-  rank,
-  onBrief,
-  spotlight = false,
-}: {
-  person: Person;
-  rank: number;
-  onBrief: () => void;
-  spotlight?: boolean;
-}) {
+function channelOptions(person: Person): ChannelOption[] {
+  const action = (person.recommendedAction ?? "").toLowerCase();
+  const preferred: ContactChannel | null = action.includes("call")
+    ? "call"
+    : action.includes("text")
+      ? "text"
+      : action.includes("email") || action.includes("send")
+        ? "email"
+        : null;
+
+  const detail: Record<ContactChannel, string | null> = {
+    call: person.phone,
+    text: person.phone,
+    email: person.email,
+  };
+
+  return (["call", "text", "email"] as const).map((channel): ChannelOption => {
+    const available = Boolean(person.channels[channel]) && Boolean(detail[channel]);
+    return {
+      channel,
+      available,
+      recommended: available && preferred === channel,
+      reason:
+        person.channels[channel] && !detail[channel]
+          ? "No contact detail on file."
+          : (person.channelReasons[channel] ?? "Not permitted yet."),
+    };
+  });
+}
+
+/** Up to three supporting facts that the workspace already permits. */
+function supportingFacts(person: Person): string[] {
+  const facts: string[] = [];
+  if (person.askedToConnect) facts.push("Asked to connect");
+  if (person.estimatedEquityCents != null)
+    facts.push(
+      `${formatMoney(person.estimatedEquityCents)} est. equity${
+        person.estimatedLtvPct != null ? ` · ${person.estimatedLtvPct}% est. LTV` : ""
+      }`,
+    );
+  if (person.loanAgeYears != null) facts.push(`Mortgage about ${person.loanAgeYears} yrs old`);
+  if (person.annualReviewDue) facts.push("Annual review due");
+  if (person.engagementLine) facts.push(person.engagementLine);
+  if (person.tenureYears != null) facts.push(`${Math.round(person.tenureYears)} yrs in home`);
+  if (!facts.length && person.dataGap) facts.push(person.dataGap);
+  return facts.slice(0, 3);
+}
+
+function useOutcome(person: Person, onDone: (d: { text: string; nextStep?: string | null }) => void) {
   const qc = useQueryClient();
   const outcomeFn = useServerFn(logLenderOutcome);
-  const [open, setOpen] = useState(false);
-  const [logging, setLogging] = useState(false);
-  const [done, setDone] = useState<{ text: string; nextStep?: string | null } | null>(null);
+  return useMutation({
+    mutationFn: (stage: string) =>
+      outcomeFn({ data: { clientId: person.id, stage: stage as never } }),
+    onSuccess: (res: any) => {
+      onDone({
+        text: res?.confirmation ?? "Outcome recorded.",
+        nextStep:
+          res?.nextStep && res?.dueAt
+            ? `${res.nextStep} · due ${new Date(res.dueAt).toLocaleDateString()}`
+            : null,
+      });
+      toast.success(res?.confirmation ?? "Outcome recorded");
+      qc.invalidateQueries({ queryKey: ["lender-workspace"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
 
+function ViewHomeowner({ person, size = "md" }: { person: Person; size?: "sm" | "md" }) {
+  return (
+    <Link
+      to={"/lender/portfolio/$id" as never}
+      params={{ id: person.portfolioId } as never}
+      search={{ client: person.id } as never}
+      className={cn(
+        "inline-flex items-center font-semibold text-primary",
+        size === "sm"
+          ? "min-h-[38px] rounded-md border border-border px-3 text-sm"
+          : "min-h-[44px] rounded-full border border-border-subtle px-5 text-sm",
+      )}
+    >
+      View homeowner
+    </Link>
+  );
+}
+
+/**
+ * Start here — the highest-priority relationship, with everything the lender
+ * needs to decide and act. Ranking, permissions and outcomes are unchanged.
+ */
+export function LenderSpotlightCard({ person, onBrief }: { person: Person; onBrief: () => void }) {
+  const [showOutcomes, setShowOutcomes] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [done, setDone] = useState<{ text: string; nextStep?: string | null } | null>(null);
+  const outcome = useOutcome(person, setDone);
+  const qc = useQueryClient();
   const permissionFn = useServerFn(setOutreachPermissions);
   const permission = useMutation({
     mutationFn: (fields: Record<string, unknown>) =>
@@ -93,243 +150,151 @@ export function LenderContactCard({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const outcome = useMutation({
-    mutationFn: (stage: string) =>
-      outcomeFn({ data: { clientId: person.id, stage: stage as never } }),
-    onSuccess: (res: any) => {
-      setDone({
-        text: res?.confirmation ?? "Outcome recorded.",
-        nextStep:
-          res?.nextStep && res?.dueAt
-            ? `${res.nextStep} · due ${new Date(res.dueAt).toLocaleDateString()}`
-            : null,
-      });
-      setLogging(false);
-      toast.success(res?.confirmation ?? "Outcome recorded");
-      qc.invalidateQueries({ queryKey: ["lender-workspace"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const t = TEMP[person.temperature ?? "nurture"];
   const review = person.reviews[0];
-
-  // The recommended action decides which channel gets visual weight.
-  const action = (person.recommendedAction ?? "").toLowerCase();
-  const preferred = action.includes("call")
-    ? "call"
-    : action.includes("text")
-      ? "text"
-      : action.includes("email") || action.includes("send")
-        ? "email"
-        : null;
+  const facts = supportingFacts(person);
+  const options = channelOptions(person);
 
   return (
-    <li
-      className={cn(
-        "overflow-hidden rounded-[28px] border bg-card shadow-soft transition duration-200 active:scale-[0.995]",
-        t.card,
-        spotlight && "border-border-subtle shadow-elevated",
-      )}
-    >
-      <div className={cn("p-5", spotlight && "sm:p-6")}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                t.chip,
-              )}
-            >
-              <span className={cn("h-1.5 w-1.5 rounded-full", t.dot)} />
-              {t.label}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">
-              {review?.label ?? "Relationship check-in"}
-            </span>
-          </div>
-          <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground/70">
-            {rank}
-          </span>
-        </div>
-
-        <h3
-          className={cn(
-            "mt-3 font-semibold leading-tight tracking-tight",
-            spotlight ? "text-[28px]" : "text-[21px]",
-          )}
-        >
-          {person.name}
-        </h3>
-        <p className="mt-1 text-[15px] leading-snug text-muted-foreground">
-          {person.whyToday} {person.urgencyReason}
+    <section className="animate-in fade-in overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
+      <div className="h-[3px] w-full bg-sucasa-orange" aria-hidden />
+      <div className="bg-surface-warm px-5 py-4">
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-status-opportunity">
+          <OpportunityDot /> {review?.label ?? "Relationship check-in"}
         </p>
+        <h2 className="mt-1 text-[25px] font-semibold leading-tight tracking-tight">
+          {person.name}
+        </h2>
+        <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] font-medium", t.text)}>
+          <span className={cn("h-1.5 w-1.5 rounded-full", t.dot)} aria-hidden />
+          {t.label}
+        </p>
+        {facts.length > 0 && (
+          <p className="mt-2 text-[13px] leading-snug text-text-secondary">{facts.join(" · ")}</p>
+        )}
+      </div>
 
-        <div className={cn("rounded-2xl bg-secondary/50 p-3.5", spotlight ? "mt-4" : "mt-3")}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Recommended
+      <div className="space-y-3.5 px-5 py-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Why now
           </p>
-          <p className="mt-0.5 text-[15px] font-semibold leading-snug">
-            {person.recommendedAction}
+          <p className="mt-1 text-sm font-medium leading-relaxed text-primary">
+            {person.whyToday}
           </p>
         </div>
 
-        {spotlight && (
-          <IntelligenceSurface
-            label="Suggested opener"
-            icon={<Quote className="h-3 w-3" />}
-            compact
-            className="mt-3"
-          >
-            <p className="text-[15px] leading-relaxed">{person.opener}</p>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Recommended next step
+          </p>
+          <p className="mt-1 text-sm font-medium leading-relaxed">{person.recommendedAction}</p>
+        </div>
+
+        {person.opener && (
+          <IntelligenceSurface label="Suggested opener" compact>
+            <p className="text-sm leading-relaxed">{person.opener}</p>
           </IntelligenceSurface>
         )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Channel
-            allowed={person.channels.call}
-            emphasis={preferred === "call"}
-            reason={person.channelReasons["call"]!}
-            icon={<Phone className="h-4 w-4" />}
-            label="Call"
-            href={person.phone ? `tel:${person.phone}` : undefined}
-          />
-          <Channel
-            allowed={person.channels.text}
-            emphasis={preferred === "text"}
-            reason={person.channelReasons["text"]!}
-            icon={<MessageSquare className="h-4 w-4" />}
-            label="Text"
-            href={person.phone ? `sms:${person.phone}` : undefined}
-          />
-          <Channel
-            allowed={person.channels.email}
-            emphasis={preferred === "email"}
-            reason={person.channelReasons["email"]!}
-            icon={<Mail className="h-4 w-4" />}
-            label="Email"
-            href={person.email ? `mailto:${person.email}` : undefined}
-          />
-        </div>
-
-        <div className="mt-3 flex items-center gap-2">
+        <ChannelActions
+          options={options}
+          phone={person.phone}
+          email={person.email}
+          onAct={() => undefined}
+        >
+          <ViewHomeowner person={person} />
           <button
             type="button"
             onClick={onBrief}
-            className="inline-flex min-h-[44px] flex-1 flex-col items-center justify-center rounded-2xl border border-action-primary/30 bg-action-primary/8 px-4 py-1.5 text-action-primary transition active:scale-[0.98]"
+            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border-subtle px-5 text-sm font-semibold text-primary"
           >
-            <span className="flex items-center gap-1.5 text-sm font-semibold">
-              <FileText className="h-4 w-4" /> Prepare me
-            </span>
-            <span className="text-[11px] font-medium text-primary/70">
-              30-second relationship brief
-            </span>
+            <FileText className="h-4 w-4" /> Prepare me
           </button>
-          <button
-            type="button"
-            onClick={() => setLogging((v) => !v)}
-            className="min-h-[44px] rounded-2xl border border-border px-4 text-sm font-semibold text-muted-foreground transition active:scale-[0.98]"
-          >
-            Log outcome
-          </button>
-        </div>
+        </ChannelActions>
 
         {done && (
-          <div className="mt-3 rounded-2xl border border-growth/30 bg-growth/8 p-3.5">
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-growth">
+          <div className="rounded-xl border border-status-positive/30 bg-status-positive/[0.07] p-3.5">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-status-positive">
               <CheckCircle2 className="h-4 w-4 shrink-0" /> Relationship handled
             </p>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{done.text}</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-text-secondary">{done.text}</p>
             {done.nextStep && (
-              <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
+              <p className="mt-1 text-[13px] leading-relaxed text-text-secondary">
                 {done.nextStep}
               </p>
             )}
           </div>
         )}
 
-        {logging && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {OUTCOMES.map(([stage, label]) => (
-              <button
-                key={stage}
-                type="button"
-                disabled={outcome.isPending}
-                onClick={() => outcome.mutate(stage)}
-                className="rounded-full border border-border/70 px-3 py-1.5 text-xs font-medium text-muted-foreground transition active:scale-95 hover:text-foreground"
-              >
-                {label}
-              </button>
-            ))}
-            <p className="w-full pt-1 text-xs text-muted-foreground">
-              SuCasa schedules the follow-up for you. It never contacts a homeowner on its own.
-            </p>
-          </div>
-        )}
+        <div className="border-t border-border pt-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowOutcomes((v) => !v)}
+            aria-expanded={showOutcomes}
+            className="px-0 text-text-secondary hover:bg-transparent hover:text-primary"
+          >
+            Log outcome
+            <ChevronDown
+              className={cn("transition-transform", showOutcomes && "rotate-180")}
+            />
+          </Button>
+          {showOutcomes && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {OUTCOMES.map(([stage, label]) => (
+                <Button
+                  key={stage}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={outcome.isPending}
+                  onClick={() => outcome.mutate(stage)}
+                  className="rounded-full text-text-secondary shadow-none"
+                >
+                  {label}
+                </Button>
+              ))}
+              <p className="w-full pt-1 text-xs text-text-secondary">
+                SuCasa schedules the follow-up for you. It never contacts a homeowner on its own.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-center gap-1 border-t border-border/60 bg-secondary/30 py-2.5 text-xs font-semibold text-muted-foreground transition active:bg-secondary/60"
+        className="flex w-full items-center justify-center gap-1 border-t border-border bg-secondary/40 py-2.5 text-xs font-semibold text-text-secondary"
+        aria-expanded={open}
       >
-        More intelligence
-        <ChevronDown className={cn("h-3.5 w-3.5 transition duration-200", open && "rotate-180")} />
+        Record permissions &amp; details
+        <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
-        <div className="space-y-4 border-t border-border/60 px-5 py-4">
-          <Field label="Objective">{person.objective}</Field>
-
-          {person.dataGap ? (
-            <Field label="Snapshot">
-              <span className="text-muted-foreground">{person.dataGap}</span>
-            </Field>
-          ) : (
-            <div>
-              <Label>Snapshot</Label>
-              <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-                {person.estimatedValueCents != null && (
-                  <Metric label="Est. value" value={formatMoney(person.estimatedValueCents)} />
-                )}
-                {person.estimatedEquityCents != null && (
-                  <Metric
-                    label="Est. equity"
-                    value={formatMoney(person.estimatedEquityCents)}
-                    tone="growth"
-                  />
-                )}
-                {person.estimatedLtvPct != null && (
-                  <Metric label="Est. LTV" value={`${person.estimatedLtvPct}%`} />
-                )}
-                {person.loanAgeYears != null && (
-                  <Metric label="Loan age" value={`${person.loanAgeYears} yrs`} />
-                )}
-              </div>
-            </div>
-          )}
-
-          {review?.why?.length ? (
-            <div>
-              <Label>Key signals</Label>
-              <ul className="mt-1 space-y-0.5 text-sm">
-                {review.why.slice(0, 3).map((w, i) => (
-                  <li key={i}>• {w}</li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
+        <div className="space-y-3 border-t border-border px-5 py-4">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+              Objective
+            </p>
+            <p className="mt-0.5 text-sm leading-relaxed">{person.objective}</p>
+          </div>
 
           {person.openNextStep?.dueAt && (
-            <Field label="Scheduled">
-              {person.openNextStep.label} · due{" "}
+            <p className="text-[13px] text-text-secondary">
+              Scheduled: {person.openNextStep.label} · due{" "}
               {new Date(person.openNextStep.dueAt).toLocaleDateString()}
-            </Field>
+            </p>
           )}
 
-          <div className="rounded-2xl bg-secondary/40 p-3.5">
-            <Label>Record what this homeowner agreed to</Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
+          <div className="rounded-xl bg-secondary/50 p-3.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-text-secondary">
+              Record what this homeowner agreed to
+            </p>
+            <p className="mt-0.5 text-xs text-text-secondary">
               Recorded permission also allows campaign sending. Without it, contact stays manual and
               one to one.
             </p>
@@ -357,9 +322,9 @@ export function LenderContactCard({
                     })
                   }
                   className={cn(
-                    "rounded-full border bg-background px-3 py-1.5 text-xs font-medium transition active:scale-95",
+                    "rounded-full border bg-background px-3 py-1.5 text-xs font-medium",
                     field.startsWith("do_not")
-                      ? "border-border/70 text-muted-foreground"
+                      ? "border-border text-text-secondary"
                       : "border-primary/40 text-primary",
                   )}
                 >
@@ -369,95 +334,67 @@ export function LenderContactCard({
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-text-secondary">
             {PRIORITY_LABEL}: {person.priority} · not a credit, approval or qualification score
           </p>
         </div>
       )}
+    </section>
+  );
+}
+
+/** A dense queue row for the relationships after Start here. */
+export function LenderQueueRow({
+  person,
+  rank,
+  onBrief,
+}: {
+  person: Person;
+  rank: number;
+  onBrief: () => void;
+}) {
+  const t = TEMP[person.temperature ?? "nurture"];
+  const review = person.reviews[0];
+  const fact = supportingFacts(person)[0];
+  const options = channelOptions(person);
+
+  return (
+    <li className="rounded-xl border border-border bg-card p-3.5 shadow-soft">
+      <div className="flex items-start gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-primary">
+          {rank}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-[16px] font-semibold leading-tight">{person.name}</p>
+            <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", t.dot)} aria-hidden />
+          </div>
+          <p className="mt-0.5 text-xs font-medium text-status-opportunity">
+            {review?.label ?? "Relationship check-in"}
+          </p>
+          <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-text-secondary">
+            {fact ?? person.whyToday}
+          </p>
+        </div>
+      </div>
+      <div className="mt-2.5 border-t border-border pt-2.5">
+        <ChannelActions
+          options={options}
+          phone={person.phone}
+          email={person.email}
+          size="sm"
+          onAct={() => undefined}
+        >
+          <ViewHomeowner person={person} size="sm" />
+          <button
+            type="button"
+            onClick={onBrief}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md border border-border px-3 text-sm font-semibold text-text-secondary"
+          >
+            Prepare me
+          </button>
+        </ChannelActions>
+      </div>
     </li>
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-      {children}
-    </p>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <Label>{label}</Label>
-      <p className="mt-0.5 text-sm leading-relaxed">{children}</p>
-    </div>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone?: "growth";
-}) {
-  return (
-    <div className="rounded-2xl bg-secondary/50 px-3 py-2">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p
-        className={cn(
-          "text-[15px] font-semibold tabular-nums",
-          tone === "growth" && "text-growth",
-        )}
-      >
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function Channel({
-  allowed,
-  reason,
-  icon,
-  label,
-  href,
-  emphasis,
-}: {
-  allowed: boolean;
-  reason: string;
-  icon: React.ReactNode;
-  label: string;
-  href?: string;
-  emphasis?: boolean;
-}) {
-  if (!allowed || !href) {
-    return (
-      <span
-        title={reason}
-        className="inline-flex min-h-[40px] max-w-full items-center gap-1.5 rounded-full border border-dashed border-border px-4 py-1 text-xs font-medium text-muted-foreground"
-      >
-        <Lock className="h-3.5 w-3.5 shrink-0" />
-        <span className="font-semibold">{label}</span>
-        <span className="truncate">· {!href && allowed ? "No contact detail on file." : reason}</span>
-      </span>
-    );
-  }
-
-  return (
-    <a
-      href={href}
-      className={cn(
-        "inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-5 text-sm font-semibold transition active:scale-95",
-        emphasis
-          ? "bg-primary text-primary-foreground shadow-soft"
-          : "border border-primary/30 bg-primary/8 text-primary",
-      )}
-    >
-      {icon} {label}
-    </a>
   );
 }
