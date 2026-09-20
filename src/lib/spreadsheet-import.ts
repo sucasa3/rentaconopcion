@@ -20,7 +20,7 @@ type FileLike = {
 };
 
 export async function workbookBufferToCsv(buf: ArrayBuffer): Promise<string> {
-  const XLSX = await import("xlsx");
+  const XLSX = await import("@/vendor/xlsx/xlsx.mjs");
   const wb = XLSX.read(buf, { type: "array" });
   const sheetName = wb.SheetNames[0];
   if (!sheetName) throw new Error("That workbook has no sheets");

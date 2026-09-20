@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import * as XLSX from "xlsx";
+import * as XLSX from "@/vendor/xlsx/xlsx.mjs";
 import { fileToCsv, isSpreadsheetName } from "../spreadsheet-import";
 import { parseClientCsv } from "../lender.server";
 
