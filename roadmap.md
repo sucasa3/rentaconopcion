@@ -339,3 +339,5 @@
 - [x] Stage 2: vendored SheetJS Community Edition 0.20.3 at src/vendor/xlsx/, removed xlsx@0.18.5 npm dep, new src/lib/spreadsheet-import.ts + 9 tests
 - [x] Stage 3: kept direct browserslist/js-yaml entries as intentional resolution anchors; dependency scan reports 0 vulnerabilities in 73 production deps
 - [ ] Publish pending explicit approval
+- [x] Verified vendored SheetJS CE 0.20.3 byte-identical to official cdn.sheetjs.com tarball; integrity recorded in src/vendor/xlsx/INTEGRITY.md
+- [x] Published to sucasa.com 2026-09-20 (release commit 01dbd8b; rollback point = 1e58429, the last pre-remediation production commit)
