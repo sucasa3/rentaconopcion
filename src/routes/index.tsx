@@ -48,7 +48,7 @@ function Home() {
 function Hero() {
   const { t } = useLanguage();
   return (
-    <section className="relative bg-surface-warm">
+    <section className="gradient-hero relative">
       <div className="mx-auto max-w-7xl px-5 pb-8 pt-12 sm:pb-14 sm:pt-20">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.badge")}</p>
@@ -78,7 +78,7 @@ function Hero() {
 function HomeownerProduct() {
   const { t } = useLanguage();
   return (
-    <section id="my-home-showcase" className="scroll-mt-20 border-b border-border bg-surface-warm px-5 pb-14 sm:pb-20">
+    <section id="my-home-showcase" className="gradient-hero scroll-mt-20 border-b border-border px-5 pb-14 sm:pb-20">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto mb-7 hidden max-w-2xl text-center sm:mb-10 sm:block">
           <p className="text-xs font-semibold uppercase text-status-opportunity">{t("pub.home.showcase.eyebrow")}</p>
