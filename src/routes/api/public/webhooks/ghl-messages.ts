@@ -51,17 +51,25 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env["GHL_WEBHOOK_SECRET"];
-        if (!secret) return new Response("Server not configured", { status: 500 });
+        const sharedToken = process.env["GHL_INBOUND_WEBHOOK_TOKEN"];
+        const hmacSecret = process.env["GHL_WEBHOOK_SECRET"];
+        if (!sharedToken && !hmacSecret) {
+          return new Response("Server not configured", { status: 500 });
+        }
 
         const raw = await request.text();
-        const sig = request.headers.get("x-sucasa-signature") ?? "";
-        const expected = createHmac("sha256", secret).update(raw).digest("hex");
-        const a = Buffer.from(sig);
-        const b = Buffer.from(expected);
-        if (a.length !== b.length || !timingSafeEqual(a, b)) {
-          return new Response("Invalid signature", { status: 401 });
+
+        // Primary: fixed shared-secret header the provider's workflow can send.
+        const provided = request.headers.get("x-sucasa-webhook-token") ?? "";
+        let authorized = Boolean(sharedToken) && tokenMatches(provided, sharedToken!);
+
+        // Backwards compatibility: body HMAC, as used by the billing receiver.
+        if (!authorized && hmacSecret) {
+          const sig = request.headers.get("x-sucasa-signature") ?? "";
+          const expected = createHmac("sha256", hmacSecret).update(raw).digest("hex");
+          authorized = tokenMatches(sig, expected);
         }
+        if (!authorized) return new Response("Unauthorized", { status: 401 });
 
         let parsed;
         try {
@@ -101,15 +109,21 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
         }
 
         // START is express consent given on the texting channel itself. The
-        // evidence is what that channel offers: the keyword, the number, the
-        // provider message id and the time — not a web form's IP address.
+        // evidence is what that channel offers: the keyword, the time, the
+        // provider's own message and contact ids, and the keyed identifier that
+        // associates it with the person. No readable phone number is stored.
+        const { phoneHmac } = policy.subjectKeys({ phone: parsed.phone ?? null });
+        const inbound = (parsed.message ?? "").trim().slice(0, 40);
         const renewed = await policy.recordSmsReConsent(
           supabaseAdmin,
           { phone: parsed.phone ?? null, email: parsed.email ?? null },
           {
             source: "provider_start_keyword",
-            consentText: `Inbound keyword "${keyword(parsed.message) === "start" ? (parsed.message ?? "").trim().slice(0, 40) : "START"}" from ${parsed.phone ?? "unknown number"}`,
-            providerMessageId: parsed.messageId ?? `start-${parsed.phone ?? "unknown"}-${Date.now()}`,
+            consentText: `Inbound SMS keyword "${inbound || "START"}"`,
+            providerMessageId:
+              parsed.messageId ??
+              `start-${parsed.contactId ?? phoneHmac?.slice(0, 16) ?? "unknown"}-${Date.now()}`,
+            webEventId: parsed.contactId ?? null,
           },
         );
         return Response.json({ ok: true, applied: renewed.renewed ? "start" : "none" });
