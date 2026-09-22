@@ -5482,7 +5482,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           description: string | null
-          homeowner_id: string
+          homeowner_id: string | null
           id: string
           invoice_cents: number | null
           invoice_path: string | null
@@ -5512,7 +5512,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           description?: string | null
-          homeowner_id: string
+          homeowner_id?: string | null
           id?: string
           invoice_cents?: number | null
           invoice_path?: string | null
@@ -5542,7 +5542,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           description?: string | null
-          homeowner_id?: string
+          homeowner_id?: string | null
           id?: string
           invoice_cents?: number | null
           invoice_path?: string | null

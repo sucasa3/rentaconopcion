@@ -43,6 +43,13 @@
       "when": 1790042948249,
       "tag": "0005_account_deletion_and_suppression",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790044471583,
+      "tag": "0006_detach_committed_service_requests_on_deletion",
+      "breakpoints": true
     }
   ]
 }
