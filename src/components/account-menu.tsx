@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Briefcase, Home, LogOut, User as UserIcon, Wrench } from "lucide-react";
+import { Briefcase, Home, LogOut, Settings, User as UserIcon, Wrench } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getMyWorkspace } from "@/lib/business.functions";
 import type { User } from "@supabase/supabase-js";
@@ -145,6 +145,8 @@ export function AccountMenu({
             />
           )}
           <Row to="/services" icon={<UserIcon className="h-4 w-4" />} label={t("account.browse_services")} onNavigate={() => setOpen(false)} />
+          <Row to="/account" icon={<Settings className="h-4 w-4" />} label={t("acct.title")} onNavigate={() => setOpen(false)} />
+
         </div>
 
         <div className="mt-3 rounded-2xl border border-border/70 bg-card p-3">
