@@ -222,6 +222,7 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
         .order("created_at", { ascending: false })
         .limit(500);
       for (const r of reqs ?? []) {
+        if (!r.homeowner_id) continue;
         (referralsByHomeowner[r.homeowner_id] ??= []).push({
           id: r.id,
           category: r.category,

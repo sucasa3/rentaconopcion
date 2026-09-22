@@ -262,7 +262,7 @@ export async function createServiceLeadOpportunity(
     .select("id, category, city, zip, description, homeowner_id")
     .eq("id", serviceRequestId)
     .maybeSingle();
-  if (!req) return null;
+  if (!req || !req.homeowner_id) return null;
 
   // Resolve homeowner's GHL contact id (created by the homeowner sync flow)
   const { data: state } = await supabaseAdmin
