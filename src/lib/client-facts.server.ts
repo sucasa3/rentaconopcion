@@ -151,22 +151,17 @@ export async function clientFactsFor(
   const fullKeys = [...new Set(clients.map(fullKey))].filter(Boolean);
   const lineKeys = [...new Set(clients.map((c) => (c.address_line1 ?? "").trim()))].filter(Boolean);
 
-  for (let i = 0; i < fullKeys.length; i += 200) {
-    const { data } = await supabase
-      .from("property_intel")
-      .select(INTEL_COLUMNS)
-      .in("address_normalized", fullKeys.slice(i, i + 200));
-    for (const row of data ?? []) byFull.set(row.address_normalized, row);
+  // Raw property records are read only through the server-controlled reader.
+  // Callers have already authorized the caller against the client rows above.
+  const { readPropertyIntelByNormalized, readPropertyIntelByLine1 } = await import(
+    "@/lib/property-access.server"
+  );
+  for (const row of await readPropertyIntelByNormalized(INTEL_COLUMNS, fullKeys)) {
+    byFull.set(row.address_normalized, row);
   }
-  for (let i = 0; i < lineKeys.length; i += 200) {
-    const { data } = await supabase
-      .from("property_intel")
-      .select(INTEL_COLUMNS)
-      .in("address_line1", lineKeys.slice(i, i + 200));
-    for (const row of data ?? []) {
-      const k = normalizeAddress(row.address_line1 ?? "");
-      if (k && !byLine.has(k)) byLine.set(k, row);
-    }
+  for (const row of await readPropertyIntelByLine1(INTEL_COLUMNS, lineKeys)) {
+    const k = normalizeAddress(row.address_line1 ?? "");
+    if (k && !byLine.has(k)) byLine.set(k, row);
   }
 
   for (const c of clients) {

@@ -110,23 +110,17 @@ async function propertyRecords(
   const fullKeys = [...new Set(clients.map(fullAddressKey))].filter(Boolean);
   const lineKeys = [...new Set(clients.map((c) => (c.address_line1 ?? "").trim()))].filter(Boolean);
 
-  for (let i = 0; i < fullKeys.length; i += 200) {
-    const { data } = await supabase
-      .from("property_intel")
-      .select(INTEL_COLUMNS)
-      .in("address_normalized", fullKeys.slice(i, i + 200));
-    for (const row of data ?? []) byFull.set(row.address_normalized, row as IntelRow);
+  // Raw property records come only from the server-controlled reader; an
+  // address on a user-editable profile is never proof of entitlement.
+  const { readPropertyIntelByNormalized, readPropertyIntelByLine1 } = await import(
+    "@/lib/property-access.server"
+  );
+  for (const row of await readPropertyIntelByNormalized(INTEL_COLUMNS, fullKeys)) {
+    byFull.set(row.address_normalized, row as IntelRow);
   }
-
-  for (let i = 0; i < lineKeys.length; i += 200) {
-    const { data } = await supabase
-      .from("property_intel")
-      .select(INTEL_COLUMNS)
-      .in("address_line1", lineKeys.slice(i, i + 200));
-    for (const row of data ?? []) {
-      const k = normalizeAddress(row.address_line1 ?? "");
-      if (k && !byLine1.has(k)) byLine1.set(k, row as IntelRow);
-    }
+  for (const row of await readPropertyIntelByLine1(INTEL_COLUMNS, lineKeys)) {
+    const k = normalizeAddress(row.address_line1 ?? "");
+    if (k && !byLine1.has(k)) byLine1.set(k, row as IntelRow);
   }
 
   const out = new Map<string, IntelRow>();
