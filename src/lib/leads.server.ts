@@ -108,6 +108,7 @@ export async function offerNextPro(requestId: string): Promise<{ offered: boolea
       await ghl.sendProSms(
         next.phone,
         `SuCasa: New ${req.category} lead in ${key}. Claim within ${SLA_MINUTES} min: https://sucasa.com/pro`,
+        { purpose: "marketing", email: next.email ?? null },
       );
     }
   } catch (e) {
