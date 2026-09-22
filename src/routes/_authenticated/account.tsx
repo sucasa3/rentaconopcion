@@ -586,9 +586,13 @@ function DeleteSection() {
               <li>{t("acct.delete_point_stop")}</li>
               <li>{t("acct.delete_point_personal")}</li>
               {data.businessRecords > 0 ? <li>{t("acct.delete_point_business")}</li> : null}
-              {data.openServiceRequests + data.openIntroductions > 0 ? (
+              {data.pendingServiceRequests + data.openIntroductions > 0 ? (
                 <li>{t("acct.delete_point_open")}</li>
               ) : null}
+              {data.committedServiceRequests > 0 ? (
+                <li className="text-foreground">{t("acct.delete_point_committed")}</li>
+              ) : null}
+              <li>{t("acct.delete_point_new_consent")}</li>
               <li>{subLine}</li>
             </ul>
           </div>
