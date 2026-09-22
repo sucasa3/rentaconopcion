@@ -1,105 +1,84 @@
-# Close the privacy compliance gaps (revised)
+# Stage 3 — Communication preferences and opt-out
 
-Four gaps make an accurate privacy policy impossible today: users cannot delete their account, cannot export their data, nothing is purged on a schedule, and there is no working way to opt out of email or SMS. Four stages, each reviewed and published separately. Nothing about permissions, consent gating, relationships, ranking, opportunity logic, Today screens or View homeowner behavior changes.
+Preview only. Nothing published.
 
-A principle runs through all of it: **data SuCasa controls** is separated everywhere from **independent business records an agent or lender organization maintains**. The two are never mixed in an export, a deletion, or a policy statement.
+## 1. What the texting provider actually does (verified in code)
 
----
+- Every outbound text in SuCasa goes through one place: the GoHighLevel (LeadConnector) conversations API, via `sendProSms` in `src/lib/ghl.server.ts`. `sendVerificationSms` (account phone verification) simply calls it. There is no second texting path and no other provider in the codebase.
+- SuCasa currently has **no inbound message handling at all**. The only GoHighLevel webhook route is the billing receiver (`src/routes/api/public/ghl.billing.ts`, HMAC-verified with `GHL_WEBHOOK_SECRET`). So today a person who replies STOP is handled entirely inside GoHighLevel and SuCasa never learns about it.
+- GoHighLevel owns STOP/START natively: a STOP reply sets the contact's DND state there and the provider refuses further sends. That is the authoritative state.
+- Consequence for this stage: **do not build competing STOP keyword parsing.** SuCasa mirrors the provider's state instead of replacing it. Two directions:
+  - inbound: a new signed GoHighLevel webhook receiver (same HMAC scheme already proven by the billing route) that records opt-out/opt-in the moment the provider reports it;
+  - reconciliation: when SuCasa is about to send a marketing text, read the provider's DND state for that contact and treat provider DND as blocking even if SuCasa has no local record.
+- One item cannot be confirmed from code and needs your GoHighLevel account: which webhook events that account is configured to emit, and the exact secret/signature header the account sends. The receiver will be written against the existing HMAC pattern and the reconciliation read will work regardless, so nothing depends on that answer to function — but I will report it as unverified until you confirm the webhook is switched on in the provider.
 
-## Stage 1 — Account page, and a personal privacy export
+## 2. Purpose is decided in one place
 
-No account or settings screen exists today, so one gets created first; the later stages live inside it.
+A single policy module classifies every message and is the only door to the senders:
 
-**New "Account" page**, from the existing account menu:
-- **Your account** — name, email, phone, language. Changing email or phone requires verification: the new address or number receives a code that must be entered before the change takes effect, and the old one is notified.
-- **Your home** — the property address lives here, not in account settings, and is presented as a property change (it re-derives the entire Home Profile, valuation and equity picture). Changing it requires an explicit confirmation step.
-- **Communication preferences** — Stage 3.
-- **Download your data** — personal privacy export.
-- **Delete your account** — Stage 2.
+- Transactional (never blocked by marketing opt-out): sign-in and verification codes, password/security notices, receipts, and updates about a service request the person themselves started.
+- Marketing / relationship development (always blocked by opt-out, even when automated and even when it comes from an agent or lender): campaigns, nurture, agent and lender introduction outreach, the professional Daily Read digest, and any promotional or relationship-building message.
 
-**The privacy export is strictly personal.** It contains the signed-in person's own information and what SuCasa holds about them: profile, roles, home profile, home plan, inspection findings, service log, service requests, document index with time-limited download links, activity history, selling-intent submissions, inferred intents, consents granted and revoked, introduction history, communication preferences and their history, premium membership.
+Every send must declare its purpose. The email helper and the text helper stop accepting anonymous calls: a send without a declared purpose fails, so no feature can quietly go around the check. A test asserts this.
 
-It does **not** include client records an agent or lender holds about other people, even though that user can see them in the workspace — those are third-party personal data held by the organization, not the requester's own. A workspace/business export, if wanted later, is a separate organization feature governed by workspace permissions and is out of scope here.
+## 3. Send paths audited and routed through the check
 
-Each export is recorded in the compliance audit log.
+All existing outbound paths, each gaining a declared purpose and the policy check:
 
-## Stage 2 — Account deletion
+| Path | Purpose |
+| --- | --- |
+| Campaign sends (`campaigns-run.server.ts`, both send sites) | marketing |
+| Agent/lender outreach sends (`outreach.server.ts`) | marketing |
+| Introduction invitations (`introductions.server.ts`) | marketing |
+| Daily Read digests (`daily-read.server.ts`) | marketing |
+| Agent network invites (`network.functions.ts`) | marketing |
+| Professional invitations (`professional-invitations.server.ts`) | marketing |
+| Lender pilot request (`api/public/lenders.pilot.ts`) | transactional (person's own submission) |
+| Account security alerts and email-change confirmation (`account.server.ts`) | transactional |
+| Auth emails (sign-in, recovery, reauthentication, magic link) | transactional |
+| Provider/lead texts (`leads.server.ts` via `sendProSms`) | marketing unless it concerns a job that provider already accepted |
+| Phone-verification text (`sendVerificationSms`) | transactional |
+| CRM sync pushes (`ghl.server.ts` contact upsert) | carries the person's preference forward so provider-side automations inherit it |
 
-**In the product:** a delete button behind typed confirmation, with a plain-language screen stating exactly what is removed, what is retained, and why.
+## 4. Email unsubscribe
 
-**Deleted:** the login, profile, roles, uploaded documents (rows *and* the underlying files, which cascade does not reach today), home profile, plan, inspection findings, service log, service requests, activity history, selling-intent submissions, inferred intents, assistant conversations and stored "home memory", alerts, consent grants.
+Every marketing/relationship email gets an unsubscribe link in its footer. The link:
 
-**Retained, and stated on the confirmation screen:**
-- A client record an agent or lender independently holds in their own book is that organization's business record and stays — but it is unlinked from the deleted account, all intelligence access is revoked, and it is marked do-not-contact.
-- The minimum evidence needed to prove consent, revocation, deletion and opt-out actually happened: who, when, scope, source. Not the underlying personal content.
+- works in one click, with no sign-in, and works with an expired session;
+- carries a signed, tamper-resistant token that identifies only the recipient identity needed to record the opt-out — no name, no account details;
+- writes the opt-out **before** the confirmation page renders;
+- records channel, scope, source and timestamp;
+- is honoured by anything already queued: the queue re-checks preferences at send time, so a message queued before the opt-out is dropped rather than delivered.
 
-**A central suppression record** prevents a deleted person from being silently recreated, re-matched or contacted when an organization reimports the same list. It stores only what suppression needs — one-way hashes of email, phone and normalized address, plus the event type and timestamp. No names, no readable contact details, no reversible copy. Import, matching and outreach paths check it before creating a link or sending anything, and a suppressed match is reported back to the importer as suppressed without revealing why or who.
+The confirmation page may offer further preference choices, but the unsubscribe itself never requires them. That public page shows no private profile information and allows nothing beyond communication preferences.
 
-**Organization owners always have a path to deletion** — never a dead end. An owner of the last organization chooses either to transfer ownership to another member, or to close the organization: its client records are handled per the organization's own retention obligations (retained for the configured documentation-retention period, access revoked and marked closed, then purged), after which personal deletion completes. Deletion is deferred, never refused.
+## 5. Preference centre
 
-Every deletion is audit-logged before the account disappears.
+On the Account page, three independent controls — marketing email, marketing texts, marketing calls — clearly separated from essential account and service messages, with a line explaining that account, security and service-request messages continue either way. English and Spanish.
 
-## Stage 3 — Working preferences for email, SMS and calls
+Turning texts back on is not a simple switch: when renewed consent is legally required, the person is shown an explicit consent statement and SuCasa stores the exact wording and version, the timestamp, the phone number and channel, the source, the provider message id or web event id where one exists, and the IP/user agent for web consent when available. A provider-side STOP stays authoritative until such a re-consent happens.
 
-Today the do-not-email / do-not-text / do-not-call flags are honored when sending but nothing can ever set them. Most urgent gap.
+## 6. Calls and organisation-held records
 
-**Purpose classification, not workflow naming.** Every message is classified by what it is *for*:
-- **Transactional** — sign-in links, password resets, verification codes, receipts, updates on a service request the person asked for. Not suppressible by a marketing opt-out.
-- **Relationship development** — introduction invitations and similar outreach that develops a commercial relationship. Treated as **marketing**, fully suppressible, never classified as transactional.
-- **Marketing** — campaigns and promotional outreach.
+- Do-not-call becomes functional from the preference centre and is honoured by SuCasa call queues, Today recommendations, campaign workflows and automated outreach. Existing historical records are left intact — disabling calls is not a deletion.
+- Where an agent or lender holds their own client record, a homeowner's preference blocks SuCasa-powered outreach to that person through that organisation. The professional sees only the minimum: "contact preference prevents outreach" — never the person's account details or which preference they set.
 
-Each send path is tagged with its purpose and the suppression check is driven by that tag.
+## 7. Audit trail
 
-**Mechanisms:**
-- Unsubscribe link in the footer of every marketing and relationship-development email — one click, no login, using the existing signed-token mechanism; confirmation page with undo.
-- A preference page behind the same link for turning email, SMS and calls off individually.
-- Inbound SMS: a provider webhook honoring STOP/STOPALL/UNSUBSCRIBE/CANCEL/END/QUIT, and START/UNSTOP to re-enable. **The exact keyword set, payload shape and signature verification are validated against the live SMS provider before this is built** — the provider may already handle keywords itself, in which case the work is to ingest its opt-out state rather than parse messages.
-- Preferences visible and editable in the account page.
+Each preference or consent change records prior state, new state, channel, scope, source, timestamp, and the consent wording/version where consent was required. Message bodies are not stored.
 
-**Consent evidence.** Every change records source, timestamp, scope and channel. Turning SMS back on in settings records an account-holder-initiated preference change — it does **not** by itself manufacture whatever express written consent a given marketing channel may require. Re-enabling a channel that needs express consent presents a distinct consent step whose exact wording, timestamp and IP are stored as evidence.
+## 8. Tests
 
-**Suppression survives deletion** via the Stage 2 suppression record, so a prior opt-out is still honored after the account is gone.
+New tests for: unsubscribe without sign-in; invalid, expired and tampered tokens; a message queued before an opt-out being dropped; provider STOP synchronisation; START/re-consent requiring stored consent evidence; email, text and call preferences behaving independently; transactional messages still delivered after a marketing opt-out; introduction messages suppressed as marketing; outreach blocked across organisations; the purpose tag being required; and a direct call to the sender without a purpose being rejected.
 
-## Stage 4 — Retention, with overrides, monitoring and broad redaction
+## 9. Verification before handing back
 
-**Nightly purge**, but only where nothing overrides it:
-
-| Data | Kept for |
-|---|---|
-| Property-data and AI usage call logs | 90 days |
-| Email open/click events | 13 months |
-| Homeowner activity history | 24 months |
-| Failed-lookup suppression records | 12 months |
-| CRM sync queue (completed) | 30 days |
-| Security and authentication logs | 12 months |
-| Billing and payment records | 7 years (tax/accounting) |
-| Consent, opt-out, deletion and compliance evidence | 5 years (existing configured baseline) |
-| Suppression records | Indefinite (that is their purpose) |
-
-**Overriding holds.** A legal hold, dispute, or open fraud/security investigation marks the affected records and the purge skips them until the hold is released. Backups are excluded from live purging and are governed by their own rotation window, which is documented rather than silently assumed — the policy must state that deleted data persists in backups until they age out.
-
-**Monitoring.** Every purge run logs start, end, rows removed per category, records skipped for holds, and success or failure. A failed or missed run raises a visible admin signal rather than failing quietly.
-
-**Redaction, broader than addresses.** An audit of every application and provider error/log write path, then redaction before storage of: names, email addresses, phone numbers, property addresses, IP addresses, authentication tokens and API keys, and document contents. Error text is reduced to a status and short reason code. Existing stored error text is cleared in the same change.
-
----
+Typecheck, full test suite, production build, security scan, and signed-in plus public smoke tests (preference centre for homeowner/agent/lender, a real unsubscribe click while signed out, Agent Today, Lender Today, both View homeowner screens). Then a report covering the provider behaviour verified, every send path audited, results, test count, and anything unresolved.
 
 ## Technical notes
 
-- Account page under the authenticated layout; export and deletion as authenticated server functions. Email/phone verification via a short-lived signed code; property change goes through the existing Home Profile refresh path.
-- Export runs as the signed-in user so row-level security bounds it; document links use short-lived signed URLs from the existing private buckets. Organization-owned client tables are explicitly excluded from the query set.
-- Deletion runs privileged, verifies the caller owns the account, deletes storage objects under the user's folder first, writes the suppression record and audit entry, then removes the auth user. Existing cascades cover profile/roles/documents/activity/consents; `lender_portfolio_clients.homeowner_id` already sets null rather than deleting.
-- New tables: a suppression register (hashed identifiers, event type, timestamp, scope), a message-purpose/consent-event log, a retention-hold register, and a purge-run log. Suppression hashing uses a server-held secret so hashes are not externally reversible.
-- Purpose tags added to every send path (`outreach.server.ts`, `campaigns-run.server.ts`, `introductions.server.ts`, `daily_read.server.ts`, `send-email.ts`, `leads.server.ts`).
-- Unsubscribe and inbound-SMS endpoints as public API routes under `src/routes/api/public/`, each verifying its caller — HMAC token for unsubscribe (reusing `tracking.server.ts`), provider signature for the webhook.
-- Retention as SQL functions plus a `pg_cron` nightly schedule alongside the two existing jobs.
-- Redaction work in `attom.server.ts`, `batchdata.server.ts`, `enrichment.server.ts`, `valuation.server.ts`, `ghl.functions.ts`, `ai-usage.server.ts`.
-- Each stage: typecheck, full suite, new tests for export scope, deletion cascade and suppression, purpose-based suppression, unsubscribe tokens, retention windows and holds — plus authenticated smoke tests before anything is published.
-
-## External verification, documented before the policy is drafted
-
-A written record to be produced alongside this work, since none of it is answerable from code:
-- **AI provider(s)** — exact provider and models behind the gateway, whether API inputs and uploaded documents are retained, for how long, whether inputs are used for model training, and the applicable data-processing terms. Whole inspection reports are sent to the model, so this is the highest-priority item.
-- **Hosting, CDN and infrastructure** — which providers, what IP/device/request data they log, and their retention periods, including backup rotation.
-- **Analytics, monitoring and error reporting** — any provider that independently receives personal information, including the platform's error-capture hook and the email provider's own tracking.
-- **Other processors** — property data, CRM, payments, email: retention and sub-processor terms for each.
+- New module `src/lib/messaging-policy.server.ts`: purpose enum, per-person preference read, provider-DND reconciliation, and a single `assertSendAllowed` gate. `sendTemplateEmail` and `sendProSms` require a purpose argument and call it.
+- Person-level preferences and consent evidence stored in new tables (preferences keyed to the person, consent evidence append-only); `outreach_channel_permissions` stays as the per-organisation layer and is read on top of the person-level preference, with the stricter of the two winning.
+- Unsubscribe token: HMAC-signed like `tracking.server.ts`, with an expiry and a purpose claim, served by a new public route; opt-out written before render.
+- Inbound provider receiver at `src/routes/api/public/webhooks/ghl-messages.ts`, HMAC-verified against `GHL_WEBHOOK_SECRET`, idempotent on the provider message id.
+- No change to ranking, eligibility, opportunity generation, canonical reasons, opener logic, outcomes, or the approved Today and View-homeowner screens.
