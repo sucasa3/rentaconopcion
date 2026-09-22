@@ -1,70 +1,79 @@
-# Dependency security audit — findings and staged remediation (no changes yet)
+# Close the privacy compliance gaps
 
-The scanner reports 25 vulnerability rows across 8 named packages. Every row was traced to the
-actual installed copy in the lockfile. Nothing has been modified.
+The audit found four gaps that make an accurate privacy policy impossible today: users cannot delete their account, cannot export their data, nothing is ever retained-and-purged on a schedule, and there is no working way to opt out of email or SMS. This plan closes all four, in four stages that can each be reviewed and published separately.
 
-Headline: none of the 25 rows are the May 2026 compromised TanStack releases. `@tanstack/react-start`
-and `@tanstack/router-plugin` are flagged **only** because they pull in older copies of
-`browserslist`, `js-yaml`, and `baseline-browser-mapping` — all build-time tooling, not shipped code.
+Nothing about permissions, consent gating, relationships, ranking, opportunity logic, Today screens, or View homeowner behavior changes.
 
-## Remediation table
+---
 
-| # | Package / installed | Advisory (as reported) | Sev | Direct? | Path that introduces it | Vulnerable range → first safe | Exercised in production? | Recommended action |
-|---|---|---|---|---|---|---|---|---|
-| 1-2 | xlsx 0.18.5 | Prototype Pollution in SheetJS; SheetJS ReDoS | high | direct | `xlsx` → `src/components/bulk-client-upload.tsx` (dynamic import) | ≤0.18.5 → 0.19.3 / 0.20.2 | **Yes** — parses .xls/.xlsx a signed-in agent/lender uploads in the browser | Replace (see below). The fixed versions are not published on npm, so a version bump is not available |
-| 3-4 | @tanstack/react-start 1.168.26 | Browserslist OOM cache growth; Browserslist normalizeStats prototype write | high | direct | react-start → babel toolchain → `browserslist@4.28.2` (nested copy; root copy is already 4.28.9/safe) | ≤4.28.6 → >4.28.6 | No — build-time only, inputs are our own config | Mitigate with a lockfile override pinning browserslist ≥4.28.9 everywhere |
-| 5-7, 16 | @tanstack/react-start 1.168.26 | 4× js-yaml quadratic-CPU / merge-key DoS | high/mod | direct | react-start → eslintrc + xmlbuilder2 → `js-yaml@4.1.1` (root `js-yaml` is 5.4.1/safe) | 4.x <4.3.2 → 4.3.2 | No — YAML is never parsed at runtime; these copies are lint/build tooling | Mitigate with an override to js-yaml 4.3.2 for nested copies, or accept as build-time-only |
-| 8-9 | @tanstack/router-plugin 1.168.18 | same 2 browserslist advisories | high | direct | router-plugin → babel toolchain → `browserslist@4.28.2` | ≤4.28.6 → >4.28.6 | No — build-time | Same override as #3-4 |
-| 10 | @react-three/drei 10.7.7 | fflate ZIP64 infinite loop | mod | direct | drei → three-stdlib → `fflate@0.6.10` | <0.6.11 → 0.6.11 | **No — drei is not imported anywhere** in the codebase (only `@react-three/fiber` is) | **Remove `@react-three/drei`** — highest value, lowest risk fix |
-| 11, 20, 21 | @streamdown/mermaid 1.0.2, mermaid 11.17.2, streamdown 2.5.0 | DOMPurify detached-subtree XSS | mod | direct | streamdown / @streamdown/mermaid → `mermaid@11.16.0` → `dompurify@3.4.12` (root dompurify is 3.4.14/safe) | ≤3.4.12 → >3.4.12 | **Potentially** — Streamdown renders AI assistant output in Ask SuCasa (`home-assistant-card.tsx`); XSS needs a hook using `IN_PLACE`, which mermaid does not use today | Mitigate with an override pinning dompurify ≥3.4.14 for nested copies |
-| 12-15, 22-25 | @streamdown/mermaid, streamdown | Mermaid architecture prototype pollution; XY-chart infinite loop; CSS injection; radar DoS | mod | direct (via the two streamdown packages) | streamdown & @streamdown/mermaid → `mermaid@11.16.0` | <11.16.1 → 11.16.1 | Only if the assistant emits mermaid diagrams — the plugin is registered but SuCasa's assistant produces prose, not diagrams | Either drop the mermaid plugin from `streamdownPlugins` (removes the whole class), or override nested mermaid to ≥11.17.2 |
-| 17-19 | @tanstack/react-start, @tanstack/router-plugin, browserslist 4.28.9 | baseline-browser-mapping termination DoS | mod | direct | nested `browserslist@4.28.2` → `baseline-browser-mapping@2.10.21` (root copy is 2.11.21/safe) | <2.11.0 → 2.11.0 | No — build-time | Resolved automatically by the browserslist override (#3-4) |
+## Stage 1 — An account page, and data export
 
-## xlsx@0.18.5 — priority item
+There is no account or settings screen anywhere in the product today, so one gets created first; the next three stages all live inside it.
 
-Usage is exactly one place: `BulkClientUpload` dynamically imports `xlsx`, reads the uploaded
-workbook in the browser, converts sheet 1 to CSV, and hands the CSV to the caller. There is no
-server-side spreadsheet parsing, no formula evaluation, no HTML output. Untrusted input exists
-(any file the professional picks), but it runs client-side in the uploader's own tab.
+**New "Account" page**, reachable from the existing account menu, with four sections:
+- **Your details** — edit name, email, phone, address, language. Today these can only be changed by walking back through onboarding.
+- **Communication preferences** — see and change email/SMS/call preferences (wired up in Stage 3).
+- **Download your data** — one button.
+- **Delete your account** — (wired up in Stage 2).
 
-SheetJS stopped publishing to npm after 0.18.5, so `xlsx@0.19.3` / `0.20.2` cannot be installed from
-npm. Three viable options, in order of preference:
+**Download your data** produces a single JSON file covering everything tied to the signed-in person: profile, roles, home profile, home plan and plan items, inspection findings, service log, service requests, documents (filename, type, date, plus a time-limited download link for each), activity history, selling-intent submissions, inferred intents, consents granted and revoked, introduction history, premium membership, and — for agents and lenders — their organization membership, portfolios and client records.
 
-1. **Replace with a maintained parser** (e.g. `exceljs`, or a small `.xlsx`-only reader built on the
-   `fflate` we already depend on). Keeps the feature, removes both advisories. Medium effort.
-2. **Pin the official SheetJS CDN tarball** (`xlsx@https://cdn.sheetjs.com/xlsx-0.20.x/...`). Fast,
-   but adds a non-npm dependency source.
-3. **Drop Excel support** and accept CSV only (the template we hand out is already CSV). Zero
-   dependency risk; small feature regression for professionals uploading .xlsx books.
+The export is assembled server-side as the signed-in user, so it can only ever contain what that person is entitled to see. Each export is recorded in the existing compliance audit log.
 
-Recommendation: option 1, decided together before implementation.
+## Stage 2 — Account deletion
 
-## Staged remediation plan (ranked by real risk, then regression risk)
+**In the product:** a delete button behind a typed confirmation, with a plain-language screen explaining exactly what is removed and what is not.
 
-**Stage 0 — free wins, near-zero regression risk**
-- Remove `@react-three/drei` (unused). Clears finding 10.
-- Remove the unused direct `browserslist` and `js-yaml` entries from `package.json` if nothing
-  imports them (verify first) — they exist only to force safe root versions.
+**What gets deleted:** the login itself, the profile, roles, uploaded documents (both the database rows *and* the underlying files, which today would be orphaned), home profile, plan, inspection findings, service log, service requests, activity history, selling-intent submissions, inferred intents, assistant conversations and stored "home memory", alerts, and consent grants.
 
-**Stage 1 — nested-copy overrides (clears 14 of 25 rows, no app code touched)**
-Add lockfile overrides: `browserslist ≥4.28.9`, `baseline-browser-mapping ≥2.11.21`,
-`js-yaml 4.3.2` (nested 4.x only), `dompurify ≥3.4.14`, `mermaid ≥11.17.2`.
+**What is deliberately kept, and must be said plainly on the confirmation screen:** a record an agent or lender independently holds about that person in their own client book is *their* business record, and stays — but it is unlinked from the deleted account, all intelligence access on it is revoked, and it is flagged do-not-contact so the deletion cannot be undone by re-matching. Compliance and audit entries are also retained, as records of consent decisions that must outlive the account.
 
-**Stage 2 — assistant rendering surface**
-Decide whether Ask SuCasa needs mermaid diagrams. If not, drop the mermaid plugin (and
-`@streamdown/mermaid`) entirely — that removes 8 rows at the source rather than by version pinning.
+For an agent or lender who is the last remaining owner of an organization, deletion is blocked with a clear message to transfer ownership or contact support first — silently orphaning a book of client records would be worse than refusing.
 
-**Stage 3 — xlsx**
-Implement the chosen option above, with a focused test covering a real .xlsx upload, a malformed
-file, and CSV fallback.
+Every deletion is recorded in the audit log (who, when, what was removed) before the account disappears.
 
-Each stage lands separately with typecheck, the full test suite, a production build, and an
-authenticated smoke test (agent import flow, Ask SuCasa, homepage 3D hero) before anything is
-published.
+## Stage 3 — Working opt-out for email and SMS
+
+Today the do-not-email / do-not-text / do-not-call flags are honored when sending, but nothing in the product can ever set them. That is the most urgent gap.
+
+- **Unsubscribe link in every marketing and campaign email** — footer link, one click, no login required, using the same signed-token mechanism the product already uses for open and click tracking. Clicking it sets do-not-email for that record and the account-level campaign opt-out, then shows a confirmation page with an "undo" option.
+- **A preference page** at the same link where someone can turn email, SMS and calls off individually rather than all at once.
+- **Inbound SMS "STOP"** — a webhook endpoint that receives inbound messages from the SMS provider, matches the sending phone number, and sets do-not-text. Replies of STOP, STOPALL, UNSUBSCRIBE, CANCEL, END and QUIT are honored; START and UNSTOP re-enable.
+- **Preferences visible and editable** in the Stage 1 account page for signed-in users.
+- Transactional email (sign-in links, password resets, service-request updates, introduction invitations) is **not** suppressed by a marketing unsubscribe — it is still gated by the existing consent rules.
+
+Every preference change writes its source and timestamp to the existing consent columns, so the record shows how each opt-out arrived.
+
+## Stage 4 — Retention limits, and cleaning addresses out of error logs
+
+**Scheduled nightly purge** with these windows, chosen to keep operational value while bounding exposure:
+
+| Data | Kept for |
+|---|---|
+| Property-data and AI usage call logs | 90 days |
+| Email open/click events | 13 months |
+| Homeowner activity history | 24 months |
+| Failed-lookup suppression records | 12 months |
+| CRM sync queue (completed jobs) | 30 days |
+| Compliance and consent audit records | 5 years (the retention baseline already configured in the product) |
+
+**Stop storing addresses in error text.** When a property lookup fails, the provider's raw error text is stored verbatim today and can contain the street address. Error text will be reduced to a status and a short reason code before it is saved, and existing stored error text will be cleared in the same change.
+
+---
 
 ## Technical notes
-- The scanner attributes nested advisories to the nearest direct dependency, which is why
-  `@tanstack/*` appears "high" for issues that are actually in build tooling.
-- Root copies of `browserslist`, `js-yaml`, `dompurify`, `fflate`, and `baseline-browser-mapping`
-  are already at safe versions; only the duplicated nested copies are vulnerable.
-- No database, RLS, auth, permission, or Today/View-homeowner behavior is touched by any stage.
+
+- Account page as a new route under the authenticated layout; export and deletion as authenticated server functions.
+- Export runs as the signed-in user so row-level security bounds the result; document links use short-lived signed URLs from the existing private buckets.
+- Deletion runs in a privileged server function that verifies the caller is deleting their own account, deletes storage objects under the user's folder first (cascade does not reach storage), then removes the auth user. Existing cascade rules already handle profile, roles, documents, activity and consent rows; `lender_portfolio_clients.homeowner_id` already sets null rather than deleting, which is the retained-business-record behavior above. A migration adds columns to mark those rows revoked and do-not-contact on deletion.
+- Unsubscribe and inbound-SMS endpoints as public API routes under `src/routes/api/public/`, each verifying its caller: the unsubscribe link by HMAC token (reusing `src/lib/tracking.server.ts`), the SMS webhook by provider signature.
+- Retention as a SQL function plus a `pg_cron` nightly schedule, alongside the two existing scheduled jobs.
+- Error-text change in `src/lib/attom.server.ts`, `batchdata.server.ts`, `enrichment.server.ts` and `valuation.server.ts`.
+- New tables: none required beyond columns; deletion and export events use the existing `compliance_audit_events`.
+- Each stage: typecheck, full test suite, new tests for export shape, deletion cascade, unsubscribe token handling and retention windows, plus authenticated smoke tests before anything is published.
+
+## Still needs an answer from outside the code
+
+Two policy questions this work cannot settle, both needed before the privacy policy is written:
+- Whether the AI provider retains prompt content and uploaded document contents. Whole inspection reports are sent to the model, so this needs confirming in writing.
+- What the hosting and CDN layer logs (IP address, user agent) and for how long.
