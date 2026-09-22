@@ -407,22 +407,40 @@ export async function sendProSms(
     if (!decision.allowed) return { sent: false, reason: decision.reason ?? undefined };
   }
 
-  await ghlFetch(`/conversations/messages`, {
-    method: "POST",
-    body: JSON.stringify({
-      type: "SMS",
-      locationId: env("GHL_LOCATION_ID"),
-      message,
-      toNumber: toPhone,
-    }),
-  });
+  try {
+    await ghlFetch(`/conversations/messages`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "SMS",
+        locationId: env("GHL_LOCATION_ID"),
+        message,
+        toNumber: toPhone,
+      }),
+    });
+  } catch (e: any) {
+    // Provider / carrier STOP is the last word, for transactional messages too.
+    // SuCasa reports the refusal and never retries around it or clears it.
+    if (e?.name === "GhlError" && e.kind === "provider_dnd") {
+      return { sent: false, reason: "provider_stop" };
+    }
+    throw e;
+  }
   return { sent: true };
 }
 
 /**
  * One-time verification code by SMS (account contact-change verification).
- * Transactional: a marketing opt-out never blocks a code the person asked for.
+ * Transactional, so a SuCasa marketing opt-out never blocks it — but the
+ * provider's own STOP / do-not-disturb state still does, and that refusal is
+ * surfaced to the caller rather than worked around.
  */
 export async function sendVerificationSms(toPhone: string, message: string): Promise<void> {
-  await sendProSms(toPhone, message, { purpose: "transactional" });
+  const result = await sendProSms(toPhone, message, { purpose: "transactional" });
+  if (!result.sent) {
+    throw new Error(
+      result.reason === "provider_stop"
+        ? "The messaging provider will not deliver to this number because it is opted out of messages."
+        : "The verification text could not be sent.",
+    );
+  }
 }
