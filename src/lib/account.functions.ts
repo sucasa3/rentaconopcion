@@ -262,8 +262,23 @@ export const confirmPhoneChange = createServerFn({ method: "POST" })
       },
     });
 
+    // Tell the account's email address that contact details changed, without
+    // repeating any code or the new number.
+    const { data: owner } = await supabaseAdmin
+      .from("profiles")
+      .select("email, language")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const { sendContactChangeAlert } = await import("@/lib/account.server");
+    await sendContactChangeAlert({
+      previousEmail: owner?.email ?? (context.claims as { email?: string }).email ?? null,
+      changed: "phone number",
+      language: owner?.language ?? null,
+    });
+
     return { ok: true as const, phone: pending.new_value };
   });
+
 
 /** Abandon a pending phone verification. */
 export const cancelPhoneChange = createServerFn({ method: "POST" })
