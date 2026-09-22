@@ -382,7 +382,9 @@ describe("deletion steps against a fake backend", () => {
     ).toBe(true);
 
     // Open transactions documented and closed.
-    expect(admin.tables.service_requests[0].status).toBe("Cancelled");
+    // Already accepted by a provider: detached, never cancelled by SuCasa.
+    expect(admin.tables.service_requests[0].status).toBe("Scheduled");
+    expect(admin.tables.service_requests[0].homeowner_id).toBeNull();
     expect(admin.tables.introduction_requests[0].status).toBe("withdrawn");
     expect(
       admin.tables.deletion_retained_records.some((r) => r.record_type === "service_request"),
@@ -400,7 +402,9 @@ describe("deletion steps against a fake backend", () => {
 
     // Storage and account.
     expect(admin.removed.some((r) => r.bucket === "home-documents")).toBe(true);
-    expect(admin.removed.some((r) => r.bucket === "service-invoices")).toBe(true);
+    // The invoice belongs to a job already accepted by a provider, so it stays
+    // with that detached transaction record rather than being destroyed.
+    expect(admin.removed.some((r) => r.bucket === "service-invoices")).toBe(false);
     expect(admin.deletedUsers).toEqual([USER]);
 
     // Suppression recorded with hashes only, and audit evidence written.
@@ -479,5 +483,110 @@ describe("organization ownership before deletion", () => {
     await closeOrganization(admin as any, { orgId: "org-1", actorUserId: USER });
     expect(admin.tables.lender_orgs[0].active).toBe(false);
     expect(await lastOwnerOrgs(admin as any, USER)).toHaveLength(0);
+  });
+});
+
+describe("open transactions: pending vs provider-accepted", () => {
+  it("cancels an unaccepted request but detaches one a provider already accepted", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/billing.server", () => ({ cancelSubscription: async () => undefined }));
+    const { executeAccountDeletion } = await import("@/lib/account-deletion.server");
+
+    const tables = seed();
+    tables.service_requests = [
+      { id: "sr-pending", homeowner_id: USER, status: "New", category: "roof", invoice_path: null, receipt_path: null },
+      {
+        id: "sr-accepted",
+        homeowner_id: USER,
+        status: "Scheduled",
+        category: "hvac",
+        vendor_name: "Cedar HVAC",
+        scheduled_at: "2026-10-01T15:00:00Z",
+        invoice_path: null,
+        receipt_path: null,
+      },
+    ];
+    const admin = fakeAdmin(tables);
+    const out = await executeAccountDeletion(admin as any, USER);
+    expect(out.status).toBe("completed");
+
+    // Files for the unaccepted request are destroyed with the account.
+    const pending = admin.tables.service_requests.find((r: any) => r.id === "sr-pending");
+    expect(pending.status).toBe("Cancelled");
+    expect(pending.cancelled_at).toBeTruthy();
+
+    // Never cancelled on the homeowner's behalf: it continues with the provider.
+    const accepted = admin.tables.service_requests.find((r: any) => r.id === "sr-accepted");
+    expect(accepted.status).toBe("Scheduled");
+    expect(accepted.homeowner_id).toBeNull();
+
+    const retained = admin.tables.deletion_retained_records.filter(
+      (r: any) => r.record_type === "service_request",
+    );
+    expect(retained.find((r: any) => r.record_id === "sr-pending").metadata.disposition).toBe(
+      "cancelled",
+    );
+    expect(retained.find((r: any) => r.record_id === "sr-accepted").metadata.disposition).toBe(
+      "detached",
+    );
+  });
+
+  it("the preview counts unaccepted and provider-accepted requests separately", async () => {
+    const { deletionPreview } = await import("@/lib/account-deletion.server");
+    const tables = seed();
+    tables.service_requests = [
+      { id: "a", homeowner_id: USER, status: "Matched", category: "roof" },
+      { id: "b", homeowner_id: USER, status: "Claimed", category: "hvac" },
+      { id: "c", homeowner_id: USER, status: "In Progress", category: "plumbing" },
+      { id: "d", homeowner_id: USER, status: "Completed", category: "paint" },
+    ];
+    const preview = await deletionPreview(fakeAdmin(tables) as any, USER);
+    expect(preview.pendingServiceRequests).toBe(1);
+    expect(preview.committedServiceRequests).toBe(2);
+  });
+});
+
+describe("new consent after deletion", () => {
+  it("retires the old suppression as a new consent event instead of silently reusing it", async () => {
+    const { recordSuppression, isSuppressed, recordConsentAfterSuppression } = await import(
+      "@/lib/suppression.server"
+    );
+    const tables = seed();
+    const admin = fakeAdmin(tables);
+
+    await recordSuppression(admin as any, {
+      email: "returning@example.com",
+      eventType: "account_deleted",
+      source: "account_settings",
+    });
+    expect(await isSuppressed(admin as any, { email: "returning@example.com" })).toBe(true);
+
+    const res = await recordConsentAfterSuppression(admin as any, {
+      email: "returning@example.com",
+      userId: "user-new",
+      source: "new_account_verified",
+    });
+    expect(res.renewed).toBe(true);
+    expect(await isSuppressed(admin as any, { email: "returning@example.com" })).toBe(false);
+    const event = admin.tables.compliance_audit_events.find(
+      (e: any) => e.action === "consent_renewed_after_deletion",
+    );
+    expect(event).toBeTruthy();
+    expect(event.metadata.subject_email_hmac).toBeTruthy();
+    expect(JSON.stringify(event)).not.toContain("returning@example.com");
+  });
+
+  it("leaves an unrelated person's suppression in place", async () => {
+    const { recordSuppression, isSuppressed, recordConsentAfterSuppression } = await import(
+      "@/lib/suppression.server"
+    );
+    const admin = fakeAdmin(seed());
+    await recordSuppression(admin as any, {
+      email: "someone.else@example.com",
+      eventType: "account_deleted",
+      source: "account_settings",
+    });
+    await recordConsentAfterSuppression(admin as any, { email: "returning@example.com" });
+    expect(await isSuppressed(admin as any, { email: "someone.else@example.com" })).toBe(true);
   });
 });

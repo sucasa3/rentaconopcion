@@ -116,11 +116,13 @@ export async function handoffToPartner(requestId: string): Promise<HandoffResult
     return { sent: false, reason: "no_active_partner" };
   }
 
-  const { data: owner } = await supabaseAdmin
-    .from("profiles")
-    .select("full_name, phone, email")
-    .eq("id", req.homeowner_id)
-    .maybeSingle();
+  const { data: owner } = req.homeowner_id
+    ? await supabaseAdmin
+        .from("profiles")
+        .select("full_name, phone, email")
+        .eq("id", req.homeowner_id)
+        .maybeSingle()
+    : { data: null };
 
   const payload = applyFieldMap(buildLeadPayload(req, owner ?? null), partner.field_map);
 

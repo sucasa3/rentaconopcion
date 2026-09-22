@@ -16,7 +16,11 @@ import {
 } from "./account-deletion";
 import { identifierHmac, normalizeEmailKey, normalizePhoneKey, recordSuppression } from "./suppression.server";
 
-const OPEN_REQUEST_STATUSES = ["New", "Matched", "Claimed", "Scheduled", "In Progress"];
+/** SuCasa-only: no independent provider has accepted the job yet, so it can be cancelled. */
+const PENDING_REQUEST_STATUSES = ["New", "Matched"];
+/** A provider has accepted or committed: detach from the account, never cancel on SuCasa's behalf. */
+const COMMITTED_REQUEST_STATUSES = ["Claimed", "Scheduled", "In Progress"];
+const OPEN_REQUEST_STATUSES = [...PENDING_REQUEST_STATUSES, ...COMMITTED_REQUEST_STATUSES];
 
 export type OrgOwnership = {
   orgId: string;
@@ -33,6 +37,8 @@ export type DeletionPreview = {
     | { kind: "sponsored"; label: string }
     | { kind: "paid"; priceCents: number | null; willCancel: true };
   openServiceRequests: number;
+  pendingServiceRequests: number;
+  committedServiceRequests: number;
   openIntroductions: number;
   businessRecords: number;
   blockingOrgs: OrgOwnership[];
@@ -51,7 +57,7 @@ export async function deletionPreview(admin: any, userId: string): Promise<Delet
         .maybeSingle(),
       admin
         .from("service_requests")
-        .select("id", { count: "exact", head: true })
+        .select("id, status")
         .eq("homeowner_id", userId)
         .in("status", OPEN_REQUEST_STATUSES),
       admin
@@ -75,7 +81,13 @@ export async function deletionPreview(admin: any, userId: string): Promise<Delet
     email: profile?.email ?? null,
     phone: profile?.phone ?? null,
     subscription,
-    openServiceRequests: (reqs as any)?.count ?? 0,
+    openServiceRequests: (reqs ?? []).length,
+    pendingServiceRequests: (reqs ?? []).filter((r: any) =>
+      PENDING_REQUEST_STATUSES.includes(r.status),
+    ).length,
+    committedServiceRequests: (reqs ?? []).filter((r: any) =>
+      COMMITTED_REQUEST_STATUSES.includes(r.status),
+    ).length,
     openIntroductions: (intros as any)?.count ?? 0,
     businessRecords: (clients as any)?.count ?? 0,
     blockingOrgs: await lastOwnerOrgs(admin, userId),
@@ -355,29 +367,63 @@ export function buildDeletionIo(ctx: DeletionContext): DeletionIo {
     async document_open_transactions() {
       const { data: openReqs } = await admin
         .from("service_requests")
-        .select("id, category, status")
+        .select("id, category, status, vendor_name, scheduled_at")
         .eq("homeowner_id", userId)
         .in("status", OPEN_REQUEST_STATUSES);
 
-      for (const r of openReqs ?? []) {
+      const pending = (openReqs ?? []).filter((r: any) =>
+        PENDING_REQUEST_STATUSES.includes(r.status),
+      );
+      const committed = (openReqs ?? []).filter((r: any) =>
+        COMMITTED_REQUEST_STATUSES.includes(r.status),
+      );
+
+      // Nobody outside SuCasa has accepted these, so they can be cancelled.
+      for (const r of pending) {
         await admin.from("deletion_retained_records").insert({
           deletion_request_id: ctx.requestId,
           record_type: "service_request",
           record_id: r.id,
-          reason: `Open ${r.category} request closed on deletion; the professional keeps only the record needed to document the job.`,
-          metadata: { status_at_deletion: r.status },
+          reason: `Unaccepted ${r.category} request cancelled on deletion; no provider had accepted it.`,
+          metadata: { status_at_deletion: r.status, disposition: "cancelled" },
         });
       }
-      if ((openReqs ?? []).length > 0) {
+      if (pending.length > 0) {
         await admin
           .from("service_requests")
           .update({
             status: "Cancelled",
             cancelled_at: new Date().toISOString(),
-            cancellation_reason: "Homeowner deleted their SuCasa account",
+            cancellation_reason: "Homeowner deleted their SuCasa account before any provider accepted",
           })
           .eq("homeowner_id", userId)
-          .in("status", OPEN_REQUEST_STATUSES);
+          .in("status", PENDING_REQUEST_STATUSES);
+      }
+
+      // A provider already accepted these. SuCasa does not cancel an agreement
+      // between the homeowner and another business: detach the request from the
+      // deleted account and keep only the minimum transaction record.
+      for (const r of committed) {
+        await admin.from("deletion_retained_records").insert({
+          deletion_request_id: ctx.requestId,
+          record_type: "service_request",
+          record_id: r.id,
+          reason:
+            `${r.category} job already accepted by an independent provider; detached from the deleted account and retained only as the minimum record of that transaction.`,
+          metadata: {
+            status_at_deletion: r.status,
+            disposition: "detached",
+            vendor_name: r.vendor_name ?? null,
+            scheduled_at: r.scheduled_at ?? null,
+          },
+        });
+        await admin
+          .from("service_requests")
+          .update({
+            homeowner_id: null,
+            notes: "SuCasa account deleted; this job continues with the provider independently of SuCasa.",
+          })
+          .eq("id", r.id);
       }
 
       const { data: openIntros } = await admin
@@ -402,7 +448,7 @@ export function buildDeletionIo(ctx: DeletionContext): DeletionIo {
           .in("status", ["pending", "approved"]);
       }
 
-      return `documented ${(openReqs ?? []).length + (openIntros ?? []).length} open transactions`;
+      return `cancelled ${pending.length}, detached ${committed.length}, withdrew ${(openIntros ?? []).length}`;
     },
 
     async unlink_business_records() {
@@ -442,6 +488,9 @@ export function buildDeletionIo(ctx: DeletionContext): DeletionIo {
         if (error) throw new Error(error.message);
       }
 
+      // Only requests still linked to the account. A job a provider already
+      // accepted has been detached, and its invoice/receipt stays as part of the
+      // minimum record of that independent transaction.
       const { data: reqs } = await admin
         .from("service_requests")
         .select("invoice_path, receipt_path")

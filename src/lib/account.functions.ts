@@ -20,6 +20,21 @@ export const getMyAccount = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
 
+    // A person who previously deleted an account and has now created and
+    // verified a new one is giving fresh consent. Record that as a NEW consent
+    // event and retire the old suppression, rather than letting the deleted
+    // account's state silently govern the new one.
+    {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { recordConsentAfterSuppression } = await import("@/lib/suppression.server");
+      await recordConsentAfterSuppression(supabaseAdmin, {
+        email: authEmail ?? profile?.email ?? null,
+        phone: profile?.phone ?? null,
+        userId: context.userId,
+        source: "new_account_verified",
+      });
+    }
+
     // Keep the stored email aligned with the verified sign-in email, which is
     // the only one that ever changes through a confirmation flow. This is also
     // the point at which a confirmed email change is first observed, so the

@@ -142,3 +142,48 @@ export async function recordSuppression(
   }
   return { recorded: true };
 }
+
+/**
+ * A person who deleted their account and later signs in again with valid new
+ * consent is a NEW consent event, not a silent override of the old account
+ * state: the prior suppression identifiers are retired and the fresh consent is
+ * recorded as evidence, so the old decision is never reused or quietly lost.
+ */
+export async function recordConsentAfterSuppression(
+  admin: any,
+  input: SuppressionInput & { userId?: string | null; source?: string },
+): Promise<{ renewed: boolean }> {
+  const candidate = candidateFor(input);
+  if (!candidate.emailHmac && !candidate.phoneHmac) return { renewed: false };
+
+  const filters: string[] = [];
+  if (candidate.emailHmac) filters.push(`email_hmac.eq.${candidate.emailHmac}`);
+  if (candidate.phoneHmac) filters.push(`phone_hmac.eq.${candidate.phoneHmac}`);
+  const { data: rows } = await admin
+    .from("deletion_suppressions")
+    .select("id, email_hmac, phone_hmac")
+    .or(filters.join(","))
+    .limit(10);
+  const matches = suppressionMatches((rows ?? []) as any, candidate);
+  if (!matches || (rows ?? []).length === 0) return { renewed: false };
+
+  for (const row of rows ?? []) {
+    await admin.from("deletion_suppressions").delete().eq("id", row.id);
+  }
+
+  await admin.from("compliance_audit_events").insert({
+    category: "privacy",
+    action: "consent_renewed_after_deletion",
+    actor_user_id: input.userId ?? null,
+    detail: "A previously suppressed person gave new consent by creating and using a new account.",
+    metadata: {
+      source: input.source ?? "new_account",
+      subject_email_hmac: candidate.emailHmac,
+      subject_phone_hmac: candidate.phoneHmac,
+      retired_suppressions: (rows ?? []).length,
+      at: new Date().toISOString(),
+    },
+  });
+
+  return { renewed: true };
+}
