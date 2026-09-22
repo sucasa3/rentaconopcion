@@ -117,12 +117,15 @@ function AccountPage() {
                 pending={account.data.pendingPhone}
                 onChanged={() => queryClient.invalidateQueries({ queryKey: ["my-account"] })}
               />
-              <HomeSection
-                home={account.data.home}
-                onChanged={async () => {
-                  await queryClient.invalidateQueries();
-                }}
-              />
+              {account.data.hasOwnHome ? (
+                <HomeSection
+                  home={account.data.home}
+                  onChanged={async () => {
+                    await queryClient.invalidateQueries();
+                  }}
+                />
+              ) : null}
+
               <ExportSection />
             </>
           ) : (

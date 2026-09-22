@@ -209,3 +209,34 @@ export async function buildPersonalExport(
     data,
   };
 }
+
+/**
+ * Security notification to the account's PREVIOUS email address after a verified
+ * contact-detail change completes. Never includes codes or new contact values.
+ * Best effort: a delivery failure must not undo a completed, verified change.
+ */
+export async function sendContactChangeAlert(opts: {
+  previousEmail: string | null | undefined;
+  changed: "email address" | "phone number";
+  language?: string | null;
+}): Promise<void> {
+  const to = (opts.previousEmail ?? "").trim();
+  if (!to || !to.includes("@")) return;
+  try {
+    const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+    await sendTemplateEmail("security-alert", to, {
+      templateData: {
+        changedWhat: opts.changed,
+        changedAt: new Date().toLocaleDateString(opts.language === "es" ? "es-US" : "en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+        supportEmail: "support@sucasa.com",
+        language: opts.language === "es" ? "es" : "en",
+      },
+    });
+  } catch {
+    // Notification is advisory; the change itself is already verified.
+  }
+}

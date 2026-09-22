@@ -89,3 +89,30 @@ describe("verification codes", () => {
     expect(stored).toMatch(/^[a-f0-9]{64}$/);
   });
 });
+
+describe("contact-change security notification", () => {
+  it("is registered as a sendable template", async () => {
+    const { TEMPLATES } = await import("@/lib/email-templates/registry");
+    expect(TEMPLATES["security-alert"]).toBeTruthy();
+  });
+
+  it("never contains codes, values, or account details", async () => {
+    const { render } = await import("@react-email/render");
+    const React = (await import("react")).default;
+    const { SecurityAlertEmail } = await import("@/lib/email-templates/security-alert");
+    const text = await render(
+      React.createElement(SecurityAlertEmail, {
+        changedWhat: "phone number",
+        changedAt: "September 22, 2026",
+        language: "en",
+      }),
+      { plainText: true },
+    );
+    expect(text).toMatch(/contact information was changed/i);
+    expect(text).toMatch(/support@sucasa\.com/);
+    // The rendered body carries no verification code and no phone number.
+    const body = text.slice(text.indexOf("YOUR CONTACT"), text.indexOf("secure your account"));
+    expect(body.replace("September 22, 2026", "")).not.toMatch(/\d/);
+    expect(text).not.toMatch(/verification code is/i);
+  });
+})

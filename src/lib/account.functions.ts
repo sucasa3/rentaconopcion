@@ -21,12 +21,29 @@ export const getMyAccount = createServerFn({ method: "GET" })
       .maybeSingle();
 
     // Keep the stored email aligned with the verified sign-in email, which is
-    // the only one that ever changes through a confirmation flow.
+    // the only one that ever changes through a confirmation flow. This is also
+    // the point at which a confirmed email change is first observed, so the
+    // security notification goes to the previous address here.
     if (authEmail && profile && profile.email !== authEmail) {
+      const previousEmail = profile.email;
       await context.supabase
         .from("profiles")
         .update({ email: authEmail })
         .eq("id", context.userId);
+
+      const { sendContactChangeAlert, recordAccountEvent } = await import("@/lib/account.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await recordAccountEvent(supabaseAdmin, {
+        userId: context.userId,
+        action: "email_changed",
+        detail: "Email change confirmed; security notification sent to the previous address",
+        metadata: { verification: "confirmation_link", notifiedPrevious: Boolean(previousEmail) },
+      });
+      await sendContactChangeAlert({
+        previousEmail,
+        changed: "email address",
+        language: profile.language,
+      });
     }
 
     const { data: pending } = await context.supabase
@@ -44,6 +61,18 @@ export const getMyAccount = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", context.userId);
 
+    const roleNames = (roles ?? []).map((r) => r.role as string);
+
+    // "Your home" is the signed-in person's OWN Home Profile. Agents and lenders
+    // never reach client, portfolio, or organization-owned property records here.
+    const { data: ownHome } = await context.supabase
+      .from("home_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .limit(1)
+      .maybeSingle();
+    const hasOwnHome = roleNames.includes("homeowner") || Boolean(ownHome);
+
     const { maskPhone } = await import("@/lib/account.server");
 
     return {
@@ -51,18 +80,22 @@ export const getMyAccount = createServerFn({ method: "GET" })
       fullName: profile?.full_name ?? "",
       phone: profile?.phone ?? null,
       language: profile?.language ?? "en",
-      home: {
-        address: profile?.address ?? null,
-        city: profile?.city ?? null,
-        state: profile?.state ?? null,
-        zip: profile?.zip ?? null,
-      },
-      roles: (roles ?? []).map((r) => r.role as string),
+      hasOwnHome,
+      home: hasOwnHome
+        ? {
+            address: profile?.address ?? null,
+            city: profile?.city ?? null,
+            state: profile?.state ?? null,
+            zip: profile?.zip ?? null,
+          }
+        : { address: null, city: null, state: null, zip: null },
+      roles: roleNames,
       pendingPhone: pending
         ? { masked: maskPhone(pending.new_value), expiresAt: pending.expires_at }
         : null,
     };
   });
+
 
 /** Name and language only — contact details and the home address have their own paths. */
 export const updateMyAccountBasics = createServerFn({ method: "POST" })
@@ -140,11 +173,26 @@ export const requestPhoneChange = createServerFn({ method: "POST" })
       const { sendVerificationSms } = await import("@/lib/ghl.server");
       await sendVerificationSms(e164, `Your SuCasa verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
     } catch {
+      // Nothing was sent, so leave no pending verification behind: the number
+      // must not look like it is half-way through being changed.
+      await supabaseAdmin
+        .from("account_change_requests")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("user_id", context.userId)
+        .is("consumed_at", null);
+      await recordAccountEvent(supabaseAdmin, {
+        userId: context.userId,
+        action: "phone_change_send_failed",
+        detail: "Verification code could not be sent; phone number unchanged",
+        metadata: { channel: "sms", masked: maskPhone(e164), delivered: false },
+      });
       return {
         ok: false as const,
-        error: "We couldn't send a code to that number. Please check it and try again.",
+        error:
+          "We couldn't send the verification code. Your phone number has not been changed. Please try again or contact support.",
       };
     }
+
 
     await recordAccountEvent(supabaseAdmin, {
       userId: context.userId,
@@ -214,8 +262,23 @@ export const confirmPhoneChange = createServerFn({ method: "POST" })
       },
     });
 
+    // Tell the account's email address that contact details changed, without
+    // repeating any code or the new number.
+    const { data: owner } = await supabaseAdmin
+      .from("profiles")
+      .select("email, language")
+      .eq("id", context.userId)
+      .maybeSingle();
+    const { sendContactChangeAlert } = await import("@/lib/account.server");
+    await sendContactChangeAlert({
+      previousEmail: owner?.email ?? (context.claims as { email?: string }).email ?? null,
+      changed: "phone number",
+      language: owner?.language ?? null,
+    });
+
     return { ok: true as const, phone: pending.new_value };
   });
+
 
 /** Abandon a pending phone verification. */
 export const cancelPhoneChange = createServerFn({ method: "POST" })
@@ -249,12 +312,35 @@ export const updateMyHomeAddress = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Only the signed-in person's OWN Home Profile. An agent or lender with no
+    // homeowner Home Profile of their own cannot use this path at all, so no
+    // client, portfolio, or organization-owned property can be altered here.
+    const { data: roles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const { data: ownHome } = await context.supabase
+      .from("home_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .limit(1)
+      .maybeSingle();
+    const hasOwnHome =
+      (roles ?? []).some((r) => (r.role as string) === "homeowner") || Boolean(ownHome);
+    if (!hasOwnHome) {
+      return {
+        ok: false as const,
+        error: "This account doesn't have its own home profile, so there's no home address to change here.",
+      };
+    }
+
     if (!((data.city && data.state) || data.zip)) {
       return {
         ok: false as const,
         error: "Please include a city and state, or a ZIP code, so we can match the property.",
       };
     }
+
 
     const { data: before } = await context.supabase
       .from("profiles")
