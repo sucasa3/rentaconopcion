@@ -10,14 +10,19 @@ import { z } from "zod";
  * mirrors the provider's state so the rest of the product (call queues, Today
  * recommendations, campaigns) honours it too.
  *
- * Auth: HMAC-SHA256 of the raw body with GHL_WEBHOOK_SECRET in
- * `x-sucasa-signature`, the same scheme as the billing receiver.
+ * Auth: a fixed shared secret in `x-sucasa-webhook-token`, compared in constant
+ * time against GHL_INBOUND_WEBHOOK_TOKEN. GoHighLevel workflow webhooks can send
+ * fixed custom headers but cannot sign the request body, so this is the scheme
+ * the provider can actually satisfy. The older body-HMAC in `x-sucasa-signature`
+ * (GHL_WEBHOOK_SECRET) is still accepted for backwards compatibility.
  * Idempotent on the provider message id.
  */
 const Payload = z.object({
   type: z.string().max(80).optional(),
   phone: z.string().max(40).optional(),
   email: z.string().max(200).optional(),
+  /** Provider contact id — the preferred non-readable association key. */
+  contactId: z.string().max(120).optional(),
   /** Inbound body — read for the keyword only; never stored. */
   message: z.string().max(2000).optional(),
   messageId: z.string().max(120).optional(),
@@ -35,21 +40,36 @@ function keyword(message: string | undefined): "stop" | "start" | null {
   return null;
 }
 
+/** Constant-time equality for the shared token. */
+function tokenMatches(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env["GHL_WEBHOOK_SECRET"];
-        if (!secret) return new Response("Server not configured", { status: 500 });
+        const sharedToken = process.env["GHL_INBOUND_WEBHOOK_TOKEN"];
+        const hmacSecret = process.env["GHL_WEBHOOK_SECRET"];
+        if (!sharedToken && !hmacSecret) {
+          return new Response("Server not configured", { status: 500 });
+        }
 
         const raw = await request.text();
-        const sig = request.headers.get("x-sucasa-signature") ?? "";
-        const expected = createHmac("sha256", secret).update(raw).digest("hex");
-        const a = Buffer.from(sig);
-        const b = Buffer.from(expected);
-        if (a.length !== b.length || !timingSafeEqual(a, b)) {
-          return new Response("Invalid signature", { status: 401 });
+
+        // Primary: fixed shared-secret header the provider's workflow can send.
+        const provided = request.headers.get("x-sucasa-webhook-token") ?? "";
+        let authorized = Boolean(sharedToken) && tokenMatches(provided, sharedToken!);
+
+        // Backwards compatibility: body HMAC, as used by the billing receiver.
+        if (!authorized && hmacSecret) {
+          const sig = request.headers.get("x-sucasa-signature") ?? "";
+          const expected = createHmac("sha256", hmacSecret).update(raw).digest("hex");
+          authorized = tokenMatches(sig, expected);
         }
+        if (!authorized) return new Response("Unauthorized", { status: 401 });
 
         let parsed;
         try {
@@ -89,15 +109,21 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
         }
 
         // START is express consent given on the texting channel itself. The
-        // evidence is what that channel offers: the keyword, the number, the
-        // provider message id and the time — not a web form's IP address.
+        // evidence is what that channel offers: the keyword, the time, the
+        // provider's own message and contact ids, and the keyed identifier that
+        // associates it with the person. No readable phone number is stored.
+        const { phoneHmac } = policy.subjectKeys({ phone: parsed.phone ?? null });
+        const inbound = (parsed.message ?? "").trim().slice(0, 40);
         const renewed = await policy.recordSmsReConsent(
           supabaseAdmin,
           { phone: parsed.phone ?? null, email: parsed.email ?? null },
           {
             source: "provider_start_keyword",
-            consentText: `Inbound keyword "${keyword(parsed.message) === "start" ? (parsed.message ?? "").trim().slice(0, 40) : "START"}" from ${parsed.phone ?? "unknown number"}`,
-            providerMessageId: parsed.messageId ?? `start-${parsed.phone ?? "unknown"}-${Date.now()}`,
+            consentText: `Inbound SMS keyword "${inbound || "START"}"`,
+            providerMessageId:
+              parsed.messageId ??
+              `start-${parsed.contactId ?? phoneHmac?.slice(0, 16) ?? "unknown"}-${Date.now()}`,
+            webEventId: parsed.contactId ?? null,
           },
         );
         return Response.json({ ok: true, applied: renewed.renewed ? "start" : "none" });

@@ -347,3 +347,13 @@
 - Fix: all five reads now use the explicit hint plan_tiers!lender_orgs_plan_key_fkey. No schema, RLS, ranking, permission or UI change.
 - Verified: plan data resolves (MLO / 250 allowance); import now returns the correct capacity message instead of an opaque failure. Demo lender book holds 987 profiles on a 250 plan, so imports there are legitimately blocked by the limit.
 - Typecheck clean, 330 tests pass. Not yet published.
+
+## Stage 3 final verification (2026-09-22, preview only)
+- [x] Correction 1: provider/carrier STOP (DND) is authoritative for every outbound text; GhlError kind `provider_dnd`, transactional send returns {sent:false, reason:"provider_stop"}, verification SMS surfaces the refusal, never bypassed/cleared/retried
+- [x] Correction 2: START consent evidence carries keyword, version, timestamp, channel, source, provider message/contact id and keyed identifier — no readable phone number
+- [x] Correction 3: inbound receiver authenticates `x-sucasa-webhook-token` (constant-time) against GHL_INBOUND_WEBHOOK_TOKEN; body-HMAC path kept only for backwards compatibility
+- [ ] GHL workflow configured (inbound reply + SMS DND change) with the shared header
+- [ ] Live STOP test, mirror + audit verification, blocked second marketing send
+- [ ] Live START test + separate web re-consent verification
+- [ ] Review five security findings without changing them
+- [ ] Final publish recommendation (do not publish)
