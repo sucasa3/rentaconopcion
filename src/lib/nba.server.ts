@@ -196,6 +196,29 @@ export async function buildActionQueue(
     (channelPerms ?? []).map((p: any) => [p.portfolio_client_id, p]),
   );
 
+  // A person's own communication preference is folded in here, so the call
+  // queue and every recommended next step honour it. The stricter of the
+  // organization permission and the person's preference always wins, and the
+  // professional only ever sees the resulting decision.
+  {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { personChannelBlocks } = await import("@/lib/messaging-policy.server");
+    const blocks = await personChannelBlocks(
+      supabaseAdmin,
+      rows.map((c: any) => ({ id: c.id, email: c.client_email, phone: c.client_phone })),
+    );
+    for (const [clientId, block] of blocks) {
+      const existing = permByClient.get(clientId);
+      if (existing) {
+        existing.do_not_email = existing.do_not_email || block.do_not_email;
+        existing.do_not_text = existing.do_not_text || block.do_not_text;
+        existing.do_not_call = existing.do_not_call || block.do_not_call;
+      } else {
+        permByClient.set(clientId, { portfolio_client_id: clientId, ...block });
+      }
+    }
+  }
+
   const { data: opps } = await supabase
     .from("homeowner_opportunities")
     .select("id, portfolio_client_id, org_id, category, strength, score, reasons")
