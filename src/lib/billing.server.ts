@@ -68,17 +68,17 @@ export async function stripeRequest<T = any>(
  * billing/accounting records SuCasa must retain.
  */
 export async function cancelSubscription(subscriptionId: string): Promise<void> {
-  await stripeRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}`, "POST", {
-    cancel_at_period_end: false,
-  }).catch(async (e: unknown) => {
-    // Already canceled or missing upstream is an acceptable end state.
+  try {
+    await stripeRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, "POST", {
+      "cancellation_details[comment]": "Homeowner deleted their SuCasa account",
+    });
+  } catch (e) {
+    // Already canceled, or no longer present upstream: that is the end state we
+    // wanted, so it is not a failure.
     const msg = e instanceof Error ? e.message : String(e);
-    if (/no such subscription|canceled/i.test(msg)) return;
+    if (/no such subscription|already canceled|canceled subscription/i.test(msg)) return;
     throw e;
-  });
-  await stripeRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}`, "POST", {
-    "cancellation_details[comment]": "Homeowner deleted their SuCasa account",
-  }).catch(() => undefined);
+  }
 }
 
 /** Find or create the Stripe customer for an organization. */
