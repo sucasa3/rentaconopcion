@@ -140,7 +140,7 @@ export function factsFromRecord(
  * Batched reads of the cached record only — no provider calls, no cost.
  */
 export async function clientFactsFor(
-  supabase: any,
+  _supabase: any,
   clients: FactClientRow[],
 ): Promise<Map<string, ClientFacts>> {
   const out = new Map<string, ClientFacts>();
