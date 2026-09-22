@@ -313,10 +313,23 @@ export async function pushCampaignContact(p: CampaignContactPush): Promise<strin
     key: `sc_${k}`,
     field_value: String(v ?? ""),
   }));
+  // Carry the person's own preference to the CRM so provider-side automations
+  // inherit it instead of contacting someone who opted out here.
+  let dnd = false;
+  try {
+    const { loadPreferences } = await import("./messaging-policy.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const prefs = await loadPreferences(supabaseAdmin, { email: p.email, phone: p.phone ?? null });
+    dnd = !prefs.marketing_email && !prefs.marketing_sms && !prefs.marketing_calls;
+  } catch {
+    /* preference lookup is best effort; the send gate is authoritative */
+  }
+
   const body = {
     locationId: env("GHL_LOCATION_ID"),
     email: p.email,
     phone: p.phone ?? undefined,
+    dnd,
     firstName: firstName || undefined,
     lastName: rest.join(" ") || undefined,
     city: p.city ?? undefined,
