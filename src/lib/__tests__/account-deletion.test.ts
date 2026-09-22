@@ -382,7 +382,9 @@ describe("deletion steps against a fake backend", () => {
     ).toBe(true);
 
     // Open transactions documented and closed.
-    expect(admin.tables.service_requests[0].status).toBe("Cancelled");
+    // Already accepted by a provider: detached, never cancelled by SuCasa.
+    expect(admin.tables.service_requests[0].status).toBe("Scheduled");
+    expect(admin.tables.service_requests[0].homeowner_id).toBeNull();
     expect(admin.tables.introduction_requests[0].status).toBe("withdrawn");
     expect(
       admin.tables.deletion_retained_records.some((r) => r.record_type === "service_request"),

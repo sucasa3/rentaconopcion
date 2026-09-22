@@ -167,10 +167,9 @@ export async function recordConsentAfterSuppression(
   const matches = suppressionMatches((rows ?? []) as any, candidate);
   if (!matches || (rows ?? []).length === 0) return { renewed: false };
 
-  await admin
-    .from("deletion_suppressions")
-    .delete()
-    .in("id", (rows ?? []).map((r: any) => r.id));
+  for (const row of rows ?? []) {
+    await admin.from("deletion_suppressions").delete().eq("id", row.id);
+  }
 
   await admin.from("compliance_audit_events").insert({
     category: "privacy",
