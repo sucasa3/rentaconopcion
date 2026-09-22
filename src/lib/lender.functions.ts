@@ -400,8 +400,19 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => IngestSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
-    const rows = parseClientCsv(data.csv);
-    if (rows.length === 0) return { inserted: 0 };
+    const parsedRows = parseClientCsv(data.csv);
+    if (parsedRows.length === 0) return { inserted: 0, suppressed: 0 };
+
+    // Never re-create someone who asked to be deleted or opted out.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { partitionSuppressed } = await import("./suppression.server");
+    const { allowed: rows, suppressed } = await partitionSuppressed(supabaseAdmin, parsedRows, (r) => ({
+      email: r.email ?? null,
+      street: r.address,
+      zip: r.zip ?? null,
+    }));
+    if (rows.length === 0) return { inserted: 0, suppressed: suppressed.length };
+
     const { assertCapacityForPortfolio } = await import("./capacity.server");
     await assertCapacityForPortfolio(data.portfolioId, rows.length);
 
@@ -421,7 +432,7 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
 
-    return { inserted: rows.length };
+    return { inserted: rows.length, suppressed: suppressed.length };
   });
 
 const AddClientSchema = z.object({
@@ -443,6 +454,22 @@ export const addPortfolioClient = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AddClientSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
+    {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { isSuppressed } = await import("./suppression.server");
+      if (
+        await isSuppressed(supabaseAdmin, {
+          email: data.email || null,
+          phone: data.phone || null,
+          street: data.address,
+          zip: data.zip || null,
+        })
+      ) {
+        throw new Error(
+          "This person asked us not to contact them, so they can't be added to a client list.",
+        );
+      }
+    }
     const { assertCapacityForPortfolio } = await import("./capacity.server");
     await assertCapacityForPortfolio(data.portfolioId, 1);
     const { error } = await context.supabase.from("lender_portfolio_clients").insert({

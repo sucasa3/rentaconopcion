@@ -272,8 +272,16 @@ export async function intakeDiscoveryCsv(input: {
     existingKeys,
   });
 
-  if (accepted.length) {
-    const payload = accepted.map((r: any) => ({
+  const { partitionSuppressed } = await import("./suppression.server");
+  const { allowed: importable } = await partitionSuppressed(db, accepted, (r: any) => ({
+    email: r.email ?? null,
+    phone: r.phone ?? null,
+    street: r.address,
+    zip: r.zip ?? null,
+  }));
+
+  if (importable.length) {
+    const payload = importable.map((r: any) => ({
       portfolio_id: input.portfolioId,
       client_name: r.full_name,
       client_email: r.email ?? null,
