@@ -312,12 +312,35 @@ export const updateMyHomeAddress = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // Only the signed-in person's OWN Home Profile. An agent or lender with no
+    // homeowner Home Profile of their own cannot use this path at all, so no
+    // client, portfolio, or organization-owned property can be altered here.
+    const { data: roles } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const { data: ownHome } = await context.supabase
+      .from("home_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .limit(1)
+      .maybeSingle();
+    const hasOwnHome =
+      (roles ?? []).some((r) => (r.role as string) === "homeowner") || Boolean(ownHome);
+    if (!hasOwnHome) {
+      return {
+        ok: false as const,
+        error: "This account doesn't have its own home profile, so there's no home address to change here.",
+      };
+    }
+
     if (!((data.city && data.state) || data.zip)) {
       return {
         ok: false as const,
         error: "Please include a city and state, or a ZIP code, so we can match the property.",
       };
     }
+
 
     const { data: before } = await context.supabase
       .from("profiles")
