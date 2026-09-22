@@ -134,14 +134,23 @@ export const EXCLUDED_FROM_PERSONAL_EXPORT: ReadonlyArray<string> = [
   "batchdata_call_log",
 ];
 
+/** JSON-safe value: everything in the export crosses the wire as JSON. */
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 export type PersonalExport = {
   generatedAt: string;
   scope: string;
   notIncluded: string;
-  account: Record<string, unknown> | null;
+  account: { [key: string]: JsonValue } | null;
   authEmail: string | null;
-  documents: Array<Record<string, unknown>>;
-  data: Record<string, unknown[]>;
+  documents: Array<{ [key: string]: JsonValue }>;
+  data: { [key: string]: JsonValue[] };
 };
 
 /**
@@ -155,17 +164,17 @@ export async function buildPersonalExport(
 ): Promise<PersonalExport> {
   const { data: account } = await db.from("profiles").select("*").eq("id", userId).maybeSingle();
 
-  const data: Record<string, unknown[]> = {};
+  const data: { [key: string]: JsonValue[] } = {};
   for (const { table, column } of PERSONAL_EXPORT_TABLES) {
     const { data: rows } = await db
       .from(table as never)
       .select("*")
       .eq(column as never, userId as never);
-    if (rows && rows.length > 0) data[table] = rows as unknown[];
+    if (rows && rows.length > 0) data[table] = rows as unknown as JsonValue[];
   }
 
   // Document index with short-lived download links (files stay private).
-  const documents: Array<Record<string, unknown>> = [];
+  const documents: Array<{ [key: string]: JsonValue }> = [];
   const { data: docs } = await db
     .from("home_documents")
     .select("id, kind, original_filename, storage_path, created_at")
@@ -194,7 +203,7 @@ export async function buildPersonalExport(
       "Your personal SuCasa information: your account, your home profile and plan, your documents, your requests, your activity, and your consent and communication records.",
     notIncluded:
       "This export does not include client records that a real estate agent or lender organization keeps about other people in their own workspace. Those are that organization's records, not your personal data.",
-    account: (account as Record<string, unknown> | null) ?? null,
+    account: (account as unknown as { [key: string]: JsonValue } | null) ?? null,
     authEmail,
     documents,
     data,
