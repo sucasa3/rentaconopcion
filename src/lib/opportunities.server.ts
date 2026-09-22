@@ -101,7 +101,7 @@ function fullAddressKey(c: PortfolioClientRow): string {
  * line for rows imported without a city.
  */
 async function propertyRecords(
-  supabase: any,
+  _supabase: any,
   clients: PortfolioClientRow[],
 ): Promise<Map<string, IntelRow>> {
   const byFull = new Map<string, IntelRow>();
