@@ -21,12 +21,29 @@ export const getMyAccount = createServerFn({ method: "GET" })
       .maybeSingle();
 
     // Keep the stored email aligned with the verified sign-in email, which is
-    // the only one that ever changes through a confirmation flow.
+    // the only one that ever changes through a confirmation flow. This is also
+    // the point at which a confirmed email change is first observed, so the
+    // security notification goes to the previous address here.
     if (authEmail && profile && profile.email !== authEmail) {
+      const previousEmail = profile.email;
       await context.supabase
         .from("profiles")
         .update({ email: authEmail })
         .eq("id", context.userId);
+
+      const { sendContactChangeAlert, recordAccountEvent } = await import("@/lib/account.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await recordAccountEvent(supabaseAdmin, {
+        userId: context.userId,
+        action: "email_changed",
+        detail: "Email change confirmed; security notification sent to the previous address",
+        metadata: { verification: "confirmation_link", notifiedPrevious: Boolean(previousEmail) },
+      });
+      await sendContactChangeAlert({
+        previousEmail,
+        changed: "email address",
+        language: profile.language,
+      });
     }
 
     const { data: pending } = await context.supabase
@@ -44,6 +61,18 @@ export const getMyAccount = createServerFn({ method: "GET" })
       .select("role")
       .eq("user_id", context.userId);
 
+    const roleNames = (roles ?? []).map((r) => r.role as string);
+
+    // "Your home" is the signed-in person's OWN Home Profile. Agents and lenders
+    // never reach client, portfolio, or organization-owned property records here.
+    const { data: ownHome } = await context.supabase
+      .from("home_profiles")
+      .select("id")
+      .eq("user_id", context.userId)
+      .limit(1)
+      .maybeSingle();
+    const hasOwnHome = roleNames.includes("homeowner") || Boolean(ownHome);
+
     const { maskPhone } = await import("@/lib/account.server");
 
     return {
@@ -51,18 +80,22 @@ export const getMyAccount = createServerFn({ method: "GET" })
       fullName: profile?.full_name ?? "",
       phone: profile?.phone ?? null,
       language: profile?.language ?? "en",
-      home: {
-        address: profile?.address ?? null,
-        city: profile?.city ?? null,
-        state: profile?.state ?? null,
-        zip: profile?.zip ?? null,
-      },
-      roles: (roles ?? []).map((r) => r.role as string),
+      hasOwnHome,
+      home: hasOwnHome
+        ? {
+            address: profile?.address ?? null,
+            city: profile?.city ?? null,
+            state: profile?.state ?? null,
+            zip: profile?.zip ?? null,
+          }
+        : { address: null, city: null, state: null, zip: null },
+      roles: roleNames,
       pendingPhone: pending
         ? { masked: maskPhone(pending.new_value), expiresAt: pending.expires_at }
         : null,
     };
   });
+
 
 /** Name and language only — contact details and the home address have their own paths. */
 export const updateMyAccountBasics = createServerFn({ method: "POST" })
