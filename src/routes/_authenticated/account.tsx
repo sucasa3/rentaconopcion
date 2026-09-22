@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Download,
   Loader2,
+  MailCheck,
   MapPin,
   Phone,
   ShieldCheck,
@@ -19,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AddressAutocomplete, type AddressValue } from "@/components/address-autocomplete";
 import { useT, useLanguage } from "@/lib/i18n";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   cancelPhoneChange,
   confirmPhoneChange,
@@ -27,6 +30,8 @@ import {
   requestPhoneChange,
   updateMyAccountBasics,
   updateMyHomeAddress,
+  getMyCommunicationPreferences,
+  updateMyCommunicationPreferences,
 } from "@/lib/account.functions";
 import {
   closeMyOrganization,
@@ -141,6 +146,7 @@ function AccountPage() {
                 />
               ) : null}
 
+              <PreferencesSection hasPhone={Boolean(account.data.phone)} />
               <ExportSection />
               <DeleteSection />
             </>
@@ -149,6 +155,131 @@ function AccountPage() {
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+/**
+ * Marketing email, texts and calls, controlled separately and clearly distinct
+ * from essential account and service messages. Turning texts back on after an
+ * opt-out asks for express consent rather than flipping a switch.
+ */
+function PreferencesSection({ hasPhone }: { hasPhone: boolean }) {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const prefs = useQuery({
+    queryKey: ["my-comm-prefs"],
+    queryFn: () => getMyCommunicationPreferences(),
+  });
+  const [consentAccepted, setConsentAccepted] = useState(false);
+
+  const save = useMutation({
+    mutationFn: (patch: {
+      marketingEmail?: boolean;
+      marketingSms?: boolean;
+      marketingCalls?: boolean;
+      smsConsentAccepted?: boolean;
+    }) => updateMyCommunicationPreferences({ data: patch }),
+    onSuccess: async (res) => {
+      if (res.consentRequired) {
+        toast.error(t("acct.prefs_consent_required_toast"));
+      } else {
+        toast.success(t("acct.prefs_saved"));
+        setConsentAccepted(false);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["my-comm-prefs"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const data = prefs.data;
+  const smsBlockedUntilConsent = Boolean(data?.smsConsentRequired);
+
+  return (
+    <Section
+      icon={<MailCheck className="h-4 w-4" />}
+      title={t("acct.section.prefs")}
+      description={t("acct.prefs_help")}
+    >
+      {prefs.isLoading || !data ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("acct.loading")}
+        </div>
+      ) : (
+        <>
+          <PreferenceRow
+            id="pref-email"
+            label={t("acct.prefs_email")}
+            help={t("acct.prefs_email_help")}
+            checked={data.marketingEmail}
+            disabled={save.isPending}
+            onChange={(v) => save.mutate({ marketingEmail: v })}
+          />
+          <PreferenceRow
+            id="pref-sms"
+            label={t("acct.prefs_sms")}
+            help={hasPhone ? t("acct.prefs_sms_help") : t("acct.prefs_no_phone")}
+            checked={data.marketingSms}
+            disabled={save.isPending || !hasPhone}
+            onChange={(v) =>
+              save.mutate({ marketingSms: v, smsConsentAccepted: v ? consentAccepted : undefined })
+            }
+          />
+          {!data.marketingSms && smsBlockedUntilConsent && hasPhone ? (
+            <div className="rounded-xl border border-border/70 bg-muted/40 p-3">
+              <p className="text-xs text-muted-foreground">{t("acct.prefs_consent_needed")}</p>
+              <label className="mt-2 flex items-start gap-2 text-xs leading-snug text-foreground">
+                <Checkbox
+                  checked={consentAccepted}
+                  onCheckedChange={(v) => setConsentAccepted(v === true)}
+                  aria-label={t("acct.prefs_consent_accept")}
+                />
+                <span>{data.consentText}</span>
+              </label>
+            </div>
+          ) : null}
+          <PreferenceRow
+            id="pref-calls"
+            label={t("acct.prefs_calls")}
+            help={t("acct.prefs_calls_help")}
+            checked={data.marketingCalls}
+            disabled={save.isPending}
+            onChange={(v) => save.mutate({ marketingCalls: v })}
+          />
+          <p className="pt-1 text-xs leading-snug text-muted-foreground">
+            {t("acct.prefs_essential")}
+          </p>
+        </>
+      )}
+    </Section>
+  );
+}
+
+function PreferenceRow({
+  id,
+  label,
+  help,
+  checked,
+  disabled,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  help: string;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 p-3">
+      <div className="min-w-0">
+        <Label htmlFor={id} className="text-sm font-medium text-foreground">
+          {label}
+        </Label>
+        <p className="mt-1 text-xs leading-snug text-muted-foreground">{help}</p>
+      </div>
+      <Switch id={id} checked={checked} disabled={disabled} onCheckedChange={onChange} />
     </div>
   );
 }
