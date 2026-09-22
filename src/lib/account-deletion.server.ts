@@ -488,6 +488,9 @@ export function buildDeletionIo(ctx: DeletionContext): DeletionIo {
         if (error) throw new Error(error.message);
       }
 
+      // Only requests still linked to the account. A job a provider already
+      // accepted has been detached, and its invoice/receipt stays as part of the
+      // minimum record of that independent transaction.
       const { data: reqs } = await admin
         .from("service_requests")
         .select("invoice_path, receipt_path")

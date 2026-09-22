@@ -402,7 +402,9 @@ describe("deletion steps against a fake backend", () => {
 
     // Storage and account.
     expect(admin.removed.some((r) => r.bucket === "home-documents")).toBe(true);
-    expect(admin.removed.some((r) => r.bucket === "service-invoices")).toBe(true);
+    // The invoice belongs to a job already accepted by a provider, so it stays
+    // with that detached transaction record rather than being destroyed.
+    expect(admin.removed.some((r) => r.bucket === "service-invoices")).toBe(false);
     expect(admin.deletedUsers).toEqual([USER]);
 
     // Suppression recorded with hashes only, and audit evidence written.
@@ -508,6 +510,7 @@ describe("open transactions: pending vs provider-accepted", () => {
     const out = await executeAccountDeletion(admin as any, USER);
     expect(out.status).toBe("completed");
 
+    // Files for the unaccepted request are destroyed with the account.
     const pending = admin.tables.service_requests.find((r: any) => r.id === "sr-pending");
     expect(pending.status).toBe("Cancelled");
     expect(pending.cancelled_at).toBeTruthy();
