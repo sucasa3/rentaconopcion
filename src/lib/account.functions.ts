@@ -173,11 +173,26 @@ export const requestPhoneChange = createServerFn({ method: "POST" })
       const { sendVerificationSms } = await import("@/lib/ghl.server");
       await sendVerificationSms(e164, `Your SuCasa verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
     } catch {
+      // Nothing was sent, so leave no pending verification behind: the number
+      // must not look like it is half-way through being changed.
+      await supabaseAdmin
+        .from("account_change_requests")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("user_id", context.userId)
+        .is("consumed_at", null);
+      await recordAccountEvent(supabaseAdmin, {
+        userId: context.userId,
+        action: "phone_change_send_failed",
+        detail: "Verification code could not be sent; phone number unchanged",
+        metadata: { channel: "sms", masked: maskPhone(e164), delivered: false },
+      });
       return {
         ok: false as const,
-        error: "We couldn't send a code to that number. Please check it and try again.",
+        error:
+          "We couldn't send the verification code. Your phone number has not been changed. Please try again or contact support.",
       };
     }
+
 
     await recordAccountEvent(supabaseAdmin, {
       userId: context.userId,
