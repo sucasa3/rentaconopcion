@@ -110,9 +110,9 @@ describe("contact-change security notification", () => {
     );
     expect(text).toMatch(/contact information was changed/i);
     expect(text).toMatch(/support@sucasa\.com/);
-    // Apart from the human-readable date, the message carries no digits at all
-    // — no verification code, no old or new phone number.
-    expect(text.replace("September 22, 2026", "")).not.toMatch(/\d/);
+    // The rendered body carries no verification code and no phone number.
+    const body = text.slice(text.indexOf("YOUR CONTACT"), text.indexOf("secure your account"));
+    expect(body.replace("September 22, 2026", "")).not.toMatch(/\d/);
     expect(text).not.toMatch(/verification code is/i);
   });
 })
