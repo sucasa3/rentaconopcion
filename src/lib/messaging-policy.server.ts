@@ -28,6 +28,12 @@ export interface PolicySubject {
   /** Secondary matching factors for the suppression register only. */
   street?: string | null;
   zip?: string | null;
+  /**
+   * Pre-computed keyed identifiers, used where only the token is available
+   * (an unsubscribe link carries no readable address).
+   */
+  emailHmacOverride?: string | null;
+  phoneHmacOverride?: string | null;
 }
 
 export interface PolicyDecision {
@@ -65,8 +71,8 @@ export function subjectKeys(subject: PolicySubject): {
   const email = normalizeEmailKey(subject.email);
   const phone = normalizePhoneKey(subject.phone);
   return {
-    emailHmac: email ? identifierHmac("email", email) : null,
-    phoneHmac: phone ? identifierHmac("phone", phone) : null,
+    emailHmac: subject.emailHmacOverride ?? (email ? identifierHmac("email", email) : null),
+    phoneHmac: subject.phoneHmacOverride ?? (phone ? identifierHmac("phone", phone) : null),
   };
 }
 
