@@ -418,3 +418,136 @@ export const exportMyPersonalData = createServerFn({ method: "POST" })
 
     return payload;
   });
+
+/**
+ * Communication preferences: marketing email, marketing texts and marketing
+ * calls, each controlled separately and each distinct from essential account
+ * and service messages, which are never affected here.
+ */
+export const getMyCommunicationPreferences = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadPreferences, SMS_CONSENT_TEXT, SMS_CONSENT_VERSION } = await import(
+      "@/lib/messaging-policy.server"
+    );
+
+    const authEmail = (context.claims as { email?: string }).email ?? null;
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("email, phone")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const prefs = await loadPreferences(supabaseAdmin, {
+      userId: context.userId,
+      email: profile?.email ?? authEmail,
+      phone: profile?.phone ?? null,
+    });
+
+    return {
+      marketingEmail: prefs.marketing_email,
+      marketingSms: prefs.marketing_sms,
+      marketingCalls: prefs.marketing_calls,
+      smsConsentRequired: prefs.sms_consent_required,
+      hasPhone: Boolean(profile?.phone),
+      consentText: SMS_CONSENT_TEXT,
+      consentVersion: SMS_CONSENT_VERSION,
+    };
+  });
+
+export const updateMyCommunicationPreferences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        marketingEmail: z.boolean().optional(),
+        marketingSms: z.boolean().optional(),
+        marketingCalls: z.boolean().optional(),
+        /** Required to turn marketing texts back on after an opt-out. */
+        smsConsentAccepted: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const policy = await import("@/lib/messaging-policy.server");
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+
+    const authEmail = (context.claims as { email?: string }).email ?? null;
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("email, phone")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const subject = {
+      userId: context.userId,
+      email: profile?.email ?? authEmail,
+      phone: profile?.phone ?? null,
+    };
+
+    const ip =
+      getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for") ?? null;
+    const userAgent = getRequestHeader("user-agent") ?? null;
+    const webEventId = crypto.randomUUID();
+
+    const prior = await policy.loadPreferences(supabaseAdmin, subject);
+    let consentRequired = false;
+
+    // Email and calls are simple preference switches.
+    const patch: Record<string, boolean> = {};
+    if (typeof data.marketingEmail === "boolean") patch["marketing_email"] = data.marketingEmail;
+    if (typeof data.marketingCalls === "boolean") patch["marketing_calls"] = data.marketingCalls;
+    if (data.marketingSms === false) patch["marketing_sms"] = false;
+
+    if (Object.keys(patch).length) {
+      await policy.setPreferences(supabaseAdmin, subject, patch as any, {
+        channel: "all",
+        source: "account_preference_centre",
+        webEventId,
+        ip,
+        userAgent,
+      });
+    }
+
+    // Turning texts back on is a consent decision, not a boolean flip: when
+    // renewed express consent is required, the person must accept the consent
+    // statement and the wording, version and web evidence are stored.
+    if (data.marketingSms === true) {
+      if (prior.sms_consent_required && !data.smsConsentAccepted) {
+        consentRequired = true;
+      } else if (prior.sms_consent_required) {
+        await policy.recordSmsReConsent(supabaseAdmin, subject, {
+          source: "account_preference_centre",
+          consentText: policy.SMS_CONSENT_TEXT,
+          consentVersion: policy.SMS_CONSENT_VERSION,
+          webEventId,
+          ip,
+          userAgent,
+        });
+      } else {
+        await policy.setPreferences(
+          supabaseAdmin,
+          subject,
+          { marketing_sms: true },
+          {
+            channel: "sms",
+            source: "account_preference_centre",
+            webEventId,
+            ip,
+            userAgent,
+          },
+        );
+      }
+    }
+
+    const next = await policy.loadPreferences(supabaseAdmin, subject);
+    return {
+      marketingEmail: next.marketing_email,
+      marketingSms: next.marketing_sms,
+      marketingCalls: next.marketing_calls,
+      smsConsentRequired: next.sms_consent_required,
+      consentRequired,
+    };
+  });
