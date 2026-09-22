@@ -14,6 +14,7 @@ export type GhlErrorKind =
   | "not_found"
   | "rate_limited"
   | "bad_request"
+  | "provider_dnd"
   | "server_error"
   | "unknown";
 
