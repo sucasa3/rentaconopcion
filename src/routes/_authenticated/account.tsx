@@ -127,6 +127,7 @@ function AccountPage() {
               ) : null}
 
               <ExportSection />
+              <DeleteSection />
             </>
           ) : (
             <p className="text-sm text-muted-foreground">{t("acct.load_error")}</p>
