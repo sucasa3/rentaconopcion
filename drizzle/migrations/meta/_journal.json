@@ -36,6 +36,13 @@
       "when": 1790041099059,
       "tag": "0004_account_change_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790042948249,
+      "tag": "0005_account_deletion_and_suppression",
+      "breakpoints": true
     }
   ]
 }

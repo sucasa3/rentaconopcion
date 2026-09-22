@@ -244,6 +244,22 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
         continue;
       }
 
+      // Someone who deleted their account or opted out is never contacted,
+      // even if an organization still holds their business record.
+      {
+        const { isSuppressed } = await import("./suppression.server");
+        if (
+          await isSuppressed(supabaseAdmin, {
+            email: c.client_email,
+            phone: (c as any).client_phone ?? null,
+            street: c.address_line1,
+            zip: c.zip,
+          })
+        ) {
+          continue;
+        }
+      }
+
       const { data: sendRow } = await supabaseAdmin
         .from("campaign_sends")
         .insert({

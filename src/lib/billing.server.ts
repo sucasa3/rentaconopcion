@@ -62,6 +62,25 @@ export async function stripeRequest<T = any>(
   return json as T;
 }
 
+/**
+ * Stop a subscription so no further renewal or charge can occur. Invoices,
+ * charges and customer records stay with the payment provider: those are
+ * billing/accounting records SuCasa must retain.
+ */
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  try {
+    await stripeRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, "POST", {
+      "cancellation_details[comment]": "Homeowner deleted their SuCasa account",
+    });
+  } catch (e) {
+    // Already canceled, or no longer present upstream: that is the end state we
+    // wanted, so it is not a failure.
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/no such subscription|already canceled|canceled subscription/i.test(msg)) return;
+    throw e;
+  }
+}
+
 /** Find or create the Stripe customer for an organization. */
 export async function ensureCustomer(
   supabaseAdmin: any,

@@ -1136,6 +1136,27 @@ export const en = {
   "acct.export_note": "This does not include client records an agent or lender keeps about other people in their own workspace. Those belong to that business, not to you.",
   "acct.export_button": "Download my data",
   "acct.export_done": "Your file has been downloaded.",
+  "acct.section.delete": "Delete your account",
+  "acct.delete_help":
+    "This permanently deletes your SuCasa account and the personal information SuCasa keeps about you. It cannot be undone.",
+  "acct.delete_what": "What happens when you delete",
+  "acct.delete_point_stop": "All emails, texts and calls from SuCasa stop, and we keep a record so you are not contacted again if someone re-uploads your details later.",
+  "acct.delete_point_personal": "Your account, home profile, plan, documents, activity and requests are deleted.",
+  "acct.delete_point_business": "An agent or lender who already had you in their own client list keeps that business record, but the link to your SuCasa account and everything SuCasa added to it is removed, and they are marked do-not-contact. Deleting SuCasa does not delete records another company keeps independently.",
+  "acct.delete_point_open": "Any open service request or pending introduction is closed.",
+  "acct.delete_sub_paid": "Your paid membership is cancelled now and you will not be charged again. Payment receipts we're required to keep for accounting stay with our payment provider.",
+  "acct.delete_sub_sponsored": "Your sponsored membership ends. You are not billed for it.",
+  "acct.delete_sub_none": "You have no paid membership, so there is nothing to cancel.",
+  "acct.delete_org_title": "One more step first",
+  "acct.delete_org_help": "You are the last owner of {name}. Hand it to someone else on your team, or close it, and then you can delete your account.",
+  "acct.delete_org_transfer": "Make this person the owner",
+  "acct.delete_org_close": "Close {name}",
+  "acct.delete_org_closed": "Organization closed.",
+  "acct.delete_org_transferred": "Ownership transferred.",
+  "acct.delete_confirm_label": "Type DELETE to confirm",
+  "acct.delete_button": "Delete my account permanently",
+  "acct.delete_reauth": "For your security, please sign in again before deleting your account.",
+  "acct.delete_done": "Your account has been deleted.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

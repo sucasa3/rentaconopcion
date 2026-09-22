@@ -233,7 +233,7 @@ export async function runEnrichmentTick(opts?: {
   const { data: clients } = await supabaseAdmin
     .from("lender_portfolio_clients")
     .select(
-      "id, portfolio_id, address_line1, city, state, zip, loan_amount_at_close_cents, close_date, term_months",
+      "id, portfolio_id, client_email, client_phone, address_line1, city, state, zip, loan_amount_at_close_cents, close_date, term_months",
     )
     .in(
       "id",
@@ -241,7 +241,32 @@ export async function runEnrichmentTick(opts?: {
     )
     // Archived Home Profiles go quiet: no refreshes, no provider spend.
     .is("archived_at", null);
-  const clientById = new Map((clients ?? []).map((c: any) => [c.id, c]));
+  // A person who deleted their SuCasa account or opted out is never re-derived
+  // or re-matched: their queue rows stop here.
+  const { isSuppressed } = await import("./suppression.server");
+  const enrichable: any[] = [];
+  for (const c of clients ?? []) {
+    // eslint-disable-next-line no-await-in-loop
+    const blocked = await isSuppressed(supabaseAdmin, {
+      email: (c as any).client_email ?? null,
+      phone: (c as any).client_phone ?? null,
+      street: c.address_line1,
+      zip: c.zip,
+    });
+    if (blocked) {
+      await supabaseAdmin
+        .from("property_enrichment_queue")
+        .update({
+          status: "canceled",
+          last_error: "suppressed: the person asked not to be contacted",
+          completed_at: new Date().toISOString(),
+        })
+        .eq("portfolio_client_id", c.id);
+      continue;
+    }
+    enrichable.push(c);
+  }
+  const clientById = new Map(enrichable.map((c: any) => [c.id, c]));
 
   const { getPropertyIntel, extractMortgage, extractSales } = await import("./valuation.server");
   const touchedPortfolios = new Set<string>();

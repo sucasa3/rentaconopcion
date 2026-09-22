@@ -1504,8 +1504,19 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
       metadata: { method: "csv" },
     });
     const { parseClientCsv } = await import("./lender.server");
-    const parsed = parseClientCsv(data.csv);
-    if (parsed.length === 0) return { inserted: 0, skipped: 0, remaining: null };
+    const parsedAll = parseClientCsv(data.csv);
+    if (parsedAll.length === 0)
+      return { inserted: 0, skipped: 0, suppressed: 0, remaining: null };
+
+    // Never re-create someone who asked to be deleted or opted out.
+    const { partitionSuppressed } = await import("./suppression.server");
+    const { allowed: parsed, suppressed: suppressedRows } = await partitionSuppressed(
+      supabaseAdmin,
+      parsedAll,
+      (r) => ({ email: r.email ?? null, street: r.address, zip: r.zip ?? null }),
+    );
+    if (parsed.length === 0)
+      return { inserted: 0, skipped: 0, suppressed: suppressedRows.length, remaining: null };
 
     // Import up to the remaining balance and say plainly what was held back.
     const { remainingCreditsForPortfolio } = await import("./credits-stats.server");
@@ -1549,6 +1560,7 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     return {
       inserted: rows.length,
       skipped,
+      suppressed: suppressedRows.length,
       remaining: remaining == null ? null : Math.max(0, remaining - rows.length),
     };
   });

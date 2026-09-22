@@ -61,6 +61,45 @@ export type Database = {
           },
         ]
       }
+      account_deletion_requests: {
+        Row: {
+          completed_at: string | null
+          failures: Json
+          id: string
+          needs_admin_attention: boolean
+          requested_at: string
+          status: string
+          steps: Json
+          updated_at: string
+          user_hmac: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          failures?: Json
+          id?: string
+          needs_admin_attention?: boolean
+          requested_at?: string
+          status?: string
+          steps?: Json
+          updated_at?: string
+          user_hmac?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          failures?: Json
+          id?: string
+          needs_admin_attention?: boolean
+          requested_at?: string
+          status?: string
+          steps?: Json
+          updated_at?: string
+          user_hmac?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       addon_products: {
         Row: {
           active: boolean
@@ -1689,6 +1728,86 @@ export type Database = {
           provider?: string
           unauthorized_count?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      deletion_retained_records: {
+        Row: {
+          created_at: string
+          deletion_request_id: string | null
+          id: string
+          metadata: Json
+          reason: string
+          record_id: string | null
+          record_type: string
+          retained_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          deletion_request_id?: string | null
+          id?: string
+          metadata?: Json
+          reason: string
+          record_id?: string | null
+          record_type: string
+          retained_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          deletion_request_id?: string | null
+          id?: string
+          metadata?: Json
+          reason?: string
+          record_id?: string | null
+          record_type?: string
+          retained_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deletion_retained_records_deletion_request_id_fkey"
+            columns: ["deletion_request_id"]
+            isOneToOne: false
+            referencedRelation: "account_deletion_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deletion_suppressions: {
+        Row: {
+          address_hmac: string | null
+          created_at: string
+          email_hmac: string | null
+          event_type: string
+          id: string
+          phone_hmac: string | null
+          reason: string | null
+          review_after: string | null
+          scope: string
+          source: string
+        }
+        Insert: {
+          address_hmac?: string | null
+          created_at?: string
+          email_hmac?: string | null
+          event_type?: string
+          id?: string
+          phone_hmac?: string | null
+          reason?: string | null
+          review_after?: string | null
+          scope?: string
+          source?: string
+        }
+        Update: {
+          address_hmac?: string | null
+          created_at?: string
+          email_hmac?: string | null
+          event_type?: string
+          id?: string
+          phone_hmac?: string | null
+          reason?: string | null
+          review_after?: string | null
+          scope?: string
+          source?: string
         }
         Relationships: []
       }

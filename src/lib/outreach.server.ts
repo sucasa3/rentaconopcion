@@ -39,6 +39,22 @@ export async function sendOutreachEmail(args: SendOutreachArgs): Promise<SendOut
     return { ok: false, messageId: null, reason: "This homeowner has no email address on file." };
   }
 
+  {
+    const { isSuppressed } = await import("./suppression.server");
+    if (
+      await isSuppressed(supabaseAdmin, {
+        email: client.client_email,
+        phone: client.client_phone,
+      })
+    ) {
+      return {
+        ok: false,
+        messageId: null,
+        reason: "This person asked us not to contact them, so no message was sent.",
+      };
+    }
+  }
+
   const { data: org } = await supabaseAdmin
     .from("lender_orgs")
     .select(
