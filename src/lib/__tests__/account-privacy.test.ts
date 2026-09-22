@@ -27,7 +27,7 @@ describe("personal privacy export scope", () => {
     const included = PERSONAL_EXPORT_TABLES.map((t) => t.table);
     for (const table of [
       "home_profiles",
-      "home_documents".replace("home_documents", "home_document_facts"),
+      "home_document_facts",
       "service_requests",
       "consent_records",
       "homeowner_lender_consents",
