@@ -22,6 +22,7 @@ import {
  * ignoring this email, keeps it that way.
  */
 export interface IntroductionInviteProps {
+  unsubscribeUrl?: string | null
   homeownerName?: string | null
   agentOrgName?: string
   lenderOrgName?: string
@@ -37,10 +38,11 @@ export function IntroductionInviteEmail({
   lenderContactName,
   categoryLabel = 'financing options',
   acceptUrl = 'https://sucasa.com/introduction',
+  unsubscribeUrl,
 }: IntroductionInviteProps) {
   const who = lenderContactName ? `${lenderContactName} at ${lenderOrgName}` : lenderOrgName
   return (
-    <EmailBrand preview={`Would you like to connect with ${lenderOrgName}?`}>
+    <EmailBrand preview={`Would you like to connect with ${lenderOrgName}?`} unsubscribeUrl={unsubscribeUrl}>
       <Section>
         <Text style={eyebrow}>An introduction, only if you want it</Text>
         <Heading style={heading}>Would you like to connect with {lenderOrgName}?</Heading>

@@ -21,6 +21,7 @@ import {
  * channel. Everything of substance waits behind the claim.
  */
 export interface ProfessionalInviteProps {
+  unsubscribeUrl?: string | null
   /** Name of the professional being invited, when known. */
   professionalName?: string
   /** The agent workspace that named this person as someone they work with. */
@@ -47,8 +48,9 @@ const ProfessionalInviteEmail = ({
   professionalName,
   inviterOrgName = 'An agent on SuCasa',
   acceptUrl = 'https://rentaconopcion.lovable.app/professional-invite',
+  unsubscribeUrl,
 }: ProfessionalInviteProps) => (
-  <EmailBrand preview={`${inviterOrgName} works with you on SuCasa`}>
+  <EmailBrand preview={`${inviterOrgName} works with you on SuCasa`} unsubscribeUrl={unsubscribeUrl}>
     <Text style={eyebrow}>Invited by {inviterOrgName}</Text>
     <Heading style={heading}>Claim your professional profile.</Heading>
     <Text style={bodyText}>

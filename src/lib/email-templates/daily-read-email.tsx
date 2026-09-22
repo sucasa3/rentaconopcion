@@ -21,6 +21,7 @@ export interface DailyReadPerson {
 }
 
 export interface DailyReadEmailProps {
+  unsubscribeUrl?: string | null
   greeting?: string
   summary?: string
   supporting?: string | null
@@ -57,8 +58,9 @@ export const DailyReadEmail = ({
   preview,
   trackingPixelUrl,
   preferencesUrl,
+  unsubscribeUrl,
 }: DailyReadEmailProps) => (
-  <EmailBrand preview={preview || summary || 'Your SuCasa Daily Read'}>
+  <EmailBrand preview={preview || summary || 'Your SuCasa Daily Read'} unsubscribeUrl={unsubscribeUrl}>
     <Text style={eyebrow}>Your SuCasa Daily Read</Text>
     <Heading style={h1}>{greeting}</Heading>
 

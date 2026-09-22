@@ -13,6 +13,7 @@ import {
 } from './brand'
 
 export interface AgentInviteProps {
+  unsubscribeUrl?: string | null
   /** Name of the agent being invited, when known. */
   agentName?: string
   /** Lender organization extending the invitation. */
@@ -48,8 +49,9 @@ const AgentInviteEmail = ({
   message,
   sponsored,
   acceptUrl = 'https://rentaconopcion.lovable.app/agent-invite',
+  unsubscribeUrl,
 }: AgentInviteProps) => (
-  <EmailBrand preview={`${lenderName} is giving you access to SuCasa`}>
+  <EmailBrand preview={`${lenderName} is giving you access to SuCasa`} unsubscribeUrl={unsubscribeUrl}>
     <Text style={eyebrow}>Invited by {lenderName}</Text>
     <Heading style={heading}>Your database is about to get smarter.</Heading>
     <Text style={bodyText}>

@@ -15,6 +15,11 @@ import logoAsset from '@/assets/sucasa-logo.png.asset.json'
 interface EmailBrandProps {
   preview: string
   children: React.ReactNode
+  /**
+   * One-click unsubscribe link, injected by the sender for marketing and
+   * relationship-development email. Absent on transactional email.
+   */
+  unsubscribeUrl?: string | null
 }
 
 const SITE_NAME = 'SuCasa'
@@ -39,7 +44,7 @@ const HAIRLINE = '#ECE7E1'
 const TEXT_BODY = '#3F4550'
 const TEXT_MUTED = '#7A8290'
 
-export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
+export const EmailBrand = ({ preview, children, unsubscribeUrl }: EmailBrandProps) => (
   <Html lang="en" dir="ltr">
     <Head>
       {/* Keep clients from auto-inverting the charcoal wordmark in dark mode. */}
@@ -62,6 +67,13 @@ export const EmailBrand = ({ preview, children }: EmailBrandProps) => (
             You’re receiving this email because you have a SuCasa account or
             were invited to join.
           </Text>
+          {unsubscribeUrl ? (
+            <Text style={footerLinks}>
+              <Link href={unsubscribeUrl} style={footerLink}>
+                Unsubscribe from these emails
+              </Link>
+            </Text>
+          ) : null}
           <Text style={footerLinks}>
             <Link href={SITE_URL} style={footerLink}>
               sucasa.com
