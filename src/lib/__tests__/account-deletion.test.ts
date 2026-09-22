@@ -159,7 +159,7 @@ describe("deletion run order and safety", () => {
     // Outreach is already off, so the person is not contactable meanwhile.
     expect(calls).toContain("stop_outreach");
     const blocked = out.failures.find((f) => f.step === "revoke_sessions_and_delete_account");
-    expect(blocked?.error).toMatch(/not left contactable/i);
+    expect(blocked?.error).toMatch(/Nothing was left contactable/i);
   });
 
   it("is idempotent: a repeat attempt skips the steps already completed", async () => {
