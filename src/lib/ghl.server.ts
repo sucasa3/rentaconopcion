@@ -54,6 +54,16 @@ function classify(status: number, path: string, text: string): GhlError {
   if (status === 404) return new GhlError("not_found", status, `GHL ${path} not found: ${detail}`, detail);
   if (status === 429) return new GhlError("rate_limited", status, `GHL rate limit hit on ${path}`, detail);
   if (status >= 500) return new GhlError("server_error", status, `GHL server error on ${path}: ${detail}`, detail);
+  // The provider (and the carrier behind it) enforces STOP / do-not-disturb
+  // itself. Its refusal is authoritative: it is surfaced, never worked around.
+  if (/dnd|do not disturb|do-not-disturb|opted out|unsubscrib/i.test(lower)) {
+    return new GhlError(
+      "provider_dnd",
+      status,
+      `GHL refused ${path}: the recipient is on provider do-not-disturb (STOP)`,
+      detail,
+    );
+  }
   if (status >= 400) return new GhlError("bad_request", status, `GHL rejected ${path}: ${detail}`, detail);
   return new GhlError("unknown", status, `GHL ${path} failed: ${detail}`, detail);
 }
