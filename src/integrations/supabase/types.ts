@@ -1395,6 +1395,108 @@ export type Database = {
           },
         ]
       }
+      communication_preference_events: {
+        Row: {
+          channel: string
+          consent_text: string | null
+          consent_version: string | null
+          email_hmac: string | null
+          id: string
+          ip: string | null
+          new_state: Json | null
+          occurred_at: string
+          phone_hmac: string | null
+          prior_state: Json | null
+          provider_message_id: string | null
+          scope: string
+          source: string
+          user_agent: string | null
+          user_id: string | null
+          web_event_id: string | null
+        }
+        Insert: {
+          channel: string
+          consent_text?: string | null
+          consent_version?: string | null
+          email_hmac?: string | null
+          id?: string
+          ip?: string | null
+          new_state?: Json | null
+          occurred_at?: string
+          phone_hmac?: string | null
+          prior_state?: Json | null
+          provider_message_id?: string | null
+          scope?: string
+          source: string
+          user_agent?: string | null
+          user_id?: string | null
+          web_event_id?: string | null
+        }
+        Update: {
+          channel?: string
+          consent_text?: string | null
+          consent_version?: string | null
+          email_hmac?: string | null
+          id?: string
+          ip?: string | null
+          new_state?: Json | null
+          occurred_at?: string
+          phone_hmac?: string | null
+          prior_state?: Json | null
+          provider_message_id?: string | null
+          scope?: string
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          web_event_id?: string | null
+        }
+        Relationships: []
+      }
+      communication_preferences: {
+        Row: {
+          created_at: string
+          email_hmac: string | null
+          id: string
+          marketing_calls: boolean
+          marketing_email: boolean
+          marketing_sms: boolean
+          phone_hmac: string | null
+          sms_consent_at: string | null
+          sms_consent_required: boolean
+          sms_consent_version: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_hmac?: string | null
+          id?: string
+          marketing_calls?: boolean
+          marketing_email?: boolean
+          marketing_sms?: boolean
+          phone_hmac?: string | null
+          sms_consent_at?: string | null
+          sms_consent_required?: boolean
+          sms_consent_version?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_hmac?: string | null
+          id?: string
+          marketing_calls?: boolean
+          marketing_email?: boolean
+          marketing_sms?: boolean
+          phone_hmac?: string | null
+          sms_consent_at?: string | null
+          sms_consent_required?: boolean
+          sms_consent_version?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       compliance_audit_events: {
         Row: {
           action: string

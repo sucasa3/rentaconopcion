@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/lenders/pilot")({
           const { logNetworkEventOnce } = await import("@/lib/network-events.server");
 
           await sendTemplateEmail("lender-pilot-request", email, {
+            purpose: "transactional",
             templateData: { name, email, company, loanOfficers, markets, message },
             idempotencyKey: `lender-pilot-${email.toLowerCase()}-${new Date().toISOString().slice(0, 10)}`,
             replyTo: email,

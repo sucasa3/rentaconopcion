@@ -410,6 +410,7 @@ export async function respondToIntroductionAsAgent(
       const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
       const siteUrl = process.env["SITE_URL"] ?? "https://sucasa.com";
       const res = await sendTemplateEmail("introduction-invite", email, {
+        purpose: "marketing",
         fromName: "SuCasa",
         idempotencyKey: `introduction-${intro.id}`,
         templateData: {

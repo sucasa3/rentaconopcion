@@ -97,6 +97,7 @@ export async function sendOutreachEmail(args: SendOutreachArgs): Promise<SendOut
   try {
     const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
     const res = await sendTemplateEmail("campaign-update", client.client_email, {
+      purpose: "marketing",
       fromName: branding.senderName || branding.orgName || "SuCasa",
       replyTo: branding.replyToEmail ?? undefined,
       idempotencyKey: `outreach-${message.id}`,

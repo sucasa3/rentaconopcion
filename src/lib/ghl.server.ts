@@ -313,10 +313,23 @@ export async function pushCampaignContact(p: CampaignContactPush): Promise<strin
     key: `sc_${k}`,
     field_value: String(v ?? ""),
   }));
+  // Carry the person's own preference to the CRM so provider-side automations
+  // inherit it instead of contacting someone who opted out here.
+  let dnd = false;
+  try {
+    const { loadPreferences } = await import("./messaging-policy.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const prefs = await loadPreferences(supabaseAdmin, { email: p.email, phone: p.phone ?? null });
+    dnd = !prefs.marketing_email && !prefs.marketing_sms && !prefs.marketing_calls;
+  } catch {
+    /* preference lookup is best effort; the send gate is authoritative */
+  }
+
   const body = {
     locationId: env("GHL_LOCATION_ID"),
     email: p.email,
     phone: p.phone ?? undefined,
+    dnd,
     firstName: firstName || undefined,
     lastName: rest.join(" ") || undefined,
     city: p.city ?? undefined,
@@ -331,9 +344,58 @@ export async function pushCampaignContact(p: CampaignContactPush): Promise<strin
 }
 
 
-// Best-effort SMS to a pro via GHL conversations API. Silently skips if
-// GHL_LOCATION_ID is missing. Errors bubble to caller (which logs them).
-export async function sendProSms(toPhone: string, message: string): Promise<void> {
+/**
+ * Does the provider hold this number on do-not-disturb? GoHighLevel owns
+ * STOP/START natively, so its answer is authoritative; SuCasa mirrors it rather
+ * than parsing keywords itself. Returns false when the provider is not
+ * configured or the contact is unknown.
+ */
+export async function lookupContactDnd(phone: string): Promise<boolean> {
+  try {
+    const locationId = env("GHL_LOCATION_ID");
+    const r = await ghlFetch(
+      `/contacts/lookup?locationId=${encodeURIComponent(locationId)}&phone=${encodeURIComponent(phone)}`,
+    );
+    const contacts: any[] = r?.contacts ?? (r?.contact ? [r.contact] : []);
+    return contacts.some((c) => {
+      if (c?.dnd === true) return true;
+      const settings = c?.dndSettings ?? {};
+      return Object.values(settings).some((s: any) => s?.status === "active");
+    });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * SMS via the GHL conversations API. Every caller declares a purpose; a
+ * marketing or relationship text passes through the messaging policy first, so
+ * no feature can text someone who opted out. Errors bubble to the caller.
+ */
+export async function sendProSms(
+  toPhone: string,
+  message: string,
+  opts: {
+    purpose: import("./messaging-policy.server").MessagePurpose;
+    email?: string | null;
+    userId?: string | null;
+  },
+): Promise<{ sent: boolean; reason?: string }> {
+  if (!opts?.purpose) throw new Error("sendProSms requires a declared message purpose");
+
+  if (opts.purpose === "marketing") {
+    const { assertSendAllowed } = await import("./messaging-policy.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const decision = await assertSendAllowed(supabaseAdmin, {
+      purpose: "marketing",
+      channel: "sms",
+      phone: toPhone,
+      email: opts.email ?? null,
+      userId: opts.userId ?? null,
+    });
+    if (!decision.allowed) return { sent: false, reason: decision.reason ?? undefined };
+  }
+
   await ghlFetch(`/conversations/messages`, {
     method: "POST",
     body: JSON.stringify({
@@ -343,13 +405,13 @@ export async function sendProSms(toPhone: string, message: string): Promise<void
       toNumber: toPhone,
     }),
   });
+  return { sent: true };
 }
 
 /**
  * One-time verification code by SMS (account contact-change verification).
- * Same transport as `sendProSms`; named separately so the purpose of each send
- * is explicit at the call site.
+ * Transactional: a marketing opt-out never blocks a code the person asked for.
  */
 export async function sendVerificationSms(toPhone: string, message: string): Promise<void> {
-  await sendProSms(toPhone, message);
+  await sendProSms(toPhone, message, { purpose: "transactional" });
 }

@@ -225,6 +225,7 @@ export async function sendContactChangeAlert(opts: {
   try {
     const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
     await sendTemplateEmail("security-alert", to, {
+      purpose: "transactional",
       templateData: {
         changedWhat: opts.changed,
         changedAt: new Date().toLocaleDateString(opts.language === "es" ? "es-US" : "en-US", {

@@ -447,6 +447,7 @@ export async function runDailyReadTick(
           r.audience === "agent" ? "daily-read-agent" : "daily-read-lender",
           r.email,
           {
+            purpose: "marketing",
             idempotencyKey: `daily-read-${send.id}`,
             templateData: {
               ...content,

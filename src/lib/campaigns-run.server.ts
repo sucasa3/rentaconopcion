@@ -288,6 +288,7 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       try {
         const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
         const res = await sendTemplateEmail("campaign-update", c.client_email, {
+          purpose: "marketing",
           fromName: branding.senderName || branding.orgName || org.name,
           replyTo: branding.replyToEmail ?? undefined,
           idempotencyKey: `campaign-update-${sendRow?.id ?? `${campaign.id}-${c.id}`}`,
@@ -534,6 +535,7 @@ export async function sendTestCampaignEmail(opts: {
 
   const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
   const emailResult = await sendTemplateEmail("campaign-update", opts.email, {
+    purpose: "marketing",
     fromName: branding.senderName || branding.orgName || org.name,
     replyTo: branding.replyToEmail ?? undefined,
     idempotencyKey: `campaign-test-${campaign.key}-${opts.email}-${Date.now()}`,

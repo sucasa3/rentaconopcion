@@ -41,6 +41,8 @@ export interface CampaignUpdateProps {
   equity?: string
   /** 1x1 open-tracking pixel URL (optional). */
   trackingPixelUrl?: string
+  /** One-click unsubscribe link, injected by the sender for marketing email. */
+  unsubscribeUrl?: string | null
 }
 
 const CampaignUpdateEmail = ({
@@ -61,6 +63,7 @@ const CampaignUpdateEmail = ({
   propertyValue,
   equity,
   trackingPixelUrl,
+  unsubscribeUrl,
 }: CampaignUpdateProps) => {
   const paragraphs = (body ?? '')
     .split(/\n\s*\n/)
@@ -148,6 +151,13 @@ const CampaignUpdateEmail = ({
                 ? `Sent by SuCasa on behalf of ${partnerName}.`
                 : 'Sent by SuCasa.'}
             </Text>
+            {unsubscribeUrl ? (
+              <Text style={footerText}>
+                <Link href={unsubscribeUrl} style={link}>
+                  Unsubscribe from these emails
+                </Link>
+              </Text>
+            ) : null}
             {trackingPixelUrl ? (
               <Img src={trackingPixelUrl} alt="" width="1" height="1" style={pixel} />
             ) : null}

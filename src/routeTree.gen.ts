@@ -47,6 +47,7 @@ import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authenticated/agent/route'
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
+import { Route as ApiPublicUnsubscribeRouteImport } from './routes/api/public/unsubscribe'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenticated/lender/tasks'
 import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
@@ -66,6 +67,7 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
+import { Route as ApiPublicWebhooksGhlMessagesRouteImport } from './routes/api/public/webhooks/ghl-messages'
 import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
 import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
 import { Route as ApiPublicRatesTickRouteImport } from './routes/api/public/rates.tick'
@@ -277,6 +279,11 @@ const AuthenticatedAgentIndexRoute = AuthenticatedAgentIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAgentRouteRoute,
 } as any)
+const ApiPublicUnsubscribeRoute = ApiPublicUnsubscribeRouteImport.update({
+  id: '/api/public/unsubscribe',
+  path: '/api/public/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
   id: '/requests/$id',
   path: '/requests/$id',
@@ -386,6 +393,12 @@ const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
   path: '/api/public/webhooks/stripe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWebhooksGhlMessagesRoute =
+  ApiPublicWebhooksGhlMessagesRouteImport.update({
+    id: '/api/public/webhooks/ghl-messages',
+    path: '/api/public/webhooks/ghl-messages',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTOpenRoute = ApiPublicTOpenRouteImport.update({
   id: '/api/public/t/open',
   path: '/api/public/t/open',
@@ -536,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/api/public/unsubscribe': typeof ApiPublicUnsubscribeRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
   '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
@@ -552,6 +566,7 @@ export interface FileRoutesByFullPath {
   '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/ghl-messages': typeof ApiPublicWebhooksGhlMessagesRoute
   '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -608,6 +623,7 @@ export interface FileRoutesByTo {
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/api/public/unsubscribe': typeof ApiPublicUnsubscribeRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
   '/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
@@ -623,6 +639,7 @@ export interface FileRoutesByTo {
   '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/ghl-messages': typeof ApiPublicWebhooksGhlMessagesRoute
   '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -685,6 +702,7 @@ export interface FileRoutesById {
   '/_authenticated/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/_authenticated/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/api/public/unsubscribe': typeof ApiPublicUnsubscribeRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
   '/_authenticated/agent/add-client/$id': typeof AuthenticatedAgentAddClientIdRoute
@@ -701,6 +719,7 @@ export interface FileRoutesById {
   '/api/public/rates/tick': typeof ApiPublicRatesTickRoute
   '/api/public/t/click': typeof ApiPublicTClickRoute
   '/api/public/t/open': typeof ApiPublicTOpenRoute
+  '/api/public/webhooks/ghl-messages': typeof ApiPublicWebhooksGhlMessagesRoute
   '/api/public/webhooks/stripe': typeof ApiPublicWebhooksStripeRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -763,6 +782,7 @@ export interface FileRouteTypes {
     | '/lender/opportunities'
     | '/lender/tasks'
     | '/requests/$id'
+    | '/api/public/unsubscribe'
     | '/agent/'
     | '/lender/'
     | '/agent/add-client/$id'
@@ -779,6 +799,7 @@ export interface FileRouteTypes {
     | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/ghl-messages'
     | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -835,6 +856,7 @@ export interface FileRouteTypes {
     | '/lender/opportunities'
     | '/lender/tasks'
     | '/requests/$id'
+    | '/api/public/unsubscribe'
     | '/agent'
     | '/lender'
     | '/agent/add-client/$id'
@@ -850,6 +872,7 @@ export interface FileRouteTypes {
     | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/ghl-messages'
     | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -911,6 +934,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lender/opportunities'
     | '/_authenticated/lender/tasks'
     | '/_authenticated/requests/$id'
+    | '/api/public/unsubscribe'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
     | '/_authenticated/agent/add-client/$id'
@@ -927,6 +951,7 @@ export interface FileRouteTypes {
     | '/api/public/rates/tick'
     | '/api/public/t/click'
     | '/api/public/t/open'
+    | '/api/public/webhooks/ghl-messages'
     | '/api/public/webhooks/stripe'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -956,6 +981,7 @@ export interface RootRouteChildren {
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicUnsubscribeRoute: typeof ApiPublicUnsubscribeRoute
   ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
   ApiPublicDailyReadTickRoute: typeof ApiPublicDailyReadTickRoute
   ApiPublicEnrichTickRoute: typeof ApiPublicEnrichTickRoute
@@ -966,6 +992,7 @@ export interface RootRouteChildren {
   ApiPublicRatesTickRoute: typeof ApiPublicRatesTickRoute
   ApiPublicTClickRoute: typeof ApiPublicTClickRoute
   ApiPublicTOpenRoute: typeof ApiPublicTOpenRoute
+  ApiPublicWebhooksGhlMessagesRoute: typeof ApiPublicWebhooksGhlMessagesRoute
   ApiPublicWebhooksStripeRoute: typeof ApiPublicWebhooksStripeRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -1240,6 +1267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAgentIndexRouteImport
       parentRoute: typeof AuthenticatedAgentRouteRoute
     }
+    '/api/public/unsubscribe': {
+      id: '/api/public/unsubscribe'
+      path: '/api/public/unsubscribe'
+      fullPath: '/api/public/unsubscribe'
+      preLoaderRoute: typeof ApiPublicUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/requests/$id': {
       id: '/_authenticated/requests/$id'
       path: '/requests/$id'
@@ -1371,6 +1405,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/stripe'
       fullPath: '/api/public/webhooks/stripe'
       preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/ghl-messages': {
+      id: '/api/public/webhooks/ghl-messages'
+      path: '/api/public/webhooks/ghl-messages'
+      fullPath: '/api/public/webhooks/ghl-messages'
+      preLoaderRoute: typeof ApiPublicWebhooksGhlMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/t/open': {
@@ -1676,6 +1717,7 @@ const rootRouteChildren: RootRouteChildren = {
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicUnsubscribeRoute: ApiPublicUnsubscribeRoute,
   ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,
   ApiPublicDailyReadTickRoute: ApiPublicDailyReadTickRoute,
   ApiPublicEnrichTickRoute: ApiPublicEnrichTickRoute,
@@ -1686,6 +1728,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicRatesTickRoute: ApiPublicRatesTickRoute,
   ApiPublicTClickRoute: ApiPublicTClickRoute,
   ApiPublicTOpenRoute: ApiPublicTOpenRoute,
+  ApiPublicWebhooksGhlMessagesRoute: ApiPublicWebhooksGhlMessagesRoute,
   ApiPublicWebhooksStripeRoute: ApiPublicWebhooksStripeRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

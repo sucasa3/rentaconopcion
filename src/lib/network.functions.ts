@@ -80,6 +80,7 @@ export const inviteAgent = createServerFn({ method: "POST" })
       // Signed, expiring link — a bare connection id is never a credential.
       const token = row?.id ? signInviteToken(row.id, data.email.toLowerCase()) : null;
       const res = await sendTemplateEmail("agent-invite", data.email.toLowerCase(), {
+        purpose: "marketing",
         fromName: org?.name ?? "SuCasa",
         replyTo: org?.reply_to_email ?? undefined,
         idempotencyKey: `agent-invite-${row?.id ?? data.email.toLowerCase()}`,

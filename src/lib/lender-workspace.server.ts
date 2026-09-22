@@ -277,6 +277,27 @@ export async function readLenderWorkspace(
     ]);
 
   const permByClient = new Map(((perms ?? []) as any[]).map((p) => [p.portfolio_client_id, p]));
+
+  // Person-level communication preferences override the organization layer
+  // whenever they are stricter, so a homeowner's opt-out blocks SuCasa-powered
+  // outreach through any organization holding their business record.
+  {
+    const { personChannelBlocks } = await import("@/lib/messaging-policy.server");
+    const blocks = await personChannelBlocks(
+      admin(),
+      rows.map((c: any) => ({ id: c.id, email: c.client_email, phone: c.client_phone })),
+    );
+    for (const [clientId, block] of blocks) {
+      const existing = permByClient.get(clientId);
+      if (existing) {
+        existing.do_not_email = existing.do_not_email || block.do_not_email;
+        existing.do_not_text = existing.do_not_text || block.do_not_text;
+        existing.do_not_call = existing.do_not_call || block.do_not_call;
+      } else {
+        permByClient.set(clientId, { portfolio_client_id: clientId, ...block });
+      }
+    }
+  }
   const oppsByClient = new Map<string, any[]>();
   for (const o of (opps ?? []) as any[]) {
     const list = oppsByClient.get(o.portfolio_client_id) ?? [];

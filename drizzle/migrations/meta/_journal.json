@@ -50,6 +50,13 @@
       "when": 1790044471583,
       "tag": "0006_detach_committed_service_requests_on_deletion",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790047720670,
+      "tag": "0007_communication_preferences",
+      "breakpoints": true
     }
   ]
 }
