@@ -210,7 +210,7 @@ async function deliverInvitation(
       "professional-invite",
       args.invitation.invited_email_normalized,
       {
-        purpose: "transactional",
+        purpose: "marketing",
         // Deliberately relationship-only: no homeowner names, addresses,
         // property facts, mortgage details or counts of "clients".
         templateData: {
