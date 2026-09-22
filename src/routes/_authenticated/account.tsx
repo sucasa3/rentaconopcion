@@ -284,7 +284,7 @@ function PhoneSection({
   });
 
   const cancel = useMutation({
-    mutationFn: () => cancelPhoneChange({ data: {} }),
+    mutationFn: () => cancelPhoneChange(),
     onSuccess: async () => {
       setCode("");
       await onChanged();
@@ -456,7 +456,7 @@ function HomeSection({
 function ExportSection() {
   const t = useT();
   const run = useMutation({
-    mutationFn: () => exportMyPersonalData({ data: {} }),
+    mutationFn: () => exportMyPersonalData(),
     onSuccess: (payload) => {
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);

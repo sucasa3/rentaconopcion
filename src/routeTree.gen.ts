@@ -42,6 +42,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedBatchdataTestRouteImport } from './routes/_authenticated/batchdata-test'
 import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
 import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authenticated/agent/route'
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
@@ -247,6 +248,11 @@ const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLenderRouteRoute =
@@ -499,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/agent': typeof AuthenticatedAgentRouteRouteWithChildren
   '/lender': typeof AuthenticatedLenderRouteRouteWithChildren
+  '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/assistant': typeof AuthenticatedAssistantRoute
   '/batchdata-test': typeof AuthenticatedBatchdataTestRoute
@@ -570,6 +577,7 @@ export interface FileRoutesByTo {
   '/request': typeof RequestRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/assistant': typeof AuthenticatedAssistantRoute
   '/batchdata-test': typeof AuthenticatedBatchdataTestRoute
@@ -646,6 +654,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/agent': typeof AuthenticatedAgentRouteRouteWithChildren
   '/_authenticated/lender': typeof AuthenticatedLenderRouteRouteWithChildren
+  '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/assistant': typeof AuthenticatedAssistantRoute
   '/_authenticated/batchdata-test': typeof AuthenticatedBatchdataTestRoute
@@ -723,6 +732,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/agent'
     | '/lender'
+    | '/account'
     | '/admin'
     | '/assistant'
     | '/batchdata-test'
@@ -794,6 +804,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/services'
     | '/sitemap.xml'
+    | '/account'
     | '/admin'
     | '/assistant'
     | '/batchdata-test'
@@ -869,6 +880,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/agent'
     | '/_authenticated/lender'
+    | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/assistant'
     | '/_authenticated/batchdata-test'
@@ -1191,6 +1203,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/lender': {
@@ -1576,6 +1595,7 @@ const AuthenticatedLenderRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentRouteRoute: typeof AuthenticatedAgentRouteRouteWithChildren
   AuthenticatedLenderRouteRoute: typeof AuthenticatedLenderRouteRouteWithChildren
+  AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAssistantRoute: typeof AuthenticatedAssistantRoute
   AuthenticatedBatchdataTestRoute: typeof AuthenticatedBatchdataTestRoute
@@ -1591,6 +1611,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentRouteRoute: AuthenticatedAgentRouteRouteWithChildren,
   AuthenticatedLenderRouteRoute: AuthenticatedLenderRouteRouteWithChildren,
+  AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAssistantRoute: AuthenticatedAssistantRoute,
   AuthenticatedBatchdataTestRoute: AuthenticatedBatchdataTestRoute,
