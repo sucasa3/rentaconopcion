@@ -10,14 +10,19 @@ import { z } from "zod";
  * mirrors the provider's state so the rest of the product (call queues, Today
  * recommendations, campaigns) honours it too.
  *
- * Auth: HMAC-SHA256 of the raw body with GHL_WEBHOOK_SECRET in
- * `x-sucasa-signature`, the same scheme as the billing receiver.
+ * Auth: a fixed shared secret in `x-sucasa-webhook-token`, compared in constant
+ * time against GHL_INBOUND_WEBHOOK_TOKEN. GoHighLevel workflow webhooks can send
+ * fixed custom headers but cannot sign the request body, so this is the scheme
+ * the provider can actually satisfy. The older body-HMAC in `x-sucasa-signature`
+ * (GHL_WEBHOOK_SECRET) is still accepted for backwards compatibility.
  * Idempotent on the provider message id.
  */
 const Payload = z.object({
   type: z.string().max(80).optional(),
   phone: z.string().max(40).optional(),
   email: z.string().max(200).optional(),
+  /** Provider contact id — the preferred non-readable association key. */
+  contactId: z.string().max(120).optional(),
   /** Inbound body — read for the keyword only; never stored. */
   message: z.string().max(2000).optional(),
   messageId: z.string().max(120).optional(),
@@ -33,6 +38,13 @@ function keyword(message: string | undefined): "stop" | "start" | null {
   if (STOP_WORDS.has(first)) return "stop";
   if (START_WORDS.has(first)) return "start";
   return null;
+}
+
+/** Constant-time equality for the shared token. */
+function tokenMatches(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
