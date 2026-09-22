@@ -344,3 +344,12 @@ export async function sendProSms(toPhone: string, message: string): Promise<void
     }),
   });
 }
+
+/**
+ * One-time verification code by SMS (account contact-change verification).
+ * Same transport as `sendProSms`; named separately so the purpose of each send
+ * is explicit at the call site.
+ */
+export async function sendVerificationSms(toPhone: string, message: string): Promise<void> {
+  await sendProSms(toPhone, message);
+}
