@@ -54,13 +54,15 @@ export async function sendTemplateEmail(
   to: string,
   options: SendTemplateEmailOptions
 ): Promise<SendTemplateEmailResult> {
+  // Purpose first: a send with no declared purpose is a programming error and
+  // must fail the same way in every environment.
+  if (!options?.purpose) {
+    throw new Error('sendTemplateEmail requires a declared message purpose')
+  }
+
   const apiKey = process.env['LOVABLE_API_KEY']
   if (!apiKey) {
     throw new Error('LOVABLE_API_KEY is not configured')
-  }
-
-  if (!options?.purpose) {
-    throw new Error('sendTemplateEmail requires a declared message purpose')
   }
 
   const template = TEMPLATES[templateName]
