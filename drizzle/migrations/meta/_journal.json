@@ -57,6 +57,13 @@
       "when": 1790047720670,
       "tag": "0007_communication_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790118218572,
+      "tag": "0008_property_intel_admin_only_read",
+      "breakpoints": true
     }
   ]
 }
