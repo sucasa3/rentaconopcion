@@ -71,7 +71,10 @@ export const getMyAccount = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .limit(1)
       .maybeSingle();
-    const hasOwnHome = roleNames.includes("homeowner") || Boolean(ownHome);
+    // Their own home exists when they have a Home Profile record, or a personal
+    // home address on their own profile. Role alone is not enough: every account
+    // carries the homeowner role at signup.
+    const hasOwnHome = Boolean(ownHome) || Boolean(profile?.address);
 
     const { maskPhone } = await import("@/lib/account.server");
 
@@ -315,19 +318,18 @@ export const updateMyHomeAddress = createServerFn({ method: "POST" })
     // Only the signed-in person's OWN Home Profile. An agent or lender with no
     // homeowner Home Profile of their own cannot use this path at all, so no
     // client, portfolio, or organization-owned property can be altered here.
-    const { data: roles } = await context.supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", context.userId);
     const { data: ownHome } = await context.supabase
       .from("home_profiles")
       .select("id")
       .eq("user_id", context.userId)
       .limit(1)
       .maybeSingle();
-    const hasOwnHome =
-      (roles ?? []).some((r) => (r.role as string) === "homeowner") || Boolean(ownHome);
-    if (!hasOwnHome) {
+    const { data: ownProfile } = await context.supabase
+      .from("profiles")
+      .select("address")
+      .eq("id", context.userId)
+      .maybeSingle();
+    if (!ownHome && !ownProfile?.address) {
       return {
         ok: false as const,
         error: "This account doesn't have its own home profile, so there's no home address to change here.",
