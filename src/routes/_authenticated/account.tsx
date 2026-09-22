@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Download, Loader2, MapPin, Phone, ShieldCheck, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  MapPin,
+  Phone,
+  ShieldCheck,
+  Trash2,
+  User,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +28,12 @@ import {
   updateMyAccountBasics,
   updateMyHomeAddress,
 } from "@/lib/account.functions";
+import {
+  closeMyOrganization,
+  deleteMyAccount,
+  getDeletionPreview,
+  transferOrganizationOwnership,
+} from "@/lib/account-deletion.functions";
 
 export const Route = createFileRoute("/_authenticated/account")({
   ssr: false,
@@ -492,6 +507,177 @@ function ExportSection() {
         {run.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         {t("acct.export_button")}
       </Button>
+    </Section>
+  );
+}
+
+function DeleteSection() {
+  const t = useT();
+  const queryClient = useQueryClient();
+  const [confirm, setConfirm] = useState("");
+  const [transferTo, setTransferTo] = useState<Record<string, string>>({});
+
+  const preview = useQuery({
+    queryKey: ["deletion-preview"],
+    queryFn: () => getDeletionPreview(),
+  });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["deletion-preview"] });
+
+  const transfer = useMutation({
+    mutationFn: (vars: { orgId: string; toUserId: string }) =>
+      transferOrganizationOwnership({ data: vars }),
+    onSuccess: async () => {
+      toast.success(t("acct.delete_org_transferred"));
+      await refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const close = useMutation({
+    mutationFn: (orgId: string) => closeMyOrganization({ data: { orgId } }),
+    onSuccess: async () => {
+      toast.success(t("acct.delete_org_closed"));
+      await refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const run = useMutation({
+    mutationFn: () => deleteMyAccount({ data: { confirm } }),
+    onSuccess: async (res) => {
+      if (res.ok) {
+        toast.success(t("acct.delete_done"));
+        await supabase.auth.signOut();
+        window.location.href = "/";
+        return;
+      }
+      toast.error(res.error);
+      if (res.reason === "organization") await refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const data = preview.data;
+  const blocked = (data?.blockingOrgs.length ?? 0) > 0;
+  const subLine =
+    data?.subscription.kind === "paid"
+      ? t("acct.delete_sub_paid")
+      : data?.subscription.kind === "sponsored"
+        ? t("acct.delete_sub_sponsored")
+        : t("acct.delete_sub_none");
+
+  return (
+    <Section
+      icon={<Trash2 className="h-4 w-4" />}
+      title={t("acct.section.delete")}
+      description={t("acct.delete_help")}
+    >
+      {preview.isLoading || !data ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("acct.loading")}
+        </div>
+      ) : (
+        <>
+          <div className="rounded-xl border border-border/70 bg-secondary/40 p-3">
+            <p className="text-sm font-medium text-foreground">{t("acct.delete_what")}</p>
+            <ul className="mt-2 space-y-1.5 text-xs leading-snug text-muted-foreground">
+              <li>{t("acct.delete_point_stop")}</li>
+              <li>{t("acct.delete_point_personal")}</li>
+              {data.businessRecords > 0 ? <li>{t("acct.delete_point_business")}</li> : null}
+              {data.openServiceRequests + data.openIntroductions > 0 ? (
+                <li>{t("acct.delete_point_open")}</li>
+              ) : null}
+              <li>{subLine}</li>
+            </ul>
+          </div>
+
+          {blocked ? (
+            <div className="space-y-3">
+              {data.blockingOrgs.map((org) => (
+                <div
+                  key={org.orgId}
+                  className="rounded-xl border border-border/70 bg-card p-3"
+                >
+                  <p className="text-sm font-medium text-foreground">
+                    {t("acct.delete_org_title")}
+                  </p>
+                  <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                    {t("acct.delete_org_help", { name: org.orgName })}
+                  </p>
+                  {org.otherMembers.length > 0 ? (
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <select
+                        value={transferTo[org.orgId] ?? ""}
+                        onChange={(e) =>
+                          setTransferTo((p) => ({ ...p, [org.orgId]: e.target.value }))
+                        }
+                        className="min-h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                      >
+                        <option value="">—</option>
+                        {org.otherMembers.map((m) => (
+                          <option key={m.userId} value={m.userId}>
+                            {m.role}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        variant="secondary"
+                        className="min-h-11 shrink-0 rounded-xl"
+                        disabled={!transferTo[org.orgId] || transfer.isPending}
+                        onClick={() =>
+                          transfer.mutate({
+                            orgId: org.orgId,
+                            toUserId: transferTo[org.orgId] as string,
+                          })
+                        }
+                      >
+                        {t("acct.delete_org_transfer")}
+                      </Button>
+                    </div>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    className="mt-2 min-h-11 rounded-xl text-destructive"
+                    disabled={close.isPending}
+                    onClick={() => close.mutate(org.orgId)}
+                  >
+                    {t("acct.delete_org_close", { name: org.orgName })}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {!data.recentAuth ? (
+                <p className="text-xs leading-snug text-muted-foreground">
+                  {t("acct.delete_reauth")}
+                </p>
+              ) : null}
+              <div>
+                <Label htmlFor="acct-delete-confirm">{t("acct.delete_confirm_label")}</Label>
+                <Input
+                  id="acct-delete-confirm"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  placeholder="DELETE"
+                  className="mt-1.5"
+                />
+              </div>
+              <Button
+                variant="destructive"
+                className="min-h-11 rounded-xl"
+                disabled={confirm.trim().toUpperCase() !== "DELETE" || run.isPending}
+                onClick={() => run.mutate()}
+              >
+                {run.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {t("acct.delete_button")}
+              </Button>
+            </>
+          )}
+        </>
+      )}
     </Section>
   );
 }
