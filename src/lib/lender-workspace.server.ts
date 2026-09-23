@@ -349,7 +349,7 @@ export async function readLenderWorkspace(
 
   // Latest post-call conversation per homeowner — context for the card, not
   // an input to ranking.
-  const { data: convoRows } = clientIds.length
+  const convoRes = clientIds.length
     ? await admin()
         .from("professional_conversations")
         .select(
@@ -358,7 +358,10 @@ export async function readLenderWorkspace(
         .in("portfolio_client_id", clientIds)
         .order("created_at", { ascending: false })
         .limit(500)
-    : { data: [] as any[] };
+    : { data: [] as any[], error: null };
+  const convoRows = convoRes.data;
+  console.log("[dbg convo]", clientIds.length, (convoRows ?? []).length, JSON.stringify((convoRes as any).error));
+
   const lastConvoByClient = new Map<string, any>();
   for (const cv of (convoRows ?? []) as any[]) {
     if (!lastConvoByClient.has(cv.portfolio_client_id))
