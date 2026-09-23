@@ -458,6 +458,7 @@ export async function buildActionQueue(
   }
 
   return {
+  console.log("[dbgq]", deduped.length, deduped.filter((i:any)=>i.lastConversation).map((i:any)=>i.name).join("|"), "top:", deduped.slice(0,3).map((i:any)=>i.name).join("|"));
     items: deduped.slice(0, limit),
     counts: {
       hot: deduped.filter((i) => i.temperature === "hot").length,
