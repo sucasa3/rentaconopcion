@@ -7,7 +7,27 @@ import { useT } from "@/lib/i18n";
 import { X } from "lucide-react";
 
 export type OverrideRow = {
-...
+  campaign_id: string;
+  subject: string | null;
+  intro: string | null;
+  closing: string | null;
+  cta_label: string | null;
+  cta_url: string | null;
+};
+
+export function CampaignOverrideDialog({
+  orgId,
+  campaignId,
+  campaignName,
+  defaults,
+  current,
+  onClose,
+}: {
+  orgId: string;
+  campaignId: string;
+  campaignName: string;
+  defaults: { cta_label: string | null; cta_url: string | null };
+  current: OverrideRow | null;
   onClose: () => void;
 }) {
   const t = useT();
