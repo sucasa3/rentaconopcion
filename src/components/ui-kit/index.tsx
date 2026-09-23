@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 /** Big number tile used across the business dashboards. */
 export function StatCard({
@@ -290,7 +291,7 @@ export function PriorityCard({
       {secondaryActions.length > 0 && (
         <div className="mt-4 border-t border-border/60 pt-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Next up
+            {tr("biz.ui.next_up")}
           </p>
           <ul className="mt-2 space-y-1">
             {secondaryActions.map((a, i) => (
