@@ -349,16 +349,19 @@ export async function readLenderWorkspace(
 
   // Latest post-call conversation per homeowner — context for the card, not
   // an input to ranking.
+  // Scoped by org (not a 1000-id IN filter, which overflows the request URL).
   const { data: convoRows } = clientIds.length
     ? await admin()
         .from("professional_conversations")
         .select(
           "portfolio_client_id, summary, suggested_opener, follow_up_reason, follow_up_timeframe_text",
         )
-        .in("portfolio_client_id", clientIds)
+        .eq("org_id", scope.orgId)
         .order("created_at", { ascending: false })
-        .limit(500)
+        .limit(1000)
     : { data: [] as any[] };
+
+
   const lastConvoByClient = new Map<string, any>();
   for (const cv of (convoRows ?? []) as any[]) {
     if (!lastConvoByClient.has(cv.portfolio_client_id))
