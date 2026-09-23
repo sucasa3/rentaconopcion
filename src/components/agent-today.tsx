@@ -489,9 +489,33 @@ function BestMove({
               ))}
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => setNoteOpen(true)}
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+          >
+            <Mic className="h-3.5 w-3.5" /> {t("biz.pc.cta")}
+          </button>
         </div>
       </div>
+
+      {noteOpen && (
+        <PostCallNoteDialog
+          kind="agent"
+          clientId={item.clientId}
+          name={item.name}
+          opportunityId={item.opportunityId}
+          open
+          onOpenChange={(o) => !o && setNoteOpen(false)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["action-queue", "agent"] });
+            qc.invalidateQueries({ queryKey: ["business-funnel", "agent"] });
+            qc.invalidateQueries({ queryKey: ["business-overview", "agent"] });
+          }}
+        />
+      )}
     </section>
+
   );
 }
 
