@@ -144,25 +144,14 @@ export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
 
         <div className="rounded-2xl border border-border bg-muted/50 p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Signature preview
+            {t("biz.brand.signature_preview")}
           </p>
           <div className="mt-3 space-y-1 text-xs">
             <p className="font-medium">
-              From: {form.sender_name || org.name}
-              {form.reply_to_email ? ` <${form.reply_to_email}>` : ""}
-            </p>
-            <div className="mt-3 border-t border-border pt-3">
-              {form.logo_url && (
-                <img src={form.logo_url} alt={`${org.name} logo`} className="mb-2 h-8 w-auto" />
-              )}
-              {form.signoff && <p className="mb-2 text-muted-foreground">{form.signoff}</p>}
-              {signature.map((line, i) => (
-                <p key={i} className={i === 0 ? "font-semibold" : "text-muted-foreground"}>
-                  {line}
-                </p>
-              ))}
+              {t("biz.common.from")} {form.sender_name || org.name}
+...
               <p className="mt-3 text-[10px] text-muted-foreground">
-                Sent by SuCasa on behalf of {org.name}
+                {t("biz.brand.sent_by", { name: org.name })}
               </p>
             </div>
           </div>
@@ -175,7 +164,7 @@ export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
           disabled={mut.isPending}
           className="rounded-full gradient-brand px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
-          {mut.isPending ? "Saving…" : "Save branding"}
+          {mut.isPending ? t("biz.common.saving") : t("biz.brand.save_branding")}
         </button>
       </div>
     </div>
