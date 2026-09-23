@@ -7,6 +7,7 @@ import {
   type ChannelOption,
   type ContactChannel,
 } from "@/lib/contact-channels";
+import { useT } from "@/lib/i18n";
 
 const ICON = { call: Phone, text: MessageSquare, email: Mail };
 
@@ -36,6 +37,9 @@ export function ChannelActions({
   onEmail?: () => void;
   children?: React.ReactNode;
 }) {
+  const t = useT();
+  const channelLabel = (c: ContactChannel) =>
+    t(`biz.channel.${c}` as const) || CHANNEL_LABEL[c];
   const [showWhy, setShowWhy] = useState(false);
   const allowed = permittedChannels(options);
   const blocked = blockedChannels(options);
@@ -55,7 +59,7 @@ export function ChannelActions({
           if (opt.channel === "email") {
             return onEmail && !emailHref ? (
               <button key="email" type="button" onClick={onEmail} className={cls}>
-                <Icon className="h-4 w-4" /> Write email
+                <Icon className="h-4 w-4" /> {t("biz.chan.write_email")}
               </button>
             ) : (
               <a
@@ -64,7 +68,7 @@ export function ChannelActions({
                 onClick={() => onAct("email")}
                 className={cls}
               >
-                <Icon className="h-4 w-4" /> Email
+                <Icon className="h-4 w-4" /> {channelLabel("email")}
               </a>
             );
           }
@@ -75,7 +79,7 @@ export function ChannelActions({
               onClick={() => onAct(opt.channel)}
               className={cls}
             >
-              <Icon className="h-4 w-4" /> {CHANNEL_LABEL[opt.channel]}
+              <Icon className="h-4 w-4" /> {channelLabel(opt.channel)}
             </a>
           );
         })}
@@ -91,14 +95,16 @@ export function ChannelActions({
           >
             <Info className="h-3.5 w-3.5" />
             {allowed.length === 0
-              ? "No way to reach this homeowner yet — why?"
-              : `Why not ${blocked.map((b) => CHANNEL_LABEL[b.channel].toLowerCase()).join(" or ")}?`}
+              ? t("biz.chan.none")
+              : t("biz.chan.why_not", {
+                  channels: blocked.map((b) => channelLabel(b.channel).toLowerCase()).join(" / "),
+                })}
           </button>
           {showWhy && (
             <ul className="mt-1.5 space-y-1 rounded-2xl bg-secondary/50 p-3 text-xs text-muted-foreground">
               {blocked.map((b) => (
                 <li key={b.channel}>
-                  <span className="font-medium text-foreground">{CHANNEL_LABEL[b.channel]}:</span>{" "}
+                  <span className="font-medium text-foreground">{channelLabel(b.channel)}:</span>{" "}
                   {b.reason}
                 </li>
               ))}
