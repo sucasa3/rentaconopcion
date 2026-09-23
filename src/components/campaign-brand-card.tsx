@@ -115,7 +115,27 @@ export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
             <div className="mt-1 flex items-center gap-3">
               {form.logo_url ? (
                 <img src={form.logo_url} alt={org.name} className="h-10 w-auto rounded-lg bg-muted" />
-...
+              ) : (
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-muted text-muted-foreground">
+                  <Upload className="h-4 w-4" />
+                </span>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onLogo(f);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50"
+              >
                 {uploading ? t("biz.brand.uploading") : form.logo_url ? t("biz.brand.replace_logo") : t("biz.brand.upload_logo")}
               </button>
             </div>
