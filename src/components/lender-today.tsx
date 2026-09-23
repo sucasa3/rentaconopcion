@@ -8,6 +8,7 @@ import { SectionHeader } from "@/components/ui-kit";
 import { LenderSpotlightCard, LenderQueueRow } from "@/components/lender-contact-card";
 import { LenderBriefDialog } from "@/components/lender-brief";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
  * derives a score, widens visibility or names a sponsored-only homeowner.
  */
 export function LenderToday() {
+  const t = useT();
   const wsFn = useServerFn(getLenderWorkspace);
   const { data, isLoading } = useQuery({
     queryKey: ["lender-workspace"],
@@ -42,34 +44,34 @@ export function LenderToday() {
   const quiet = daily.length === 0;
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greeting = t(hour < 12 ? "biz.greet.morning" : hour < 18 ? "biz.greet.afternoon" : "biz.greet.evening");
 
   return (
     <div className="professional-detail space-y-6 bg-background px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       {/* DAILY READ — compact briefing band */}
       <header>
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary">
-          {data.org.name} · Daily read
+          {data.org.name} · {t("biz.lt.daily_read")}
         </p>
         <h1 className="mt-1.5 text-[26px] font-semibold leading-[1.15] tracking-tight sm:text-[30px]">
           {greeting}
           {firstName ? `, ${firstName}` : ""}.{" "}
           <span className="text-text-secondary">
-            {quiet ? "Your book is steady." : "Your book moved."}
+            {quiet ? t("biz.lt.steady") : t("biz.lt.moved")}
           </span>
         </h1>
 
         <div className="mt-3 overflow-hidden rounded-xl border border-surface-intelligence-border bg-surface-intelligence">
           <div className="px-4 py-3">
             <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-intelligence-foreground">
-              <Sparkles className="h-3.5 w-3.5" /> SuCasa daily read
+              <Sparkles className="h-3.5 w-3.5" /> {t("biz.lt.sucasa_daily")}
             </p>
             <p className="mt-1.5 text-[14px] font-medium leading-relaxed">{take}</p>
           </div>
           <dl className="grid grid-cols-3 divide-x divide-surface-intelligence-border border-t border-surface-intelligence-border">
-            <DailyMetric label="Need attention" value={metrics.needsAttentionToday} />
-            <DailyMetric label="Reviews due" value={metrics.followUpsDue} />
-            <DailyMetric label="Monitored" value={monitored} />
+            <DailyMetric label={t("biz.at.need_attention")} value={metrics.needsAttentionToday} />
+            <DailyMetric label={t("biz.lt.reviews_due")} value={metrics.followUpsDue} />
+            <DailyMetric label={t("biz.at.monitored")} value={monitored} />
           </dl>
           {!quiet && (
             <>
@@ -79,17 +81,18 @@ export function LenderToday() {
                 aria-expanded={whyOpen}
                 className="flex w-full items-center justify-center gap-1 border-t border-surface-intelligence-border py-2 text-[11px] font-semibold text-surface-intelligence-foreground"
               >
-                Why these {daily.length}?
+                {t("biz.lt.why_these", { count: daily.length })}
                 <ChevronDown
                   className={cn("h-3.5 w-3.5 transition-transform", whyOpen && "rotate-180")}
                 />
               </button>
               {whyOpen && (
                 <p className="border-t border-surface-intelligence-border px-4 py-3 text-[12px] leading-relaxed text-text-secondary">
-                  This list is ranked by how timely a relationship check-in is — homeowners who
-                  asked to connect come first, then the people your book suggests are most worth a
-                  conversation today. {counts.hot} hot · {counts.warm} warm · {counts.nurture}{" "}
-                  nurture. It is not a credit, approval or qualification score.
+                  {t("biz.lt.why_body", {
+                    hot: counts.hot,
+                    warm: counts.warm,
+                    nurture: counts.nurture,
+                  })}
                 </p>
               )}
             </>
@@ -98,8 +101,8 @@ export function LenderToday() {
 
         {handled > 0 && (
           <p className="mt-2 flex items-center gap-1.5 text-[13px] font-semibold text-status-positive">
-            <CheckCircle2 className="h-4 w-4" /> {handled} relationship
-            {handled === 1 ? "" : "s"} handled today
+            <CheckCircle2 className="h-4 w-4" />{" "}
+            {t(handled === 1 ? "biz.at.handled_one" : "biz.at.handled_many", { count: handled })}
           </p>
         )}
       </header>
@@ -107,7 +110,7 @@ export function LenderToday() {
       {/* START HERE */}
       {spotlight ? (
         <section className="space-y-2.5">
-          <SectionHeader title="Start here" />
+          <SectionHeader title={t("biz.at.start_here")} />
           <LenderSpotlightCard
             person={spotlight}
             onBrief={() => setBrief({ id: spotlight.id, name: spotlight.name })}
@@ -116,11 +119,11 @@ export function LenderToday() {
       ) : (
         <div className="rounded-xl border border-surface-warm-border bg-surface-warm p-6 text-center">
           <CheckCircle2 className="mx-auto h-7 w-7 text-status-positive" />
-          <p className="mt-2 font-semibold">Your book is in good shape today</p>
+          <p className="mt-2 font-semibold">{t("biz.lt.good_shape")}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-            Nothing needs immediate attention. SuCasa is monitoring {monitored.toLocaleString()}{" "}
-            homeowner{monitored === 1 ? "" : "s"} and will surface the next meaningful relationship
-            moment.
+            {t(monitored === 1 ? "biz.lt.good_shape_body_one" : "biz.lt.good_shape_body_many", {
+              count: monitored.toLocaleString(),
+            })}
           </p>
         </div>
       )}
@@ -128,7 +131,7 @@ export function LenderToday() {
       {/* ASKED TO CONNECT — existing precedence and authorization disclosure */}
       {requests.length > 0 && (
         <section className="space-y-2.5">
-          <SectionHeader title="Homeowners who asked to connect" />
+          <SectionHeader title={t("biz.lt.asked")} />
           <ul className="space-y-2.5">
             {requests.map((r) => (
               <li
@@ -136,16 +139,17 @@ export function LenderToday() {
                 className="rounded-xl border border-status-attention/30 bg-surface-warm p-3.5"
               >
                 <p className="flex items-center gap-1.5 text-xs font-semibold text-status-attention">
-                  <HandHeart className="h-3.5 w-3.5" /> Requested contact
+                  <HandHeart className="h-3.5 w-3.5" /> {t("biz.lt.requested")}
                 </p>
                 <p className="mt-1 text-[17px] font-semibold leading-tight">{r.name}</p>
                 <p className="mt-0.5 text-[13px] text-text-secondary">
-                  Asked about: {r.askedAbout}
+                  {t("biz.lt.asked_about", { topic: r.askedAbout })}
                 </p>
                 {r.note && <p className="mt-0.5 text-[13px]">{r.note}</p>}
                 <p className="mt-1 text-[12px] text-text-secondary">
-                  Authorized to share:{" "}
-                  {r.authorized.length ? r.authorized.join(", ") : "contact only"}
+                  {t("biz.lt.authorized", {
+                    items: r.authorized.length ? r.authorized.join(", ") : t("biz.lt.contact_only"),
+                  })}
                 </p>
                 <Link
                   to={"/lender/portfolio/$id" as never}
@@ -153,7 +157,7 @@ export function LenderToday() {
                   search={{ client: r.clientId } as never}
                   className="mt-2.5 inline-flex min-h-[38px] items-center rounded-md border border-border px-3 text-sm font-semibold text-primary"
                 >
-                  Review &amp; contact
+                  {t("biz.lt.review_contact")}
                 </Link>
               </li>
             ))}
@@ -163,14 +167,13 @@ export function LenderToday() {
 
       {/* THE QUEUE */}
       <section id="work-queue" className="scroll-mt-6 space-y-2.5">
-        <SectionHeader title="Next relationships" />
+        <SectionHeader title={t("biz.at.next_rel")} />
         {quiet ? (
           <div className="rounded-xl border border-border bg-card px-5 py-8 text-center">
             <CheckCircle2 className="mx-auto h-7 w-7 text-status-positive" />
-            <p className="mt-2 text-[16px] font-semibold">You&rsquo;re caught up</p>
+            <p className="mt-2 text-[16px] font-semibold">{t("biz.lt.caught_up")}</p>
             <p className="mt-1.5 text-[13px] leading-relaxed text-text-secondary">
-              SuCasa will keep watching your book and bring the right relationships back when
-              something changes or a review becomes due.
+              {t("biz.lt.caught_body")}
             </p>
           </div>
         ) : (
@@ -188,7 +191,7 @@ export function LenderToday() {
               </ul>
             ) : (
               <p className="text-[13px] text-text-secondary">
-                Start here is the only relationship recommended right now.
+                {t("biz.lt.only_one")}
               </p>
             )}
             {dailyTotal > daily.length && (
@@ -197,7 +200,7 @@ export function LenderToday() {
                 onClick={() => setShowAll((v) => !v)}
                 className="min-h-[44px] w-full rounded-md border border-border bg-card text-sm font-semibold text-primary"
               >
-                {showAll ? "Show today's 10" : `View more (${dailyTotal - daily.length} waiting)`}
+                {showAll ? t("biz.lt.show_today") : t("biz.lt.view_more", { count: dailyTotal - daily.length })}
               </button>
             )}
           </>
@@ -206,21 +209,19 @@ export function LenderToday() {
 
       {/* SUCASA WORKING FOR YOU — aggregate only. */}
       <section className="space-y-2.5">
-        <SectionHeader title="SuCasa working for you" />
+        <SectionHeader title={t("biz.at.working")} />
         <div className="rounded-xl border border-border bg-card p-4">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3">
-            <Stat label="Homeowners monitored" value={monitored} />
-            <Stat label="Signals detected" value={metrics.changesDetected} />
-            <Stat label="Review opportunities" value={metrics.reviewOpportunities} />
-            <Stat label="Engaged this month" value={metrics.engagedThisMonth} />
-            <Stat label="Follow-ups organized" value={metrics.followUpsDue} />
-            <Stat label="Sponsored, counted only" value={data.aggregateOnly.sponsoredOnly} />
+            <Stat label={t("biz.at.m_monitored")} value={monitored} />
+            <Stat label={t("biz.lt.s_signals")} value={metrics.changesDetected} />
+            <Stat label={t("biz.lt.s_review_opps")} value={metrics.reviewOpportunities} />
+            <Stat label={t("biz.lt.s_engaged")} value={metrics.engagedThisMonth} />
+            <Stat label={t("biz.lt.s_followups")} value={metrics.followUpsDue} />
+            <Stat label={t("biz.lt.s_sponsored")} value={data.aggregateOnly.sponsoredOnly} />
           </dl>
           <p className="mt-3 flex gap-2 border-t border-border pt-3 text-xs leading-relaxed text-text-secondary">
             <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Sponsored homeowners with no separate relationship are counted here only and never
-            named. Sponsorship does not give you access to an individual homeowner&rsquo;s
-            information.
+            {t("biz.lt.sponsored_note")}
           </p>
         </div>
       </section>

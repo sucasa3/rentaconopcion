@@ -17,12 +17,12 @@ import {
 import {
   TEMPERATURE_META,
   OUTCOME_STAGES,
-  outcomeLabel,
   type Audience,
   type OutcomeStage,
 } from "@/lib/next-best-action";
 import { getActionQueue, draftOutreach, sendOutreach, logOutcome } from "@/lib/nba.functions";
 import { EmptyState } from "@/components/ui-kit";
+import { useT } from "@/lib/i18n";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,13 @@ const channelIcon = {
  * to hear from you, each with the single next thing to do.
  */
 export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: number }) {
+  const t = useT();
+  const oLabel = (s: OutcomeStage): string =>
+    t(
+      (s === "appointment" || s === "application" || s === "closed"
+        ? `biz.outcome.${s}.${kind}`
+        : `biz.outcome.${s}`) as Parameters<typeof t>[0],
+    );
   const qc = useQueryClient();
   const queueFn = useServerFn(getActionQueue);
   const { data, isLoading } = useQuery({
@@ -64,8 +71,8 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
     onSuccess: (_r, v) => {
       toast.success(
         v.stage === "attempted"
-          ? "Reached out — tell us how it went below."
-          : `Logged: ${outcomeLabel(v.stage, kind)}`,
+          ? t("biz.aq.logged_out")
+          : t("biz.aq.logged", { label: oLabel(v.stage) }),
       );
       qc.invalidateQueries({ queryKey: ["action-queue", kind] });
       qc.invalidateQueries({ queryKey: ["business-funnel", kind] });
@@ -74,14 +81,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
   });
 
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">Loading your list…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground">{t("biz.aq.loading")}</div>;
 
   if (!data || data.items.length === 0) {
     return (
       <EmptyState
         icon={<CheckCircle2 className="mx-auto h-7 w-7" />}
-        title="Nothing needs you right now"
-        hint="As soon as a homeowner shows a signal, they'll show up here."
+        title={t("biz.aq.empty_title")}
+        hint={t("biz.aq.empty_hint")}
       />
     );
   }
@@ -91,24 +98,27 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
-        {(["hot", "warm", "nurture"] as const).map((t) => (
-          <div key={t} className="rounded-2xl border border-border-subtle bg-card px-3 py-2.5">
+        {(["hot", "warm", "nurture"] as const).map((temp) => (
+          <div key={temp} className="rounded-2xl border border-border-subtle bg-card px-3 py-2.5">
             <p className="text-xs text-muted-foreground">
               <span
-                className={`mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${TEMPERATURE_META[t].dot}`}
+                className={`mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${TEMPERATURE_META[temp].dot}`}
                 aria-hidden
               />
-              {TEMPERATURE_META[t].label}
+              {t(`biz.temp.${temp}` as const)}
             </p>
-            <p className="text-xl font-semibold">{data.counts[t]}</p>
+            <p className="text-xl font-semibold">{data.counts[temp]}</p>
           </div>
         ))}
       </div>
 
       {data.yesterday.opened + data.yesterday.clicked + data.yesterday.replied > 0 && (
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Eye className="h-4 w-4" /> In the last day: {data.yesterday.opened} opened,{" "}
-          {data.yesterday.clicked} clicked, {data.yesterday.replied} replied.
+          <Eye className="h-4 w-4" /> {t("biz.aq.yesterday", {
+            opened: data.yesterday.opened,
+            clicked: data.yesterday.clicked,
+            replied: data.yesterday.replied,
+          })}
         </p>
       )}
 
@@ -127,12 +137,12 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${meta.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
-                      {meta.label}
+                      {t(`biz.temp.${item.temperature}` as const)}
                     </span>
                     <span className="text-xs text-muted-foreground">· {item.categoryLabel}</span>
                     {item.shared && (
                       <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium">
-                        Shared
+                        {t("biz.aq.shared")}
                       </span>
                     )}
                   </div>
@@ -148,7 +158,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                     params={{ id: item.portfolioId } as never}
                     search={{ client: item.clientId } as never}
                     className="shrink-0 rounded-full border border-border-subtle p-2 text-muted-foreground"
-                    aria-label={`Open ${item.name}`}
+                    aria-label={t("biz.aq.open", { name: item.name })}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Link>
@@ -192,7 +202,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                         }
                         className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
-                        <Phone className="h-4 w-4" /> Call
+                        <Phone className="h-4 w-4" /> {t("biz.channel.call")}
                       </a>
                     )}
                     {item.channel === "text" && item.phone && (
@@ -207,7 +217,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                         }
                         className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
-                        <MessageSquare className="h-4 w-4" /> Text
+                        <MessageSquare className="h-4 w-4" /> {t("biz.channel.text")}
                       </a>
                     )}
                     <button
@@ -216,14 +226,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                       disabled={!item.email}
                       className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle px-4 py-2 text-sm font-semibold disabled:opacity-50"
                     >
-                      <Icon className="h-4 w-4" /> {item.email ? "Write email" : "No email on file"}
+                      <Icon className="h-4 w-4" /> {item.email ? t("biz.chan.write_email") : t("biz.aq.no_email")}
                     </button>
                   </div>
                 )}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
-                <span className="self-center text-xs text-muted-foreground">What happened?</span>
+                <span className="self-center text-xs text-muted-foreground">{t("biz.aq.what_happened")}</span>
                 {OUTCOME_STAGES.map((s) => (
                   <button
                     key={s}
@@ -236,7 +246,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                         : "border-border/70 text-muted-foreground"
                     }`}
                   >
-                    {outcomeLabel(s, kind)}
+                    {oLabel(s)}
                   </button>
                 ))}
               </div>
@@ -266,6 +276,7 @@ function ComposeDialog({
   onClose: () => void;
   onSent: () => void;
 }) {
+  const t = useT();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [seeded, setSeeded] = useState<string | null>(null);
@@ -308,11 +319,11 @@ function ComposeDialog({
     },
     onSuccess: (r) => {
       if (r.ok) {
-        toast.success("Sent and logged — you'll see opens and clicks here.");
+        toast.success(t("biz.aq.sent"));
         onSent();
         onClose();
       } else {
-        toast.error(r.reason ?? "Could not send.");
+        toast.error(r.reason ?? t("biz.aq.send_fail"));
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -323,9 +334,9 @@ function ComposeDialog({
     <Dialog open={Boolean(item)} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Email {item?.name}</DialogTitle>
+          <DialogTitle>{t("biz.aq.email_title", { name: item?.name ?? "" })}</DialogTitle>
           <DialogDescription>
-            Sent from your own name and reply-to address. Nothing goes out until you press send.
+            {t("biz.aq.email_desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -342,19 +353,19 @@ function ComposeDialog({
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            {body ? "Rewrite with the assistant" : "Write it for me"}
+            {body ? t("biz.aq.rewrite") : t("biz.aq.write_for_me")}
           </Button>
 
           <Input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder="Subject"
+            placeholder={t("biz.aq.subject")}
           />
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={9}
-            placeholder="Your message"
+            placeholder={t("biz.aq.message_ph")}
           />
 
           <Button
@@ -368,7 +379,7 @@ function ComposeDialog({
             ) : (
               <Send className="mr-2 h-4 w-4" />
             )}
-            Send email
+            {t("biz.aq.send")}
           </Button>
         </div>
       </DialogContent>

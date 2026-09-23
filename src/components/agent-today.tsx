@@ -17,7 +17,7 @@ import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-s
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
-import { OUTCOME_STAGES, TEMPERATURE_META, outcomeLabel, type OutcomeStage } from "@/lib/next-best-action";
+import { OUTCOME_STAGES, TEMPERATURE_META, type OutcomeStage } from "@/lib/next-best-action";
 import {
   firstName,
   firstRunMode,
@@ -30,6 +30,7 @@ import { ChannelActions } from "@/components/channel-actions";
 import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n";
 
 type QueueItem = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
@@ -43,6 +44,7 @@ const SEEN_KEY = "sucasa.agent.firstrun.v1";
  * come from the existing engines; this screen only presents them.
  */
 export function AgentToday() {
+  const t = useT();
   const qc = useQueryClient();
 
   const overviewFn = useServerFn(getBusinessOverview);
@@ -97,7 +99,12 @@ export function AgentToday() {
     onSuccess: (_r, v) => {
       const done = items.find((i) => i.opportunityId === v.opportunityId);
       const next = items[cursor + 1] ?? null;
-      toast.success(outcomeAcknowledgement(done?.name ?? "", outcomeLabel(v.stage, "agent")), {
+      const labelKey = (
+        v.stage === "appointment" || v.stage === "application" || v.stage === "closed"
+          ? `biz.outcome.${v.stage}.agent`
+          : `biz.outcome.${v.stage}`
+      ) as Parameters<typeof t>[0];
+      toast.success(outcomeAcknowledgement(done?.name ?? "", t(labelKey)), {
         description: nextMovePrompt(next?.name ?? null),
       });
       setHandledNote({
@@ -137,38 +144,38 @@ export function AgentToday() {
   const engagedCount = queue?.counts?.engaged ?? 0;
   const quiet = items.length === 0;
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greeting = t(hour < 12 ? "biz.greet.morning" : hour < 18 ? "biz.greet.afternoon" : "biz.greet.evening");
 
   return (
     <div className="professional-detail space-y-6 bg-background px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       <header className="-mx-4 border-b border-border bg-surface-warm px-4 pb-4 pt-1 sm:-mx-6 sm:px-6">
         <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-          <OpportunityDot /> Daily Intelligence
+          <OpportunityDot /> {t("biz.at.daily_intel")}
         </p>
         <h1 className="mt-1.5 text-[27px] font-semibold leading-[1.12] tracking-tight sm:text-[34px]">
           {greeting}.
           <span className="block text-text-secondary">
-            {quiet ? "Your book is steady today." : "Your relationships are moving."}
+            {quiet ? t("biz.at.steady") : t("biz.at.moving")}
           </span>
         </h1>
         <dl className="mt-3 grid max-w-xl grid-cols-3 divide-x divide-border">
-          <DailyMetric value={items.length} label="Need attention" />
-          <DailyMetric value={tasksDue} label="Follow-ups due" />
-          <DailyMetric value={monitored} label="Monitored" />
+          <DailyMetric value={items.length} label={t("biz.at.need_attention")} />
+          <DailyMetric value={tasksDue} label={t("biz.at.followups")} />
+          <DailyMetric value={monitored} label={t("biz.at.monitored")} />
         </dl>
         {handled > 0 && (
           <p className="mt-2.5 flex items-center gap-1.5 text-[13px] font-semibold text-status-positive">
-            <CheckCircle2 className="h-4 w-4" /> {handled} relationship
-            {handled === 1 ? "" : "s"} handled today
+            <CheckCircle2 className="h-4 w-4" />{" "}
+            {t(handled === 1 ? "biz.at.handled_one" : "biz.at.handled_many", { count: handled })}
           </p>
         )}
       </header>
 
       {mode === "aha" && best && (
         <div className="-mt-2 flex items-center justify-between gap-3 text-xs text-text-secondary">
-          <span>SuCasa found the relationship most worth your attention.</span>
+          <span>{t("biz.at.found")}</span>
           <Button variant="ghost" size="sm" onClick={dismissFirstRun} className="shrink-0 text-primary">
-            Got it
+            {t("biz.at.got_it")}
           </Button>
         </div>
       )}
@@ -177,18 +184,17 @@ export function AgentToday() {
       {handledNote && (
         <div className="animate-in fade-in rounded-xl border border-status-positive/25 bg-status-positive/[0.06] p-3.5">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-status-positive">
-            <CheckCircle2 className="h-4 w-4" /> {handledNote.name} is handled for today
+            <CheckCircle2 className="h-4 w-4" /> {t("biz.at.handled_note", { name: handledNote.name })}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-text-secondary">
-            Your touch was recorded. SuCasa keeps monitoring the relationship and will surface it
-            again when another meaningful moment develops. {handledNote.next}
+            {t("biz.at.handled_body")} {handledNote.next}
           </p>
         </div>
       )}
 
       {best ? (
         <section className="space-y-2.5">
-          <SectionHeader title="Start here" />
+          <SectionHeader title={t("biz.at.start_here")} />
           <BestMove
             item={best}
             onOutcome={(stage, note) =>
@@ -201,18 +207,18 @@ export function AgentToday() {
 
         <div className="rounded-3xl border border-surface-warm-border bg-surface-warm p-6 text-center">
           <CheckCircle2 className="mx-auto h-7 w-7 text-status-positive" />
-          <p className="mt-2 font-semibold">Your relationships are in good shape today</p>
+          <p className="mt-2 font-semibold">{t("biz.at.good_shape")}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-            Nothing needs immediate attention. SuCasa is still monitoring{" "}
-            {monitored.toLocaleString()} homeowner{monitored === 1 ? "" : "s"} and will surface the
-            next useful moment.
+            {t(monitored === 1 ? "biz.at.good_shape_body_one" : "biz.at.good_shape_body_many", {
+              count: monitored.toLocaleString(),
+            })}
           </p>
         </div>
       )}
 
       {upNext.length > 0 && (
         <section className="space-y-2.5">
-          <SectionHeader title="Next relationships" />
+          <SectionHeader title={t("biz.at.next_rel")} />
           <ul className="space-y-2.5">
             {upNext.map((item, i) => (
               <NextRelationship
@@ -239,7 +245,7 @@ export function AgentToday() {
             to="/agent/opportunities"
             className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
           >
-            View all relationships worth attention <ArrowRight className="h-4 w-4" />
+            {t("biz.at.view_all")} <ArrowRight className="h-4 w-4" />
           </Link>
         </section>
       )}
@@ -284,6 +290,7 @@ function NextRelationship({
   onFocus: () => void;
   onAct: (channel: "call" | "text" | "email") => void;
 }) {
+  const t = useT();
   return (
     <li className="rounded-xl border border-border bg-card p-3.5 shadow-soft">
       <div className="flex items-start gap-3">
@@ -314,7 +321,7 @@ function NextRelationship({
               search={{ client: item.clientId } as never}
               className="inline-flex min-h-[38px] items-center rounded-md border border-border px-3 text-sm font-semibold text-primary"
             >
-              View homeowner
+              {t("biz.at.view_homeowner")}
             </Link>
           )}
         </ChannelActions>
@@ -333,6 +340,7 @@ function BestMove({
   onOutcome: (stage: OutcomeStage, note?: string) => void;
   pending: boolean;
 }) {
+  const t = useT();
   const [showOutcomes, setShowOutcomes] = useState(false);
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
@@ -352,7 +360,7 @@ function BestMove({
         <h2 className="mt-1 text-[25px] font-semibold leading-tight tracking-tight">{item.name}</h2>
         <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] font-medium", meta.text)}>
           <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
-          {meta.label}
+          {t(`biz.temp.${item.temperature}` as const)}
         </p>
         {supportingFacts.length ? (
           <p className="mt-2 text-[13px] leading-snug text-text-secondary">
@@ -364,7 +372,7 @@ function BestMove({
       <div className="space-y-3.5 px-5 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            Why now
+            {t("biz.at.why_now")}
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed text-primary">
             {n?.whyItMatters ?? item.why}
@@ -373,14 +381,14 @@ function BestMove({
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            Recommended next step
+            {t("biz.at.next_step")}
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed">{n?.howToBeUseful ?? item.ask}</p>
         </div>
 
 
         {opener && (
-          <IntelligenceSurface label="Suggested opener" compact>
+          <IntelligenceSurface label={t("biz.at.opener")} compact>
             <p className="text-sm leading-relaxed">{opener}</p>
           </IntelligenceSurface>
         )}
@@ -406,7 +414,7 @@ function BestMove({
               search={{ client: item.clientId } as never}
               className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border-subtle px-5 text-sm font-semibold"
             >
-              View homeowner
+              {t("biz.at.view_homeowner")}
             </Link>
           )}
         </ChannelActions>
@@ -420,7 +428,7 @@ function BestMove({
             aria-expanded={showOutcomes}
             className="px-0 text-text-secondary hover:bg-transparent hover:text-primary"
           >
-            Log outcome
+            {t("biz.at.log_outcome")}
             {pending ? <Loader2 className="animate-spin" /> : <ChevronDown className={cn("transition-transform", showOutcomes && "rotate-180")} />}
           </Button>
           {showOutcomes && (
@@ -435,7 +443,11 @@ function BestMove({
                   onClick={() => onOutcome(s)}
                   className="rounded-full text-text-secondary shadow-none"
                 >
-                  {outcomeLabel(s, "agent")}
+                  {t(
+                    (s === "appointment" || s === "application" || s === "closed"
+                      ? `biz.outcome.${s}.agent`
+                      : `biz.outcome.${s}`) as Parameters<typeof t>[0],
+                  )}
                 </Button>
               ))}
             </div>
@@ -476,18 +488,19 @@ function MetricStrip({
   tasksDue: number;
   bookId: string | null;
 }) {
+  const t = useT();
   const tiles = [
-    { label: "Homeowners monitored", value: people },
-    { label: "Home Profiles Activated", value: activated },
-    { label: "Relationships worth attention", value: worthAttention },
-    { label: "Homeowners engaged recently", value: engaged },
+    { label: t("biz.at.m_monitored"), value: people },
+    { label: t("biz.at.m_activated"), value: activated },
+    { label: t("biz.at.m_worth"), value: worthAttention },
+    { label: t("biz.at.m_engaged"), value: engaged },
     // Open opportunity records, not signals and not guaranteed transactions.
-    { label: "Opportunities developing", value: opportunities },
-    { label: "Follow-ups due", value: tasksDue },
+    { label: t("biz.at.m_opps"), value: opportunities },
+    { label: t("biz.at.followups"), value: tasksDue },
   ];
   return (
     <section className="space-y-2.5">
-      <SectionHeader title="SuCasa working for you" />
+      <SectionHeader title={t("biz.at.working")} />
       <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         {tiles.map((t) => (
           <div
@@ -500,15 +513,14 @@ function MetricStrip({
         ))}
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Home Profiles Activated: homeowners who have activated their SuCasa Home Profile.
-        Opportunities are homeowner moments worth a conversation, not confirmed transactions.
+        {t("biz.at.footnote")}
       </p>
       <div className="flex flex-wrap gap-3 pt-1 text-sm font-semibold text-primary">
         <Link to="/agent/opportunities" className="inline-flex items-center gap-1">
-          What else is developing <ArrowRight className="h-4 w-4" />
+          {t("biz.at.what_else")} <ArrowRight className="h-4 w-4" />
         </Link>
         <Link to="/agent/tasks" className="inline-flex items-center gap-1">
-          All my tasks <ArrowRight className="h-4 w-4" />
+          {t("biz.at.all_tasks")} <ArrowRight className="h-4 w-4" />
         </Link>
         {bookId && (
           <Link
@@ -516,7 +528,7 @@ function MetricStrip({
             params={{ id: bookId }}
             className="inline-flex items-center gap-1"
           >
-            My book <ArrowRight className="h-4 w-4" />
+            {t("biz.at.my_book")} <ArrowRight className="h-4 w-4" />
           </Link>
         )}
       </div>
@@ -525,21 +537,22 @@ function MetricStrip({
 }
 
 function EmptyBook({ bookId }: { bookId: string | null }) {
+  const t = useT();
   const steps = [
-    "Add your homeowners",
-    "SuCasa builds their Home Profiles",
-    "SuCasa looks for useful homeowner moments and potential opportunities",
-    "You get told who may be worth contacting, and why",
+    t("biz.at.empty_s1"),
+    t("biz.at.empty_s2"),
+    t("biz.at.empty_s3"),
+    t("biz.at.empty_s4"),
   ];
   return (
     <div className="px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-md text-center">
         <Sparkles className="mx-auto h-8 w-8 text-primary" />
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-          Let's make your database smarter.
+          {t("biz.at.empty_title")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Bring in the people you've already worked with. SuCasa takes it from there.
+          {t("biz.at.empty_body")}
         </p>
         {bookId && (
           <div className="mt-6 flex flex-col gap-2.5">
@@ -548,20 +561,20 @@ function EmptyBook({ bookId }: { bookId: string | null }) {
               params={{ id: bookId }}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-soft"
             >
-              <Upload className="h-4 w-4" /> Import my database
+              <Upload className="h-4 w-4" /> {t("biz.at.empty_import")}
             </Link>
             <Link
               to="/agent/add-client/$id"
               params={{ id: bookId }}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-border text-sm font-semibold"
             >
-              <UserPlus className="h-4 w-4" /> Add one homeowner
+              <UserPlus className="h-4 w-4" /> {t("biz.at.empty_add")}
             </Link>
           </div>
         )}
         <ol className="mt-8 space-y-3 text-left">
           {steps.map((s, i) => (
-            <li key={s} className="flex gap-3 text-sm">
+            <li key={i} className="flex gap-3 text-sm">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold">
                 {i + 1}
               </span>
@@ -575,11 +588,12 @@ function EmptyBook({ bookId }: { bookId: string | null }) {
 }
 
 function PreparingBook({ count }: { count: number }) {
+  const t = useT();
   const steps = [
-    "Organizing homeowners",
-    "Building Home Profiles",
-    "Looking for useful signals",
-    "Preparing today's recommendations",
+    t("biz.at.prep_s1"),
+    t("biz.at.prep_s2"),
+    t("biz.at.prep_s3"),
+    t("biz.at.prep_s4"),
   ];
   const [step, setStep] = useState(0);
   useEffect(() => {
@@ -590,14 +604,13 @@ function PreparingBook({ count }: { count: number }) {
   return (
     <div className="px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-md">
-        <h1 className="text-2xl font-semibold tracking-tight">SuCasa is preparing your book.</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("biz.at.prep_title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We're going through your {count.toLocaleString()} homeowners. This page updates on its
-          own.
+          {t("biz.at.prep_body", { count: count.toLocaleString() })}
         </p>
         <ul className="mt-6 space-y-3">
           {steps.map((s, i) => (
-            <li key={s} className="flex items-center gap-3 text-sm">
+            <li key={i} className="flex items-center gap-3 text-sm">
               {i < step ? (
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
               ) : i === step ? (
