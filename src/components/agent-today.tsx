@@ -17,7 +17,7 @@ import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-s
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getMyBusinessTasks } from "@/lib/tasks.functions";
 import { getActionQueue, logOutcome } from "@/lib/nba.functions";
-import { OUTCOME_STAGES, TEMPERATURE_META, outcomeLabel, type OutcomeStage } from "@/lib/next-best-action";
+import { OUTCOME_STAGES, TEMPERATURE_META, type OutcomeStage } from "@/lib/next-best-action";
 import {
   firstName,
   firstRunMode,
@@ -30,6 +30,7 @@ import { ChannelActions } from "@/components/channel-actions";
 import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
+import { useT } from "@/lib/i18n";
 
 type QueueItem = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
@@ -43,6 +44,7 @@ const SEEN_KEY = "sucasa.agent.firstrun.v1";
  * come from the existing engines; this screen only presents them.
  */
 export function AgentToday() {
+  const t = useT();
   const qc = useQueryClient();
 
   const overviewFn = useServerFn(getBusinessOverview);
@@ -97,7 +99,12 @@ export function AgentToday() {
     onSuccess: (_r, v) => {
       const done = items.find((i) => i.opportunityId === v.opportunityId);
       const next = items[cursor + 1] ?? null;
-      toast.success(outcomeAcknowledgement(done?.name ?? "", outcomeLabel(v.stage, "agent")), {
+      const labelKey = (
+        v.stage === "appointment" || v.stage === "application" || v.stage === "closed"
+          ? `biz.outcome.${v.stage}.agent`
+          : `biz.outcome.${v.stage}`
+      ) as Parameters<typeof t>[0];
+      toast.success(outcomeAcknowledgement(done?.name ?? "", t(labelKey)), {
         description: nextMovePrompt(next?.name ?? null),
       });
       setHandledNote({
@@ -137,38 +144,38 @@ export function AgentToday() {
   const engagedCount = queue?.counts?.engaged ?? 0;
   const quiet = items.length === 0;
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greeting = t(hour < 12 ? "biz.greet.morning" : hour < 18 ? "biz.greet.afternoon" : "biz.greet.evening");
 
   return (
     <div className="professional-detail space-y-6 bg-background px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       <header className="-mx-4 border-b border-border bg-surface-warm px-4 pb-4 pt-1 sm:-mx-6 sm:px-6">
         <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
-          <OpportunityDot /> Daily Intelligence
+          <OpportunityDot /> {t("biz.at.daily_intel")}
         </p>
         <h1 className="mt-1.5 text-[27px] font-semibold leading-[1.12] tracking-tight sm:text-[34px]">
           {greeting}.
           <span className="block text-text-secondary">
-            {quiet ? "Your book is steady today." : "Your relationships are moving."}
+            {quiet ? t("biz.at.steady") : t("biz.at.moving")}
           </span>
         </h1>
         <dl className="mt-3 grid max-w-xl grid-cols-3 divide-x divide-border">
-          <DailyMetric value={items.length} label="Need attention" />
-          <DailyMetric value={tasksDue} label="Follow-ups due" />
-          <DailyMetric value={monitored} label="Monitored" />
+          <DailyMetric value={items.length} label={t("biz.at.need_attention")} />
+          <DailyMetric value={tasksDue} label={t("biz.at.followups")} />
+          <DailyMetric value={monitored} label={t("biz.at.monitored")} />
         </dl>
         {handled > 0 && (
           <p className="mt-2.5 flex items-center gap-1.5 text-[13px] font-semibold text-status-positive">
-            <CheckCircle2 className="h-4 w-4" /> {handled} relationship
-            {handled === 1 ? "" : "s"} handled today
+            <CheckCircle2 className="h-4 w-4" />{" "}
+            {t(handled === 1 ? "biz.at.handled_one" : "biz.at.handled_many", { count: handled })}
           </p>
         )}
       </header>
 
       {mode === "aha" && best && (
         <div className="-mt-2 flex items-center justify-between gap-3 text-xs text-text-secondary">
-          <span>SuCasa found the relationship most worth your attention.</span>
+          <span>{t("biz.at.found")}</span>
           <Button variant="ghost" size="sm" onClick={dismissFirstRun} className="shrink-0 text-primary">
-            Got it
+            {t("biz.at.got_it")}
           </Button>
         </div>
       )}
@@ -177,18 +184,17 @@ export function AgentToday() {
       {handledNote && (
         <div className="animate-in fade-in rounded-xl border border-status-positive/25 bg-status-positive/[0.06] p-3.5">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-status-positive">
-            <CheckCircle2 className="h-4 w-4" /> {handledNote.name} is handled for today
+            <CheckCircle2 className="h-4 w-4" /> {t("biz.at.handled_note", { name: handledNote.name })}
           </p>
           <p className="mt-1 text-sm leading-relaxed text-text-secondary">
-            Your touch was recorded. SuCasa keeps monitoring the relationship and will surface it
-            again when another meaningful moment develops. {handledNote.next}
+            {t("biz.at.handled_body")} {handledNote.next}
           </p>
         </div>
       )}
 
       {best ? (
         <section className="space-y-2.5">
-          <SectionHeader title="Start here" />
+          <SectionHeader title={t("biz.at.start_here")} />
           <BestMove
             item={best}
             onOutcome={(stage, note) =>
@@ -201,18 +207,18 @@ export function AgentToday() {
 
         <div className="rounded-3xl border border-surface-warm-border bg-surface-warm p-6 text-center">
           <CheckCircle2 className="mx-auto h-7 w-7 text-status-positive" />
-          <p className="mt-2 font-semibold">Your relationships are in good shape today</p>
+          <p className="mt-2 font-semibold">{t("biz.at.good_shape")}</p>
           <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-            Nothing needs immediate attention. SuCasa is still monitoring{" "}
-            {monitored.toLocaleString()} homeowner{monitored === 1 ? "" : "s"} and will surface the
-            next useful moment.
+            {t(monitored === 1 ? "biz.at.good_shape_body_one" : "biz.at.good_shape_body_many", {
+              count: monitored.toLocaleString(),
+            })}
           </p>
         </div>
       )}
 
       {upNext.length > 0 && (
         <section className="space-y-2.5">
-          <SectionHeader title="Next relationships" />
+          <SectionHeader title={t("biz.at.next_rel")} />
           <ul className="space-y-2.5">
             {upNext.map((item, i) => (
               <NextRelationship
@@ -239,7 +245,7 @@ export function AgentToday() {
             to="/agent/opportunities"
             className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
           >
-            View all relationships worth attention <ArrowRight className="h-4 w-4" />
+            {t("biz.at.view_all")} <ArrowRight className="h-4 w-4" />
           </Link>
         </section>
       )}
