@@ -315,16 +315,18 @@ export async function buildActionQueue(
 
   // Latest post-call conversation per homeowner — context for the card, not
   // an input to ranking.
+  // Scoped by org (not a large id IN filter, which can overflow the request URL).
   const { data: convos } = clientIds.length
     ? await supabase
         .from("professional_conversations")
         .select(
           "portfolio_client_id, summary, suggested_opener, follow_up_reason, follow_up_timeframe_text",
         )
-        .in("portfolio_client_id", clientIds)
+        .in("org_id", scope.orgIds)
         .order("created_at", { ascending: false })
-        .limit(500)
+        .limit(1000)
     : { data: [] as any[] };
+
   const lastConvoByClient = new Map<string, any>();
   for (const cv of (convos ?? []) as any[]) {
     if (!lastConvoByClient.has(cv.portfolio_client_id))
