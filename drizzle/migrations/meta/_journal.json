@@ -71,6 +71,13 @@
       "when": 1790165757296,
       "tag": "0009_create_professional_conversations",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790167128706,
+      "tag": "0010_tighten_professional_conversations_grants",
+      "breakpoints": true
     }
   ]
 }
