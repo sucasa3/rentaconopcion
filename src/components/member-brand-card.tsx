@@ -84,7 +84,7 @@ export function MemberBrandCard({
         .from("partner-logos")
         .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
       setForm((f) => ({ ...f, logo_url: signed?.signedUrl ?? null }));
-      toast.success("Image uploaded — remember to save");
+      toast.success(t("biz.brand.image_uploaded"));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -98,15 +98,14 @@ export function MemberBrandCard({
     orgName,
     eff("contact_phone"),
     eff("reply_to_email"),
-    eff("license_number") ? `License ${eff("license_number")}` : null,
+    eff("license_number") ? t("biz.brand.license_prefix", { number: eff("license_number")! }) : null,
   ].filter(Boolean) as string[];
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-      <h2 className="text-base font-semibold">My email identity</h2>
+      <h2 className="text-base font-semibold">{t("biz.brand.member_title")}</h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        Campaigns for the clients assigned to you go out under your name, with replies landing in your inbox.
-        Leave a field blank to use your team&rsquo;s default.
+        {t("biz.brand.member_help")}
       </p>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_20rem]">
