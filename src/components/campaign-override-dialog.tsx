@@ -147,7 +147,7 @@ export function CampaignOverrideDialog({
             disabled={saveMut.isPending}
             className="rounded-full gradient-brand px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
           >
-            {saveMut.isPending ? "Saving…" : "Save wording"}
+            {saveMut.isPending ? t("biz.common.saving") : t("biz.override.save")}
           </button>
         </div>
       </div>
