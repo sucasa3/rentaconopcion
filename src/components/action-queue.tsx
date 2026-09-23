@@ -276,6 +276,7 @@ function ComposeDialog({
   onClose: () => void;
   onSent: () => void;
 }) {
+  const t = useT();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [seeded, setSeeded] = useState<string | null>(null);
@@ -318,11 +319,11 @@ function ComposeDialog({
     },
     onSuccess: (r) => {
       if (r.ok) {
-        toast.success("Sent and logged — you'll see opens and clicks here.");
+        toast.success(t("biz.aq.sent"));
         onSent();
         onClose();
       } else {
-        toast.error(r.reason ?? "Could not send.");
+        toast.error(r.reason ?? t("biz.aq.send_fail"));
       }
     },
     onError: (e: Error) => toast.error(e.message),
@@ -333,9 +334,9 @@ function ComposeDialog({
     <Dialog open={Boolean(item)} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Email {item?.name}</DialogTitle>
+          <DialogTitle>{t("biz.aq.email_title", { name: item?.name ?? "" })}</DialogTitle>
           <DialogDescription>
-            Sent from your own name and reply-to address. Nothing goes out until you press send.
+            {t("biz.aq.email_desc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -352,19 +353,19 @@ function ComposeDialog({
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            {body ? "Rewrite with the assistant" : "Write it for me"}
+            {body ? t("biz.aq.rewrite") : t("biz.aq.write_for_me")}
           </Button>
 
           <Input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder="Subject"
+            placeholder={t("biz.aq.subject")}
           />
           <Textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={9}
-            placeholder="Your message"
+            placeholder={t("biz.aq.message_ph")}
           />
 
           <Button
@@ -378,7 +379,7 @@ function ComposeDialog({
             ) : (
               <Send className="mr-2 h-4 w-4" />
             )}
-            Send email
+            {t("biz.aq.send")}
           </Button>
         </div>
       </DialogContent>
