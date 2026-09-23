@@ -488,18 +488,19 @@ function MetricStrip({
   tasksDue: number;
   bookId: string | null;
 }) {
+  const t = useT();
   const tiles = [
-    { label: "Homeowners monitored", value: people },
-    { label: "Home Profiles Activated", value: activated },
-    { label: "Relationships worth attention", value: worthAttention },
-    { label: "Homeowners engaged recently", value: engaged },
+    { label: t("biz.at.m_monitored"), value: people },
+    { label: t("biz.at.m_activated"), value: activated },
+    { label: t("biz.at.m_worth"), value: worthAttention },
+    { label: t("biz.at.m_engaged"), value: engaged },
     // Open opportunity records, not signals and not guaranteed transactions.
-    { label: "Opportunities developing", value: opportunities },
-    { label: "Follow-ups due", value: tasksDue },
+    { label: t("biz.at.m_opps"), value: opportunities },
+    { label: t("biz.at.followups"), value: tasksDue },
   ];
   return (
     <section className="space-y-2.5">
-      <SectionHeader title="SuCasa working for you" />
+      <SectionHeader title={t("biz.at.working")} />
       <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
         {tiles.map((t) => (
           <div
@@ -512,15 +513,14 @@ function MetricStrip({
         ))}
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Home Profiles Activated: homeowners who have activated their SuCasa Home Profile.
-        Opportunities are homeowner moments worth a conversation, not confirmed transactions.
+        {t("biz.at.footnote")}
       </p>
       <div className="flex flex-wrap gap-3 pt-1 text-sm font-semibold text-primary">
         <Link to="/agent/opportunities" className="inline-flex items-center gap-1">
-          What else is developing <ArrowRight className="h-4 w-4" />
+          {t("biz.at.what_else")} <ArrowRight className="h-4 w-4" />
         </Link>
         <Link to="/agent/tasks" className="inline-flex items-center gap-1">
-          All my tasks <ArrowRight className="h-4 w-4" />
+          {t("biz.at.all_tasks")} <ArrowRight className="h-4 w-4" />
         </Link>
         {bookId && (
           <Link
@@ -528,7 +528,7 @@ function MetricStrip({
             params={{ id: bookId }}
             className="inline-flex items-center gap-1"
           >
-            My book <ArrowRight className="h-4 w-4" />
+            {t("biz.at.my_book")} <ArrowRight className="h-4 w-4" />
           </Link>
         )}
       </div>
@@ -537,21 +537,22 @@ function MetricStrip({
 }
 
 function EmptyBook({ bookId }: { bookId: string | null }) {
+  const t = useT();
   const steps = [
-    "Add your homeowners",
-    "SuCasa builds their Home Profiles",
-    "SuCasa looks for useful homeowner moments and potential opportunities",
-    "You get told who may be worth contacting, and why",
+    t("biz.at.empty_s1"),
+    t("biz.at.empty_s2"),
+    t("biz.at.empty_s3"),
+    t("biz.at.empty_s4"),
   ];
   return (
     <div className="px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-md text-center">
         <Sparkles className="mx-auto h-8 w-8 text-primary" />
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-          Let's make your database smarter.
+          {t("biz.at.empty_title")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Bring in the people you've already worked with. SuCasa takes it from there.
+          {t("biz.at.empty_body")}
         </p>
         {bookId && (
           <div className="mt-6 flex flex-col gap-2.5">
@@ -560,20 +561,20 @@ function EmptyBook({ bookId }: { bookId: string | null }) {
               params={{ id: bookId }}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-soft"
             >
-              <Upload className="h-4 w-4" /> Import my database
+              <Upload className="h-4 w-4" /> {t("biz.at.empty_import")}
             </Link>
             <Link
               to="/agent/add-client/$id"
               params={{ id: bookId }}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-border text-sm font-semibold"
             >
-              <UserPlus className="h-4 w-4" /> Add one homeowner
+              <UserPlus className="h-4 w-4" /> {t("biz.at.empty_add")}
             </Link>
           </div>
         )}
         <ol className="mt-8 space-y-3 text-left">
           {steps.map((s, i) => (
-            <li key={s} className="flex gap-3 text-sm">
+            <li key={i} className="flex gap-3 text-sm">
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold">
                 {i + 1}
               </span>
@@ -587,11 +588,12 @@ function EmptyBook({ bookId }: { bookId: string | null }) {
 }
 
 function PreparingBook({ count }: { count: number }) {
+  const t = useT();
   const steps = [
-    "Organizing homeowners",
-    "Building Home Profiles",
-    "Looking for useful signals",
-    "Preparing today's recommendations",
+    t("biz.at.prep_s1"),
+    t("biz.at.prep_s2"),
+    t("biz.at.prep_s3"),
+    t("biz.at.prep_s4"),
   ];
   const [step, setStep] = useState(0);
   useEffect(() => {
@@ -602,14 +604,13 @@ function PreparingBook({ count }: { count: number }) {
   return (
     <div className="px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-md">
-        <h1 className="text-2xl font-semibold tracking-tight">SuCasa is preparing your book.</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("biz.at.prep_title")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We're going through your {count.toLocaleString()} homeowners. This page updates on its
-          own.
+          {t("biz.at.prep_body", { count: count.toLocaleString() })}
         </p>
         <ul className="mt-6 space-y-3">
           {steps.map((s, i) => (
-            <li key={s} className="flex items-center gap-3 text-sm">
+            <li key={i} className="flex items-center gap-3 text-sm">
               {i < step ? (
                 <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
               ) : i === step ? (
