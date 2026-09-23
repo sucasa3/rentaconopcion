@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 
@@ -25,10 +26,15 @@ interface NavItem {
   icon: ReactNode;
 }
 
-function navItems(kind: BusinessKind, bookId: string | null, isManager: boolean): NavItem[] {
+function navItems(
+  kind: BusinessKind,
+  bookId: string | null,
+  isManager: boolean,
+  t: ReturnType<typeof useT>,
+): NavItem[] {
   const base = kind === "agent" ? "/agent" : "/lender";
   const items: NavItem[] = [
-    { label: "Today", to: base, icon: <LayoutGrid className="h-5 w-5" /> },
+    { label: t("biz.nav.today"), to: base, icon: <LayoutGrid className="h-5 w-5" /> },
   ];
   if (bookId) {
     items.push({
