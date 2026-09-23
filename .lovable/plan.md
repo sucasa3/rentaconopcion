@@ -1,51 +1,49 @@
-# Gate 1 — live provider state, endpoint check, one remaining action
+# Translate Agent & Lender Dashboards to Spanish/English
 
-Read-only queries against the live provider account. No code, workflow or architecture changes made.
+## Goal
+Make the agent and lender dashboard interiors fully bilingual (English + Spanish) using the existing homeowner i18n system, without touching any home address, property, or financial data.
 
-## 1. Live contact state (queried just now)
+## Scope decided
+- Translate **all** agent and lender authenticated screens.
+- Language follows the existing `profiles.language` field, controlled from the Account page (`en` | `es`).
+- Out of scope: homeowner-only strings (already done), marketing emails, any backend logic or data model changes.
 
-Contact "Stage3 StopTest", +1 678-485-3054 (id `XSaExFUGDuDLIgqICbN6`):
+## Why this is safe for address data
+- The i18n layer only replaces **display strings** (labels, headings, button text, empty states, error copy).
+- Address, value, equity, and other record values are rendered from database rows and are **not translated**.
+- No string is used to compute or modify data, so adding/removing dictionary keys cannot corrupt stored records.
 
-- `dndSettings.SMS` = `{ status: "permanent", message: "TWILIO_ERROR_CODE: 21610" }` — texting is still blocked at the provider.
-- Contact-level `dnd` = `false` (that flag is the global one; the SMS-channel setting above is the one that governs texting).
-- `dateUpdated` = 2026-09-23 02:17:42 UTC — the STOP moment. Nothing on the record has changed since.
+## Work breakdown
 
-## 2. START / resubscribe event
+### 1. Inventory and dictionary keys (read-only first)
+- Walk every file in `src/routes/_authenticated/agent/` and `src/routes/_authenticated/lender/`.
+- Collect every user-facing English string into new dictionary namespaces: `agent.*`, `lender.*`, and shared components where needed.
+- Group keys by screen so missing translations are easy to spot.
 
-- No START or "DND disabled by customer" entry exists on the contact record; its last change is still the STOP.
-- The provider's message log could not be read this time (the integration token answered "not authorized for this scope" for conversations read on both API versions), so the activity confirmation comes from the contact record rather than the message list.
-- The carrier confirmation you received is real, but it was handled by the carrier/messaging number, not by GoHighLevel: the provider never recorded an inbound START, so it never cleared its own SMS block.
+### 2. Spanish translations
+- Add matching keys to `src/lib/i18n/es.ts`.
+- Keep Spanish copy neutral/professional and consistent with the existing homeowner Spanish voice.
+- Leave English as the fallback if a key is missing.
 
-## 3. Is SMS eligible again?
+### 3. Refactor agent screens
+- Replace hardcoded strings in `src/routes/_authenticated/agent/*` with the `useT()` hook from the existing i18n context.
+- Keep dynamic data (names, addresses, dollar amounts, dates) as interpolated variables, not translated text.
 
-No. Carrier-level: re-subscribed. Provider-level: still permanently blocked for SMS. A send attempt through GoHighLevel would still be refused.
+### 4. Refactor lender screens
+- Same as step 3 for `src/routes/_authenticated/lender/*`.
 
-## 4. Workflow execution after START
+### 5. Shared UI and account language
+- Confirm the Account page language toggle already updates `profiles.language` and that agent/lender routes read it through `LanguageProvider`.
+- Add any missing shared strings for agent/lender-specific navigation or menus.
 
-None — and that is consistent, not a new fault. The DND-change trigger had nothing to fire on because the provider's DND state never changed, and the reply trigger had nothing to fire on because the provider never received the inbound START. As you said: the carrier-level START did not emit a provider event. Nothing to rebuild.
+### 6. Tests
+- Add dictionary key-coverage tests so a missing Spanish key fails the suite before it reaches the UI.
+- Add a regression test asserting that an address value rendered in the UI is passed through unchanged regardless of language.
+- Run existing test suite to catch accidental breakage.
 
-## 5. SuCasa endpoint verified independently
+### 7. Verification
+- Type check, production build, and authenticated smoke tests for both languages on agent and lender routes.
+- No publish. No Stage 4 work.
 
-An authenticated POST to
-
-```text
-https://project--94429f0c-1687-4b34-81a7-6195279589c3-dev.lovable.app/api/public/webhooks/ghl-messages
-```
-
-with the configured `x-sucasa-webhook-token` returned **200** and `{"ok":true,"applied":"stop"}` — the receiver read the live provider DND state for that contact id and mirrored the opt-out. So the endpoint, the secret, the provider lookup and the mirror all work end to end. The earlier 404 was in the webhook step's URL, not on our side.
-
-This means the STOP half of Gate 1 is now fully proven: carrier enforcement, provider state, and SuCasa's mirror.
-
-## 6. Single minimum remaining action
-
-Only the START/re-consent half is unproven, and it needs one thing: the provider has to actually see an inbound START message.
-
-**The one action:** in GoHighLevel, open the contact Stage3 StopTest and clear its SMS do-not-disturb, then text **START** once more from the test phone.
-
-Why both halves of that single action: while the provider holds the permanent SMS block, it discards traffic for that contact, so a keyword reply never becomes an inbound message. With the block cleared, the next START arrives as a real inbound message, the Customer Replied trigger fires, and SuCasa records re-consent from the actual inbound keyword — exactly the rule we agreed (a DND-off state alone is not consent).
-
-Tell me when that is done and I will confirm the recorded re-consent, then run Gate 2 (tests, type check, production build, existing security scan) and return the short READY / NOT READY report.
-
-## Note
-
-The integration token currently lacks conversations read access, which is why I asked you for the contact record instead of reading the message log myself. Not required to close Gate 1.
+## Deliverable
+A preview build where agents and lenders can switch language on their Account page and see their entire dashboard in Spanish, with all underlying data intact.
