@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Compass, Sparkles, X } from "lucide-react";
 import {
-  ROLE_FLOWS,
+  getRoleFlows,
   activityHint,
   readOnboarding,
   suggestFocus,
@@ -9,6 +9,7 @@ import {
   type OnboardingRole,
   type OnboardingSignals,
 } from "@/lib/onboarding";
+import { useT } from "@/lib/i18n";
 
 /**
  * 3-step guided onboarding. Auto-opens once per role/user, then can be
@@ -20,7 +21,7 @@ export function GuidedOnboarding({
   userId,
   signals,
   onFocusChange,
-  triggerLabel = "Setup guide",
+  triggerLabel,
   autoOpen = true,
 }: {
   role: OnboardingRole;
@@ -30,9 +31,10 @@ export function GuidedOnboarding({
   triggerLabel?: string;
   autoOpen?: boolean;
 }) {
-  const flow = ROLE_FLOWS[role];
+  const t = useT();
+  const flow = useMemo(() => getRoleFlows(t)[role], [t, role]);
   const suggested = useMemo(() => suggestFocus(role, signals), [role, signals]);
-  const hint = useMemo(() => activityHint(role, signals), [role, signals]);
+  const hint = useMemo(() => activityHint(role, signals, t), [role, signals, t]);
 
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
