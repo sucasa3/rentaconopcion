@@ -360,7 +360,20 @@
 - [ ] Stage 3 closure: (1) receiver tolerates event-specific GHL payloads (DND event without messageId; correlate by contactId; START evidence from inbound message event), (2) hand user GHL workflow config, (3) run live STOP/START test on 678-485-3054, (4) tests + typecheck + build + security scan, (5) short READY/NOT READY report. No publish without approval.
 
 ## Lean Agent + Lender Spanish translation (approved 2026-09-23)
-- [ ] Batch 1: shared shell, Agent/Lender Today, primary homeowner/client detail, My Book
-- [ ] Batch 2: portfolio, tasks/follow-up, campaigns, funnel, Discovery, import/detail
+- [x] Batch 1: shared shell, Agent/Lender Today, primary homeowner/client detail, My Book (published 2026-09-23)
+- [ ] Batch 2: portfolio, tasks/follow-up, campaigns, funnel, Discovery, import/detail (not started)
 - [ ] Batch 3: remaining network, home teams, reveal/add-client, capacity, billing; tests, typecheck, build, preview smoke
 - [ ] Keep generated briefings/conversation points unchanged unless already bilingual
+
+## Post-call voice note + automatic follow-up (approved 2026-09-23, with 4 additions)
+- [ ] Publish Batch 1 first (step 0)
+- [ ] Migration: new professional_conversations table (transcript, language, summary, outcome stage, key facts, next step, follow-up date + original timeframe text, suggested opener, edited fields), RLS mirroring workspace rules
+- [ ] Transcription server route: short audio -> speech-to-text, auto EN/ES/mixed, audio never stored
+- [ ] AI interpretation server fn: strict structured output onto EXISTING outcome stages; timezone-aware date resolution; malformed output writes nothing
+- [ ] Atomic save: conversation row + opportunity_outcomes row in one server-side transaction (both or neither)
+- [ ] Return-from-call prompt ("How did the call with [Name] go?") after tel: initiation + return; no call-end detection, no call audio; voice note also independently accessible
+- [ ] Approximate timeframes: preserve timeframeText; suggested date visible + editable on review screen; no silent false precision
+- [ ] Review UI: mic, typed fallback, all fields editable; Save & schedule / Save without follow-up / Cancel (cancel writes nothing); EN/ES
+- [ ] Today resurfacing: conversation context (why now, last conversation, promises, facts, opener) available to existing Today presentation layer; no ranking-architecture change, no new reminder system
+- [ ] Tests: EN/ES/mixed, exact/relative/approximate dates, edits, cancel, cross-workspace denial, history intact, Today feed, malformed AI output
+- [ ] Verify: typecheck, tests, build, RLS/security, Agent+Lender EN/ES walkthrough; present results; DO NOT publish without approval
