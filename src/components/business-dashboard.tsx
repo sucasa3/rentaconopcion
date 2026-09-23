@@ -75,7 +75,7 @@ export function BusinessDashboard({
   const orgName = data?.orgs?.[0]?.name ?? (kind === "agent" ? "Your agency" : "Your team");
 
   if (isLoading) {
-    return <div className="p-5 text-sm text-muted-foreground">{t("biz.cw.loading")}</div>;
+    return <div className="p-5 text-sm text-muted-foreground">{t("biz.tasks.loading")}</div>;
   }
 
   if (!data || data.orgs.length === 0) {
