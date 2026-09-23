@@ -128,7 +128,7 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
             phone: parsed.phone ?? null,
             email: parsed.email ?? null,
             providerMessageId: parsed.messageId ?? dedupeKey,
-            source: parsed.dnd === true ? "provider_dnd" : "provider_stop",
+            source: word === "stop" ? "provider_stop" : "provider_dnd",
           });
           return Response.json({ ok: true, applied: "stop" });
         }
