@@ -10,6 +10,8 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { useUserId } from "@/hooks/use-user-id";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { readOnboarding } from "@/lib/onboarding";
+import { useT } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n/en";
 import { cn } from "@/lib/utils";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,23 +52,24 @@ import {
 import { Button } from "@/components/ui/button";
 
 
-const SOURCE_LABEL: Record<string, string> = {
-  inspection: "Inspection",
-  property_records: "Property records",
-  recent_permit: "Permit",
+const SOURCE_KEY: Record<string, TranslationKey> = {
+  inspection: "biz.apd.src.inspection",
+  property_records: "biz.apd.src.property_records",
+  recent_permit: "biz.apd.src.recent_permit",
 };
 
 function NewPill({ count }: { count?: number }) {
+  const t = useT();
   return (
     <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
-      {count ? `${count} new` : "New"}
+      {count ? t("biz.apd.new_count", { count }) : t("biz.apd.new")}
     </span>
   );
 }
 
 function SourceBadge({ source }: { source?: string }) {
-
-  const label = SOURCE_LABEL[source ?? "inspection"] ?? "Inspection";
+  const t = useT();
+  const label = t(SOURCE_KEY[source ?? "inspection"] ?? "biz.apd.src.inspection");
   return (
     <span className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
       {label}
@@ -98,28 +101,29 @@ const moneyCompact = (n: number | null | undefined) => {
   return `$${Math.round(n).toLocaleString()}`;
 };
 
-const BAND_META: Record<string, { label: string; tone: string }> = {
-  high: { label: "High intent", tone: "bg-sucasa-orange/12 text-status-opportunity border-sucasa-orange/40" },
-  hot: { label: "Hot", tone: "bg-sucasa-orange/10 text-status-opportunity border-sucasa-orange/30" },
-  warm: { label: "Warm", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
-  nurture: { label: "Nurture", tone: "bg-status-nurture/10 text-status-nurture border-status-nurture/30" },
-  hold: { label: "Hold", tone: "bg-secondary text-muted-foreground border-border" },
+const BAND_META: Record<string, { labelKey: TranslationKey; tone: string }> = {
+  high: { labelKey: "biz.apd.bd.high", tone: "bg-sucasa-orange/12 text-status-opportunity border-sucasa-orange/40" },
+  hot: { labelKey: "biz.apd.bd.hot", tone: "bg-sucasa-orange/10 text-status-opportunity border-sucasa-orange/30" },
+  warm: { labelKey: "biz.apd.bd.warm", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
+  nurture: { labelKey: "biz.apd.bd.nurture", tone: "bg-status-nurture/10 text-status-nurture border-status-nurture/30" },
+  hold: { labelKey: "biz.apd.bd.hold", tone: "bg-secondary text-muted-foreground border-border" },
 };
 
-const READINESS_META: Record<string, { label: string; tone: string }> = {
-  "list-ready": { label: "List-ready", tone: "bg-status-positive/12 text-status-positive" },
-  "prep-needed": { label: "Prep needed", tone: "bg-status-attention/10 text-status-attention" },
-  "not-ready": { label: "Not ready", tone: "bg-secondary text-muted-foreground" },
+const READINESS_META: Record<string, { labelKey: TranslationKey; tone: string }> = {
+  "list-ready": { labelKey: "biz.apd.rd.list-ready", tone: "bg-status-positive/12 text-status-positive" },
+  "prep-needed": { labelKey: "biz.apd.rd.prep-needed", tone: "bg-status-attention/10 text-status-attention" },
+  "not-ready": { labelKey: "biz.apd.rd.not-ready", tone: "bg-secondary text-muted-foreground" },
 };
 
 /** Tap-to-open explainer for the three listing-readiness bands. */
 function ReadinessInfo() {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="What does readiness mean?"
+          aria-label={t("biz.apd.rd_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -131,14 +135,9 @@ function ReadinessInfo() {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Listing readiness
+          {t("biz.apd.rd_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          A 0–100 score from six pass/fail checks: equity clears selling costs,
-          property records on file, home care record (documents and maintenance
-          logged), past the 2-year capital-gains basis window, not represented
-          elsewhere, and reachable.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.rd_body")}</p>
 
         <ul className="mt-3 space-y-1.5">
           {(["list-ready", "prep-needed", "not-ready"] as const).map((k) => (
@@ -153,13 +152,9 @@ function ReadinessInfo() {
                 }`}
               />
               <span>
-                <span className="font-medium">{READINESS_META[k].label}</span>
+                <span className="font-medium">{t(READINESS_META[k].labelKey)}</span>
                 <span className="block text-muted-foreground">
-                  {k === "list-ready"
-                    ? "Score 84+. All checks pass — could take the listing today."
-                    : k === "prep-needed"
-                      ? "Score 50–83. Real potential, but a few prep steps remain before it's listable."
-                      : "Score < 50. Too many blockers — keep in value-only nurture."}
+                  {t(`biz.apd.rd_d.${k}` as TranslationKey)}
                 </span>
               </span>
             </li>
@@ -172,12 +167,13 @@ function ReadinessInfo() {
 
 /** Tap-to-open explainer for the four move-intent bands. */
 function IntentInfo() {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="What does intent mean?"
+          aria-label={t("biz.apd.in_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -189,19 +185,10 @@ function IntentInfo() {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Move intent
+          {t("biz.apd.in_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          A 0–100 score with two halves. Property records: time in the home,
-          equity, recent permits, tax pressure, absentee ownership, outgrown
-          space, expired or withdrawn listings. Behavior: repeat home-value and
-          equity checks, "thinking of selling" submissions, and clustered
-          dashboard activity in the last few weeks.
-        </p>
-        <p className="mt-2 text-muted-foreground">
-          High intent always requires real recent behavior — property signals
-          alone can reach Hot, never High.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.in_body")}</p>
+        <p className="mt-2 text-muted-foreground">{t("biz.apd.in_note")}</p>
         <ul className="mt-3 space-y-1.5">
           {(["high", "hot", "warm", "nurture", "hold"] as const).map((k) => (
             <li key={k} className="flex items-start gap-2">
@@ -219,17 +206,9 @@ function IntentInfo() {
                 }`}
               />
               <span>
-                <span className="font-medium">{BAND_META[k].label}</span>
+                <span className="font-medium">{t(BAND_META[k].labelKey)}</span>
                 <span className="block text-muted-foreground">
-                  {k === "high"
-                    ? "Score 75+ with recent homeowner activity. Actively looking — call today."
-                    : k === "hot"
-                    ? "Score 60+. Clear, time-sensitive move signal — call today."
-                    : k === "warm"
-                      ? "Score 38–59. Several solid signals. Worth a real conversation."
-                      : k === "nurture"
-                        ? "Score 18–37. Mild signals. Stay in touch with value content."
-                        : "Score under 18. Little movement signal, or represented elsewhere."}
+                  {t(`biz.apd.bd_d.${k}` as TranslationKey)}
                 </span>
               </span>
             </li>
@@ -242,12 +221,13 @@ function IntentInfo() {
 
 /** Tap-to-open explainer for the modeled net proceeds figure. */
 function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="How are net proceeds calculated?"
+          aria-label={t("biz.apd.np_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -259,32 +239,28 @@ function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Projected net proceeds
+          {t("biz.apd.np_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          What the homeowner would likely walk away with at closing, after
-          agent compensation and closing costs.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.np_body")}</p>
         <div className="mt-3 rounded-lg bg-secondary/60 p-2 font-mono text-[11px] leading-relaxed">
-          Est. value
-          <br />− {sellCostPct}% cost to sell
-          <br />− mortgage balance
+          {t("biz.apd.np_f_value")}
           <br />
-          <span className="font-semibold">= net proceeds</span>
+          {t("biz.apd.np_f_cost", { pct: sellCostPct })}
+          <br />
+          {t("biz.apd.np_f_mortgage")}
+          <br />
+          <span className="font-semibold">{t("biz.apd.np_f_net")}</span>
         </div>
         <ul className="mt-3 space-y-1.5 text-muted-foreground">
           <li>
-            <span className="font-medium text-foreground">Cost to sell</span> covers
-            agent compensation on both sides, title and escrow, transfer taxes, and
-            typical seller concessions. Adjust the {sellCostPct}% assumption at the
-            top of the page.
+            <span className="font-medium text-foreground">{t("biz.apd.np_li1_t")}</span>{" "}
+            {t("biz.apd.np_li1", { pct: sellCostPct })}
           </li>
           <li>
-            <span className="font-medium text-foreground">Est. value</span> and the
-            mortgage balance are modeled from property records — not an appraisal or
-            a payoff statement.
+            <span className="font-medium text-foreground">{t("biz.apd.np_li2_t")}</span>{" "}
+            {t("biz.apd.np_li2")}
           </li>
-          <li>A negative figure means the sale would not clear costs and payoff.</li>
+          <li>{t("biz.apd.np_li3")}</li>
         </ul>
       </PopoverContent>
     </Popover>
@@ -293,12 +269,13 @@ function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
 
 /** Tap-to-open explainer for the permit dollar value shown on a homeowner record. */
 function PermitsInfo() {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="What does the permit value mean?"
+          aria-label={t("biz.apd.pm_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -310,14 +287,10 @@ function PermitsInfo() {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Permitted work on record
+          {t("biz.apd.pm_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          This is the total declared construction cost of building permits pulled at this address. It shows real investment in the home and supports the condition/readiness story.
-        </p>
-        <p className="mt-3 text-muted-foreground">
-          Values are self-reported at filing and often understated. Coverage also varies by county, so $0 or blank can mean "no permits recorded" rather than "no work done."
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.pm_body1")}</p>
+        <p className="mt-3 text-muted-foreground">{t("biz.apd.pm_body2")}</p>
       </PopoverContent>
     </Popover>
   );
@@ -327,6 +300,7 @@ const STATUSES = ["off_market", "active", "pending", "sold", "expired", "withdra
 const PAGE_SIZE = 25;
 
 function AgentPortfolio() {
+  const t = useT();
   const { id } = Route.useParams();
   const { client: clientParam, status: statusParam } = Route.useSearch();
   const getFn = useServerFn(getAgentPortfolio);
@@ -380,13 +354,13 @@ function AgentPortfolio() {
       }
       return { enriched, failed, unmappable, remaining };
     },
-    onMutate: () => ({ toastId: toast.loading("Pulling property records…") }),
+    onMutate: () => ({ toastId: toast.loading(t("biz.apd.enrich_loading")) }),
     onSuccess: (r: any, _v, ctx) => {
-      const extra = r.unmappable
-        ? ` · ${r.unmappable} skipped (no street address on file)`
-        : "";
-      const left = r.remaining ? ` · ${r.remaining} still pending` : "";
-      toast.success(`Records pulled for ${r.enriched} homes${extra}${left}`, { id: ctx?.toastId });
+      const extra = r.unmappable ? t("biz.apd.no_address", { count: r.unmappable }) : "";
+      const left = r.remaining ? t("biz.apd.enrich_left", { count: r.remaining }) : "";
+      toast.success(t("biz.apd.enrich_success", { count: r.enriched }) + extra + left, {
+        id: ctx?.toastId,
+      });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
     onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
@@ -400,7 +374,7 @@ function AgentPortfolio() {
   const saveListing = useMutation({
     mutationFn: (v: any) => listingFn({ data: v }),
     onSuccess: () => {
-      toast.success("Listing status saved");
+      toast.success(t("biz.apd.listing_saved"));
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
       setSelected(null);
     },
@@ -460,7 +434,7 @@ function AgentPortfolio() {
     mutationFn: (v: { itemKey: string; reviewed: boolean }) =>
       reviewFn({ data: { portfolioId: id, ...v } }),
     onSuccess: (_r, v) => {
-      toast.success(v.reviewed ? "Marked reviewed" : "Restored");
+      toast.success(v.reviewed ? t("biz.apd.marked_reviewed") : t("biz.apd.restored"));
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -495,11 +469,16 @@ function AgentPortfolio() {
       return {
         kind: "high_intent" as const,
         client: data.clients?.find((c: any) => c.id === topHigh.client_id),
-        title: `${topHigh.client_name ?? "A homeowner"} is showing high intent`,
+        title: t("biz.apd.pri_high_intent", {
+          name: topHigh.client_name ?? t("biz.apd.pri_anon"),
+        }),
         subtitle: topHigh.reason,
         next: (data.high_intent_feed ?? []).slice(1, 4).map((h: any) => ({
           client: data.clients?.find((c: any) => c.id === h.client_id),
-          label: `${h.client_name ?? "Household"} — ${h.reason}`,
+          label: t("biz.apd.pri_next", {
+            name: h.client_name ?? t("biz.apd.pri_household"),
+            reason: h.reason,
+          }),
         })),
       };
     }
@@ -508,11 +487,14 @@ function AgentPortfolio() {
       return {
         kind: "listing" as const,
         client: topListing,
-        title: `${topListing.name} could be list-ready`,
-        subtitle: `Readiness ${topListing.readiness_score} · Net proceeds ${moneyCompact(topListing.net_proceeds)}`,
+        title: t("biz.apd.pri_listing", { name: topListing.name }),
+        subtitle: t("biz.apd.pri_listing_sub", {
+          score: topListing.readiness_score,
+          amount: moneyCompact(topListing.net_proceeds),
+        }),
         next: data.top_listing_opportunities.slice(1, 4).map((c: any) => ({
           client: c,
-          label: `${c.name} — readiness ${c.readiness_score}`,
+          label: t("biz.apd.pri_next_readiness", { name: c.name, score: c.readiness_score }),
         })),
       };
     }
@@ -521,13 +503,15 @@ function AgentPortfolio() {
       return {
         kind: "enrich" as const,
         client: null,
-        title: `${missing.length} household${missing.length === 1 ? "" : "s"} need property records`,
-        subtitle: "Value, equity and readiness scores unlock after records are pulled.",
+        title: t(missing.length === 1 ? "biz.apd.pri_enrich_one" : "biz.apd.pri_enrich_many", {
+          count: missing.length,
+        }),
+        subtitle: t("biz.apd.pri_enrich_sub"),
         next: [],
       };
     }
     return null;
-  }, [data]);
+  }, [data, t]);
 
   return (
     <BusinessShell kind="agent" bookId={id}>
@@ -538,19 +522,19 @@ function AgentPortfolio() {
               to="/agent"
               className="inline-flex items-center gap-1 text-xs font-medium text-primary"
             >
-              <ArrowLeft className="h-3 w-3" /> All client lists
+              <ArrowLeft className="h-3 w-3" /> {t("biz.apd.all_lists")}
             </Link>
             <Link
               to="/agent/network"
               className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
             >
-              Lender network &amp; approvals
+              {t("biz.apd.lender_network")}
             </Link>
           </div>
 
 
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : error ? (
             <p className="text-sm text-destructive">{(error as Error).message}</p>
           ) : data ? (
@@ -581,7 +565,7 @@ function AgentPortfolio() {
                   to="/agent/network"
                   className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
                 >
-                  Lender network &amp; approvals
+                  {t("biz.apd.lender_network")}
                 </Link>
               </div>
 
@@ -599,7 +583,9 @@ function AgentPortfolio() {
                     }
                   }}
                   primaryActionLabel={
-                    priority.kind === "enrich" ? "Pull property records" : "View homeowner"
+                    priority.kind === "enrich"
+                      ? t("biz.apd.pull_property_records")
+                      : t("biz.at.view_homeowner")
                   }
                   tone={priority.kind === "high_intent" ? "attention" : "opportunity"}
                   secondaryActions={priority.next?.map((n: any) => ({
@@ -618,11 +604,11 @@ function AgentPortfolio() {
                   <div className="flex items-center gap-2">
                     <Home className="h-4 w-4 text-primary" />
                     <h2 className="text-base font-semibold">
-                      Top listing opportunities @ {sellCost}% cost to sell
+                      {t("biz.apd.opps_title", { pct: sellCost })}
                     </h2>
                   </div>
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    Cost to sell
+                    {t("biz.apd.cost_to_sell")}
                     <input
                       type="number"
                       step="0.5"
@@ -639,13 +625,13 @@ function AgentPortfolio() {
                   </label>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Ranked on move intent × listing readiness. Modeled, not an appraisal.
+                  {t("biz.apd.opps_note")}
                 </p>
 
                 <div className="mt-4 space-y-3 md:hidden">
                   {data.top_listing_opportunities.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">
-                      No scored opportunities yet.
+                      {t("biz.apd.none_yet")}
                     </p>
                   ) : (
                     data.top_listing_opportunities.map((c: any) => (
@@ -654,11 +640,16 @@ function AgentPortfolio() {
                         pill={<BandPill band={c.band} score={c.move_score} />}
                         name={c.name}
                         subtitle={[c.city, c.state].filter(Boolean).join(", ")}
-                        heroLabel="Net proceeds"
+                        heroLabel={t("biz.apd.th_net_proceeds")}
                         heroValue={moneyCompact(c.net_proceeds)}
                         metrics={[
-                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
-                          { label: "Readiness", value: c.readiness_label ?? c.readiness_score },
+                          { label: t("biz.apd.th_est_value"), value: moneyCompact(c.estimated_value) },
+                          {
+                            label: t("biz.apd.th_readiness"),
+                            value: c.readiness_label
+                              ? t(READINESS_META[c.readiness_label]?.labelKey ?? "biz.apd.th_readiness")
+                              : c.readiness_score,
+                          },
                         ]}
                         extra={
                           <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
@@ -676,34 +667,34 @@ function AgentPortfolio() {
                   <table className="w-full min-w-[720px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Household</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_household")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Intent
+                            {t("biz.apd.th_intent")}
                             <IntentInfo />
                           </span>
                         </th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Readiness
+                            {t("biz.apd.th_readiness")}
                             <ReadinessInfo />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Est. value</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_est_value")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Net proceeds
+                            {t("biz.apd.th_net_proceeds")}
                             <NetProceedsInfo sellCostPct={sellCost} />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Top signal</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_top_signal")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.top_listing_opportunities.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-muted-foreground">
-                            No scored opportunities yet — pull property records to begin.
+                            {t("biz.apd.none_yet_table")}
                           </td>
                         </tr>
                       ) : (
@@ -749,7 +740,7 @@ function AgentPortfolio() {
                 <div className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
 
                   <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-                    Listing readiness mix
+                    {t("biz.apd.mix_title")}
                     <ReadinessInfo />
                   </h3>
                   <div className="mt-4 space-y-3">
@@ -759,7 +750,7 @@ function AgentPortfolio() {
                       return (
                         <div key={k}>
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium">{READINESS_META[k].label}</span>
+                            <span className="font-medium">{t(READINESS_META[k].labelKey)}</span>
                             <span className="text-muted-foreground">{n}</span>
                           </div>
                           <div className="mt-1 h-2 rounded-full bg-secondary">
@@ -779,8 +770,7 @@ function AgentPortfolio() {
                     })}
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    Readiness scores equity vs. selling costs, records on file, the home care
-                    record, the 2-year basis window, representation, and reachability.
+                    {t("biz.apd.mix_note")}
                   </p>
 
                 </div>
@@ -789,18 +779,17 @@ function AgentPortfolio() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <Wrench className="h-4 w-4 shrink-0 text-primary" />
-                      <h3 className="truncate text-sm font-semibold">Client activity</h3>
+                      <h3 className="truncate text-sm font-semibold">{t("biz.apd.act_title")}</h3>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {data.summary.active_referrals} open ·{" "}
-                      {data.summary.recommendations_due ?? 0} due ·{" "}
-                      {data.summary.touches_30d ?? 0} touches / 30d
+                      {t("biz.apd.act_counts", {
+                        open: data.summary.active_referrals,
+                        due: data.summary.recommendations_due ?? 0,
+                        touches: data.summary.touches_30d ?? 0,
+                      })}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    What your clients are doing, what their home needs next, and what has already
-                    gone out to them.
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t("biz.apd.act_note")}</p>
                   <Tabs
                     value={activityTab}
                     onValueChange={setActivityTab}
@@ -808,16 +797,16 @@ function AgentPortfolio() {
                   >
                     <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:inline-flex sm:h-9 sm:w-auto sm:grid-cols-none">
                       <TabsTrigger value="high_intent" className="gap-1.5">
-                        High intent
+                        {t("biz.apd.tab_high_intent")}
                         {highIntentFeed.length > 0 && <NewPill count={highIntentFeed.length} />}
                       </TabsTrigger>
                       <TabsTrigger value="recommendations" className="gap-1.5">
-                        <span className="truncate">Recommendations</span>
+                        <span className="truncate">{t("biz.apd.tab_recs")}</span>
                         {newRecCount > 0 && <NewPill count={newRecCount} />}
                       </TabsTrigger>
-                      <TabsTrigger value="communicated">Communicated</TabsTrigger>
+                      <TabsTrigger value="communicated">{t("biz.apd.tab_communicated")}</TabsTrigger>
                       <TabsTrigger value="referrals" className="gap-1.5">
-                        Referrals
+                        {t("biz.apd.tab_referrals")}
                         {newRefCount > 0 && <NewPill count={newRefCount} />}
                       </TabsTrigger>
                     </TabsList>
@@ -826,8 +815,7 @@ function AgentPortfolio() {
                     <TabsContent value="high_intent" className="mt-4 space-y-2">
                       {highIntentFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No high-intent sellers right now. This fills in when a linked client
-                          repeatedly checks their home value or equity, or asks about selling.
+                          {t("biz.apd.hi_empty")}
                         </p>
                       ) : (
                         highIntentFeed.map((h: any) => (
@@ -843,7 +831,7 @@ function AgentPortfolio() {
                             <div className="min-w-0">
                               <p className="flex items-center gap-1.5 text-sm font-medium">
                                 <Flame className="h-3.5 w-3.5 text-destructive" />
-                                {h.client_name ?? h.address ?? "Client"}
+                                {h.client_name ?? h.address ?? t("biz.apd.client")}
                               </p>
                               <p className="text-xs text-muted-foreground">{h.reason}</p>
                               {h.detail && (
@@ -853,7 +841,7 @@ function AgentPortfolio() {
                               )}
                             </div>
                             <span className="shrink-0 rounded-full border border-destructive/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                              {h.score} · High
+                              {h.score} · {t("biz.apd.hi_high")}
                             </span>
                           </button>
                         ))
@@ -867,15 +855,13 @@ function AgentPortfolio() {
                           className="text-[11px] font-medium text-primary"
                         >
                           {showReviewed
-                            ? "Hide reviewed"
-                            : `Show ${reviewedCount} reviewed`}
+                            ? t("biz.apd.recs_hide")
+                            : t("biz.apd.recs_show", { count: reviewedCount })}
                         </button>
                       )}
                       {recFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          Nothing outstanding. Recommendations come from property records
-                          (home age + permits) and from inspection reports once a linked client
-                          uploads one.
+                          {t("biz.apd.recs_empty")}
                         </p>
                       ) : (
                         recFeed.map((r: any) => (
@@ -910,7 +896,7 @@ function AgentPortfolio() {
                                 className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary disabled:opacity-50"
                               >
                                 <CheckCircle2 className="h-3 w-3" />
-                                {r.reviewed_at ? "Undo reviewed" : "Mark reviewed"}
+                                {r.reviewed_at ? t("biz.apd.undo_reviewed") : t("biz.apd.mark_reviewed")}
                               </button>
                             </div>
                             <div className="flex shrink-0 items-center gap-1.5">
@@ -935,8 +921,7 @@ function AgentPortfolio() {
                     <TabsContent value="referrals" className="mt-4 space-y-2">
                       {refFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No service activity yet. Invite clients to SuCasa to see their projects
-                          here.
+                          {t("biz.apd.ref_empty")}
                         </p>
                       ) : (
                         refFeed.map((r: any) => (
@@ -969,7 +954,7 @@ function AgentPortfolio() {
                     <TabsContent value="communicated" className="mt-4 space-y-2">
                       {(data.touch_feed ?? []).length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No campaign messages have gone out to this book yet.
+                          {t("biz.apd.comm_empty")}
                         </p>
                       ) : (
                         data.touch_feed.map((t: any) => (
@@ -1018,14 +1003,19 @@ function AgentPortfolio() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
-                  <h2 className="text-base font-semibold">Your book</h2>
+                  <h2 className="text-base font-semibold">{t("biz.apd.book_title")}</h2>
                   <div className="flex items-center gap-3">
                     <span
                       className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
-                      title="Value, equity and net proceeds only appear once property records have been pulled for that home."
+                      title={t("biz.apd.valued_title")}
                     >
-                      Valued {data.summary.with_value ?? 0}/{data.summary.total}
-                      {data.summary.unmappable ? ` · ${data.summary.unmappable} no address` : ""}
+                      {t("biz.apd.valued", {
+                        count: data.summary.with_value ?? 0,
+                        total: data.summary.total,
+                      })}
+                      {data.summary.unmappable
+                        ? t("biz.apd.no_address", { count: data.summary.unmappable })
+                        : ""}
                     </span>
                     <button
                       onClick={() => enrich.mutate()}
@@ -1037,24 +1027,24 @@ function AgentPortfolio() {
                       ) : (
                         <Sparkles className="h-3 w-3 text-growth" />
                       )}
-                      Pull records
+                      {t("biz.apd.pull_records")}
                     </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                  <SummaryTile label="Households" value={data.summary.total.toLocaleString()} />
-                  <SummaryTile label="List-ready" value={String(data.summary.readiness["list-ready"])} />
-                  <SummaryTile label="Hot signals" value={String(data.summary.bands.hot)} />
-                  <SummaryTile label="Sphere equity" value={moneyCompact(data.summary.total_equity)} />
-                  <SummaryTile label="Potential GCI" value={moneyCompact(data.summary.total_gci_potential)} />
+                  <SummaryTile label={t("biz.apd.st_households")} value={data.summary.total.toLocaleString()} />
+                  <SummaryTile label={t("biz.apd.st_list_ready")} value={String(data.summary.readiness["list-ready"])} />
+                  <SummaryTile label={t("biz.apd.st_hot")} value={String(data.summary.bands.hot)} />
+                  <SummaryTile label={t("biz.apd.st_equity")} value={moneyCompact(data.summary.total_equity)} />
+                  <SummaryTile label={t("biz.apd.st_gci")} value={moneyCompact(data.summary.total_gci_potential)} />
                 </div>
 
                 <AgentCoveragePanel portfolioId={id} />
 
                 <div className="flex flex-wrap gap-2">
                   <SegChip
-                    label={`All ${data.summary.total}`}
+                    label={t("biz.apd.all_chip", { count: data.summary.total })}
                     active={band === "all"}
                     tone="bg-foreground text-background border-foreground"
                     onClick={() => {
@@ -1065,7 +1055,7 @@ function AgentPortfolio() {
                   {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
                     <SegChip
                       key={b}
-                      label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
+                      label={`${t(BAND_META[b].labelKey)} ${data.summary.bands[b] ?? 0}`}
                       active={band === b}
                       tone={BAND_META[b].tone}
                       onClick={() => {
@@ -1077,11 +1067,11 @@ function AgentPortfolio() {
                   <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
                     <span className="inline-flex items-center gap-1">
                       <AlertCircle className="h-3 w-3 text-growth" />
-                      {data.summary.expired} expired / withdrawn
+                      {t("biz.apd.expired", { count: data.summary.expired })}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Link2 className="h-3 w-3" />
-                      {data.summary.linked} linked to SuCasa
+                      {t("biz.apd.linked", { count: data.summary.linked })}
                     </span>
                   </span>
                 </div>
@@ -1092,7 +1082,7 @@ function AgentPortfolio() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-base font-semibold">
-                    Households ({filtered.length.toLocaleString()})
+                    {t("biz.apd.households_count", { count: filtered.length.toLocaleString() })}
                   </h2>
                   <div className="relative w-full sm:w-auto">
                     <Search className="pointer-events-none absolute left-3 top-3 h-3.5 w-3.5 text-muted-foreground" />
@@ -1102,7 +1092,7 @@ function AgentPortfolio() {
                         setSearch(e.target.value);
                         setPage(0);
                       }}
-                      placeholder="Name, address, city, zip"
+                      placeholder={t("biz.apd.search_ph")}
                       className="w-full rounded-full border border-border bg-background py-2 pl-8 pr-3 text-sm outline-none focus:border-primary sm:w-64"
                     />
                   </div>
@@ -1111,7 +1101,7 @@ function AgentPortfolio() {
                 <div className="mt-4 space-y-3 md:hidden">
                   {pageRows.length === 0 ? (
                     <p className="py-6 text-center text-sm text-muted-foreground">
-                      No households match this filter.
+                      {t("biz.apd.no_match")}
                     </p>
                   ) : (
                     pageRows.map((c: any) => (
@@ -1124,16 +1114,18 @@ function AgentPortfolio() {
                             <BandPill band={c.band} score={c.move_score} />
                             <StatusPill tone="muted">
                               {c.listing
-                                ? String(c.listing.status).replace("_", " ")
-                                : "off market"}
+                                ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
+                                : t("biz.apd.off_market")}
                             </StatusPill>
                           </>
                         }
                         metrics={[
-                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
+                          { label: t("biz.apd.th_est_value"), value: moneyCompact(c.estimated_value) },
                           {
-                            label: "Intent",
-                            value: c.move_score ? `${c.move_score} · ${BAND_META[c.band]?.label ?? c.band}` : "—",
+                            label: t("biz.apd.th_intent"),
+                            value: c.move_score
+                              ? `${c.move_score} · ${BAND_META[c.band] ? t(BAND_META[c.band].labelKey) : c.band}`
+                              : "—",
                           },
                         ]}
                         extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
@@ -1150,30 +1142,30 @@ function AgentPortfolio() {
                   <table className="w-full min-w-[980px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Household</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_household")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Intent
+                            {t("biz.apd.th_intent")}
                             <IntentInfo />
                           </span>
                         </th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Readiness
+                            {t("biz.apd.th_readiness")}
                             <ReadinessInfo />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Value</th>
-                        <th className="py-2 pr-3 font-medium">Equity</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_value")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_equity")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Net proceeds
+                            {t("biz.apd.th_net_proceeds")}
                             <NetProceedsInfo sellCostPct={sellCost} />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Tenure</th>
-                        <th className="py-2 pr-3 font-medium">Listing</th>
-                        <th className="py-2 pr-3 font-medium">Referrals</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_tenure")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_listing")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_referrals")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1212,10 +1204,12 @@ function AgentPortfolio() {
                             {moneyCompact(c.net_proceeds)}
                           </td>
                           <td className="py-2.5 pr-3">
-                            {c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—"}
+                            {c.tenure_years ? t("biz.apd.yr", { count: c.tenure_years.toFixed(1) }) : "—"}
                           </td>
                           <td className="py-2.5 pr-3 text-xs capitalize text-muted-foreground">
-                            {c.listing ? String(c.listing.status).replace("_", " ") : "off market"}
+                            {c.listing
+                              ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
+                              : t("biz.apd.off_market")}
                           </td>
                           <td className="py-2.5 pr-3 text-xs text-muted-foreground">
                             {c.referral_count || "—"}
@@ -1225,7 +1219,7 @@ function AgentPortfolio() {
                       {pageRows.length === 0 && (
                         <tr>
                           <td colSpan={9} className="py-8 text-center text-muted-foreground">
-                            No households match this filter.
+                            {t("biz.apd.no_match")}
                           </td>
                         </tr>
                       )}
@@ -1236,8 +1230,11 @@ function AgentPortfolio() {
                 {filtered.length > PAGE_SIZE && (
                   <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                     <span>
-                      Showing {page * PAGE_SIZE + 1}–
-                      {Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
+                      {t("biz.lpd.showing", {
+                        from: page * PAGE_SIZE + 1,
+                        to: Math.min((page + 1) * PAGE_SIZE, filtered.length),
+                        total: filtered.length,
+                      })}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -1248,7 +1245,7 @@ function AgentPortfolio() {
                         <ChevronLeft className="h-3 w-3" />
                       </button>
                       <span className="px-2">
-                        Page {page + 1} / {pageCount}
+                        {t("biz.lpd.page", { page: page + 1, pages: pageCount })}
                       </span>
                       <button
                         disabled={page >= pageCount - 1}
@@ -1316,22 +1313,24 @@ function SegChip({
 }
 
 function BandPill({ band, score }: { band: string; score: number }) {
+  const t = useT();
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${BAND_META[band]?.tone}`}
     >
       {(band === "hot" || band === "high") && <Flame className="h-3 w-3" />}
-      {score} · {BAND_META[band]?.label}
+      {score} · {BAND_META[band] ? t(BAND_META[band].labelKey) : band}
     </span>
   );
 }
 
 function ReadinessBar({ score, label }: { score: number; label: string }) {
+  const t = useT();
   return (
     <div className="w-28">
       <div className="flex items-center justify-between text-[10px]">
         <span className={`rounded-full px-1.5 py-0.5 font-medium ${READINESS_META[label]?.tone}`}>
-          {READINESS_META[label]?.label}
+          {READINESS_META[label] ? t(READINESS_META[label].labelKey) : label}
         </span>
         <span className="text-muted-foreground">{score}</span>
       </div>
@@ -1370,6 +1369,7 @@ function ClientDrawer({
   onSaveListing: (v: any) => void;
   saving: boolean;
 }) {
+  const t = useT();
   const isMobile = useIsMobile();
   const [status, setStatus] = useState<string>(client.listing?.status ?? "off_market");
   const [otherAgent, setOtherAgent] = useState<boolean>(
@@ -1379,16 +1379,16 @@ function ClientDrawer({
 
   const opportunityHeadline =
     client.band === "high" || client.band === "hot"
-      ? "Worth a conversation"
+      ? t("biz.apd.opp_worth")
       : client.readiness_label === "list-ready"
-        ? "Strong listing position"
+        ? t("biz.apd.opp_strong")
         : client.readiness_label === "prep-needed"
-          ? "Prep likely needed"
-          : "Future-plans opportunity";
+          ? t("biz.apd.opp_prep")
+          : t("biz.apd.opp_future");
   const opportunityDetail =
     client.signals?.[0]?.detail ??
     client.readiness_checks?.find((check: any) => !check.ok)?.detail ??
-    "Review the supported property facts and relationship status before reaching out.";
+    t("biz.apd.opp_fallback");
   const whyNow = (client.signals ?? []).slice(0, 5);
   const prepRows = (client.recommendations ?? []).slice(0, 4);
 
@@ -1410,56 +1410,56 @@ function ClientDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative overflow-hidden bg-sucasa-navy px-5 pb-5 pt-6 text-primary-foreground sm:px-7">
-          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 text-primary-foreground hover:bg-card/10 hover:text-primary-foreground"><X /></Button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t("biz.common.close")} className="absolute right-3 top-3 text-primary-foreground hover:bg-card/10 hover:text-primary-foreground"><X /></Button>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 pr-8">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Agent home review</p>
-              <h2 className="mt-2 truncate text-2xl font-semibold leading-tight">{client.name ?? "Household"}</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">{t("biz.apd.dr_kicker")}</p>
+              <h2 className="mt-2 truncate text-2xl font-semibold leading-tight">{client.name ?? t("biz.apd.pri_household")}</h2>
               <p className="mt-1 flex min-w-0 items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="min-w-0">{[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}</span></p>
             </div>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-foreground/10"><Home className="h-5 w-5" /></span>
           </div>
           <div className="mt-4 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-3">
-            <HeroMetric label="Est. value" value={moneyCompact(client.estimated_value)} />
-            <HeroMetric label="Net proceeds" value={moneyCompact(client.net_proceeds)} info={<NetProceedsInfo sellCostPct={sellCostPct} />} />
-            <HeroMetric label="Tenure" value={client.tenure_years ? `${client.tenure_years.toFixed(1)} yr` : "—"} />
-            <HeroMetric label="Readiness" value={`${client.readiness_score ?? "—"}`} />
+            <HeroMetric label={t("biz.apd.th_est_value")} value={moneyCompact(client.estimated_value)} />
+            <HeroMetric label={t("biz.apd.th_net_proceeds")} value={moneyCompact(client.net_proceeds)} info={<NetProceedsInfo sellCostPct={sellCostPct} />} />
+            <HeroMetric label={t("biz.apd.hm_tenure")} value={client.tenure_years ? t("biz.apd.yr", { count: client.tenure_years.toFixed(1) }) : "—"} />
+            <HeroMetric label={t("biz.apd.th_readiness")} value={`${client.readiness_score ?? "—"}`} />
           </div>
         </div>
 
         <div className="space-y-7 px-5 py-6 sm:px-7">
           <section className="border-l-4 border-sucasa-orange pl-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-opportunity">Opportunity summary</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-opportunity">{t("biz.apd.opp_kicker")}</p>
             <h3 className="mt-1 text-xl font-semibold text-sucasa-navy">{opportunityHeadline}</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{opportunityDetail}</p>
           </section>
 
-          <DetailSection title="Why now">
+          <DetailSection title={t("biz.apd.why_now")}>
             {whyNow.length ? whyNow.map((s: any, i: number) => (
               <SignalRow key={`${s.label}-${i}`} icon={i === 0 ? <Sparkles /> : <CheckCircle2 />} title={s.label} detail={s.detail} tone={i === 0 ? "opportunity" : "positive"} />
-            )) : <p className="text-sm text-text-secondary">{client.has_intel ? "No movement signals yet." : "No property records pulled for this address yet."}</p>}
+            )) : <p className="text-sm text-text-secondary">{client.has_intel ? t("biz.apd.no_signals") : t("biz.apd.no_records")}</p>}
           </DetailSection>
 
           <section className="rounded-lg bg-surface-warm p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
-              <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-attention">Agent intelligence</p><h3 className="mt-1 text-lg font-semibold text-sucasa-navy">Home Prep &amp; Listing Readiness</h3></div>
+              <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-attention">{t("biz.apd.ai_kicker")}</p><h3 className="mt-1 text-lg font-semibold text-sucasa-navy">{t("biz.apd.ai_title")}</h3></div>
               <Hammer className="h-5 w-5 text-sucasa-orange" />
             </div>
             <div className="mt-3 divide-y divide-surface-warm-border">
               {(prepRows.length ? prepRows : (client.readiness_checks ?? []).filter((c: any) => !c.ok).slice(0, 4)).map((r: any, i: number) => (
                 <div key={r.id ?? r.key ?? i} className="flex items-start justify-between gap-4 py-3">
-                  <div><p className="text-sm font-semibold capitalize text-sucasa-navy">{String(r.system ?? r.label ?? "Property review").replace(/_/g, " ")}</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{r.recommended_action ?? r.detail}</p></div>
-                  <span className="shrink-0 text-xs font-semibold text-status-attention">{r.urgency === "medium" ? "Review due" : r.urgency === "high" ? "Worth checking" : "Prep likely"}</span>
+                  <div><p className="text-sm font-semibold capitalize text-sucasa-navy">{String(r.system ?? r.label ?? t("biz.apd.prop_review")).replace(/_/g, " ")}</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{r.recommended_action ?? r.detail}</p></div>
+                  <span className="shrink-0 text-xs font-semibold text-status-attention">{r.urgency === "medium" ? t("biz.apd.urg_review") : r.urgency === "high" ? t("biz.apd.urg_worth") : t("biz.apd.urg_prep")}</span>
                 </div>
               ))}
-              {!prepRows.length && !(client.readiness_checks ?? []).some((c: any) => !c.ok) && <p className="py-3 text-sm text-text-secondary">No preparation items are currently supported by the information on file.</p>}
+              {!prepRows.length && !(client.readiness_checks ?? []).some((c: any) => !c.ok) && <p className="py-3 text-sm text-text-secondary">{t("biz.apd.prep_none")}</p>}
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">Property Records and homeowner-provided records</p>
+            <p className="mt-2 text-[10px] text-muted-foreground">{t("biz.apd.prep_source")}</p>
           </section>
 
         <div className="rounded-lg border-l-4 border-intelligence-accent bg-surface-intelligence p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-            Suggested opener
+            {t("biz.apd.opener_title")}
           </p>
           <p className="mt-2 text-[15px] leading-relaxed text-sucasa-navy">{client.opener}</p>
           <Button
@@ -1468,11 +1468,11 @@ function ClientDrawer({
             size="sm"
             onClick={() => {
               navigator.clipboard.writeText(client.opener);
-              toast.success("Copied");
+              toast.success(t("biz.apd.copied"));
             }}
             className="mt-2 px-0 text-primary hover:bg-transparent"
           >
-            <Copy className="h-3 w-3" /> Copy
+            <Copy className="h-3 w-3" /> {t("biz.apd.copy")}
           </Button>
         </div>
 
@@ -1486,7 +1486,7 @@ function ClientDrawer({
           ) : (
             <Sparkles className="h-4 w-4" />
           )}
-          Generate listing brief
+          {t("biz.apd.gen_brief")}
         </Button>
         {brief && (
           <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-border bg-card p-3 text-sm">
@@ -1500,7 +1500,7 @@ function ClientDrawer({
               href={`tel:${String(client.phone).replace(/[^0-9+]/g, "")}`}
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
-              <Phone className="h-4 w-4 text-primary" /> Call
+              <Phone className="h-4 w-4 text-primary" /> {t("biz.channel.call")}
             </a>
           )}
           {client.email && (
@@ -1508,24 +1508,24 @@ function ClientDrawer({
               href={`mailto:${client.email}`}
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
-              <Mail className="h-4 w-4 text-primary" /> Email
+              <Mail className="h-4 w-4 text-primary" /> {t("biz.channel.email")}
             </a>
           )}
         </div>
 
-        <DetailSection title="Property details">
+        <DetailSection title={t("biz.apd.prop_details")}>
           <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-            <DetailFact label="Equity" value={money(client.equity_dollars)} />
-            <DetailFact label="Beds / baths" value={client.beds ? `${client.beds} / ${client.baths ?? "—"}` : "—"} />
-            <DetailFact label="Square feet" value={client.sqft ? client.sqft.toLocaleString() : "—"} />
-            <DetailFact label="Year built" value={client.year_built ?? "—"} />
-            <DetailFact label="Permitted work" value={money(client.permit_total_value)} info={<PermitsInfo />} />
-            <DetailFact label="Last permit" value={client.last_permit_date ? new Date(client.last_permit_date).toLocaleDateString() : "—"} />
+            <DetailFact label={t("biz.apd.th_equity")} value={money(client.equity_dollars)} />
+            <DetailFact label={t("biz.apd.f_beds")} value={client.beds ? `${client.beds} / ${client.baths ?? "—"}` : "—"} />
+            <DetailFact label={t("biz.apd.f_sqft")} value={client.sqft ? client.sqft.toLocaleString() : "—"} />
+            <DetailFact label={t("biz.apd.f_year")} value={client.year_built ?? "—"} />
+            <DetailFact label={t("biz.apd.f_permits")} value={money(client.permit_total_value)} info={<PermitsInfo />} />
+            <DetailFact label={t("biz.apd.f_last_permit")} value={client.last_permit_date ? new Date(client.last_permit_date).toLocaleDateString() : "—"} />
           </div>
         </DetailSection>
 
         {(client.referrals?.length > 0 || client.touches?.length > 0) && (
-          <DetailSection title="Supporting activity">
+          <DetailSection title={t("biz.apd.supporting")}>
             {client.referrals?.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
                 <span className="font-medium capitalize text-sucasa-navy">{String(r.category).replace(/_/g, " ")}</span>
@@ -1542,7 +1542,7 @@ function ClientDrawer({
         )}
 
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Listing status
+          {t("biz.apd.listing_status")}
         </h3>
         <select
           value={status}
@@ -1551,7 +1551,7 @@ function ClientDrawer({
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s.replace("_", " ")}
+              {t(`biz.apd.ls.${s}` as TranslationKey)}
             </option>
           ))}
         </select>
@@ -1561,13 +1561,13 @@ function ClientDrawer({
             checked={otherAgent}
             onChange={(e) => setOtherAgent(e.target.checked)}
           />
-          Listed with another agent
+          {t("biz.apd.listed_other")}
         </label>
         {otherAgent && (
           <input
             value={agentName}
             onChange={(e) => setAgentName(e.target.value)}
-            placeholder="Listing agent name"
+            placeholder={t("biz.apd.agent_name_ph")}
             className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
           />
         )}
@@ -1583,7 +1583,7 @@ function ClientDrawer({
           variant="outline"
           className="mt-3 w-full rounded-lg"
         >
-          {saving ? "Saving…" : "Save listing status"}
+          {saving ? t("biz.common.saving") : t("biz.apd.save_listing")}
         </Button>
         </div>
       </aside>
