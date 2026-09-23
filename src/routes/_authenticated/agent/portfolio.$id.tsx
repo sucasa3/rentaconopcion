@@ -1313,22 +1313,24 @@ function SegChip({
 }
 
 function BandPill({ band, score }: { band: string; score: number }) {
+  const t = useT();
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${BAND_META[band]?.tone}`}
     >
       {(band === "hot" || band === "high") && <Flame className="h-3 w-3" />}
-      {score} · {BAND_META[band]?.label}
+      {score} · {BAND_META[band] ? t(BAND_META[band].labelKey) : band}
     </span>
   );
 }
 
 function ReadinessBar({ score, label }: { score: number; label: string }) {
+  const t = useT();
   return (
     <div className="w-28">
       <div className="flex items-center justify-between text-[10px]">
         <span className={`rounded-full px-1.5 py-0.5 font-medium ${READINESS_META[label]?.tone}`}>
-          {READINESS_META[label]?.label}
+          {READINESS_META[label] ? t(READINESS_META[label].labelKey) : label}
         </span>
         <span className="text-muted-foreground">{score}</span>
       </div>
