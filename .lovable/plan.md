@@ -1,45 +1,51 @@
-# Stage 3 closure — run the three gates
+# Gate 1 — live provider state, endpoint check, one remaining action
 
-Workflow is live, so the setup step is done. No new architecture work, no additional audits, no Stage 4, no publish until you approve.
+Read-only queries against the live provider account. No code, workflow or architecture changes made.
 
-## Gate 1 — one live STOP/START test (authorized test phone 678-485-3054)
+## 1. Live contact state (queried just now)
 
-Marketing SMS → you reply STOP → GoHighLevel sets SMS DND → webhook arrives and authenticates →
-SuCasa mirrors the SMS marketing opt-out → second marketing send refused before any provider call →
-you reply START → GoHighLevel clears SMS DND → webhook arrives → SuCasa records valid re-consent →
-eligible marketing SMS permitted again.
+Contact "Stage3 StopTest", +1 678-485-3054 (id `XSaExFUGDuDLIgqICbN6`):
 
-Two points in the run need you at the phone: replying STOP, then replying START. I send the message,
-tell you when to reply, and read the real event as it lands.
+- `dndSettings.SMS` = `{ status: "permanent", message: "TWILIO_ERROR_CODE: 21610" }` — texting is still blocked at the provider.
+- Contact-level `dnd` = `false` (that flag is the global one; the SMS-channel setting above is the one that governs texting).
+- `dateUpdated` = 2026-09-23 02:17:42 UTC — the STOP moment. Nothing on the record has changed since.
 
-I confirm, from the real event and from GoHighLevel: event received, authentication succeeded, actual
-contact DND state, SuCasa mirror, suppression applied before send, re-consent evidence recorded, no
-provider STOP/DND restriction bypassed, and no readable phone number in consent or audit evidence.
+## 2. START / resubscribe event
 
-If GoHighLevel's actual payload field names differ from the ones the receiver expects, I make the
-minimum field-mapping change in the receiver and rerun this one test. No redesign.
+- No START or "DND disabled by customer" entry exists on the contact record; its last change is still the STOP.
+- The provider's message log could not be read this time (the integration token answered "not authorized for this scope" for conversations read on both API versions), so the activity confirmation comes from the contact record rather than the message list.
+- The carrier confirmation you received is real, but it was handled by the carrier/messaging number, not by GoHighLevel: the provider never recorded an inbound START, so it never cleared its own SMS block.
 
-Payload tolerance: the receiver accepts the fields each event actually provides. *Customer Replied /
-SMS* carries phone, message, messageId, contactId and any available SMS DND state; a *DND change*
-event carries phone, contactId and the SMS-specific DND state, and is not required to provide message
-or messageId. Events are correlated by the GoHighLevel contact id. START re-consent evidence comes
-from the actual inbound START message event; the DND-change event only confirms provider state.
+## 3. Is SMS eligible again?
 
-Test records are deleted afterwards.
+No. Carrier-level: re-subscribed. Provider-level: still permanently blocked for SMS. A send attempt through GoHighLevel would still be refused.
 
-## Gate 2 — Automated verification
+## 4. Workflow execution after START
 
-Full test suite, type check, production build, existing security scan. Previously resolved findings
-are not reopened. The public `market_rates` informational finding stays an accepted exception.
+None — and that is consistent, not a new fault. The DND-change trigger had nothing to fire on because the provider's DND state never changed, and the reply trigger had nothing to fire on because the provider never received the inbound START. As you said: the carrier-level START did not emit a provider event. Nothing to rebuild.
 
-## Gate 3 — Report
+## 5. SuCasa endpoint verified independently
 
-A short report only: STOP result, START result, final test count, build/type-check result,
-security-scan result, READY / NOT READY. Then I stop and wait for your publish approval.
+An authenticated POST to
 
-## Technical note
+```text
+https://project--94429f0c-1687-4b34-81a7-6195279589c3-dev.lovable.app/api/public/webhooks/ghl-messages
+```
 
-Only possible code change in this stage: field mapping inside
-`src/routes/api/public/webhooks/ghl-messages.ts` if the live payload uses different key names.
-Authentication, idempotency, messaging policy, preferences, consent evidence and every other Stage 3
-behaviour stay exactly as accepted.
+with the configured `x-sucasa-webhook-token` returned **200** and `{"ok":true,"applied":"stop"}` — the receiver read the live provider DND state for that contact id and mirrored the opt-out. So the endpoint, the secret, the provider lookup and the mirror all work end to end. The earlier 404 was in the webhook step's URL, not on our side.
+
+This means the STOP half of Gate 1 is now fully proven: carrier enforcement, provider state, and SuCasa's mirror.
+
+## 6. Single minimum remaining action
+
+Only the START/re-consent half is unproven, and it needs one thing: the provider has to actually see an inbound START message.
+
+**The one action:** in GoHighLevel, open the contact Stage3 StopTest and clear its SMS do-not-disturb, then text **START** once more from the test phone.
+
+Why both halves of that single action: while the provider holds the permanent SMS block, it discards traffic for that contact, so a keyword reply never becomes an inbound message. With the block cleared, the next START arrives as a real inbound message, the Customer Replied trigger fires, and SuCasa records re-consent from the actual inbound keyword — exactly the rule we agreed (a DND-off state alone is not consent).
+
+Tell me when that is done and I will confirm the recorded re-consent, then run Gate 2 (tests, type check, production build, existing security scan) and return the short READY / NOT READY report.
+
+## Note
+
+The integration token currently lacks conversations read access, which is why I asked you for the contact record instead of reading the message log myself. Not required to close Gate 1.
