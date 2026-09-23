@@ -3,32 +3,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { saveCampaignOverride, resetCampaignOverride } from "@/lib/campaigns.functions";
+import { useT } from "@/lib/i18n";
 import { X } from "lucide-react";
 
 export type OverrideRow = {
-  campaign_id: string;
-  subject: string | null;
-  intro: string | null;
-  closing: string | null;
-  cta_label: string | null;
-  cta_url: string | null;
-};
-
-export function CampaignOverrideDialog({
-  orgId,
-  campaignId,
-  campaignName,
-  defaults,
-  current,
-  onClose,
-}: {
-  orgId: string;
-  campaignId: string;
-  campaignName: string;
-  defaults: { cta_label: string | null; cta_url: string | null };
-  current: OverrideRow | null;
+...
   onClose: () => void;
 }) {
+  const t = useT();
   const qc = useQueryClient();
   const save = useServerFn(saveCampaignOverride);
   const reset = useServerFn(resetCampaignOverride);
@@ -60,7 +42,7 @@ export function CampaignOverrideDialog({
         },
       }),
     onSuccess: () => {
-      toast.success("Wording saved");
+      toast.success(t("biz.override.saved"));
       invalidate();
       onClose();
     },
@@ -70,7 +52,7 @@ export function CampaignOverrideDialog({
   const resetMut = useMutation({
     mutationFn: () => reset({ data: { orgId, campaignId } }),
     onSuccess: () => {
-      toast.success("Reset to SuCasa defaults");
+      toast.success(t("biz.override.reset_done"));
       invalidate();
       onClose();
     },
@@ -85,13 +67,12 @@ export function CampaignOverrideDialog({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold">Edit wording · {campaignName}</h3>
+            <h3 className="text-base font-semibold">{t("biz.override.title", { name: campaignName })}</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Leave a field blank to keep the SuCasa-written version. The personalized data paragraph is
-              always generated fresh for each client.
+              {t("biz.override.help")}
             </p>
           </div>
-          <button onClick={onClose} className="rounded-full p-1 hover:bg-muted" aria-label="Close">
+          <button onClick={onClose} className="rounded-full p-1 hover:bg-muted" aria-label={t("biz.common.close")}>
             <X className="h-4 w-4" />
           </button>
         </div>
