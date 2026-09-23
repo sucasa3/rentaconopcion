@@ -83,16 +83,28 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // Idempotency key: the provider message id when the event carries one
-        // (inbound-reply events). Message-less DND-change events are keyed by
-        // contact id + the DND state itself — re-delivering the same state is a
-        // duplicate; a state flip is a new event. Correlation is by the
-        // provider contact id, never a readable phone number.
+        // The live workflow sends phone, contactId and message only — no
+        // messageId and no dnd field. So:
+        //   * an inbound reply is identified by its message body;
+        //   * a message-less execution (the DND trigger) is resolved by asking
+        //     the provider for the contact's current SMS do-not-disturb state.
+        const word = keyword(parsed.message);
+        let providerDnd: boolean | null = parsed.dnd ?? null;
+        if (!word && providerDnd === null && parsed.contactId) {
+          const { lookupContactDndById } = await import("@/lib/ghl.server");
+          providerDnd = await lookupContactDndById(parsed.contactId);
+        }
+
+        // Idempotency: the provider message id when present, otherwise the
+        // keyword or resolved DND state plus the provider contact id. Correlation
+        // is by contact id, never a readable phone number.
         const dedupeKey =
           parsed.messageId ??
-          (parsed.dnd !== undefined
-            ? `ghl-dnd:${parsed.contactId ?? "unknown"}:${parsed.dnd}`
-            : null);
+          (word
+            ? `ghl-kw:${parsed.contactId ?? "unknown"}:${word}`
+            : providerDnd !== null
+              ? `ghl-dnd:${parsed.contactId ?? "unknown"}:${providerDnd}`
+              : null);
         if (dedupeKey) {
           const { data: seen } = await supabaseAdmin
             .from("communication_preference_events")
@@ -102,11 +114,11 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
           if ((seen ?? []).length) return Response.json({ ok: true, duplicate: true });
         }
 
-        // STOP: either the contact's DND state went on, or the inbound reply
-        // was a stop keyword. A bare "DND off" state event is NOT consent — it
-        // only confirms the provider state; re-consent requires the actual
+        // STOP: either the provider now holds the contact on do-not-disturb, or
+        // the inbound reply was a stop keyword. A "DND off" state is NOT consent
+        // — it only confirms the provider state; re-consent requires the actual
         // inbound START message (keyword path below).
-        const intent = parsed.dnd === true ? "stop" : keyword(parsed.message);
+        const intent = providerDnd === true ? "stop" : word;
         if (!intent) return Response.json({ ok: true, applied: "none" });
 
         const policy = await import("@/lib/messaging-policy.server");
