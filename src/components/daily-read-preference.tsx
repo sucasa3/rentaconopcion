@@ -5,6 +5,7 @@ import { Mail } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { getDailyReadPreference, setDailyReadPreference } from "@/lib/daily-read.functions";
 import { DEFAULT_DAILY_READ_TIMEZONE } from "@/lib/daily-read";
+import { useT } from "@/lib/i18n";
 
 /**
  * One switch: the morning Daily Read email. Nothing here touches homeowner

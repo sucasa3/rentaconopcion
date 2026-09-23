@@ -119,7 +119,7 @@ export function BusinessShell({
             className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <Home className="h-5 w-5" />
-            My home
+            {t("biz.my_home")}
           </Link>
           <div className="mt-1 border-t border-border/60 pt-2">
             <AccountMenu role={kind} showName className="w-full" />
