@@ -76,7 +76,7 @@ export function GuidedOnboarding({
         }}
         className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground hover:bg-secondary"
       >
-        <Compass className="h-3.5 w-3.5 text-primary" /> {triggerLabel}
+        <Compass className="h-3.5 w-3.5 text-primary" /> {triggerLabel ?? t("biz.ob.trigger")}
       </button>
 
       {open && (
@@ -98,7 +98,7 @@ export function GuidedOnboarding({
               </div>
               <button
                 onClick={dismiss}
-                aria-label="Close setup guide"
+                aria-label={t("biz.ob.close")}
                 className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function GuidedOnboarding({
                 ))}
               </div>
               <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-primary">
-                Step {step + 1} of 3
+                {t("biz.ob.step", { n: step + 1 })}
               </p>
 
               {step === 0 && (
@@ -156,7 +156,7 @@ export function GuidedOnboarding({
                             <p className="text-sm font-semibold">{o.label}</p>
                             {o.key === suggested && (
                               <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                                Suggested
+                                {t("biz.ob.suggested")}
                               </span>
                             )}
                           </div>
@@ -174,7 +174,7 @@ export function GuidedOnboarding({
                   <p className="mt-1 text-sm text-muted-foreground">{done.body}</p>
                   <div className="mt-4 rounded-2xl border border-border bg-secondary/50 p-4">
                     <p className="text-xs uppercase tracking-wider text-muted-foreground">
-                      Your starting view
+                      {t("biz.ob.starting_view")}
                     </p>
                     <p className="mt-1 text-sm font-semibold">{focusLabel}</p>
                   </div>
@@ -188,10 +188,10 @@ export function GuidedOnboarding({
                 className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
               >
                 {step === 0 ? (
-                  "Skip for now"
+                  t("biz.ob.skip")
                 ) : (
                   <>
-                    <ArrowLeft className="h-3.5 w-3.5" /> Back
+                    <ArrowLeft className="h-3.5 w-3.5" /> {t("biz.ob.back")}
                   </>
                 )}
               </button>
@@ -199,7 +199,7 @@ export function GuidedOnboarding({
                 onClick={() => (step === 2 ? finish() : setStep(step + 1))}
                 className="inline-flex items-center gap-1.5 rounded-full gradient-brand px-4 py-2 text-sm font-semibold text-white"
               >
-                {step === 2 ? "Start" : "Continue"} <ArrowRight className="h-3.5 w-3.5" />
+                {step === 2 ? t("biz.ob.start") : t("biz.ob.continue")} <ArrowRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
