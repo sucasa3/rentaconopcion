@@ -398,16 +398,45 @@ function BestMove({
           </IntelligenceSurface>
         )}
 
+        {convo && (
+          <div className="space-y-1 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs text-muted-foreground">
+            {convo.reason && (
+              <p>
+                <span className="font-semibold text-foreground">{t("biz.pc.why_now")}:</span>{" "}
+                {convo.reason}
+              </p>
+            )}
+            <p>
+              <span className="font-semibold text-foreground">{t("biz.pc.last_conv")}:</span>{" "}
+              {convo.summary}
+            </p>
+            {convo.opener && (
+              <p>
+                <span className="font-semibold text-foreground">{t("biz.pc.suggested_opener")}:</span>{" "}
+                &ldquo;{convo.opener}&rdquo;
+              </p>
+            )}
+          </div>
+        )}
+
         <ChannelActions
           options={item.channels ?? []}
           phone={item.phone}
           email={item.email}
-          onAct={(channel) =>
+          onAct={(channel) => {
+            if (channel === "call")
+              markCallInitiated({
+                clientId: item.clientId,
+                name: item.name,
+                audience: "agent",
+                opportunityId: item.opportunityId,
+              });
             onOutcome(
               "attempted",
               channel === "call" ? "Tapped call" : channel === "text" ? "Tapped text" : "Tapped email",
-            )
-          }
+            );
+          }}
+
           emailHref={`mailto:${item.email ?? ""}?subject=${encodeURIComponent(
             item.draftSubject ?? "",
           )}&body=${encodeURIComponent(item.draftBody ?? "")}`}
