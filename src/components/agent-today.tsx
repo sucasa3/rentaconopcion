@@ -428,7 +428,7 @@ function BestMove({
             aria-expanded={showOutcomes}
             className="px-0 text-text-secondary hover:bg-transparent hover:text-primary"
           >
-            Log outcome
+            {t("biz.at.log_outcome")}
             {pending ? <Loader2 className="animate-spin" /> : <ChevronDown className={cn("transition-transform", showOutcomes && "rotate-180")} />}
           </Button>
           {showOutcomes && (
