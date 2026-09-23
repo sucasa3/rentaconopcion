@@ -5,6 +5,7 @@ import { Mail } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { getDailyReadPreference, setDailyReadPreference } from "@/lib/daily-read.functions";
 import { DEFAULT_DAILY_READ_TIMEZONE } from "@/lib/daily-read";
+import { useT } from "@/lib/i18n";
 
 /**
  * One switch: the morning Daily Read email. Nothing here touches homeowner
@@ -19,6 +20,7 @@ export function DailyReadPreference({
 }) {
   const getPref = useServerFn(getDailyReadPreference);
   const setPref = useServerFn(setDailyReadPreference);
+  const t = useT();
   const qc = useQueryClient();
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
 
@@ -57,15 +59,14 @@ export function DailyReadPreference({
           <Mail className="h-4 w-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-semibold text-foreground">Daily Read email</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("biz.daily_read.title")}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            A morning email when someone in your book deserves attention — and nothing
-            on the days no one does.
+            {t("biz.daily_read.desc")}
           </p>
         </div>
         <Switch
           checked={enabled}
-          aria-label="Daily Read email"
+          aria-label={t("biz.daily_read.title")}
           onCheckedChange={(next) => {
             setOptimistic(next);
             mutation.mutate(next);

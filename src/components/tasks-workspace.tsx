@@ -6,6 +6,7 @@ import { CheckCircle2, Circle, ChevronRight, ListChecks, PartyPopper } from "luc
 import { toast } from "sonner";
 import { getMyBusinessTasks, setBusinessTaskDone } from "@/lib/tasks.functions";
 import { SectionHeader, EmptyState, StatusPill } from "@/components/ui-kit";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 type Task = {
@@ -32,6 +33,7 @@ function TaskCard({
   onToggle: (t: Task) => void;
   busy: boolean;
 }) {
+  const t = useT();
   return (
     <div
       className={cn(
@@ -44,7 +46,7 @@ function TaskCard({
           type="button"
           disabled={busy}
           onClick={() => onToggle(task)}
-          aria-label={task.done ? "Reopen task" : "Mark task done"}
+          aria-label={task.done ? t("biz.tasks.reopen") : t("biz.tasks.mark_done")}
           className="mt-0.5 shrink-0 text-muted-foreground transition hover:text-growth disabled:opacity-50"
         >
           {task.done ? (
@@ -64,7 +66,7 @@ function TaskCard({
               {task.title}
             </p>
             {!task.done && task.urgency === "now" && (
-              <StatusPill tone="attention">Do now</StatusPill>
+              <StatusPill tone="attention">{t("biz.tasks.do_now")}</StatusPill>
             )}
           </div>
           {task.who && <p className="mt-0.5 text-sm text-muted-foreground">{task.who}</p>}
@@ -87,6 +89,7 @@ function TaskCard({
 
 /** The shared "what's on my plate" queue for agents and lenders. */
 export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
+  const t = useT();
   const listFn = useServerFn(getMyBusinessTasks);
   const doneFn = useServerFn(setBusinessTaskDone);
   const qc = useQueryClient();
@@ -109,38 +112,38 @@ export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
     [tasks],
   );
 
-  const toggle = async (t: Task) => {
-    setBusyKey(t.key);
+  const toggle = async (task: Task) => {
+    setBusyKey(task.key);
     try {
       const res = await doneFn({
-        data: { orgId: t.orgId, taskKey: t.key, done: !t.done },
+        data: { orgId: task.orgId, taskKey: task.key, done: !task.done },
       });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      if (!t.done) toast.success("Nice — that's off your plate.");
+      if (!task.done) toast.success(t("biz.tasks.done_toast"));
       await qc.invalidateQueries({ queryKey: ["business-tasks", kind] });
     } catch {
-      toast.error("Could not update that task");
+      toast.error(t("biz.tasks.update_fail"));
     } finally {
       setBusyKey(null);
     }
   };
 
   if (isLoading) {
-    return <div className="py-4 text-sm text-muted-foreground">Loading…</div>;
+    return <div className="py-4 text-sm text-muted-foreground">{t("biz.tasks.loading")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <section className="space-y-3">
-        <SectionHeader title="Do now" />
+        <SectionHeader title={t("biz.tasks.do_now")} />
         {now.length === 0 ? (
           <EmptyState
             icon={<PartyPopper className="mx-auto h-7 w-7" />}
-            title="You're all caught up"
-            hint="New tasks appear the moment something changes in your book."
+            title={t("biz.tasks.caught_up")}
+            hint={t("biz.tasks.caught_hint")}
           />
         ) : (
           <div className="space-y-3">
@@ -153,7 +156,7 @@ export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
 
       {later.length > 0 && (
         <section className="space-y-3">
-          <SectionHeader title="When you have time" />
+          <SectionHeader title={t("biz.tasks.later")} />
           <div className="space-y-3">
             {later.map((t) => (
               <TaskCard key={t.key} task={t} onToggle={toggle} busy={busyKey === t.key} />
@@ -170,7 +173,7 @@ export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
             className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground"
           >
             <ListChecks className="h-4 w-4" />
-            {showDone ? "Hide" : "Show"} completed ({done.length})
+            {t(showDone ? "biz.tasks.hide_completed" : "biz.tasks.show_completed", { count: done.length })}
           </button>
           {showDone && (
             <div className="space-y-3">
@@ -187,12 +190,13 @@ export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
 
 /** Full-page wrapper kept for the standalone tasks route. */
 export function TasksWorkspace({ kind }: { kind: "agent" | "lender" }) {
+  const t = useT();
   return (
     <div className="space-y-6 px-4 py-6 sm:px-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Tasks</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">{t("biz.tasks.eyebrow")}</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-          What needs you today
+          {t("biz.tasks.title")}
         </h1>
       </header>
       <TaskQueue kind={kind} />

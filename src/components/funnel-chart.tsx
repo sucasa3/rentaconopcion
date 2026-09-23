@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Funnel, FunnelChart, LabelList, ResponsiveContainer, Tooltip, Cell } from "recharts";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface FunnelRow {
@@ -14,16 +15,27 @@ interface FunnelRow {
   closed_value_cents: number;
 }
 
-const stages = [
-  { key: "homeowners", label: "Homeowners", color: "var(--primary)" },
-  { key: "opportunities", label: "Opportunities", color: "var(--info)" },
-  { key: "contacted", label: "Contacted", color: "var(--attention)" },
-  { key: "engaged", label: "Engaged", color: "var(--growth)" },
-  { key: "conversations", label: "Conversations", color: "var(--growth)" },
-  { key: "appointments", label: "Appointments", color: "var(--growth)" },
-  { key: "applications", label: "Applications", color: "var(--growth)" },
-  { key: "closed", label: "Closed", color: "var(--growth)" },
+const STAGE_KEYS = [
+  "homeowners",
+  "opportunities",
+  "contacted",
+  "engaged",
+  "conversations",
+  "appointments",
+  "applications",
+  "closed",
 ] as const;
+
+const STAGE_COLORS: Record<(typeof STAGE_KEYS)[number], string> = {
+  homeowners: "var(--primary)",
+  opportunities: "var(--info)",
+  contacted: "var(--attention)",
+  engaged: "var(--growth)",
+  conversations: "var(--growth)",
+  appointments: "var(--growth)",
+  applications: "var(--growth)",
+  closed: "var(--growth)",
+};
 
 function formatCents(cents: number) {
   return `$${Math.round(cents / 100).toLocaleString()}`;
@@ -60,16 +72,23 @@ export function FunnelView({
   costCents?: number;
   days?: number;
 }) {
+  const t = useT();
   if (!data) {
     return (
       <div className="rounded-3xl border border-dashed border-border p-8 text-center">
-        <p className="font-semibold">No funnel data yet</p>
+        <p className="font-semibold">{t("biz.funnel.empty_title")}</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Activity will appear as soon as outreach and outcomes are logged.
+          {t("biz.funnel.empty_desc")}
         </p>
       </div>
     );
   }
+
+  const stages = STAGE_KEYS.map((key) => ({
+    key,
+    label: t(`biz.funnel.stage.${key}` as const),
+    color: STAGE_COLORS[key],
+  }));
 
   const chartData = stages.map((s) => ({
     name: s.label,
@@ -83,18 +102,18 @@ export function FunnelView({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricCard label="Closed value" value={formatCents(closedValue)} tone="growth" />
+        <MetricCard label={t("biz.funnel.closed_value")} value={formatCents(closedValue)} tone="growth" />
         <MetricCard
-          label="SuCasa cost"
+          label={t("biz.funnel.sucasa_cost")}
           value={formatCents(costCents)}
           tone={costCents > 0 ? "attention" : "default"}
         />
         <MetricCard label="ROI" value={`${roi}%`} tone={roi >= 100 ? "growth" : "default"} />
-        <MetricCard label="Closed" value={data.closed} tone="default" />
+        <MetricCard label={t("biz.funnel.stage.closed")} value={data.closed} tone="default" />
       </div>
 
       <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
-        <p className="mb-2 text-sm font-medium">Pipeline — last {days} days</p>
+        <p className="mb-2 text-sm font-medium">{t("biz.funnel.pipeline_title", { days })}</p>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <FunnelChart>
@@ -128,7 +147,7 @@ export function FunnelView({
                 {s.label}
               </p>
               <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
-              {rate > 0 && <p className="text-xs text-muted-foreground">{rate}% of previous</p>}
+              {rate > 0 && <p className="text-xs text-muted-foreground">{t("biz.funnel.of_previous", { rate })}</p>}
             </div>
           );
         })}

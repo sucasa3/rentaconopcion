@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 
@@ -25,37 +26,42 @@ interface NavItem {
   icon: ReactNode;
 }
 
-function navItems(kind: BusinessKind, bookId: string | null, isManager: boolean): NavItem[] {
+function navItems(
+  kind: BusinessKind,
+  bookId: string | null,
+  isManager: boolean,
+  t: ReturnType<typeof useT>,
+): NavItem[] {
   const base = kind === "agent" ? "/agent" : "/lender";
   const items: NavItem[] = [
-    { label: "Today", to: base, icon: <LayoutGrid className="h-5 w-5" /> },
+    { label: t("biz.nav.today"), to: base, icon: <LayoutGrid className="h-5 w-5" /> },
   ];
   if (bookId) {
     items.push({
-      label: "Homeowners",
+      label: t("biz.nav.homeowners"),
       to: `${base}/portfolio/$id`,
       params: { id: bookId },
       icon: <Users className="h-5 w-5" />,
     });
   }
   items.push(
-    { label: "Marketing", to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
-    { label: "Network", to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
+    { label: t("biz.nav.marketing"), to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
+    { label: t("biz.nav.network"), to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
   );
   if (isManager) {
     items.push({
-      label: "Pipeline",
+      label: t("biz.nav.pipeline"),
       to: `${base}/funnel`,
       icon: <BarChart3 className="h-5 w-5" />,
     });
     if (kind === "lender") {
       items.push({
-        label: "Capacity",
+        label: t("biz.nav.capacity"),
         to: `${base}/capacity`,
         icon: <Gauge className="h-5 w-5" />,
       });
       items.push({
-        label: "Billing",
+        label: t("biz.nav.billing"),
         to: `${base}/billing`,
         icon: <CreditCard className="h-5 w-5" />,
       });
@@ -81,7 +87,8 @@ export function BusinessShell({
   isManager?: boolean;
   children: ReactNode;
 }) {
-  const items = navItems(kind, bookId, isManager);
+  const t = useT();
+  const items = navItems(kind, bookId, isManager, t);
 
 
 
@@ -112,7 +119,7 @@ export function BusinessShell({
             className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <Home className="h-5 w-5" />
-            My home
+            {t("biz.my_home")}
           </Link>
           <div className="mt-1 border-t border-border/60 pt-2">
             <AccountMenu role={kind} showName className="w-full" />

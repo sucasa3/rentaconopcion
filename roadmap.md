@@ -358,3 +358,9 @@
 - [ ] Review five security findings without changing them
 - [ ] Final publish recommendation (do not publish)
 - [ ] Stage 3 closure: (1) receiver tolerates event-specific GHL payloads (DND event without messageId; correlate by contactId; START evidence from inbound message event), (2) hand user GHL workflow config, (3) run live STOP/START test on 678-485-3054, (4) tests + typecheck + build + security scan, (5) short READY/NOT READY report. No publish without approval.
+
+## Lean Agent + Lender Spanish translation (approved 2026-09-23)
+- [ ] Batch 1: shared shell, Agent/Lender Today, primary homeowner/client detail, My Book
+- [ ] Batch 2: portfolio, tasks/follow-up, campaigns, funnel, Discovery, import/detail
+- [ ] Batch 3: remaining network, home teams, reveal/add-client, capacity, billing; tests, typecheck, build, preview smoke
+- [ ] Keep generated briefings/conversation points unchanged unless already bilingual

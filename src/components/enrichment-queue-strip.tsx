@@ -8,6 +8,7 @@ import {
   queuePortfolioEnrichment,
   runEnrichmentBatch,
 } from "@/lib/enrichment.functions";
+import { useT } from "@/lib/i18n";
 
 /**
  * Live status of the automatic records engine for one book.
@@ -17,6 +18,7 @@ import {
  * re-queue their own book.
  */
 export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
+  const t = useT();
   const coverageFn = useServerFn(getEnrichmentCoverage);
   const queueFn = useServerFn(queuePortfolioEnrichment);
   const runFn = useServerFn(runEnrichmentBatch);
@@ -62,7 +64,7 @@ export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
     setBusy("queue");
     try {
       const res = await queueFn({ data: { portfolioId, retryFailed: true } });
-      toast.success(`${res.queued} ${res.queued === 1 ? "home" : "homes"} queued for a records pass`);
+      toast.success(t(res.queued === 1 ? "biz.enrich.queued_one" : "biz.enrich.queued_many", { count: res.queued }));
       await refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -76,12 +78,12 @@ export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
     try {
       const res = await runFn({ data: { portfolioId, batchSize: 25 } });
       if (res.paused === "cache_only" || res.paused === "background_cap") {
-        toast.info("Background pulls are paused for this month — cached records are still served.");
+        toast.info(t("biz.enrich.paused"));
       } else if (res.paused === "empty_queue") {
-        toast.info("Nothing waiting in the queue.");
+        toast.info(t("biz.enrich.empty_queue"));
       } else {
         toast.success(
-          `${res.completed} updated (${res.cachedOnly} already on file)${res.needsReview ? ` · ${res.needsReview} need review` : ""}`,
+          `${t("biz.enrich.updated", { completed: res.completed, cached: res.cachedOnly })}${res.needsReview ? t("biz.enrich.need_review_suffix", { count: res.needsReview }) : ""}`,
         );
       }
       await refresh();
@@ -99,19 +101,18 @@ export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
           <p className="flex items-center gap-1.5 text-xs font-semibold">
             {data?.working ? (
               <>
-                <Loader2 className="h-3 w-3 animate-spin text-primary" /> Filling in property
-                records…
+                <Loader2 className="h-3 w-3 animate-spin text-primary" /> {t("biz.enrich.working")}
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-3 w-3 text-growth" /> Property records up to date
+                <CheckCircle2 className="h-3 w-3 text-growth" /> {t("biz.enrich.uptodate")}
               </>
             )}
           </p>
           <p className="text-[11px] text-muted-foreground">
-            {covered}/{total} homes have records ({pct}%)
-            {queued ? ` · ${queued} in progress` : ""}
-            {needsReview ? ` · ${needsReview} need an address fix` : ""}
+            {t("biz.enrich.progress", { covered, total, pct })}
+            {queued ? ` · ${t("biz.enrich.in_progress", { count: queued })}` : ""}
+            {needsReview ? ` · ${t("biz.enrich.need_fix", { count: needsReview })}` : ""}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -121,7 +122,7 @@ export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
             className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-[11px] font-medium disabled:opacity-50"
           >
             {busy === "queue" ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-            Retry skipped
+            {t("biz.enrich.retry")}
           </button>
           <button
             onClick={handleRun}
@@ -133,7 +134,7 @@ export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
             ) : (
               <PlayCircle className="h-3 w-3" />
             )}
-            Speed up
+            {t("biz.enrich.speedup")}
           </button>
         </div>
       </div>
@@ -149,8 +150,8 @@ export function EnrichmentQueueStrip({ portfolioId }: { portfolioId: string }) {
         <ul className="mt-2 space-y-1 border-t border-border pt-2">
           {data.reviewList.slice(0, 4).map((r) => (
             <li key={r.id} className="text-[11px] text-muted-foreground">
-              <span className="font-medium text-foreground">{r.name ?? "Client"}</span>{" "}
-              — {r.reason ?? "Needs review"}
+              <span className="font-medium text-foreground">{r.name ?? t("biz.enrich.client")}</span>{" "}
+              — {r.reason ?? t("biz.enrich.needs_review")}
             </li>
           ))}
         </ul>

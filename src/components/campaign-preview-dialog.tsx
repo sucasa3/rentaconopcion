@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { listOrgCampaignClients, previewCampaignForClient } from "@/lib/campaigns.functions";
+import { useT } from "@/lib/i18n";
 import { X } from "lucide-react";
 
 export function CampaignPreviewDialog({
@@ -15,6 +16,7 @@ export function CampaignPreviewDialog({
   campaignName: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const clientsFn = useServerFn(listOrgCampaignClients);
   const previewFn = useServerFn(previewCampaignForClient);
   const [clientId, setClientId] = useState("");
@@ -40,12 +42,12 @@ export function CampaignPreviewDialog({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="text-base font-semibold">Preview · {campaignName}</h3>
+            <h3 className="text-base font-semibold">{t("biz.preview.title", { name: campaignName })}</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Exactly what this client would receive. Nothing is sent.
+              {t("biz.preview.help")}
             </p>
           </div>
-          <button onClick={onClose} className="rounded-full p-1 hover:bg-muted" aria-label="Close">
+          <button onClick={onClose} className="rounded-full p-1 hover:bg-muted" aria-label={t("biz.common.close")}>
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -62,27 +64,27 @@ export function CampaignPreviewDialog({
           ))}
         </select>
 
-        {isFetching && <p className="mt-4 text-xs text-muted-foreground">Building preview…</p>}
+        {isFetching && <p className="mt-4 text-xs text-muted-foreground">{t("biz.preview.building")}</p>}
 
         {preview && !isFetching && (
           <div className="mt-4 rounded-2xl border border-border bg-background p-5">
             <div className="border-b border-border pb-3 text-xs text-muted-foreground">
               <p>
-                <span className="font-medium text-foreground">From:</span>{" "}
+                <span className="font-medium text-foreground">{t("biz.common.from")}</span>{" "}
                 {preview.branding.senderName || preview.branding.orgName}
                 {preview.branding.replyToEmail ? ` <${preview.branding.replyToEmail}>` : ""}
               </p>
               <p>
-                <span className="font-medium text-foreground">To:</span>{" "}
+                <span className="font-medium text-foreground">{t("biz.common.to")}</span>{" "}
                 {preview.recipient.name ?? preview.recipient.email ?? "—"}
               </p>
               <p>
-                <span className="font-medium text-foreground">Subject:</span> {preview.subject}
+                <span className="font-medium text-foreground">{t("biz.common.subject")}</span> {preview.subject}
               </p>
             </div>
 
             {preview.branding.logoUrl && (
-              <img src={preview.branding.logoUrl} alt="Partner logo" className="mt-4 h-9 w-auto" />
+              <img src={preview.branding.logoUrl} alt={t("biz.preview.partner_logo")} className="mt-4 h-9 w-auto" />
             )}
 
             <div className="mt-4 space-y-3 text-sm leading-relaxed">
@@ -108,7 +110,7 @@ export function CampaignPreviewDialog({
             </div>
 
             <p className="mt-4 text-[11px] text-muted-foreground">
-              {preview.due ? "Due to send on the next daily pass" : `Not due right now — ${preview.dueReason}`}
+              {preview.due ? t("biz.preview.due") : t("biz.preview.not_due", { reason: preview.dueReason ?? "" })}
             </p>
           </div>
         )}
