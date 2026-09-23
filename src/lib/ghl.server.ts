@@ -365,7 +365,7 @@ export async function lookupContactDnd(phone: string): Promise<boolean> {
   try {
     const locationId = env("GHL_LOCATION_ID");
     const r = await ghlFetch(
-      `/contacts/lookup?locationId=${encodeURIComponent(locationId)}&phone=${encodeURIComponent(phone)}`,
+      `/contacts/?locationId=${encodeURIComponent(locationId)}&query=${encodeURIComponent(phone)}`,
     );
     const contacts: any[] = r?.contacts ?? (r?.contact ? [r.contact] : []);
     return contacts.some((c) => {
