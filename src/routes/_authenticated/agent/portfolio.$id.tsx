@@ -117,12 +117,13 @@ const READINESS_META: Record<string, { labelKey: TranslationKey; tone: string }>
 
 /** Tap-to-open explainer for the three listing-readiness bands. */
 function ReadinessInfo() {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="What does readiness mean?"
+          aria-label={t("biz.apd.rd_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -134,14 +135,9 @@ function ReadinessInfo() {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Listing readiness
+          {t("biz.apd.rd_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          A 0–100 score from six pass/fail checks: equity clears selling costs,
-          property records on file, home care record (documents and maintenance
-          logged), past the 2-year capital-gains basis window, not represented
-          elsewhere, and reachable.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.rd_body")}</p>
 
         <ul className="mt-3 space-y-1.5">
           {(["list-ready", "prep-needed", "not-ready"] as const).map((k) => (
@@ -156,13 +152,9 @@ function ReadinessInfo() {
                 }`}
               />
               <span>
-                <span className="font-medium">{READINESS_META[k].label}</span>
+                <span className="font-medium">{t(READINESS_META[k].labelKey)}</span>
                 <span className="block text-muted-foreground">
-                  {k === "list-ready"
-                    ? "Score 84+. All checks pass — could take the listing today."
-                    : k === "prep-needed"
-                      ? "Score 50–83. Real potential, but a few prep steps remain before it's listable."
-                      : "Score < 50. Too many blockers — keep in value-only nurture."}
+                  {t(`biz.apd.rd_d.${k}` as TranslationKey)}
                 </span>
               </span>
             </li>
@@ -175,12 +167,13 @@ function ReadinessInfo() {
 
 /** Tap-to-open explainer for the four move-intent bands. */
 function IntentInfo() {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="What does intent mean?"
+          aria-label={t("biz.apd.in_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -192,19 +185,10 @@ function IntentInfo() {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Move intent
+          {t("biz.apd.in_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          A 0–100 score with two halves. Property records: time in the home,
-          equity, recent permits, tax pressure, absentee ownership, outgrown
-          space, expired or withdrawn listings. Behavior: repeat home-value and
-          equity checks, "thinking of selling" submissions, and clustered
-          dashboard activity in the last few weeks.
-        </p>
-        <p className="mt-2 text-muted-foreground">
-          High intent always requires real recent behavior — property signals
-          alone can reach Hot, never High.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.in_body")}</p>
+        <p className="mt-2 text-muted-foreground">{t("biz.apd.in_note")}</p>
         <ul className="mt-3 space-y-1.5">
           {(["high", "hot", "warm", "nurture", "hold"] as const).map((k) => (
             <li key={k} className="flex items-start gap-2">
@@ -222,17 +206,9 @@ function IntentInfo() {
                 }`}
               />
               <span>
-                <span className="font-medium">{BAND_META[k].label}</span>
+                <span className="font-medium">{t(BAND_META[k].labelKey)}</span>
                 <span className="block text-muted-foreground">
-                  {k === "high"
-                    ? "Score 75+ with recent homeowner activity. Actively looking — call today."
-                    : k === "hot"
-                    ? "Score 60+. Clear, time-sensitive move signal — call today."
-                    : k === "warm"
-                      ? "Score 38–59. Several solid signals. Worth a real conversation."
-                      : k === "nurture"
-                        ? "Score 18–37. Mild signals. Stay in touch with value content."
-                        : "Score under 18. Little movement signal, or represented elsewhere."}
+                  {t(`biz.apd.bd_d.${k}` as TranslationKey)}
                 </span>
               </span>
             </li>
@@ -245,12 +221,13 @@ function IntentInfo() {
 
 /** Tap-to-open explainer for the modeled net proceeds figure. */
 function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="How are net proceeds calculated?"
+          aria-label={t("biz.apd.np_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -262,32 +239,28 @@ function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Projected net proceeds
+          {t("biz.apd.np_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          What the homeowner would likely walk away with at closing, after
-          agent compensation and closing costs.
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.np_body")}</p>
         <div className="mt-3 rounded-lg bg-secondary/60 p-2 font-mono text-[11px] leading-relaxed">
-          Est. value
-          <br />− {sellCostPct}% cost to sell
-          <br />− mortgage balance
+          {t("biz.apd.np_f_value")}
           <br />
-          <span className="font-semibold">= net proceeds</span>
+          {t("biz.apd.np_f_cost", { pct: sellCostPct })}
+          <br />
+          {t("biz.apd.np_f_mortgage")}
+          <br />
+          <span className="font-semibold">{t("biz.apd.np_f_net")}</span>
         </div>
         <ul className="mt-3 space-y-1.5 text-muted-foreground">
           <li>
-            <span className="font-medium text-foreground">Cost to sell</span> covers
-            agent compensation on both sides, title and escrow, transfer taxes, and
-            typical seller concessions. Adjust the {sellCostPct}% assumption at the
-            top of the page.
+            <span className="font-medium text-foreground">{t("biz.apd.np_li1_t")}</span>{" "}
+            {t("biz.apd.np_li1", { pct: sellCostPct })}
           </li>
           <li>
-            <span className="font-medium text-foreground">Est. value</span> and the
-            mortgage balance are modeled from property records — not an appraisal or
-            a payoff statement.
+            <span className="font-medium text-foreground">{t("biz.apd.np_li2_t")}</span>{" "}
+            {t("biz.apd.np_li2")}
           </li>
-          <li>A negative figure means the sale would not clear costs and payoff.</li>
+          <li>{t("biz.apd.np_li3")}</li>
         </ul>
       </PopoverContent>
     </Popover>
@@ -296,12 +269,13 @@ function NetProceedsInfo({ sellCostPct }: { sellCostPct: number }) {
 
 /** Tap-to-open explainer for the permit dollar value shown on a homeowner record. */
 function PermitsInfo() {
+  const t = useT();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="What does the permit value mean?"
+          aria-label={t("biz.apd.pm_aria")}
           className="rounded-full p-0.5 text-muted-foreground transition hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <Info className="h-3.5 w-3.5" />
@@ -313,14 +287,10 @@ function PermitsInfo() {
         className="w-72 rounded-xl border border-border bg-popover p-4 text-xs shadow-soft"
       >
         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Permitted work on record
+          {t("biz.apd.pm_title")}
         </p>
-        <p className="mt-1 text-muted-foreground">
-          This is the total declared construction cost of building permits pulled at this address. It shows real investment in the home and supports the condition/readiness story.
-        </p>
-        <p className="mt-3 text-muted-foreground">
-          Values are self-reported at filing and often understated. Coverage also varies by county, so $0 or blank can mean "no permits recorded" rather than "no work done."
-        </p>
+        <p className="mt-1 text-muted-foreground">{t("biz.apd.pm_body1")}</p>
+        <p className="mt-3 text-muted-foreground">{t("biz.apd.pm_body2")}</p>
       </PopoverContent>
     </Popover>
   );
