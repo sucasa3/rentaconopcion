@@ -10,7 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 type Result = {
-...
+  id: string;
+  portfolio_id: string;
+  name: string;
+  email: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  rate: number | null;
+  equity_cents: number;
+  savings_per_month: number;
+  intent: "high" | "medium" | "low" | null;
+  last_contact_at: string | null;
 };
 
 function money(cents: number | null | undefined): string {
