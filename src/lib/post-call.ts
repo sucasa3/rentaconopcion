@@ -92,8 +92,10 @@ export function normalizeFollowUpDate(
  * ISO instant for next_step_due_at. One offset correction pass is enough for
  * every real timezone (offsets don't change within a morning).
  */
-export function followUpDateToDueAt(date: string, timezone: string): string {
-  const [y, m, d] = date.split("-").map(Number);
+export function followUpDateToDueAt(date: string, timezone: string): string | null {
+  const normalized = normalizeFollowUpDate(date);
+  if (!normalized) return null;
+  const [y, m, d] = normalized.split("-").map(Number);
   const guess = Date.UTC(y, m - 1, d, 9, 0, 0);
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,

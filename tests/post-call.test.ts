@@ -152,7 +152,7 @@ describe("editedFields", () => {
       ...validInterpretation,
       followUp: { ...validInterpretation.followUp, date: "2027-01-08" },
     });
-    expect(editedFields(validInterpretation, final)).toEqual(["followUp.date"]);
+    expect(editedFields(validInterpretation, final)).toEqual(["follow_up_date"]);
   });
 
   it("detects summary edits and removed key facts", () => {
@@ -161,7 +161,7 @@ describe("editedFields", () => {
       summary: "User rewrote this.",
       keyFacts: [],
     });
-    expect(editedFields(validInterpretation, final).sort()).toEqual(["keyFacts", "summary"]);
+    expect(editedFields(validInterpretation, final).sort()).toEqual(["key_facts", "summary"]);
   });
 });
 
