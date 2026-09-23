@@ -653,6 +653,7 @@ export async function readLenderWorkspace(
       (!prospectingSuppressed(v) || dueNow(v)),
   );
   const daily = queue.slice(0, 10);
+  console.log("[dbg daily0]", daily[0]?.id, JSON.stringify((daily[0] as any)?.lastConversation));
   const followUpsDue = visible.filter(dueNow).length;
 
   return {
