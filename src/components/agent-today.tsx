@@ -341,13 +341,18 @@ function BestMove({
   pending: boolean;
 }) {
   const t = useT();
+  const qc = useQueryClient();
   const [showOutcomes, setShowOutcomes] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
   const supportingFacts = [...(n?.supportingSignals ?? []), ...(n?.secondarySignals ?? [])].slice(0, 3);
   // The canonical narrative decides the opener. A cached draft is only used
   // when the server has already validated it against the same fact snapshot.
   const opener = n?.openerSeed || item.draftBody?.trim() || item.headline;
+  const convo = (item as { lastConversation?: { summary: string; opener?: string | null; reason?: string | null } })
+    .lastConversation;
+
 
   return (
     <section className="animate-in fade-in overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
