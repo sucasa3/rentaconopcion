@@ -98,20 +98,16 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-2">
-        {(["hot", "warm", "nurture"] as const).map((t) => (
-          <div key={t} className="rounded-2xl border border-border-subtle bg-card px-3 py-2.5">
+        {(["hot", "warm", "nurture"] as const).map((temp) => (
+          <div key={temp} className="rounded-2xl border border-border-subtle bg-card px-3 py-2.5">
             <p className="text-xs text-muted-foreground">
               <span
-                className={`mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${TEMPERATURE_META[t].dot}`}
+                className={`mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${TEMPERATURE_META[temp].dot}`}
                 aria-hidden
               />
-              {t === "hot"
-                ? t2("biz.temp.hot")
-                : t === "warm"
-                  ? t2("biz.temp.warm")
-                  : t2("biz.temp.nurture")}
+              {t(`biz.temp.${temp}` as const)}
             </p>
-            <p className="text-xl font-semibold">{data.counts[t]}</p>
+            <p className="text-xl font-semibold">{data.counts[temp]}</p>
           </div>
         ))}
       </div>
@@ -141,7 +137,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${meta.text}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} aria-hidden />
-                      {meta.label}
+                      {t(`biz.temp.${item.temperature}` as const)}
                     </span>
                     <span className="text-xs text-muted-foreground">· {item.categoryLabel}</span>
                     {item.shared && (
@@ -250,7 +246,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                         : "border-border/70 text-muted-foreground"
                     }`}
                   >
-                    {outcomeLabel(s, kind)}
+                    {oLabel(s)}
                   </button>
                 ))}
               </div>
