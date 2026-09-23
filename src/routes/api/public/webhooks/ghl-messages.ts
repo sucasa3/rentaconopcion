@@ -115,7 +115,7 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
           await policy.recordProviderOptOut(supabaseAdmin, {
             phone: parsed.phone ?? null,
             email: parsed.email ?? null,
-            providerMessageId: parsed.messageId ?? null,
+            providerMessageId: parsed.messageId ?? dedupeKey,
             source: parsed.dnd === true ? "provider_dnd" : "provider_stop",
           });
           return Response.json({ ok: true, applied: "stop" });
@@ -135,7 +135,8 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
             consentText: `Inbound SMS keyword "${inbound || "START"}"`,
             providerMessageId:
               parsed.messageId ??
-              `start-${parsed.contactId ?? phoneHmac?.slice(0, 16) ?? "unknown"}-${Date.now()}`,
+              dedupeKey ??
+              `start-${parsed.contactId ?? phoneHmac?.slice(0, 16) ?? "unknown"}`,
             webEventId: parsed.contactId ?? null,
           },
         );
