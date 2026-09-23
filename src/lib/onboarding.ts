@@ -41,110 +41,66 @@ export type RoleFlow = {
   finish: (focusLabel: string) => { title: string; body: string };
 };
 
-export const ROLE_FLOWS: Record<OnboardingRole, RoleFlow> = {
-  homeowner: {
-    title: "Set up your home",
-    intro: {
-      title: "Welcome to SuCasa",
-      body: "Three quick steps and your dashboard is tuned to what your home needs.",
-      bullets: [
-        "We pull public property records so your value and equity stay current",
-        "Your systems and inspection reports drive a Home Score you can improve",
-        "When something is due, we connect you with a vetted local pro",
+type TFn = (key: any, vars?: Record<string, string | number>) => string;
+
+export function getRoleFlows(t: TFn): Record<OnboardingRole, RoleFlow> {
+  return {
+    homeowner: {
+      title: t("biz.ob.home.title"),
+      intro: {
+        title: t("biz.ob.home.intro_title"),
+        body: t("biz.ob.home.intro_body"),
+        bullets: [t("biz.ob.home.b1"), t("biz.ob.home.b2"), t("biz.ob.home.b3")],
+      },
+      focusPrompt: t("biz.ob.home.focus"),
+      options: [
+        { key: "home", label: t("biz.ob.home.opt_home_l"), description: t("biz.ob.home.opt_home_d") },
+        { key: "care", label: t("biz.ob.home.opt_care_l"), description: t("biz.ob.home.opt_care_d") },
+        { key: "documents", label: t("biz.ob.home.opt_docs_l"), description: t("biz.ob.home.opt_docs_d") },
       ],
+      finish: (focusLabel) => ({
+        title: t("biz.ob.finish_title"),
+        body: t("biz.ob.home.finish_body", { focus: focusLabel }),
+      }),
     },
-    focusPrompt: "What matters most to you right now?",
-    options: [
-      {
-        key: "home",
-        label: "Value & equity",
-        description: "Track what your home is worth and what you could unlock.",
+    lender: {
+      title: t("biz.ob.lender.title"),
+      intro: {
+        title: t("biz.ob.lender.intro_title"),
+        body: t("biz.ob.lender.intro_body"),
+        bullets: [t("biz.ob.lender.b1"), t("biz.ob.lender.b2"), t("biz.ob.lender.b3")],
       },
-      {
-        key: "care",
-        label: "Home care",
-        description: "Stay ahead of maintenance and get quotes when something is due.",
-      },
-      {
-        key: "documents",
-        label: "Documents & records",
-        description: "Keep inspections, warranties, and receipts in one place.",
-      },
-    ],
-    finish: (focusLabel) => ({
-      title: "You're all set",
-      body: `Your dashboard will open on ${focusLabel}. You can switch tabs any time, and reopen this guide from the header.`,
-    }),
-  },
-  lender: {
-    title: "Set up your book",
-    intro: {
-      title: "Welcome to SuCasa for lenders",
-      body: "Three quick steps and your workspace opens where your next deal is.",
-      bullets: [
-        "Your client book is scored for refinance and equity opportunity daily",
-        "Campaigns go out under your branding and contact info",
-        "The agent network surfaces de-identified opportunities you can request",
+      focusPrompt: t("biz.ob.lender.focus"),
+      options: [
+        { key: "clients", label: t("biz.ob.lender.opt_clients_l"), description: t("biz.ob.lender.opt_clients_d") },
+        { key: "campaigns", label: t("biz.ob.lender.opt_campaigns_l"), description: t("biz.ob.lender.opt_campaigns_d") },
+        { key: "network", label: t("biz.ob.lender.opt_network_l"), description: t("biz.ob.lender.opt_network_d") },
       ],
+      finish: (focusLabel) => ({
+        title: t("biz.ob.finish_title"),
+        body: t("biz.ob.lender.finish_body", { focus: focusLabel }),
+      }),
     },
-    focusPrompt: "Where do you want to start each day?",
-    options: [
-      {
-        key: "clients",
-        label: "My clients",
-        description: "Ranked refi and equity signals across your own book.",
+    agent: {
+      title: t("biz.ob.agent.title"),
+      intro: {
+        title: t("biz.ob.agent.intro_title"),
+        body: t("biz.ob.agent.intro_body"),
+        bullets: [t("biz.ob.agent.b1"), t("biz.ob.agent.b2"), t("biz.ob.agent.b3")],
       },
-      {
-        key: "campaigns",
-        label: "Campaigns",
-        description: "Review and brand the emails going out to your clients.",
-      },
-      {
-        key: "network",
-        label: "Agent network",
-        description: "Opportunities inside connected agents' books.",
-      },
-    ],
-    finish: (focusLabel) => ({
-      title: "You're all set",
-      body: `Your workspace will open on ${focusLabel}. Switch tabs any time, or reopen this guide from the header.`,
-    }),
-  },
-  agent: {
-    title: "Set up your portfolio",
-    intro: {
-      title: "Welcome to SuCasa for agents",
-      body: "Three quick steps and your client activity feed leads with what to work today.",
-      bullets: [
-        "Every client gets a move intent and listing readiness score",
-        "High intent combines property records with recent homeowner behavior",
-        "Home needs turn into referrals you can hand to trusted pros",
+      focusPrompt: t("biz.ob.agent.focus"),
+      options: [
+        { key: "high_intent", label: t("biz.ob.agent.opt_high_l"), description: t("biz.ob.agent.opt_high_d") },
+        { key: "recommendations", label: t("biz.ob.agent.opt_recs_l"), description: t("biz.ob.agent.opt_recs_d") },
+        { key: "referrals", label: t("biz.ob.agent.opt_refs_l"), description: t("biz.ob.agent.opt_refs_d") },
       ],
+      finish: (focusLabel) => ({
+        title: t("biz.ob.finish_title"),
+        body: t("biz.ob.agent.finish_body", { focus: focusLabel }),
+      }),
     },
-    focusPrompt: "What should your activity feed lead with?",
-    options: [
-      {
-        key: "high_intent",
-        label: "High intent sellers",
-        description: "Clients showing real, recent selling signals.",
-      },
-      {
-        key: "recommendations",
-        label: "Recommendations due",
-        description: "Home needs you can reach out about right now.",
-      },
-      {
-        key: "referrals",
-        label: "Referrals",
-        description: "Projects already in motion with your clients.",
-      },
-    ],
-    finish: (focusLabel) => ({
-      title: "You're all set",
-      body: `Your client activity feed will open on ${focusLabel}. Reopen this guide any time from the header.`,
-    }),
-  },
-};
+  };
+}
 
 /** Pre-selects the option that matches the user's actual recent activity. */
 export function suggestFocus(role: OnboardingRole, s: OnboardingSignals = {}): string {
@@ -165,25 +121,30 @@ export function suggestFocus(role: OnboardingRole, s: OnboardingSignals = {}): s
 }
 
 /** A short, personalized line shown under the focus prompt. */
-export function activityHint(role: OnboardingRole, s: OnboardingSignals = {}): string | null {
+export function activityHint(
+  role: OnboardingRole,
+  s: OnboardingSignals = {},
+  t?: TFn,
+): string | null {
+  if (!t) return null;
   if (role === "homeowner") {
     if ((s.urgentCount ?? 0) > 0)
-      return `We spotted ${s.urgentCount} item${s.urgentCount === 1 ? "" : "s"} in your home that need attention.`;
-    if (s.refiSignal) return "Your mortgage shows a refinance signal worth a look.";
-    if ((s.documentCount ?? 0) === 0) return "You haven't added any documents yet.";
+      return t(s.urgentCount === 1 ? "biz.ob.hint.home_urgent_one" : "biz.ob.hint.home_urgent_many", { count: s.urgentCount! });
+    if (s.refiSignal) return t("biz.ob.hint.home_refi");
+    if ((s.documentCount ?? 0) === 0) return t("biz.ob.hint.home_docs");
     return null;
   }
   if (role === "lender") {
     if ((s.clientCount ?? 0) > 0)
-      return `You have ${s.clientCount} client${s.clientCount === 1 ? "" : "s"} in this book${
-        (s.connectionCount ?? 0) > 0 ? ` and ${s.connectionCount} connected agent(s)` : ""
+      return `${t(s.clientCount === 1 ? "biz.ob.hint.lender_clients_one" : "biz.ob.hint.lender_clients_many", { count: s.clientCount! })}${
+        (s.connectionCount ?? 0) > 0 ? t("biz.ob.hint.lender_agents", { count: s.connectionCount! }) : ""
       }.`;
-    return "Your book is empty — importing clients unlocks everything else.";
+    return t("biz.ob.hint.lender_empty");
   }
   if ((s.highIntentCount ?? 0) > 0)
-    return `${s.highIntentCount} client${s.highIntentCount === 1 ? " is" : "s are"} showing high selling intent right now.`;
+    return t(s.highIntentCount === 1 ? "biz.ob.hint.agent_high_one" : "biz.ob.hint.agent_high_many", { count: s.highIntentCount! });
   if ((s.recommendationsDue ?? 0) > 0)
-    return `${s.recommendationsDue} recommendation${s.recommendationsDue === 1 ? " is" : "s are"} due across your clients.`;
+    return t(s.recommendationsDue === 1 ? "biz.ob.hint.agent_recs_one" : "biz.ob.hint.agent_recs_many", { count: s.recommendationsDue! });
   return null;
 }
 
