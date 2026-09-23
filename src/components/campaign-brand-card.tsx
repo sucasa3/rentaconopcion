@@ -8,7 +8,17 @@ import { useT } from "@/lib/i18n";
 import { Upload } from "lucide-react";
 
 export type OrgBrandRow = {
-...
+  id: string;
+  name: string;
+  org_type: string | null;
+  sender_name: string | null;
+  reply_to_email: string | null;
+  contact_name: string | null;
+  contact_title: string | null;
+  contact_phone: string | null;
+  license_number: string | null;
+  logo_url: string | null;
+  signoff: string | null;
 };
 
 export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
@@ -46,7 +56,7 @@ export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
         },
       }),
     onSuccess: () => {
-      toast.success("Branding saved");
+      toast.success(t("biz.brand.saved"));
       qc.invalidateQueries({ queryKey: ["org-branding", org.id] });
     },
     onError: (e) => toast.error((e as Error).message),
