@@ -1367,6 +1367,9 @@ export const en = {
   "biz.enrich.need_review_suffix": " · {count} need review",
   "biz.enrich.client": "Client",
   "biz.enrich.needs_review": "Needs review",
+  "biz.intent.high": "High",
+  "biz.intent.medium": "Medium",
+  "biz.intent.low": "Low",
 } as const;
 
 export type TranslationKey = keyof typeof en;

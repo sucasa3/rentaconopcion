@@ -171,7 +171,7 @@ export function CopilotSearch({
                             variant={r.intent === "high" ? "default" : "secondary"}
                             className="uppercase"
                           >
-                            {r.intent}
+                            {t(`biz.intent.${r.intent}` as const)}
                           </Badge>
                         )}
                         {cols.includes("rate") && (

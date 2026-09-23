@@ -1398,4 +1398,7 @@ export const es: Dictionary = {
   "biz.enrich.need_review_suffix": " · {count} necesitan revisión",
   "biz.enrich.client": "Cliente",
   "biz.enrich.needs_review": "Necesita revisión",
+  "biz.intent.high": "Alta",
+  "biz.intent.medium": "Media",
+  "biz.intent.low": "Baja",
 };
