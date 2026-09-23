@@ -10,6 +10,8 @@ import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/compone
 import { useIsMobile } from "@/hooks/use-mobile";
 import { LenderBriefDialog } from "@/components/lender-brief";
 import { ComparisonRate } from "@/components/comparison-rate";
+import { useT } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n/en";
 import { cn } from "@/lib/utils";
 
 
@@ -53,25 +55,17 @@ function moneyCompact(cents: number | null | undefined) {
 
 type Segment = "all" | "refi-ready" | "rate-and-term" | "cash-out" | "watchlist";
 
-const SEGMENT_META: Record<Exclude<Segment, "all">, { label: string; tone: string }> = {
-  "refi-ready": { label: "Refi-ready", tone: "bg-primary/10 text-primary border-primary/30" },
-  "rate-and-term": {
-    label: "Rate & term",
-    tone: "bg-growth/10 text-growth border-growth/30",
-  },
-  "cash-out": {
-    label: "Cash-out",
-    tone: "bg-status-attention/10 text-status-attention border-status-attention/30",
-  },
-  watchlist: {
-    label: "Watchlist",
-    tone: "bg-secondary text-muted-foreground border-border",
-  },
+const SEGMENT_TONE: Record<Exclude<Segment, "all">, string> = {
+  "refi-ready": "bg-primary/10 text-primary border-primary/30",
+  "rate-and-term": "bg-growth/10 text-growth border-growth/30",
+  "cash-out": "bg-status-attention/10 text-status-attention border-status-attention/30",
+  watchlist: "bg-secondary text-muted-foreground border-border",
 };
 
 const PAGE_SIZE = 25;
 
 function PortfolioDetail() {
+  const t = useT();
   const { id } = Route.useParams();
   const { status: statusParam, client: clientParam } = Route.useSearch();
   const getFn = useServerFn(getPortfolio);
@@ -105,16 +99,14 @@ function PortfolioDetail() {
   const enrich = useMutation({
     mutationFn: () => enrichFn({ data: { portfolioId: id } }),
     onMutate: () => {
-      const toastId = toast.loading(
-        `Enriching ${missingCount} clients from property records… this can take a minute.`,
-      );
+      const toastId = toast.loading(t("biz.lpd.enrich_loading", { count: missingCount }));
       return { toastId };
     },
     onSuccess: (r: any, _v, ctx) => {
       toast.success(
-        `Enriched ${r.enriched} of ${r.total} clients from property records${
-          r.skipped ? ` · ${r.skipped} no data` : ""
-        }${r.failed ? ` · ${r.failed} failed` : ""}`,
+        t("biz.lpd.enrich_success", { enriched: r.enriched, total: r.total }) +
+          (r.skipped ? t("biz.lpd.enrich_skipped", { count: r.skipped }) : "") +
+          (r.failed ? t("biz.lpd.enrich_failed", { count: r.failed }) : ""),
         { id: ctx?.toastId },
       );
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
@@ -169,13 +161,21 @@ function PortfolioDetail() {
       return {
         kind: "refi" as const,
         client: topRefi,
-        title: `${topRefi.full_name} could save $${topRefi.savings_per_month_dollars.toLocaleString()}/mo`,
-        subtitle: `Current rate ${topRefi.rate_at_close ?? "—"}% · Balance ${moneyCompact(
-          topRefi.loan_balance_cents,
-        )} · Refi at ${data.summary.benchmark_rate?.toFixed(2) ?? "—"}%`,
+        title: t("biz.lpd.priority_save", {
+          name: topRefi.full_name,
+          amount: topRefi.savings_per_month_dollars.toLocaleString(),
+        }),
+        subtitle: t("biz.lpd.priority_sub", {
+          rate: topRefi.rate_at_close ?? "—",
+          balance: moneyCompact(topRefi.loan_balance_cents),
+          refi: data.summary.benchmark_rate?.toFixed(2) ?? "—",
+        }),
         next: data.top_refi_opportunities.slice(1, 4).map((c: any) => ({
           client: c,
-          label: `${c.full_name} — $${c.savings_per_month_dollars.toLocaleString()}/mo savings`,
+          label: t("biz.lpd.priority_next", {
+            name: c.full_name,
+            amount: c.savings_per_month_dollars.toLocaleString(),
+          }),
         })),
       };
     }
@@ -183,13 +183,15 @@ function PortfolioDetail() {
     if (missing?.length > 0) {
       return {
         kind: "enrich" as const,
-        title: `${missing.length} client${missing.length === 1 ? "" : "s"} need property records`,
-        subtitle: "Loan and equity details unlock refi opportunities and monthly savings estimates.",
+        title: t(missing.length === 1 ? "biz.lpd.enrich_need_one" : "biz.lpd.enrich_need_many", {
+          count: missing.length,
+        }),
+        subtitle: t("biz.lpd.enrich_need_sub"),
         next: [],
       };
     }
     return null;
-  }, [data]);
+  }, [data, t]);
 
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
