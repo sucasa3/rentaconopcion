@@ -4,33 +4,24 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { saveOrgBranding } from "@/lib/campaigns.functions";
+import { useT } from "@/lib/i18n";
 import { Upload } from "lucide-react";
 
 export type OrgBrandRow = {
-  id: string;
-  name: string;
-  org_type: string | null;
-  sender_name: string | null;
-  reply_to_email: string | null;
-  contact_name: string | null;
-  contact_title: string | null;
-  contact_phone: string | null;
-  license_number: string | null;
-  logo_url: string | null;
-  signoff: string | null;
+...
 };
 
-const FIELDS: Array<{ key: keyof OrgBrandRow; label: string; placeholder: string }> = [
-  { key: "sender_name", label: "From name", placeholder: "Jane Smith — Acme Lending" },
-  { key: "reply_to_email", label: "Reply-to email", placeholder: "jane@acmelending.com" },
-  { key: "contact_name", label: "Contact name", placeholder: "Jane Smith" },
-  { key: "contact_title", label: "Title", placeholder: "Senior Loan Officer" },
-  { key: "contact_phone", label: "Phone", placeholder: "(404) 555-0134" },
-  { key: "license_number", label: "License #", placeholder: "NMLS 123456" },
-  { key: "signoff", label: "Sign-off line", placeholder: "Always here if you have questions." },
-];
-
 export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
+  const t = useT();
+  const FIELDS: Array<{ key: keyof OrgBrandRow; label: string; placeholder: string }> = [
+    { key: "sender_name", label: t("biz.brand.field.sender_name"), placeholder: "Jane Smith — Acme Lending" },
+    { key: "reply_to_email", label: t("biz.brand.field.reply_to_email"), placeholder: "jane@acmelending.com" },
+    { key: "contact_name", label: t("biz.brand.field.contact_name"), placeholder: "Jane Smith" },
+    { key: "contact_title", label: t("biz.brand.field.contact_title"), placeholder: t("biz.brand.field.contact_title_ph") },
+    { key: "contact_phone", label: t("biz.brand.field.contact_phone"), placeholder: "(404) 555-0134" },
+    { key: "license_number", label: t("biz.brand.field.license_number"), placeholder: "NMLS 123456" },
+    { key: "signoff", label: t("biz.brand.field.signoff"), placeholder: t("biz.brand.field.signoff_ph") },
+  ];
   const qc = useQueryClient();
   const save = useServerFn(saveOrgBranding);
   const fileRef = useRef<HTMLInputElement>(null);
