@@ -371,7 +371,7 @@ export async function lookupContactDnd(phone: string): Promise<boolean> {
     return contacts.some((c) => {
       if (c?.dnd === true) return true;
       const settings = c?.dndSettings ?? {};
-      return Object.values(settings).some((s: any) => s?.status === "active");
+      return Object.values(settings).some((s: any) => isDndStatusOn(s?.status));
     });
   } catch {
     return false;
