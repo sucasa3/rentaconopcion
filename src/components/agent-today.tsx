@@ -31,6 +31,9 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
+import { PostCallNoteDialog } from "@/components/post-call-note";
+import { markCallInitiated } from "@/lib/post-call";
+import { Mic } from "lucide-react";
 
 type QueueItem = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
@@ -341,13 +344,18 @@ function BestMove({
   pending: boolean;
 }) {
   const t = useT();
+  const qc = useQueryClient();
   const [showOutcomes, setShowOutcomes] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
   const supportingFacts = [...(n?.supportingSignals ?? []), ...(n?.secondarySignals ?? [])].slice(0, 3);
   // The canonical narrative decides the opener. A cached draft is only used
   // when the server has already validated it against the same fact snapshot.
   const opener = n?.openerSeed || item.draftBody?.trim() || item.headline;
+  const convo = (item as { lastConversation?: { summary: string; opener?: string | null; reason?: string | null } })
+    .lastConversation;
+
 
   return (
     <section className="animate-in fade-in overflow-hidden rounded-xl border border-border bg-card shadow-elevated">
@@ -393,16 +401,45 @@ function BestMove({
           </IntelligenceSurface>
         )}
 
+        {convo && (
+          <div className="space-y-1 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs text-muted-foreground">
+            {convo.reason && (
+              <p>
+                <span className="font-semibold text-foreground">{t("biz.pc.why_now")}:</span>{" "}
+                {convo.reason}
+              </p>
+            )}
+            <p>
+              <span className="font-semibold text-foreground">{t("biz.pc.last_conv")}:</span>{" "}
+              {convo.summary}
+            </p>
+            {convo.opener && (
+              <p>
+                <span className="font-semibold text-foreground">{t("biz.pc.suggested_opener")}:</span>{" "}
+                &ldquo;{convo.opener}&rdquo;
+              </p>
+            )}
+          </div>
+        )}
+
         <ChannelActions
           options={item.channels ?? []}
           phone={item.phone}
           email={item.email}
-          onAct={(channel) =>
+          onAct={(channel) => {
+            if (channel === "call")
+              markCallInitiated({
+                clientId: item.clientId,
+                name: item.name,
+                audience: "agent",
+                opportunityId: item.opportunityId,
+              });
             onOutcome(
               "attempted",
               channel === "call" ? "Tapped call" : channel === "text" ? "Tapped text" : "Tapped email",
-            )
-          }
+            );
+          }}
+
           emailHref={`mailto:${item.email ?? ""}?subject=${encodeURIComponent(
             item.draftSubject ?? "",
           )}&body=${encodeURIComponent(item.draftBody ?? "")}`}
@@ -452,9 +489,33 @@ function BestMove({
               ))}
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => setNoteOpen(true)}
+            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+          >
+            <Mic className="h-3.5 w-3.5" /> {t("biz.pc.cta")}
+          </button>
         </div>
       </div>
+
+      {noteOpen && (
+        <PostCallNoteDialog
+          kind="agent"
+          clientId={item.clientId}
+          name={item.name}
+          opportunityId={item.opportunityId}
+          open
+          onOpenChange={(o) => !o && setNoteOpen(false)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["action-queue", "agent"] });
+            qc.invalidateQueries({ queryKey: ["business-funnel", "agent"] });
+            qc.invalidateQueries({ queryKey: ["business-overview", "agent"] });
+          }}
+        />
+      )}
     </section>
+
   );
 }
 
