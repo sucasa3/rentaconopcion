@@ -210,7 +210,7 @@ function PortfolioDetail() {
   return (
     <div className="space-y-6">
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">{t("biz.tasks.loading")}</p>
       ) : error ? (
         <p className="text-sm text-destructive">{(error as Error).message}</p>
       ) : data ? (
@@ -225,7 +225,7 @@ function PortfolioDetail() {
                     else if (priority.kind === "enrich") enrich.mutate();
                   }}
                   primaryActionLabel={
-                    priority.kind === "refi" ? "View homeowner" : "Enrich property records"
+                    priority.kind === "refi" ? t("biz.at.view_homeowner") : t("biz.lpd.enrich_records")
                   }
                   tone={priority.kind === "refi" ? "opportunity" : "attention"}
                   secondaryActions={priority.next?.map((n: any) => ({
@@ -240,29 +240,29 @@ function PortfolioDetail() {
                 <div className="flex items-center gap-2">
                   <TrendingDown className="h-4 w-4 text-primary" />
                   <h2 className="text-base font-semibold">
-                    Top refi opportunities @ {data.summary.benchmark_rate?.toFixed(2) ?? "—"}%
+                    {t("biz.lpd.refi_title", { rate: data.summary.benchmark_rate?.toFixed(2) ?? "—" })}
                   </h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Ranked by estimated monthly savings. Model only.
+                  {t("biz.lpd.refi_hint")}
                 </p>
                 <div className="space-y-3 md:hidden">
                   {data.top_refi_opportunities.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-muted-foreground">
-                      No savings above assumed rate.
+                      <p className="py-4 text-center text-sm text-muted-foreground">
+                      {t("biz.lpd.no_savings")}
                     </p>
                   ) : (
                     data.top_refi_opportunities.map((c: any) => (
                       <OpportunityCard
                         key={c.id}
-                        pill={<StatusPill tone="attention">High opportunity</StatusPill>}
+                        pill={<StatusPill tone="attention">{t("biz.lpd.high_opportunity")}</StatusPill>}
                         name={c.full_name}
                         subtitle={[c.city, c.state].filter(Boolean).join(", ")}
-                        heroLabel="Est. savings / mo"
+                        heroLabel={t("biz.lpd.est_savings")}
                         heroValue={`$${c.savings_per_month_dollars.toLocaleString()}`}
                         metrics={[
-                          { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
-                          { label: "Rate / LTV", value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}` },
+                          { label: t("biz.lpd.balance"), value: moneyCompact(c.loan_balance_cents) },
+                          { label: t("biz.lpd.rate_ltv"), value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}` },
                         ]}
                         onAction={() => setContact(c)}
                       />
@@ -274,18 +274,18 @@ function PortfolioDetail() {
                     <table className="w-full min-w-[640px] text-left text-sm">
                       <thead>
                         <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                          <th className="py-2 pr-3 font-medium">Client</th>
-                          <th className="py-2 pr-3 font-medium">Rate</th>
-                          <th className="py-2 pr-3 font-medium">Balance</th>
-                          <th className="py-2 pr-3 font-medium">LTV</th>
-                          <th className="py-2 pr-3 font-medium">Est. savings / mo</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_client")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_rate")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_balance")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_ltv")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.est_savings")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {data.top_refi_opportunities.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                              No savings above assumed rate.
+                              {t("biz.lpd.no_savings")}
                             </td>
                           </tr>
                         ) : (
@@ -333,30 +333,30 @@ function PortfolioDetail() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
-                  <h2 className="text-base font-semibold">Your book</h2>
+                  <h2 className="text-base font-semibold">{t("biz.lpd.your_book")}</h2>
                   <ComparisonRate orgId={data.portfolio.orgId} summary={data.summary} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                  <SummaryTile label="Clients" value={data.summary.total.toLocaleString()} />
+                  <SummaryTile label={t("biz.lpd.st_clients")} value={data.summary.total.toLocaleString()} />
                   <SummaryTile
-                    label="Originated"
+                    label={t("biz.lpd.st_originated")}
                     value={moneyCompact(data.summary.total_loan_cents)}
                   />
                   <SummaryTile
-                    label="Est. balance"
+                    label={t("biz.lpd.st_est_balance")}
                     value={moneyCompact(data.summary.total_balance_cents)}
                   />
                   <SummaryTile
-                    label="Est. equity"
+                    label={t("biz.lb.est_equity")}
                     value={moneyCompact(data.summary.total_equity_cents)}
                   />
-                  <SummaryTile label="Avg rate" value={`${data.summary.avg_rate.toFixed(2)}%`} />
+                  <SummaryTile label={t("biz.lpd.st_avg_rate")} value={`${data.summary.avg_rate.toFixed(2)}%`} />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <SegChip
-                    label={`All ${data.summary.total}`}
+                    label={t("biz.lpd.all_chip", { count: data.summary.total })}
                     active={segment === "all"}
                     tone="bg-foreground text-background border-foreground"
                     onClick={() => {
@@ -379,11 +379,11 @@ function PortfolioDetail() {
                   <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
                     <span className="inline-flex items-center gap-1">
                       <CheckCircle2 className="h-3 w-3 text-growth" />
-                      {data.consent_counts.granted ?? 0} consented
+                      {t("biz.lpd.consented", { count: data.consent_counts.granted ?? 0 })}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Lock className="h-3 w-3" />
-                      {data.consent_counts.pending ?? 0} pending
+                      {t("biz.lpd.pending", { count: data.consent_counts.pending ?? 0 })}
                     </span>
                   </span>
                 </div>
@@ -395,13 +395,13 @@ function PortfolioDetail() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-base font-semibold">
-                    Clients ({filtered.length.toLocaleString()})
+                    {t("biz.lpd.clients_count", { count: filtered.length.toLocaleString() })}
                   </h2>
                   <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                     <div className="relative w-full sm:w-auto">
                       <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                       <input
-                        placeholder="Search name, address, zip…"
+                        placeholder={t("biz.lpd.search_ph")}
                         value={search}
                         onChange={(e) => {
                           setSearch(e.target.value);
@@ -415,7 +415,7 @@ function PortfolioDetail() {
                       params={{ id }}
                       className="inline-flex w-full items-center justify-center gap-1 rounded-full border border-border bg-background px-3 py-2.5 text-xs font-medium text-foreground hover:border-primary sm:w-auto sm:py-1.5"
                     >
-                      <Upload className="h-3 w-3" /> Add clients
+                      <Upload className="h-3 w-3" /> {t("biz.lpd.add_clients")}
                     </Link>
 
                     {missingCount > 0 && (
@@ -430,8 +430,8 @@ function PortfolioDetail() {
                           <Sparkles className="h-3 w-3" />
                         )}{" "}
                         {enrich.isPending
-                          ? `Enriching ${missingCount}…`
-                          : `Enrich ${missingCount} from property records`}
+                          ? t("biz.lpd.enriching", { count: missingCount })
+                          : t("biz.lpd.enrich_n", { count: missingCount })}
                       </button>
                     )}
                   </div>
@@ -448,8 +448,8 @@ function PortfolioDetail() {
                   }`}
                 >
                   {pageRows.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground">
-                      No clients match this filter.
+                     <p className="py-6 text-center text-sm text-muted-foreground">
+                      {t("biz.lpd.no_match")}
                     </p>
                   ) : (
                     pageRows.map((c: any) => (
