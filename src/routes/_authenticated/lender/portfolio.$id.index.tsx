@@ -364,12 +364,12 @@ function PortfolioDetail() {
                       setPage(0);
                     }}
                   />
-                  {(Object.keys(SEGMENT_META) as Array<keyof typeof SEGMENT_META>).map((s) => (
+                  {(Object.keys(SEGMENT_TONE) as Array<keyof typeof SEGMENT_TONE>).map((s) => (
                     <SegChip
                       key={s}
-                      label={`${SEGMENT_META[s].label} ${data.segments[s] ?? 0}`}
+                      label={`${t(`biz.lpd.seg.${s}` as TranslationKey)} ${data.segments[s] ?? 0}`}
                       active={segment === s}
-                      tone={SEGMENT_META[s].tone}
+                      tone={SEGMENT_TONE[s]}
                       onClick={() => {
                         setSegment(s);
                         setPage(0);
@@ -461,12 +461,11 @@ function PortfolioDetail() {
                           <>
                             <span
                               className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                                SEGMENT_META[c.segment as keyof typeof SEGMENT_META]?.tone ??
+                                SEGMENT_TONE[c.segment as keyof typeof SEGMENT_TONE] ??
                                 "bg-secondary text-muted-foreground border-border"
                               }`}
                             >
-                              {SEGMENT_META[c.segment as keyof typeof SEGMENT_META]?.label ??
-                                c.segment}
+                              {t(`biz.lpd.seg.${c.segment}` as TranslationKey)}
                             </span>
                             <ConsentPill state={c.consent_state} />
                           </>
@@ -529,12 +528,11 @@ function PortfolioDetail() {
                           <td className="py-2.5 pr-3">
                             <span
                               className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                                SEGMENT_META[c.segment as keyof typeof SEGMENT_META]?.tone ??
+                                SEGMENT_TONE[c.segment as keyof typeof SEGMENT_TONE] ??
                                 "bg-secondary text-muted-foreground border-border"
                               }`}
                             >
-                              {SEGMENT_META[c.segment as keyof typeof SEGMENT_META]?.label ??
-                                c.segment}
+                              {t(`biz.lpd.seg.${c.segment}` as TranslationKey)}
                             </span>
                           </td>
                           <td className="py-2.5 pr-3">
