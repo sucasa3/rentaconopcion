@@ -112,17 +112,17 @@ export function TaskQueue({ kind }: { kind: "agent" | "lender" }) {
     [tasks],
   );
 
-  const toggle = async (t: Task) => {
-    setBusyKey(t.key);
+  const toggle = async (task: Task) => {
+    setBusyKey(task.key);
     try {
       const res = await doneFn({
-        data: { orgId: t.orgId, taskKey: t.key, done: !t.done },
+        data: { orgId: task.orgId, taskKey: task.key, done: !task.done },
       });
       if (!res.ok) {
         toast.error(res.error);
         return;
       }
-      if (!t.done) toast.success(t("biz.tasks.done_toast"));
+      if (!task.done) toast.success(t("biz.tasks.done_toast"));
       await qc.invalidateQueries({ queryKey: ["business-tasks", kind] });
     } catch {
       toast.error(t("biz.tasks.update_fail"));
