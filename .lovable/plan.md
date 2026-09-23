@@ -19,6 +19,10 @@
 - Task/action queue surfaces
 - Shared status, contact-action, and account/preferences panels used within these dashboards
 
+### Generated briefings and conversation points
+
+Generated briefings and conversation points would **not** be translated as part of this work. Their fixed interface around them — headings such as briefing, why now, summary, next step, outcome, and tooltips — belongs to the relevant screen batch: Today and detail surfaces in Batch 1, then lender brief / relationship workflows in Batch 2. The generated body text itself remains unchanged unless it already has an established bilingual generation path.
+
 Dynamic names, addresses, company names, financial/property values, database records, IDs, raw provider values, canonical reasons, and AI-generated content remain unchanged.
 
 ## Proposed implementation batches
