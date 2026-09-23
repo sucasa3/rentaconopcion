@@ -83,16 +83,29 @@ export const Route = createFileRoute("/api/public/webhooks/ghl-messages")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // Idempotency: the same provider message never applies twice.
-        if (parsed.messageId) {
+        // Idempotency key: the provider message id when the event carries one
+        // (inbound-reply events). Message-less DND-change events are keyed by
+        // contact id + the DND state itself — re-delivering the same state is a
+        // duplicate; a state flip is a new event. Correlation is by the
+        // provider contact id, never a readable phone number.
+        const dedupeKey =
+          parsed.messageId ??
+          (parsed.dnd !== undefined
+            ? `ghl-dnd:${parsed.contactId ?? "unknown"}:${parsed.dnd}`
+            : null);
+        if (dedupeKey) {
           const { data: seen } = await supabaseAdmin
             .from("communication_preference_events")
             .select("id")
-            .eq("provider_message_id", parsed.messageId)
+            .eq("provider_message_id", dedupeKey)
             .limit(1);
           if ((seen ?? []).length) return Response.json({ ok: true, duplicate: true });
         }
 
+        // STOP: either the contact's DND state went on, or the inbound reply
+        // was a stop keyword. A bare "DND off" state event is NOT consent — it
+        // only confirms the provider state; re-consent requires the actual
+        // inbound START message (keyword path below).
         const intent = parsed.dnd === true ? "stop" : keyword(parsed.message);
         if (!intent) return Response.json({ ok: true, applied: "none" });
 
