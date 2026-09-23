@@ -113,7 +113,7 @@ export function FunnelView({
       </div>
 
       <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
-        <p className="mb-2 text-sm font-medium">Pipeline — last {days} days</p>
+        <p className="mb-2 text-sm font-medium">{t("biz.funnel.pipeline_title", { days })}</p>
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <FunnelChart>
@@ -147,7 +147,7 @@ export function FunnelView({
                 {s.label}
               </p>
               <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
-              {rate > 0 && <p className="text-xs text-muted-foreground">{rate}% of previous</p>}
+              {rate > 0 && <p className="text-xs text-muted-foreground">{t("biz.funnel.of_previous", { rate })}</p>}
             </div>
           );
         })}
