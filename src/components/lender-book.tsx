@@ -4,9 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { BookOpen } from "lucide-react";
 import { getLenderWorkspace } from "@/lib/lender-workspace.functions";
-import { PRIORITY_LABEL, REVIEW_TYPES, type ReviewType } from "@/lib/lender-access";
+import { REVIEW_TYPES, type ReviewType } from "@/lib/lender-access";
 import { SectionHeader, EmptyState, StatusPill } from "@/components/ui-kit";
 import { formatMoney } from "@/lib/money";
+import { useT } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n/en";
 import { cn } from "@/lib/utils";
 
 type Workspace = NonNullable<Awaited<ReturnType<typeof getLenderWorkspace>>>;
@@ -26,41 +28,42 @@ type FilterKey =
   | "no_recent_contact"
   | "hot";
 
-const FILTERS: { key: FilterKey; label: string; test: (p: Person) => boolean }[] = [
-  { key: "all", label: "Everyone", test: () => true },
-  { key: "asked", label: "Asked to connect", test: (p) => p.askedToConnect },
-  { key: "hot", label: "Needs attention", test: (p) => p.temperature === "hot" },
+const FILTERS: { key: FilterKey; label: TranslationKey; test: (p: Person) => boolean }[] = [
+  { key: "all", label: "biz.lb.f.all", test: () => true },
+  { key: "asked", label: "biz.lb.f.asked", test: (p) => p.askedToConnect },
+  { key: "hot", label: "biz.lb.f.hot", test: (p) => p.temperature === "hot" },
   {
     key: "equity",
-    label: "Equity change",
+    label: "biz.lb.f.equity",
     test: (p) => p.reviews.some((r) => r.type === "equity_review" || r.type === "equity_milestone"),
   },
   {
     key: "value",
-    label: "Value milestone",
+    label: "biz.lb.f.value",
     test: (p) => p.reviews.some((r) => r.type === "value_milestone"),
   },
-  { key: "mortgage_age", label: "Mortgage age", test: (p) => (p.loanAgeYears ?? 0) >= 5 },
-  { key: "engaged", label: "Engaged", test: (p) => p.engagedRecently },
-  { key: "tenure", label: "Long tenure", test: (p) => (p.tenureYears ?? 0) >= 7 },
+  { key: "mortgage_age", label: "biz.lb.f.mortgage_age", test: (p) => (p.loanAgeYears ?? 0) >= 5 },
+  { key: "engaged", label: "biz.lb.f.engaged", test: (p) => p.engagedRecently },
+  { key: "tenure", label: "biz.lb.f.tenure", test: (p) => (p.tenureYears ?? 0) >= 7 },
   {
     key: "property_activity",
-    label: "Property activity",
+    label: "biz.lb.f.property_activity",
     test: (p) => p.reviews.some((r) => r.type === "property_change"),
   },
   {
     key: "projects",
-    label: "Projects & maintenance",
+    label: "biz.lb.f.projects",
     test: (p) => p.reviews.some((r) => r.type === "improvement_planning"),
   },
-  { key: "annual_review", label: "Annual review due", test: (p) => p.annualReviewDue },
-  { key: "no_recent_contact", label: "No recent contact", test: (p) => !p.lastContactAt },
+  { key: "annual_review", label: "biz.lb.f.annual_review", test: (p) => p.annualReviewDue },
+  { key: "no_recent_contact", label: "biz.lb.f.no_recent_contact", test: (p) => !p.lastContactAt },
 ];
 
-const TEMP_LABEL = { hot: "🔥 Hot", warm: "🟡 Warm", nurture: "🔵 Nurture" } as const;
+const TEMP_EMOJI = { hot: "🔥", warm: "🟡", nurture: "🔵" } as const;
 
 /** My Book: monitor the homeowners this lender already knows. */
 export function LenderBook() {
+  const t = useT();
   const wsFn = useServerFn(getLenderWorkspace);
   const { data } = useQuery({
     queryKey: ["lender-workspace"],
@@ -92,16 +95,17 @@ export function LenderBook() {
 
   return (
     <section className="space-y-3 px-4 py-6 sm:px-6">
-      <SectionHeader title="My Book" />
+      <SectionHeader title={t("biz.at.my_book")} />
       <p className="-mt-1 text-sm text-muted-foreground">
-        Who changed, who needs attention, and what to say. {data.book.length} homeowner
-        {data.book.length === 1 ? "" : "s"} you have a documented relationship with.
+        {t(data.book.length === 1 ? "biz.lb.sub_one" : "biz.lb.sub_many", {
+          count: data.book.length,
+        })}
       </p>
 
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder="Search by name or address"
+        placeholder={t("biz.lb.search_ph")}
         className="min-h-[44px] w-full rounded-full border border-border bg-card px-4 text-sm"
       />
 
@@ -118,7 +122,7 @@ export function LenderBook() {
                 : "border-border bg-card text-muted-foreground",
             )}
           >
-            {f.label}
+            {t(f.label)}
           </button>
         ))}
       </div>
@@ -132,19 +136,19 @@ export function LenderBook() {
             type === "any" ? "border-primary text-primary" : "border-border text-muted-foreground",
           )}
         >
-          Any review type
+          {t("biz.lb.any_type")}
         </button>
-        {(Object.keys(REVIEW_TYPES) as ReviewType[]).map((t) => (
+        {(Object.keys(REVIEW_TYPES) as ReviewType[]).map((rt) => (
           <button
-            key={t}
+            key={rt}
             type="button"
-            onClick={() => setType(t)}
+            onClick={() => setType(rt)}
             className={cn(
               "rounded-full border px-3 py-1.5 text-xs transition",
-              type === t ? "border-primary text-primary" : "border-border text-muted-foreground",
+              type === rt ? "border-primary text-primary" : "border-border text-muted-foreground",
             )}
           >
-            {REVIEW_TYPES[t].label}
+            {t(`biz.lb.rt.${rt}` as TranslationKey)}
           </button>
         ))}
       </div>
@@ -152,8 +156,8 @@ export function LenderBook() {
       {rows.length === 0 ? (
         <EmptyState
           icon={<BookOpen className="mx-auto h-7 w-7" />}
-          title="Nobody matches that filter"
-          hint="Try a different filter, or add homeowners you already work with."
+          title={t("biz.lb.empty_title")}
+          hint={t("biz.lb.empty_hint")}
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -168,19 +172,22 @@ export function LenderBook() {
               <div className="flex items-start justify-between gap-2">
                 <p className="font-semibold">{p.name}</p>
                 {p.askedToConnect ? (
-                  <StatusPill tone="attention">Requested contact</StatusPill>
+                  <StatusPill tone="attention">{t("biz.lt.requested")}</StatusPill>
                 ) : (
-                  <StatusPill tone="muted">{TEMP_LABEL[p.temperature ?? "nurture"]}</StatusPill>
+                  <StatusPill tone="muted">
+                    {TEMP_EMOJI[p.temperature ?? "nurture"]}{" "}
+                    {t(`biz.temp.${p.temperature ?? "nurture"}` as TranslationKey)}
+                  </StatusPill>
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Est. equity {formatMoney(p.estimatedEquityCents)}
-                {p.estimatedLtvPct != null ? ` · Est. LTV ${p.estimatedLtvPct}%` : ""}
+                {t("biz.lb.est_equity")} {formatMoney(p.estimatedEquityCents)}
+                {p.estimatedLtvPct != null ? ` · ${t("biz.lb.est_ltv")} ${p.estimatedLtvPct}%` : ""}
               </p>
               <p className="mt-2 text-sm">{p.whyToday}</p>
-              <p className="mt-1 text-sm font-medium">Next: {p.recommendedAction}</p>
+              <p className="mt-1 text-sm font-medium">{t("biz.lb.next")} {p.recommendedAction}</p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {PRIORITY_LABEL}: {p.priority} · {p.reviews[0]?.label ?? "Monitored"}
+                {t("biz.lb.priority")}: {p.priority} · {p.reviews[0]?.label ?? t("biz.lb.monitored")}
               </p>
             </Link>
           ))}
