@@ -5,12 +5,13 @@ import { BookOpen, HeartHandshake, ShieldCheck, Users, Sparkles, ArrowRight } fr
 import { getLenderCommandCenter } from "@/lib/lender-dashboard.functions";
 import { StatCard, SectionHeader, EmptyState, StatusPill } from "@/components/ui-kit";
 import { categoryLabel } from "@/lib/opportunities";
+import { useT, type TranslationKey } from "@/lib/i18n";
 
-const DELIVERY_LABEL: Record<string, string> = {
-  premium_membership_sponsored: "Memberships funded",
-  homeowner_connection_request: "Homeowners who asked to connect",
-  monthly_digest_sent: "Monthly digests delivered",
-  home_profile_refreshed: "Home Profiles refreshed",
+const DELIVERY_KEY: Record<string, TranslationKey> = {
+  premium_membership_sponsored: "biz.lcc.d.premium_membership_sponsored",
+  homeowner_connection_request: "biz.lcc.d.homeowner_connection_request",
+  monthly_digest_sent: "biz.lcc.d.monthly_digest_sent",
+  home_profile_refreshed: "biz.lcc.d.home_profile_refreshed",
 };
 
 function when(iso?: string | null) {
@@ -19,6 +20,7 @@ function when(iso?: string | null) {
 }
 
 export function LenderCommandCenter() {
+  const t = useT();
   const fn = useServerFn(getLenderCommandCenter);
   const { data, isLoading } = useQuery({
     queryKey: ["lender-command-center"],
@@ -26,7 +28,7 @@ export function LenderCommandCenter() {
     staleTime: 60_000,
   });
 
-  if (isLoading) return <div className="px-4 py-6 text-sm text-muted-foreground">Loading…</div>;
+  if (isLoading) return <div className="px-4 py-6 text-sm text-muted-foreground">{t("common.loading")}</div>;
   if (!data) return null;
 
   const { myBook, homeownersServed, permissioned } = data;
@@ -35,26 +37,26 @@ export function LenderCommandCenter() {
     <div className="space-y-8 px-4 py-6 sm:px-6">
       {/* MY BOOK */}
       <section className="space-y-3">
-        <SectionHeader title="My Book" />
+        <SectionHeader title={t("biz.lcc.my_book")} />
         <p className="-mt-1 text-sm text-muted-foreground">
-          The homeowners {myBook.orgName} monitors with SuCasa.
+          {t("biz.lcc.my_book_sub", { org: myBook.orgName })}
         </p>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCard label="Homeowners" value={myBook.total} icon={<BookOpen className="h-4 w-4" />} />
+          <StatCard label={t("biz.lcc.homeowners")} value={myBook.total} icon={<BookOpen className="h-4 w-4" />} />
           <StatCard
-            label="Activated"
+            label={t("biz.lcc.activated")}
             value={myBook.activated}
             tone="growth"
             icon={<Users className="h-4 w-4" />}
           />
           <StatCard
-            label="Capacity left"
+            label={t("biz.lcc.capacity_left")}
             value={myBook.remaining}
             tone={myBook.remaining === 0 ? "attention" : "info"}
             icon={<ShieldCheck className="h-4 w-4" />}
             to="/lender/capacity"
           />
-          <StatCard label="Archived" value={myBook.archived} icon={<BookOpen className="h-4 w-4" />} />
+          <StatCard label={t("biz.lcc.archived")} value={myBook.archived} icon={<BookOpen className="h-4 w-4" />} />
         </div>
         {myBook.books.length > 1 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,7 +68,7 @@ export function LenderCommandCenter() {
                 className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
               >
                 <p className="font-semibold">{b.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{b.count} homeowners</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t("biz.lcc.n_homeowners", { n: b.count })}</p>
               </Link>
             ))}
           </div>
@@ -75,29 +77,28 @@ export function LenderCommandCenter() {
 
       {/* HOMEOWNERS SERVED */}
       <section className="space-y-3">
-        <SectionHeader title="Homeowners Served" />
+        <SectionHeader title={t("biz.lcc.served")} />
         <p className="-mt-1 text-sm text-muted-foreground">
-          Premium Home Intelligence memberships your subscription funds. SuCasa provides the
-          membership directly to the homeowner; sponsoring it never creates a lead.
+          {t("biz.lcc.served_sub")}
         </p>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <StatCard
-            label="Active memberships"
+            label={t("biz.lcc.active_memberships")}
             value={homeownersServed.activeMemberships}
             tone="growth"
             icon={<HeartHandshake className="h-4 w-4" />}
           />
-          <StatCard label="Sponsorships available" value={homeownersServed.remainingSponsorships} />
-          <StatCard label="Ended" value={homeownersServed.endedMemberships} />
+          <StatCard label={t("biz.lcc.sponsorships_available")} value={homeownersServed.remainingSponsorships} />
+          <StatCard label={t("biz.lcc.ended")} value={homeownersServed.endedMemberships} />
         </div>
 
         {Object.keys(homeownersServed.delivered).length > 0 && (
           <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
-            <p className="text-sm font-semibold">Delivered in the last 30 days</p>
+            <p className="text-sm font-semibold">{t("biz.lcc.delivered_30")}</p>
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               {Object.entries(homeownersServed.delivered as Record<string, number>).map(([k, n]) => (
                 <li key={k} className="flex justify-between gap-3">
-                  <span>{DELIVERY_LABEL[k] ?? k.replace(/_/g, " ")}</span>
+                  <span>{DELIVERY_KEY[k] ? t(DELIVERY_KEY[k]!) : k.replace(/_/g, " ")}</span>
                   <span className="font-semibold text-foreground">{n.toLocaleString()}</span>
                 </li>
               ))}
@@ -108,8 +109,8 @@ export function LenderCommandCenter() {
         {homeownersServed.list.length === 0 ? (
           <EmptyState
             icon={<HeartHandshake className="mx-auto h-7 w-7" />}
-            title="No memberships funded yet"
-            hint="Sponsor Premium for a homeowner in your book to start their monitoring."
+            title={t("biz.lcc.no_memberships")}
+            hint={t("biz.lcc.no_memberships_hint")}
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,10 +122,10 @@ export function LenderCommandCenter() {
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-semibold">{m.name}</p>
                   <StatusPill tone={m.membershipActive ? "growth" : "muted"}>
-                    {m.membershipActive ? "Premium active" : "Pending"}
+                    {m.membershipActive ? t("biz.lcc.premium_active") : t("biz.lcc.pending")}
                   </StatusPill>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">Since {when(m.startedAt)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{t("biz.lcc.since", { date: when(m.startedAt) })}</p>
               </div>
             ))}
           </div>
@@ -133,18 +134,18 @@ export function LenderCommandCenter() {
 
       {/* PERMISSIONED OPPORTUNITIES */}
       <section className="space-y-3">
-        <SectionHeader title="Permissioned Opportunities" />
+        <SectionHeader title={t("biz.lcc.permissioned")} />
         <p className="-mt-1 text-sm text-muted-foreground">
-          Only homeowners who asked to connect, and only the information they chose to share.
+          {t("biz.lcc.permissioned_sub")}
         </p>
 
         <div className="space-y-3">
-          <p className="text-sm font-semibold">Homeowners who asked to connect</p>
+          <p className="text-sm font-semibold">{t("biz.lcc.asked_to_connect")}</p>
           {permissioned.requests.length === 0 ? (
             <EmptyState
               icon={<ShieldCheck className="mx-auto h-7 w-7" />}
-              title="No connection requests yet"
-              hint="Homeowners appear here the moment they ask to talk to you."
+              title={t("biz.lcc.no_requests")}
+              hint={t("biz.lcc.no_requests_hint")}
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
@@ -162,7 +163,7 @@ export function LenderCommandCenter() {
                   </div>
                   {r.note && <p className="mt-2 text-sm">{r.note}</p>}
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Shared with you: {r.scope.length ? r.scope.join(", ") : "contact only"}
+                    {t("biz.lcc.shared_with_you", { scope: r.scope.length ? r.scope.join(", ") : t("biz.lcc.contact_only") })}
                   </p>
                   {r.portfolioId && r.clientId && (
                     <Link
@@ -171,7 +172,7 @@ export function LenderCommandCenter() {
                       search={{ client: r.clientId } as never}
                       className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary"
                     >
-                      Open homeowner <ArrowRight className="h-4 w-4" />
+                      {t("biz.lcc.open_homeowner")} <ArrowRight className="h-4 w-4" />
                     </Link>
                   )}
                 </div>
@@ -182,14 +183,18 @@ export function LenderCommandCenter() {
 
         <div className="space-y-3">
           <p className="text-sm font-semibold">
-            Insights you're permitted to see ({permissioned.intelligenceGrants} homeowner
-            {permissioned.intelligenceGrants === 1 ? "" : "s"})
+            {t(
+              permissioned.intelligenceGrants === 1
+                ? "biz.lcc.insights_permitted_one"
+                : "biz.lcc.insights_permitted_other",
+              { n: permissioned.intelligenceGrants },
+            )}
           </p>
           {permissioned.opportunities.length === 0 ? (
             <EmptyState
               icon={<Sparkles className="mx-auto h-7 w-7" />}
-              title="Nothing shared yet"
-              hint="Home insights appear only after a homeowner permits access."
+              title={t("biz.lcc.nothing_shared")}
+              hint={t("biz.lcc.nothing_shared_hint")}
             />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -214,7 +219,7 @@ export function LenderCommandCenter() {
                       search={{ client: o.clientId } as never}
                       className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary"
                     >
-                      Open homeowner <ArrowRight className="h-4 w-4" />
+                      {t("biz.lcc.open_homeowner")} <ArrowRight className="h-4 w-4" />
                     </Link>
                   )}
                 </div>
