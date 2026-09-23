@@ -365,7 +365,7 @@ export async function lookupContactDnd(phone: string): Promise<boolean> {
   try {
     const locationId = env("GHL_LOCATION_ID");
     const r = await ghlFetch(
-      `/contacts/lookup?locationId=${encodeURIComponent(locationId)}&phone=${encodeURIComponent(phone)}`,
+      `/contacts/?locationId=${encodeURIComponent(locationId)}&query=${encodeURIComponent(phone)}`,
     );
     const contacts: any[] = r?.contacts ?? (r?.contact ? [r.contact] : []);
     return contacts.some((c) => {
@@ -375,6 +375,28 @@ export async function lookupContactDnd(phone: string): Promise<boolean> {
     });
   } catch {
     return false;
+  }
+}
+
+/**
+ * The same question asked by provider contact id. The live workflow sends no
+ * DND field, so a message-less execution is resolved by asking the provider for
+ * the contact's current SMS do-not-disturb state. Returns null when the state
+ * cannot be determined (unknown contact, provider unreachable).
+ */
+export async function lookupContactDndById(contactId: string): Promise<boolean | null> {
+  try {
+    const r = await ghlFetch(`/contacts/${encodeURIComponent(contactId)}`);
+    const c = r?.contact ?? r;
+    if (!c) return null;
+    if (c?.dnd === true) return true;
+    const settings = c?.dndSettings ?? {};
+    const sms = (settings as any)?.SMS ?? (settings as any)?.sms;
+    if (sms?.status) return sms.status === "active";
+    const any = Object.values(settings).some((s: any) => s?.status === "active");
+    return any || c?.dnd === false ? any : null;
+  } catch {
+    return null;
   }
 }
 
