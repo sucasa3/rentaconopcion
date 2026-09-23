@@ -316,11 +316,15 @@ function FunnelPreview({ kind }: { kind: "agent" | "lender" }) {
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-semibold">30-day pipeline</p>
+            <p className="font-semibold">{t("biz.dash.funnel_title")}</p>
             <p className="text-sm text-muted-foreground">
-              {f.closed ?? 0} closed · {(f.closed_value_cents ?? 0) > 0
-                ? `$${((f.closed_value_cents ?? 0) / 100).toLocaleString()}`
-                : "no value logged"}
+              {t("biz.dash.funnel_summary", {
+                closed: f.closed ?? 0,
+                value:
+                  (f.closed_value_cents ?? 0) > 0
+                    ? `$${((f.closed_value_cents ?? 0) / 100).toLocaleString()}`
+                    : t("biz.dash.funnel_no_value"),
+              })}
             </p>
           </div>
         </div>
