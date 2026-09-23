@@ -252,6 +252,7 @@ export function PriorityCard({
     },
   };
   const t = tones[tone];
+  const tr = useT();
 
   return (
     <section
@@ -259,7 +260,7 @@ export function PriorityCard({
         "rounded-3xl border p-5 shadow-soft sm:p-6",
         t.edge,
       )}
-      aria-label="What to do now"
+      aria-label={tr("biz.ui.what_to_do_now")}
     >
       <div className="flex items-start gap-3">
         <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-2xl", t.badge)}>
@@ -267,7 +268,7 @@ export function PriorityCard({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            What to do now
+            {tr("biz.ui.what_to_do_now")}
           </p>
           <p className={cn("mt-0.5 text-2xl font-semibold tracking-tight", t.text)}>{title}</p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{subtitle}</p>
