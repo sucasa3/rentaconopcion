@@ -1844,4 +1844,6 @@ export const es: Dictionary = {
   "biz.apd.listed_other": "Listado con otro agente",
   "biz.apd.agent_name_ph": "Nombre del agente de listado",
   "biz.apd.save_listing": "Guardar estado del listado",
+  "biz.ui.what_to_do_now": "Qué hacer ahora",
+  "biz.ui.next_up": "Siguientes",
 };

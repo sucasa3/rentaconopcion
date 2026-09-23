@@ -1803,6 +1803,8 @@ export const en = {
   "biz.apd.listed_other": "Listed with another agent",
   "biz.apd.agent_name_ph": "Listing agent name",
   "biz.apd.save_listing": "Save listing status",
+  "biz.ui.what_to_do_now": "What to do now",
+  "biz.ui.next_up": "Next up",
 } as const;
 
 export type TranslationKey = keyof typeof en;
