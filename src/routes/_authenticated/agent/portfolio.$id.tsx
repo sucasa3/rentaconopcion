@@ -10,6 +10,8 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { useUserId } from "@/hooks/use-user-id";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { readOnboarding } from "@/lib/onboarding";
+import { useT } from "@/lib/i18n";
+import type { TranslationKey } from "@/lib/i18n/en";
 import { cn } from "@/lib/utils";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,23 +52,24 @@ import {
 import { Button } from "@/components/ui/button";
 
 
-const SOURCE_LABEL: Record<string, string> = {
-  inspection: "Inspection",
-  property_records: "Property records",
-  recent_permit: "Permit",
+const SOURCE_KEY: Record<string, TranslationKey> = {
+  inspection: "biz.apd.src.inspection",
+  property_records: "biz.apd.src.property_records",
+  recent_permit: "biz.apd.src.recent_permit",
 };
 
 function NewPill({ count }: { count?: number }) {
+  const t = useT();
   return (
     <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary-foreground">
-      {count ? `${count} new` : "New"}
+      {count ? t("biz.apd.new_count", { count }) : t("biz.apd.new")}
     </span>
   );
 }
 
 function SourceBadge({ source }: { source?: string }) {
-
-  const label = SOURCE_LABEL[source ?? "inspection"] ?? "Inspection";
+  const t = useT();
+  const label = t(SOURCE_KEY[source ?? "inspection"] ?? "biz.apd.src.inspection");
   return (
     <span className="rounded-full border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
       {label}
@@ -98,18 +101,18 @@ const moneyCompact = (n: number | null | undefined) => {
   return `$${Math.round(n).toLocaleString()}`;
 };
 
-const BAND_META: Record<string, { label: string; tone: string }> = {
-  high: { label: "High intent", tone: "bg-sucasa-orange/12 text-status-opportunity border-sucasa-orange/40" },
-  hot: { label: "Hot", tone: "bg-sucasa-orange/10 text-status-opportunity border-sucasa-orange/30" },
-  warm: { label: "Warm", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
-  nurture: { label: "Nurture", tone: "bg-status-nurture/10 text-status-nurture border-status-nurture/30" },
-  hold: { label: "Hold", tone: "bg-secondary text-muted-foreground border-border" },
+const BAND_META: Record<string, { labelKey: TranslationKey; tone: string }> = {
+  high: { labelKey: "biz.apd.bd.high", tone: "bg-sucasa-orange/12 text-status-opportunity border-sucasa-orange/40" },
+  hot: { labelKey: "biz.apd.bd.hot", tone: "bg-sucasa-orange/10 text-status-opportunity border-sucasa-orange/30" },
+  warm: { labelKey: "biz.apd.bd.warm", tone: "bg-status-attention/10 text-status-attention border-status-attention/40" },
+  nurture: { labelKey: "biz.apd.bd.nurture", tone: "bg-status-nurture/10 text-status-nurture border-status-nurture/30" },
+  hold: { labelKey: "biz.apd.bd.hold", tone: "bg-secondary text-muted-foreground border-border" },
 };
 
-const READINESS_META: Record<string, { label: string; tone: string }> = {
-  "list-ready": { label: "List-ready", tone: "bg-status-positive/12 text-status-positive" },
-  "prep-needed": { label: "Prep needed", tone: "bg-status-attention/10 text-status-attention" },
-  "not-ready": { label: "Not ready", tone: "bg-secondary text-muted-foreground" },
+const READINESS_META: Record<string, { labelKey: TranslationKey; tone: string }> = {
+  "list-ready": { labelKey: "biz.apd.rd.list-ready", tone: "bg-status-positive/12 text-status-positive" },
+  "prep-needed": { labelKey: "biz.apd.rd.prep-needed", tone: "bg-status-attention/10 text-status-attention" },
+  "not-ready": { labelKey: "biz.apd.rd.not-ready", tone: "bg-secondary text-muted-foreground" },
 };
 
 /** Tap-to-open explainer for the three listing-readiness bands. */
