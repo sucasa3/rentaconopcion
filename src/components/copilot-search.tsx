@@ -4,32 +4,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Sparkles, Search, Loader2, ArrowRight, X } from "lucide-react";
 import { searchClients } from "@/lib/copilot.functions";
+import { useT } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 type Result = {
-  id: string;
-  portfolio_id: string;
-  name: string;
-  email: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  rate: number | null;
-  equity_cents: number;
-  savings_per_month: number;
-  intent: "high" | "medium" | "low" | null;
-  last_contact_at: string | null;
+...
 };
-
-const EXAMPLES = [
-  "clients named Alba",
-  "who has high intent?",
-  "equity over $150k",
-  "paying more than 6.5%",
-  "not contacted in 90 days",
-];
 
 function money(cents: number | null | undefined): string {
   if (cents == null) return "—";
@@ -45,6 +27,8 @@ export function CopilotSearch({
   /** Route that shows a single client, e.g. "/lender/portfolio/$id". */
   detailPath: (r: Result) => { to: string; params?: any; search?: any };
 }) {
+  const t = useT();
+  const EXAMPLES = [t("biz.copilot.ex1"), t("biz.copilot.ex2"), t("biz.copilot.ex3"), t("biz.copilot.ex4"), t("biz.copilot.ex5")];
   const [q, setQ] = useState("");
   const run = useServerFn(searchClients);
 
