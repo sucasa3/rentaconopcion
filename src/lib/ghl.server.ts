@@ -403,8 +403,8 @@ export async function lookupContactDndById(contactId: string): Promise<boolean |
     if (c?.dnd === true) return true;
     const settings = c?.dndSettings ?? {};
     const sms = (settings as any)?.SMS ?? (settings as any)?.sms;
-    if (sms?.status) return sms.status === "active";
-    const any = Object.values(settings).some((s: any) => s?.status === "active");
+    if (sms?.status) return isDndStatusOn(sms.status);
+    const any = Object.values(settings).some((s: any) => isDndStatusOn(s?.status));
     return any || c?.dnd === false ? any : null;
   } catch {
     return null;
