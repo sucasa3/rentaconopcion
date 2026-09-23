@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   POST_CALL_OUTCOMES,
   PostCallFinalSchema,
@@ -17,12 +17,11 @@ const validInterpretation = {
   summary: "Maria is thinking about selling around March.",
   originalLanguage: "en" as const,
   outcome: "talked",
-  relationshipStatus: "warm",
-  keyFacts: [{ fact: "Husband starts new job in January", confidence: "high" as const }],
+  keyFacts: [{ fact: "Husband starts new job in January", confidence: 0.9 }],
   nextStep: "Call back in the new year",
   followUp: {
     required: true,
-    date: "2026-01-06",
+    date: "2027-01-06",
     timeframeText: "first week of January",
     reason: "She asked me to reconnect after the holidays",
   },
@@ -101,7 +100,7 @@ describe("PostCallFinalSchema", () => {
 
 describe("normalizeFollowUpDate", () => {
   it("accepts a valid ISO date", () => {
-    expect(normalizeFollowUpDate("2026-01-06")).toBe("2026-01-06");
+    expect(normalizeFollowUpDate("2027-01-06")).toBe("2027-01-06");
   });
 
   it("rejects a date in the past", () => {
@@ -110,7 +109,7 @@ describe("normalizeFollowUpDate", () => {
 
   it("rejects impossible dates and datetime strings", () => {
     expect(normalizeFollowUpDate("2026-02-30")).toBeNull();
-    expect(normalizeFollowUpDate("2026-06-01T09:00:00Z")).toBeNull();
+    expect(normalizeFollowUpDate("2027-06-01T09:00:00Z")).toBeNull();
     expect(normalizeFollowUpDate("next Friday")).toBeNull();
     expect(normalizeFollowUpDate("")).toBeNull();
   });
@@ -126,11 +125,11 @@ describe("followUpDateToDueAt", () => {
   });
 
   it("returns a UTC instant on the requested calendar day at 9:00 local", () => {
-    const due = followUpDateToDueAt("2026-06-15");
+    const due = followUpDateToDueAt("2027-06-15");
     expect(due).not.toBeNull();
     const d = new Date(due!);
-    expect(d.getTime()).toBeLessThan(Date.parse("2026-06-16T12:00:00Z"));
-    expect(d.getTime()).toBeGreaterThanOrEqual(Date.parse("2026-06-15T00:00:00Z"));
+    expect(d.getTime()).toBeLessThan(Date.parse("2027-06-16T12:00:00Z"));
+    expect(d.getTime()).toBeGreaterThanOrEqual(Date.parse("2027-06-15T00:00:00Z"));
   });
 });
 
@@ -151,7 +150,7 @@ describe("editedFields", () => {
   it("detects an edited follow-up date", () => {
     const final = PostCallFinalSchema.parse({
       ...validInterpretation,
-      followUp: { ...validInterpretation.followUp, date: "2026-01-08" },
+      followUp: { ...validInterpretation.followUp, date: "2027-01-08" },
     });
     expect(editedFields(validInterpretation, final)).toEqual(["followUp.date"]);
   });
@@ -169,6 +168,15 @@ describe("editedFields", () => {
 // ---------- return-from-call marker ----------
 
 describe("call marker", () => {
+  beforeAll(() => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k),
+      clear: () => store.clear(),
+    });
+  });
   beforeEach(() => {
     localStorage.clear();
   });
