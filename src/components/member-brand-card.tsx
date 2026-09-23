@@ -123,7 +123,7 @@ export function MemberBrandCard({
                 />
                 {inherited && (
                   <span className="mt-1 block text-[10px] font-normal text-muted-foreground">
-                    Using team default
+                    {t("biz.brand.using_team_default")}
                   </span>
                 )}
               </label>
@@ -131,10 +131,10 @@ export function MemberBrandCard({
           })}
 
           <div className="text-xs font-medium sm:col-span-2">
-            <span className="text-muted-foreground">Headshot or logo</span>
+            <span className="text-muted-foreground">{t("biz.brand.headshot_logo")}</span>
             <div className="mt-1 flex items-center gap-3">
               {eff("logo_url") ? (
-                <img src={eff("logo_url")!} alt="Sender logo" className="h-10 w-auto rounded-lg bg-muted" />
+                <img src={eff("logo_url")!} alt={orgName} className="h-10 w-auto rounded-lg bg-muted" />
               ) : (
                 <span className="grid h-10 w-10 place-items-center rounded-lg bg-muted text-muted-foreground">
                   <Upload className="h-4 w-4" />
@@ -156,7 +156,7 @@ export function MemberBrandCard({
                 disabled={uploading}
                 className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-50"
               >
-                {uploading ? "Uploading…" : form.logo_url ? "Replace image" : "Upload image"}
+                {uploading ? t("biz.brand.uploading") : form.logo_url ? t("biz.brand.replace_image") : t("biz.brand.upload_image")}
               </button>
             </div>
           </div>
@@ -164,11 +164,11 @@ export function MemberBrandCard({
 
         <div className="rounded-2xl border border-border bg-muted/50 p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Signature preview
+            {t("biz.brand.signature_preview")}
           </p>
           <div className="mt-3 space-y-1 text-xs">
             <p className="font-medium">
-              From: {eff("sender_name") || orgName}
+              {t("biz.common.from")} {eff("sender_name") || orgName}
               {eff("reply_to_email") ? ` <${eff("reply_to_email")}>` : ""}
             </p>
             <div className="mt-3 border-t border-border pt-3">
@@ -180,7 +180,7 @@ export function MemberBrandCard({
                 </p>
               ))}
               <p className="mt-3 text-[10px] text-muted-foreground">
-                Sent by SuCasa on behalf of {orgName}
+                {t("biz.brand.sent_by", { name: orgName })}
               </p>
             </div>
           </div>
@@ -193,7 +193,7 @@ export function MemberBrandCard({
           disabled={mut.isPending}
           className="rounded-full gradient-brand px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
         >
-          {mut.isPending ? "Saving…" : "Save my identity"}
+          {mut.isPending ? t("biz.common.saving") : t("biz.brand.save_identity")}
         </button>
       </div>
     </div>
