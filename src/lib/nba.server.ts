@@ -110,6 +110,17 @@ export interface QueueItem {
   lastContactAt: string | null;
   lastOutcome: OutcomeStage | null;
   /**
+   * Latest post-call conversation for this homeowner, if any. Purely
+   * presentational context (why now / what was discussed / suggested opener);
+   * ranking is unchanged.
+   */
+  lastConversation: {
+    summary: string;
+    opener: string | null;
+    reason: string | null;
+    timeframeText: string | null;
+  } | null;
+  /**
    * Server-authoritative channel decisions. The client renders these and never
    * re-derives permission. Null for audiences that keep their own channel UI.
    */
@@ -302,6 +313,25 @@ export async function buildActionQueue(
   // no surface below recomputes value, balance, equity, LTV or tenure.
   const factsByClient = await clientFactsFor(supabase, rows as any[]);
 
+  // Latest post-call conversation per homeowner — context for the card, not
+  // an input to ranking.
+  const { data: convos } = clientIds.length
+    ? await supabase
+        .from("professional_conversations")
+        .select(
+          "portfolio_client_id, summary, suggested_opener, follow_up_reason, follow_up_timeframe_text",
+        )
+        .in("portfolio_client_id", clientIds)
+        .order("created_at", { ascending: false })
+        .limit(500)
+    : { data: [] as any[] };
+  const lastConvoByClient = new Map<string, any>();
+  for (const cv of (convos ?? []) as any[]) {
+    if (!lastConvoByClient.has(cv.portfolio_client_id))
+      lastConvoByClient.set(cv.portfolio_client_id, cv);
+  }
+
+
   // Every open category for a homeowner, so the narrative can pick ONE story
   // instead of showing competing ones. Stored categories are untouched.
   const categoriesByClient = new Map<string, string[]>();
@@ -374,6 +404,17 @@ export async function buildActionQueue(
       engagementLine,
       lastContactAt: lastAt,
       lastOutcome: lastOutcomeByOpp.get(o.id) ?? null,
+      lastConversation: (() => {
+        const cv = lastConvoByClient.get(c.id);
+        return cv
+          ? {
+              summary: cv.summary as string,
+              opener: (cv.suggested_opener as string | null) ?? null,
+              reason: (cv.follow_up_reason as string | null) ?? null,
+              timeframeText: (cv.follow_up_timeframe_text as string | null) ?? null,
+            }
+          : null;
+      })(),
       channels:
         orgType === "agent"
           ? evaluateAgentChannels({

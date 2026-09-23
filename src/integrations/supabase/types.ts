@@ -4786,6 +4786,101 @@ export type Database = {
           },
         ]
       }
+      professional_conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          edited_fields: Json
+          follow_up_date: string | null
+          follow_up_reason: string | null
+          follow_up_timeframe_text: string | null
+          id: string
+          key_facts: Json
+          next_step: string | null
+          opportunity_id: string | null
+          org_id: string
+          original_language: string
+          outcome_id: string | null
+          outcome_stage: string | null
+          portfolio_client_id: string
+          source: string
+          suggested_opener: string | null
+          summary: string
+          transcript: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          edited_fields?: Json
+          follow_up_date?: string | null
+          follow_up_reason?: string | null
+          follow_up_timeframe_text?: string | null
+          id?: string
+          key_facts?: Json
+          next_step?: string | null
+          opportunity_id?: string | null
+          org_id: string
+          original_language?: string
+          outcome_id?: string | null
+          outcome_stage?: string | null
+          portfolio_client_id: string
+          source?: string
+          suggested_opener?: string | null
+          summary: string
+          transcript: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          edited_fields?: Json
+          follow_up_date?: string | null
+          follow_up_reason?: string | null
+          follow_up_timeframe_text?: string | null
+          id?: string
+          key_facts?: Json
+          next_step?: string | null
+          opportunity_id?: string | null
+          org_id?: string
+          original_language?: string
+          outcome_id?: string | null
+          outcome_stage?: string | null
+          portfolio_client_id?: string
+          source?: string
+          suggested_opener?: string | null
+          summary?: string
+          transcript?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_conversations_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "homeowner_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_conversations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_conversations_outcome_id_fkey"
+            columns: ["outcome_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_outcomes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_conversations_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_invitations: {
         Row: {
           accepted_at: string | null
@@ -6014,6 +6109,28 @@ export type Database = {
           value_checks_30d: number
           value_request_at: string
         }[]
+      }
+      record_post_call_save: {
+        Args: {
+          p_client_id: string
+          p_edited_fields: Json
+          p_follow_up_date: string
+          p_follow_up_reason: string
+          p_key_facts: Json
+          p_language: string
+          p_next_step: string
+          p_next_step_due_at: string
+          p_note: string
+          p_opportunity_id: string
+          p_org_id: string
+          p_source: string
+          p_stage: string
+          p_suggested_opener: string
+          p_summary: string
+          p_timeframe_text: string
+          p_transcript: string
+        }
+        Returns: string
       }
     }
     Enums: {

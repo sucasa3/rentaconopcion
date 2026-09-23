@@ -48,7 +48,10 @@ import {
   Info,
   Hammer,
   MapPin,
+  Mic,
 } from "lucide-react";
+import { markCallInitiated } from "@/lib/post-call";
+import { PostCallNoteDialog } from "@/components/post-call-note";
 import { Button } from "@/components/ui/button";
 
 
@@ -1371,6 +1374,8 @@ function ClientDrawer({
 }) {
   const t = useT();
   const isMobile = useIsMobile();
+  const qc = useQueryClient();
+  const [noteOpen, setNoteOpen] = useState(false);
   const [status, setStatus] = useState<string>(client.listing?.status ?? "off_market");
   const [otherAgent, setOtherAgent] = useState<boolean>(
     client.listing?.listed_with_other_agent ?? false,
@@ -1494,10 +1499,18 @@ function ClientDrawer({
           </pre>
         )}
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {client.phone && (
             <a
               href={`tel:${String(client.phone).replace(/[^0-9+]/g, "")}`}
+              onClick={() =>
+                markCallInitiated({
+                  clientId: client.id,
+                  name: client.name ?? "",
+                  audience: "agent",
+                  opportunityId: null,
+                })
+              }
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
               <Phone className="h-4 w-4 text-primary" /> {t("biz.channel.call")}
@@ -1511,7 +1524,25 @@ function ClientDrawer({
               <Mail className="h-4 w-4 text-primary" /> {t("biz.channel.email")}
             </a>
           )}
+          <button
+            type="button"
+            onClick={() => setNoteOpen(true)}
+            aria-label={t("biz.pc.cta")}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
+          >
+            <Mic className="h-4 w-4 text-primary" />
+          </button>
         </div>
+
+        <PostCallNoteDialog
+          kind="agent"
+          clientId={client.id}
+          name={client.name ?? ""}
+          opportunityId={client.opportunity_id ?? client.top_opportunity_id ?? null}
+          open={noteOpen}
+          onOpenChange={setNoteOpen}
+          onSaved={() => qc.invalidateQueries()}
+        />
 
         <DetailSection title={t("biz.apd.prop_details")}>
           <div className="grid grid-cols-2 gap-x-5 gap-y-4">

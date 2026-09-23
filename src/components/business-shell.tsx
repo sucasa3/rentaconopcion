@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
 import { AccountMenu, MobileTopBar } from "@/components/account-menu";
+import { PostCallReturnPrompt } from "@/components/post-call-return-prompt";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -128,6 +129,7 @@ export function BusinessShell({
 
         <main className="min-w-0 flex-1 pb-24 md:pb-10">
           <MobileTopBar role={kind} />
+          <PostCallReturnPrompt />
           {children}
         </main>
 

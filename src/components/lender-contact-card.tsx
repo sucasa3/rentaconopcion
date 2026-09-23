@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ChevronDown, FileText, CheckCircle2 } from "lucide-react";
+import { ChevronDown, FileText, CheckCircle2, Mic } from "lucide-react";
 import {
   getLenderWorkspace,
   logLenderOutcome,
@@ -12,10 +12,22 @@ import {
 import { PRIORITY_LABEL } from "@/lib/lender-access";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
+import { markCallInitiated } from "@/lib/post-call";
 import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-surface";
 import { ChannelActions } from "@/components/channel-actions";
+import { PostCallNoteDialog } from "@/components/post-call-note";
 import { Button } from "@/components/ui/button";
 import type { ChannelOption, ContactChannel } from "@/lib/contact-channels";
+
+function markLenderCall(person: { id: string; name: string }) {
+  markCallInitiated({
+    clientId: person.id,
+    name: person.name,
+    audience: "lender",
+    opportunityId: null,
+  });
+}
 
 type Workspace = NonNullable<Awaited<ReturnType<typeof getLenderWorkspace>>>;
 export type Person = Workspace["book"][number];
@@ -142,6 +154,8 @@ function ViewHomeowner({ person, size = "md" }: { person: Person; size?: "sm" | 
  * needs to decide and act. Ranking, permissions and outcomes are unchanged.
  */
 export function LenderSpotlightCard({ person, onBrief }: { person: Person; onBrief: () => void }) {
+  const tr = useT();
+  const [noteOpen, setNoteOpen] = useState(false);
   const [showOutcomes, setShowOutcomes] = useState(false);
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState<{ text: string; nextStep?: string | null } | null>(null);
@@ -205,11 +219,33 @@ export function LenderSpotlightCard({ person, onBrief }: { person: Person; onBri
           </IntelligenceSurface>
         )}
 
+        {person.lastConversation && (
+          <IntelligenceSurface label={tr("biz.pc.last_conv")} compact>
+            <div className="space-y-1 text-sm leading-relaxed">
+              {person.lastConversation.reason && (
+                <p>
+                  <span className="font-semibold">{tr("biz.pc.why_now")}:</span>{" "}
+                  {person.lastConversation.reason}
+                </p>
+              )}
+              <p>{person.lastConversation.summary}</p>
+              {person.lastConversation.opener && (
+                <p>
+                  <span className="font-semibold">{tr("biz.pc.suggested_opener")}:</span>{" "}
+                  &ldquo;{person.lastConversation.opener}&rdquo;
+                </p>
+              )}
+            </div>
+          </IntelligenceSurface>
+        )}
+
         <ChannelActions
           options={options}
           phone={person.phone}
           email={person.email}
-          onAct={() => undefined}
+          onAct={(channel) => {
+            if (channel === "call") markLenderCall(person);
+          }}
         >
           <ViewHomeowner person={person} />
           <button
@@ -220,6 +256,24 @@ export function LenderSpotlightCard({ person, onBrief }: { person: Person; onBri
             <FileText className="h-4 w-4" /> Prepare me
           </button>
         </ChannelActions>
+
+        <button
+          type="button"
+          onClick={() => setNoteOpen(true)}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary transition hover:text-foreground"
+        >
+          <Mic className="h-3.5 w-3.5" /> {tr("biz.pc.cta")}
+        </button>
+
+        <PostCallNoteDialog
+          kind="lender"
+          clientId={person.id}
+          name={person.name}
+          opportunityId={null}
+          open={noteOpen}
+          onOpenChange={setNoteOpen}
+          onSaved={() => qc.invalidateQueries({ queryKey: ["lender-workspace"] })}
+        />
 
         {done && (
           <div className="rounded-xl border border-status-positive/30 bg-status-positive/[0.07] p-3.5">
@@ -362,6 +416,9 @@ export function LenderQueueRow({
   onBrief: () => void;
 }) {
   const t = TEMP[person.temperature ?? "nurture"];
+  const tr = useT();
+  const qc = useQueryClient();
+  const [noteOpen, setNoteOpen] = useState(false);
   const review = person.reviews[0];
   const fact = supportingFacts(person)[0];
   const options = channelOptions(person);
@@ -391,7 +448,9 @@ export function LenderQueueRow({
           phone={person.phone}
           email={person.email}
           size="sm"
-          onAct={() => undefined}
+          onAct={(channel) => {
+            if (channel === "call") markLenderCall(person);
+          }}
         >
           <ViewHomeowner person={person} size="sm" />
           <button
@@ -401,7 +460,24 @@ export function LenderQueueRow({
           >
             Prepare me
           </button>
+          <button
+            type="button"
+            onClick={() => setNoteOpen(true)}
+            aria-label={tr("biz.pc.cta")}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-md border border-border px-3 text-sm font-semibold text-text-secondary"
+          >
+            <Mic className="h-4 w-4" />
+          </button>
         </ChannelActions>
+        <PostCallNoteDialog
+          kind="lender"
+          clientId={person.id}
+          name={person.name}
+          opportunityId={null}
+          open={noteOpen}
+          onOpenChange={setNoteOpen}
+          onSaved={() => qc.invalidateQueries({ queryKey: ["lender-workspace"] })}
+        />
       </div>
     </li>
   );

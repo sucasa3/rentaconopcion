@@ -111,6 +111,13 @@ export interface LenderClientRow {
   /** Administrative step SuCasa scheduled after the last recorded outcome. */
   openNextStep: { label: string; dueAt: string | null; overdueDays: number | null } | null;
   lastOutcome: { stage: string; occurredAt: string } | null;
+  /** Latest post-call conversation — display context only, never ranked on. */
+  lastConversation: {
+    summary: string;
+    opener: string | null;
+    reason: string | null;
+    timeframeText: string | null;
+  } | null;
   cadence: "active" | "in_process" | "post_close" | "paused";
 }
 
@@ -340,6 +347,24 @@ export async function readLenderWorkspace(
       lastOutcomeByClient.set(o.portfolio_client_id, o);
   }
 
+  // Latest post-call conversation per homeowner — context for the card, not
+  // an input to ranking.
+  const { data: convoRows } = clientIds.length
+    ? await admin()
+        .from("professional_conversations")
+        .select(
+          "portfolio_client_id, summary, suggested_opener, follow_up_reason, follow_up_timeframe_text",
+        )
+        .in("portfolio_client_id", clientIds)
+        .order("created_at", { ascending: false })
+        .limit(500)
+    : { data: [] as any[] };
+  const lastConvoByClient = new Map<string, any>();
+  for (const cv of (convoRows ?? []) as any[]) {
+    if (!lastConvoByClient.has(cv.portfolio_client_id))
+      lastConvoByClient.set(cv.portfolio_client_id, cv);
+  }
+
   // --- Cached property records ----------------------------------------------
   // The same cache the agent side reads. No provider call is made here, so this
   // costs nothing extra; it just lets the lender see real value/mortgage facts
@@ -547,6 +572,17 @@ export async function readLenderWorkspace(
       }),
       openNextStep,
       lastOutcome: last ? { stage: last.stage, occurredAt: last.occurred_at } : null,
+      lastConversation: (() => {
+        const cv = lastConvoByClient.get(c.id);
+        return cv
+          ? {
+              summary: cv.summary as string,
+              opener: (cv.suggested_opener as string | null) ?? null,
+              reason: (cv.follow_up_reason as string | null) ?? null,
+              timeframeText: (cv.follow_up_timeframe_text as string | null) ?? null,
+            }
+          : null;
+      })(),
       cadence: plan?.cadence ?? "active",
     });
   }
