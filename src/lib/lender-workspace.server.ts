@@ -368,6 +368,7 @@ export async function readLenderWorkspace(
       lastConvoByClient.set(cv.portfolio_client_id, cv);
   }
 
+  console.log("[dbg convo]", (convoRows ?? []).length, [...lastConvoByClient.keys()].slice(0,3).join(","));
   // --- Cached property records ----------------------------------------------
   // The same cache the agent side reads. No provider call is made here, so this
   // costs nothing extra; it just lets the lender see real value/mortgage facts
