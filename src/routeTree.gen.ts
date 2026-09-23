@@ -48,6 +48,7 @@ import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authentic
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
 import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as ApiPublicUnsubscribeRouteImport } from './routes/api/public/unsubscribe'
+import { Route as ApiPostCallTranscribeRouteImport } from './routes/api/post-call/transcribe'
 import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
 import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenticated/lender/tasks'
 import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
@@ -282,6 +283,11 @@ const AuthenticatedAgentIndexRoute = AuthenticatedAgentIndexRouteImport.update({
 const ApiPublicUnsubscribeRoute = ApiPublicUnsubscribeRouteImport.update({
   id: '/api/public/unsubscribe',
   path: '/api/public/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPostCallTranscribeRoute = ApiPostCallTranscribeRouteImport.update({
+  id: '/api/post-call/transcribe',
+  path: '/api/post-call/transcribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
@@ -549,6 +555,7 @@ export interface FileRoutesByFullPath {
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/api/post-call/transcribe': typeof ApiPostCallTranscribeRoute
   '/api/public/unsubscribe': typeof ApiPublicUnsubscribeRoute
   '/agent/': typeof AuthenticatedAgentIndexRoute
   '/lender/': typeof AuthenticatedLenderIndexRoute
@@ -623,6 +630,7 @@ export interface FileRoutesByTo {
   '/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/api/post-call/transcribe': typeof ApiPostCallTranscribeRoute
   '/api/public/unsubscribe': typeof ApiPublicUnsubscribeRoute
   '/agent': typeof AuthenticatedAgentIndexRoute
   '/lender': typeof AuthenticatedLenderIndexRoute
@@ -702,6 +710,7 @@ export interface FileRoutesById {
   '/_authenticated/lender/opportunities': typeof AuthenticatedLenderOpportunitiesRoute
   '/_authenticated/lender/tasks': typeof AuthenticatedLenderTasksRoute
   '/_authenticated/requests/$id': typeof AuthenticatedRequestsIdRoute
+  '/api/post-call/transcribe': typeof ApiPostCallTranscribeRoute
   '/api/public/unsubscribe': typeof ApiPublicUnsubscribeRoute
   '/_authenticated/agent/': typeof AuthenticatedAgentIndexRoute
   '/_authenticated/lender/': typeof AuthenticatedLenderIndexRoute
@@ -782,6 +791,7 @@ export interface FileRouteTypes {
     | '/lender/opportunities'
     | '/lender/tasks'
     | '/requests/$id'
+    | '/api/post-call/transcribe'
     | '/api/public/unsubscribe'
     | '/agent/'
     | '/lender/'
@@ -856,6 +866,7 @@ export interface FileRouteTypes {
     | '/lender/opportunities'
     | '/lender/tasks'
     | '/requests/$id'
+    | '/api/post-call/transcribe'
     | '/api/public/unsubscribe'
     | '/agent'
     | '/lender'
@@ -934,6 +945,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lender/opportunities'
     | '/_authenticated/lender/tasks'
     | '/_authenticated/requests/$id'
+    | '/api/post-call/transcribe'
     | '/api/public/unsubscribe'
     | '/_authenticated/agent/'
     | '/_authenticated/lender/'
@@ -981,6 +993,7 @@ export interface RootRouteChildren {
   RequestRoute: typeof RequestRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPostCallTranscribeRoute: typeof ApiPostCallTranscribeRoute
   ApiPublicUnsubscribeRoute: typeof ApiPublicUnsubscribeRoute
   ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
   ApiPublicDailyReadTickRoute: typeof ApiPublicDailyReadTickRoute
@@ -1272,6 +1285,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/unsubscribe'
       fullPath: '/api/public/unsubscribe'
       preLoaderRoute: typeof ApiPublicUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/post-call/transcribe': {
+      id: '/api/post-call/transcribe'
+      path: '/api/post-call/transcribe'
+      fullPath: '/api/post-call/transcribe'
+      preLoaderRoute: typeof ApiPostCallTranscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/requests/$id': {
@@ -1717,6 +1737,7 @@ const rootRouteChildren: RootRouteChildren = {
   RequestRoute: RequestRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPostCallTranscribeRoute: ApiPostCallTranscribeRoute,
   ApiPublicUnsubscribeRoute: ApiPublicUnsubscribeRoute,
   ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,
   ApiPublicDailyReadTickRoute: ApiPublicDailyReadTickRoute,

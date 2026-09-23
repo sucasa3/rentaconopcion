@@ -64,6 +64,13 @@
       "when": 1790118218572,
       "tag": "0008_property_intel_admin_only_read",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790165757296,
+      "tag": "0009_create_professional_conversations",
+      "breakpoints": true
     }
   ]
 }

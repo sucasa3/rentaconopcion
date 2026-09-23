@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Eye,
   ChevronRight,
+  Mic,
 } from "lucide-react";
 import {
   TEMPERATURE_META,
@@ -34,6 +35,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChannelActions } from "@/components/channel-actions";
+import { PostCallNoteDialog } from "@/components/post-call-note";
+import { markCallInitiated } from "@/lib/post-call";
 
 type Item = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
@@ -63,6 +66,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
     staleTime: 30_000,
   });
   const [composing, setComposing] = useState<Item | null>(null);
+  const [noteFor, setNoteFor] = useState<Item | null>(null);
+  const markCall = (item: Item) =>
+    markCallInitiated({
+      clientId: item.clientId,
+      name: item.name,
+      audience: kind,
+      opportunityId: item.opportunityId,
+    });
 
   const outcomeFn = useServerFn(logOutcome);
   const outcome = useMutation({
@@ -167,6 +178,29 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
 
               <p className="mt-3 text-sm font-medium">{item.headline}</p>
 
+              {item.lastConversation && (
+                <div className="mt-3 space-y-1 rounded-2xl bg-secondary/60 px-3 py-2.5 text-xs text-muted-foreground">
+                  {item.lastConversation.reason && (
+                    <p>
+                      <span className="font-semibold text-foreground">{t("biz.pc.why_now")}:</span>{" "}
+                      {item.lastConversation.reason}
+                    </p>
+                  )}
+                  <p>
+                    <span className="font-semibold text-foreground">{t("biz.pc.last_conv")}:</span>{" "}
+                    {item.lastConversation.summary}
+                  </p>
+                  {item.lastConversation.opener && (
+                    <p>
+                      <span className="font-semibold text-foreground">
+                        {t("biz.pc.suggested_opener")}:
+                      </span>{" "}
+                      &ldquo;{item.lastConversation.opener}&rdquo;
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="mt-3">
                 {decided ? (
                   <ChannelActions
@@ -174,7 +208,8 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                     phone={item.phone}
                     email={item.email}
                     size="sm"
-                    onAct={(channel) =>
+                    onAct={(channel) => {
+                      if (channel === "call") markCall(item);
                       outcome.mutate({
                         opportunityId: item.opportunityId,
                         stage: "attempted",
@@ -184,8 +219,8 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                             : channel === "text"
                               ? "Tapped text"
                               : "Tapped email",
-                      })
-                    }
+                      });
+                    }}
                     onEmail={() => setComposing(item)}
                   />
                 ) : (
@@ -193,13 +228,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                     {item.channel === "call" && item.phone && (
                       <a
                         href={`tel:${item.phone}`}
-                        onClick={() =>
+                        onClick={() => {
+                          markCall(item);
                           outcome.mutate({
                             opportunityId: item.opportunityId,
                             stage: "attempted",
                             note: "Tapped call",
-                          })
-                        }
+                          });
+                        }}
                         className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
                         <Phone className="h-4 w-4" /> {t("biz.channel.call")}
@@ -250,6 +286,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                   </button>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setNoteFor(item)}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+              >
+                <Mic className="h-3.5 w-3.5" /> {t("biz.pc.cta")}
+              </button>
             </li>
           );
         })}
@@ -261,6 +305,21 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
         onClose={() => setComposing(null)}
         onSent={() => qc.invalidateQueries({ queryKey: ["action-queue", kind] })}
       />
+
+      {noteFor && (
+        <PostCallNoteDialog
+          kind={kind}
+          clientId={noteFor.clientId}
+          name={noteFor.name}
+          opportunityId={noteFor.opportunityId}
+          open
+          onOpenChange={(o) => !o && setNoteFor(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["action-queue", kind] });
+            qc.invalidateQueries({ queryKey: ["business-funnel", kind] });
+          }}
+        />
+      )}
     </div>
   );
 }
