@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Funnel, FunnelChart, LabelList, ResponsiveContainer, Tooltip, Cell } from "recharts";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 interface FunnelRow {
@@ -14,16 +15,27 @@ interface FunnelRow {
   closed_value_cents: number;
 }
 
-const stages = [
-  { key: "homeowners", label: "Homeowners", color: "var(--primary)" },
-  { key: "opportunities", label: "Opportunities", color: "var(--info)" },
-  { key: "contacted", label: "Contacted", color: "var(--attention)" },
-  { key: "engaged", label: "Engaged", color: "var(--growth)" },
-  { key: "conversations", label: "Conversations", color: "var(--growth)" },
-  { key: "appointments", label: "Appointments", color: "var(--growth)" },
-  { key: "applications", label: "Applications", color: "var(--growth)" },
-  { key: "closed", label: "Closed", color: "var(--growth)" },
+const STAGE_KEYS = [
+  "homeowners",
+  "opportunities",
+  "contacted",
+  "engaged",
+  "conversations",
+  "appointments",
+  "applications",
+  "closed",
 ] as const;
+
+const STAGE_COLORS: Record<(typeof STAGE_KEYS)[number], string> = {
+  homeowners: "var(--primary)",
+  opportunities: "var(--info)",
+  contacted: "var(--attention)",
+  engaged: "var(--growth)",
+  conversations: "var(--growth)",
+  appointments: "var(--growth)",
+  applications: "var(--growth)",
+  closed: "var(--growth)",
+};
 
 function formatCents(cents: number) {
   return `$${Math.round(cents / 100).toLocaleString()}`;
