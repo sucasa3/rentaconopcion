@@ -99,34 +99,34 @@ export function CampaignOverrideDialog({
 
         <div className="mt-4 space-y-3">
           <Field
-            label="Subject line"
+            label={t("biz.override.subject_line")}
             value={form.subject}
             onChange={(v) => setForm({ ...form, subject: v })}
-            placeholder="Your home value update"
+            placeholder={t("biz.override.subject_ph")}
           />
           <Field
-            label="Opening line"
+            label={t("biz.override.opening_line")}
             textarea
             value={form.intro}
             onChange={(v) => setForm({ ...form, intro: v })}
-            placeholder="Hi {first name}, here's your monthly check-in."
+            placeholder={t("biz.override.opening_ph")}
           />
           <Field
-            label="Closing line"
+            label={t("biz.override.closing_line")}
             textarea
             value={form.closing}
             onChange={(v) => setForm({ ...form, closing: v })}
-            placeholder="Reply any time — happy to walk through the numbers."
+            placeholder={t("biz.override.closing_ph")}
           />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
-              label="Button label"
+              label={t("biz.override.button_label")}
               value={form.cta_label}
               onChange={(v) => setForm({ ...form, cta_label: v })}
-              placeholder={defaults.cta_label ?? "See my options"}
+              placeholder={defaults.cta_label ?? t("biz.override.button_label")}
             />
             <Field
-              label="Button link"
+              label={t("biz.override.button_link")}
               value={form.cta_url}
               onChange={(v) => setForm({ ...form, cta_url: v })}
               placeholder={defaults.cta_url ?? "https://…"}
@@ -140,7 +140,7 @@ export function CampaignOverrideDialog({
             disabled={resetMut.isPending}
             className="text-xs font-semibold text-muted-foreground hover:text-foreground disabled:opacity-50"
           >
-            Reset to default
+            {t("biz.override.reset")}
           </button>
           <button
             onClick={() => saveMut.mutate()}
