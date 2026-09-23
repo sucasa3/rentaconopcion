@@ -300,6 +300,7 @@ const STATUSES = ["off_market", "active", "pending", "sold", "expired", "withdra
 const PAGE_SIZE = 25;
 
 function AgentPortfolio() {
+  const t = useT();
   const { id } = Route.useParams();
   const { client: clientParam, status: statusParam } = Route.useSearch();
   const getFn = useServerFn(getAgentPortfolio);
@@ -353,13 +354,13 @@ function AgentPortfolio() {
       }
       return { enriched, failed, unmappable, remaining };
     },
-    onMutate: () => ({ toastId: toast.loading("Pulling property records…") }),
+    onMutate: () => ({ toastId: toast.loading(t("biz.apd.enrich_loading")) }),
     onSuccess: (r: any, _v, ctx) => {
-      const extra = r.unmappable
-        ? ` · ${r.unmappable} skipped (no street address on file)`
-        : "";
-      const left = r.remaining ? ` · ${r.remaining} still pending` : "";
-      toast.success(`Records pulled for ${r.enriched} homes${extra}${left}`, { id: ctx?.toastId });
+      const extra = r.unmappable ? t("biz.apd.no_address", { count: r.unmappable }) : "";
+      const left = r.remaining ? t("biz.apd.enrich_left", { count: r.remaining }) : "";
+      toast.success(t("biz.apd.enrich_success", { count: r.enriched }) + extra + left, {
+        id: ctx?.toastId,
+      });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
     onError: (e: any, _v, ctx) => toast.error(e.message, { id: ctx?.toastId }),
@@ -373,7 +374,7 @@ function AgentPortfolio() {
   const saveListing = useMutation({
     mutationFn: (v: any) => listingFn({ data: v }),
     onSuccess: () => {
-      toast.success("Listing status saved");
+      toast.success(t("biz.apd.listing_saved"));
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
       setSelected(null);
     },
@@ -433,7 +434,7 @@ function AgentPortfolio() {
     mutationFn: (v: { itemKey: string; reviewed: boolean }) =>
       reviewFn({ data: { portfolioId: id, ...v } }),
     onSuccess: (_r, v) => {
-      toast.success(v.reviewed ? "Marked reviewed" : "Restored");
+      toast.success(v.reviewed ? t("biz.apd.marked_reviewed") : t("biz.apd.restored"));
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
     onError: (e: any) => toast.error(e.message),
@@ -468,11 +469,16 @@ function AgentPortfolio() {
       return {
         kind: "high_intent" as const,
         client: data.clients?.find((c: any) => c.id === topHigh.client_id),
-        title: `${topHigh.client_name ?? "A homeowner"} is showing high intent`,
+        title: t("biz.apd.pri_high_intent", {
+          name: topHigh.client_name ?? t("biz.apd.pri_anon"),
+        }),
         subtitle: topHigh.reason,
         next: (data.high_intent_feed ?? []).slice(1, 4).map((h: any) => ({
           client: data.clients?.find((c: any) => c.id === h.client_id),
-          label: `${h.client_name ?? "Household"} — ${h.reason}`,
+          label: t("biz.apd.pri_next", {
+            name: h.client_name ?? t("biz.apd.pri_household"),
+            reason: h.reason,
+          }),
         })),
       };
     }
@@ -481,11 +487,14 @@ function AgentPortfolio() {
       return {
         kind: "listing" as const,
         client: topListing,
-        title: `${topListing.name} could be list-ready`,
-        subtitle: `Readiness ${topListing.readiness_score} · Net proceeds ${moneyCompact(topListing.net_proceeds)}`,
+        title: t("biz.apd.pri_listing", { name: topListing.name }),
+        subtitle: t("biz.apd.pri_listing_sub", {
+          score: topListing.readiness_score,
+          amount: moneyCompact(topListing.net_proceeds),
+        }),
         next: data.top_listing_opportunities.slice(1, 4).map((c: any) => ({
           client: c,
-          label: `${c.name} — readiness ${c.readiness_score}`,
+          label: t("biz.apd.pri_next_readiness", { name: c.name, score: c.readiness_score }),
         })),
       };
     }
@@ -494,13 +503,15 @@ function AgentPortfolio() {
       return {
         kind: "enrich" as const,
         client: null,
-        title: `${missing.length} household${missing.length === 1 ? "" : "s"} need property records`,
-        subtitle: "Value, equity and readiness scores unlock after records are pulled.",
+        title: t(missing.length === 1 ? "biz.apd.pri_enrich_one" : "biz.apd.pri_enrich_many", {
+          count: missing.length,
+        }),
+        subtitle: t("biz.apd.pri_enrich_sub"),
         next: [],
       };
     }
     return null;
-  }, [data]);
+  }, [data, t]);
 
   return (
     <BusinessShell kind="agent" bookId={id}>
@@ -511,19 +522,19 @@ function AgentPortfolio() {
               to="/agent"
               className="inline-flex items-center gap-1 text-xs font-medium text-primary"
             >
-              <ArrowLeft className="h-3 w-3" /> All client lists
+              <ArrowLeft className="h-3 w-3" /> {t("biz.apd.all_lists")}
             </Link>
             <Link
               to="/agent/network"
               className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
             >
-              Lender network &amp; approvals
+              {t("biz.apd.lender_network")}
             </Link>
           </div>
 
 
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading…</p>
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
           ) : error ? (
             <p className="text-sm text-destructive">{(error as Error).message}</p>
           ) : data ? (
@@ -554,7 +565,7 @@ function AgentPortfolio() {
                   to="/agent/network"
                   className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
                 >
-                  Lender network &amp; approvals
+                  {t("biz.apd.lender_network")}
                 </Link>
               </div>
 
@@ -572,7 +583,9 @@ function AgentPortfolio() {
                     }
                   }}
                   primaryActionLabel={
-                    priority.kind === "enrich" ? "Pull property records" : "View homeowner"
+                    priority.kind === "enrich"
+                      ? t("biz.apd.pull_property_records")
+                      : t("biz.at.view_homeowner")
                   }
                   tone={priority.kind === "high_intent" ? "attention" : "opportunity"}
                   secondaryActions={priority.next?.map((n: any) => ({
@@ -591,11 +604,11 @@ function AgentPortfolio() {
                   <div className="flex items-center gap-2">
                     <Home className="h-4 w-4 text-primary" />
                     <h2 className="text-base font-semibold">
-                      Top listing opportunities @ {sellCost}% cost to sell
+                      {t("biz.apd.opps_title", { pct: sellCost })}
                     </h2>
                   </div>
                   <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                    Cost to sell
+                    {t("biz.apd.cost_to_sell")}
                     <input
                       type="number"
                       step="0.5"
@@ -612,13 +625,13 @@ function AgentPortfolio() {
                   </label>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Ranked on move intent × listing readiness. Modeled, not an appraisal.
+                  {t("biz.apd.opps_note")}
                 </p>
 
                 <div className="mt-4 space-y-3 md:hidden">
                   {data.top_listing_opportunities.length === 0 ? (
                     <p className="py-4 text-center text-sm text-muted-foreground">
-                      No scored opportunities yet.
+                      {t("biz.apd.none_yet")}
                     </p>
                   ) : (
                     data.top_listing_opportunities.map((c: any) => (
@@ -627,11 +640,16 @@ function AgentPortfolio() {
                         pill={<BandPill band={c.band} score={c.move_score} />}
                         name={c.name}
                         subtitle={[c.city, c.state].filter(Boolean).join(", ")}
-                        heroLabel="Net proceeds"
+                        heroLabel={t("biz.apd.th_net_proceeds")}
                         heroValue={moneyCompact(c.net_proceeds)}
                         metrics={[
-                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
-                          { label: "Readiness", value: c.readiness_label ?? c.readiness_score },
+                          { label: t("biz.apd.th_est_value"), value: moneyCompact(c.estimated_value) },
+                          {
+                            label: t("biz.apd.th_readiness"),
+                            value: c.readiness_label
+                              ? t(READINESS_META[c.readiness_label]?.labelKey ?? "biz.apd.th_readiness")
+                              : c.readiness_score,
+                          },
                         ]}
                         extra={
                           <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
@@ -649,34 +667,34 @@ function AgentPortfolio() {
                   <table className="w-full min-w-[720px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Household</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_household")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Intent
+                            {t("biz.apd.th_intent")}
                             <IntentInfo />
                           </span>
                         </th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Readiness
+                            {t("biz.apd.th_readiness")}
                             <ReadinessInfo />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Est. value</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_est_value")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Net proceeds
+                            {t("biz.apd.th_net_proceeds")}
                             <NetProceedsInfo sellCostPct={sellCost} />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Top signal</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_top_signal")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.top_listing_opportunities.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="py-6 text-center text-muted-foreground">
-                            No scored opportunities yet — pull property records to begin.
+                            {t("biz.apd.none_yet_table")}
                           </td>
                         </tr>
                       ) : (
@@ -722,7 +740,7 @@ function AgentPortfolio() {
                 <div className="min-w-0 rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
 
                   <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-                    Listing readiness mix
+                    {t("biz.apd.mix_title")}
                     <ReadinessInfo />
                   </h3>
                   <div className="mt-4 space-y-3">
@@ -732,7 +750,7 @@ function AgentPortfolio() {
                       return (
                         <div key={k}>
                           <div className="flex items-center justify-between text-xs">
-                            <span className="font-medium">{READINESS_META[k].label}</span>
+                            <span className="font-medium">{t(READINESS_META[k].labelKey)}</span>
                             <span className="text-muted-foreground">{n}</span>
                           </div>
                           <div className="mt-1 h-2 rounded-full bg-secondary">
@@ -752,8 +770,7 @@ function AgentPortfolio() {
                     })}
                   </div>
                   <p className="mt-4 text-xs text-muted-foreground">
-                    Readiness scores equity vs. selling costs, records on file, the home care
-                    record, the 2-year basis window, representation, and reachability.
+                    {t("biz.apd.mix_note")}
                   </p>
 
                 </div>
@@ -762,18 +779,17 @@ function AgentPortfolio() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
                       <Wrench className="h-4 w-4 shrink-0 text-primary" />
-                      <h3 className="truncate text-sm font-semibold">Client activity</h3>
+                      <h3 className="truncate text-sm font-semibold">{t("biz.apd.act_title")}</h3>
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {data.summary.active_referrals} open ·{" "}
-                      {data.summary.recommendations_due ?? 0} due ·{" "}
-                      {data.summary.touches_30d ?? 0} touches / 30d
+                      {t("biz.apd.act_counts", {
+                        open: data.summary.active_referrals,
+                        due: data.summary.recommendations_due ?? 0,
+                        touches: data.summary.touches_30d ?? 0,
+                      })}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    What your clients are doing, what their home needs next, and what has already
-                    gone out to them.
-                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">{t("biz.apd.act_note")}</p>
                   <Tabs
                     value={activityTab}
                     onValueChange={setActivityTab}
@@ -781,16 +797,16 @@ function AgentPortfolio() {
                   >
                     <TabsList className="grid h-auto w-full grid-cols-2 gap-1 sm:inline-flex sm:h-9 sm:w-auto sm:grid-cols-none">
                       <TabsTrigger value="high_intent" className="gap-1.5">
-                        High intent
+                        {t("biz.apd.tab_high_intent")}
                         {highIntentFeed.length > 0 && <NewPill count={highIntentFeed.length} />}
                       </TabsTrigger>
                       <TabsTrigger value="recommendations" className="gap-1.5">
-                        <span className="truncate">Recommendations</span>
+                        <span className="truncate">{t("biz.apd.tab_recs")}</span>
                         {newRecCount > 0 && <NewPill count={newRecCount} />}
                       </TabsTrigger>
-                      <TabsTrigger value="communicated">Communicated</TabsTrigger>
+                      <TabsTrigger value="communicated">{t("biz.apd.tab_communicated")}</TabsTrigger>
                       <TabsTrigger value="referrals" className="gap-1.5">
-                        Referrals
+                        {t("biz.apd.tab_referrals")}
                         {newRefCount > 0 && <NewPill count={newRefCount} />}
                       </TabsTrigger>
                     </TabsList>
@@ -799,8 +815,7 @@ function AgentPortfolio() {
                     <TabsContent value="high_intent" className="mt-4 space-y-2">
                       {highIntentFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No high-intent sellers right now. This fills in when a linked client
-                          repeatedly checks their home value or equity, or asks about selling.
+                          {t("biz.apd.hi_empty")}
                         </p>
                       ) : (
                         highIntentFeed.map((h: any) => (
@@ -816,7 +831,7 @@ function AgentPortfolio() {
                             <div className="min-w-0">
                               <p className="flex items-center gap-1.5 text-sm font-medium">
                                 <Flame className="h-3.5 w-3.5 text-destructive" />
-                                {h.client_name ?? h.address ?? "Client"}
+                                {h.client_name ?? h.address ?? t("biz.apd.client")}
                               </p>
                               <p className="text-xs text-muted-foreground">{h.reason}</p>
                               {h.detail && (
@@ -826,7 +841,7 @@ function AgentPortfolio() {
                               )}
                             </div>
                             <span className="shrink-0 rounded-full border border-destructive/40 bg-background px-2 py-0.5 text-[10px] font-semibold text-destructive">
-                              {h.score} · High
+                              {h.score} · {t("biz.apd.hi_high")}
                             </span>
                           </button>
                         ))
@@ -840,15 +855,13 @@ function AgentPortfolio() {
                           className="text-[11px] font-medium text-primary"
                         >
                           {showReviewed
-                            ? "Hide reviewed"
-                            : `Show ${reviewedCount} reviewed`}
+                            ? t("biz.apd.recs_hide")
+                            : t("biz.apd.recs_show", { count: reviewedCount })}
                         </button>
                       )}
                       {recFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          Nothing outstanding. Recommendations come from property records
-                          (home age + permits) and from inspection reports once a linked client
-                          uploads one.
+                          {t("biz.apd.recs_empty")}
                         </p>
                       ) : (
                         recFeed.map((r: any) => (
@@ -883,7 +896,7 @@ function AgentPortfolio() {
                                 className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-primary disabled:opacity-50"
                               >
                                 <CheckCircle2 className="h-3 w-3" />
-                                {r.reviewed_at ? "Undo reviewed" : "Mark reviewed"}
+                                {r.reviewed_at ? t("biz.apd.undo_reviewed") : t("biz.apd.mark_reviewed")}
                               </button>
                             </div>
                             <div className="flex shrink-0 items-center gap-1.5">
@@ -908,8 +921,7 @@ function AgentPortfolio() {
                     <TabsContent value="referrals" className="mt-4 space-y-2">
                       {refFeed.length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No service activity yet. Invite clients to SuCasa to see their projects
-                          here.
+                          {t("biz.apd.ref_empty")}
                         </p>
                       ) : (
                         refFeed.map((r: any) => (
@@ -942,7 +954,7 @@ function AgentPortfolio() {
                     <TabsContent value="communicated" className="mt-4 space-y-2">
                       {(data.touch_feed ?? []).length === 0 ? (
                         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-                          No campaign messages have gone out to this book yet.
+                          {t("biz.apd.comm_empty")}
                         </p>
                       ) : (
                         data.touch_feed.map((t: any) => (
@@ -991,14 +1003,19 @@ function AgentPortfolio() {
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
-                  <h2 className="text-base font-semibold">Your book</h2>
+                  <h2 className="text-base font-semibold">{t("biz.apd.book_title")}</h2>
                   <div className="flex items-center gap-3">
                     <span
                       className="rounded-full border border-border px-2.5 py-1 text-[11px] text-muted-foreground"
-                      title="Value, equity and net proceeds only appear once property records have been pulled for that home."
+                      title={t("biz.apd.valued_title")}
                     >
-                      Valued {data.summary.with_value ?? 0}/{data.summary.total}
-                      {data.summary.unmappable ? ` · ${data.summary.unmappable} no address` : ""}
+                      {t("biz.apd.valued", {
+                        count: data.summary.with_value ?? 0,
+                        total: data.summary.total,
+                      })}
+                      {data.summary.unmappable
+                        ? t("biz.apd.no_address", { count: data.summary.unmappable })
+                        : ""}
                     </span>
                     <button
                       onClick={() => enrich.mutate()}
@@ -1010,24 +1027,24 @@ function AgentPortfolio() {
                       ) : (
                         <Sparkles className="h-3 w-3 text-growth" />
                       )}
-                      Pull records
+                      {t("biz.apd.pull_records")}
                     </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                  <SummaryTile label="Households" value={data.summary.total.toLocaleString()} />
-                  <SummaryTile label="List-ready" value={String(data.summary.readiness["list-ready"])} />
-                  <SummaryTile label="Hot signals" value={String(data.summary.bands.hot)} />
-                  <SummaryTile label="Sphere equity" value={moneyCompact(data.summary.total_equity)} />
-                  <SummaryTile label="Potential GCI" value={moneyCompact(data.summary.total_gci_potential)} />
+                  <SummaryTile label={t("biz.apd.st_households")} value={data.summary.total.toLocaleString()} />
+                  <SummaryTile label={t("biz.apd.st_list_ready")} value={String(data.summary.readiness["list-ready"])} />
+                  <SummaryTile label={t("biz.apd.st_hot")} value={String(data.summary.bands.hot)} />
+                  <SummaryTile label={t("biz.apd.st_equity")} value={moneyCompact(data.summary.total_equity)} />
+                  <SummaryTile label={t("biz.apd.st_gci")} value={moneyCompact(data.summary.total_gci_potential)} />
                 </div>
 
                 <AgentCoveragePanel portfolioId={id} />
 
                 <div className="flex flex-wrap gap-2">
                   <SegChip
-                    label={`All ${data.summary.total}`}
+                    label={t("biz.apd.all_chip", { count: data.summary.total })}
                     active={band === "all"}
                     tone="bg-foreground text-background border-foreground"
                     onClick={() => {
@@ -1038,7 +1055,7 @@ function AgentPortfolio() {
                   {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
                     <SegChip
                       key={b}
-                      label={`${BAND_META[b].label} ${data.summary.bands[b] ?? 0}`}
+                      label={`${t(BAND_META[b].labelKey)} ${data.summary.bands[b] ?? 0}`}
                       active={band === b}
                       tone={BAND_META[b].tone}
                       onClick={() => {
@@ -1050,11 +1067,11 @@ function AgentPortfolio() {
                   <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
                     <span className="inline-flex items-center gap-1">
                       <AlertCircle className="h-3 w-3 text-growth" />
-                      {data.summary.expired} expired / withdrawn
+                      {t("biz.apd.expired", { count: data.summary.expired })}
                     </span>
                     <span className="inline-flex items-center gap-1">
                       <Link2 className="h-3 w-3" />
-                      {data.summary.linked} linked to SuCasa
+                      {t("biz.apd.linked", { count: data.summary.linked })}
                     </span>
                   </span>
                 </div>
@@ -1065,7 +1082,7 @@ function AgentPortfolio() {
               <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <h2 className="text-base font-semibold">
-                    Households ({filtered.length.toLocaleString()})
+                    {t("biz.apd.households_count", { count: filtered.length.toLocaleString() })}
                   </h2>
                   <div className="relative w-full sm:w-auto">
                     <Search className="pointer-events-none absolute left-3 top-3 h-3.5 w-3.5 text-muted-foreground" />
@@ -1075,7 +1092,7 @@ function AgentPortfolio() {
                         setSearch(e.target.value);
                         setPage(0);
                       }}
-                      placeholder="Name, address, city, zip"
+                      placeholder={t("biz.apd.search_ph")}
                       className="w-full rounded-full border border-border bg-background py-2 pl-8 pr-3 text-sm outline-none focus:border-primary sm:w-64"
                     />
                   </div>
@@ -1084,7 +1101,7 @@ function AgentPortfolio() {
                 <div className="mt-4 space-y-3 md:hidden">
                   {pageRows.length === 0 ? (
                     <p className="py-6 text-center text-sm text-muted-foreground">
-                      No households match this filter.
+                      {t("biz.apd.no_match")}
                     </p>
                   ) : (
                     pageRows.map((c: any) => (
@@ -1097,16 +1114,18 @@ function AgentPortfolio() {
                             <BandPill band={c.band} score={c.move_score} />
                             <StatusPill tone="muted">
                               {c.listing
-                                ? String(c.listing.status).replace("_", " ")
-                                : "off market"}
+                                ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
+                                : t("biz.apd.off_market")}
                             </StatusPill>
                           </>
                         }
                         metrics={[
-                          { label: "Est. value", value: moneyCompact(c.estimated_value) },
+                          { label: t("biz.apd.th_est_value"), value: moneyCompact(c.estimated_value) },
                           {
-                            label: "Intent",
-                            value: c.move_score ? `${c.move_score} · ${BAND_META[c.band]?.label ?? c.band}` : "—",
+                            label: t("biz.apd.th_intent"),
+                            value: c.move_score
+                              ? `${c.move_score} · ${BAND_META[c.band] ? t(BAND_META[c.band].labelKey) : c.band}`
+                              : "—",
                           },
                         ]}
                         extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
@@ -1123,30 +1142,30 @@ function AgentPortfolio() {
                   <table className="w-full min-w-[980px] text-left text-sm">
                     <thead>
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Household</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_household")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Intent
+                            {t("biz.apd.th_intent")}
                             <IntentInfo />
                           </span>
                         </th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Readiness
+                            {t("biz.apd.th_readiness")}
                             <ReadinessInfo />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Value</th>
-                        <th className="py-2 pr-3 font-medium">Equity</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_value")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_equity")}</th>
                         <th className="py-2 pr-3 font-medium">
                           <span className="inline-flex items-center gap-1">
-                            Net proceeds
+                            {t("biz.apd.th_net_proceeds")}
                             <NetProceedsInfo sellCostPct={sellCost} />
                           </span>
                         </th>
-                        <th className="py-2 pr-3 font-medium">Tenure</th>
-                        <th className="py-2 pr-3 font-medium">Listing</th>
-                        <th className="py-2 pr-3 font-medium">Referrals</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_tenure")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_listing")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_referrals")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1185,10 +1204,12 @@ function AgentPortfolio() {
                             {moneyCompact(c.net_proceeds)}
                           </td>
                           <td className="py-2.5 pr-3">
-                            {c.tenure_years ? `${c.tenure_years.toFixed(1)} yr` : "—"}
+                            {c.tenure_years ? t("biz.apd.yr", { count: c.tenure_years.toFixed(1) }) : "—"}
                           </td>
                           <td className="py-2.5 pr-3 text-xs capitalize text-muted-foreground">
-                            {c.listing ? String(c.listing.status).replace("_", " ") : "off market"}
+                            {c.listing
+                              ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
+                              : t("biz.apd.off_market")}
                           </td>
                           <td className="py-2.5 pr-3 text-xs text-muted-foreground">
                             {c.referral_count || "—"}
@@ -1198,7 +1219,7 @@ function AgentPortfolio() {
                       {pageRows.length === 0 && (
                         <tr>
                           <td colSpan={9} className="py-8 text-center text-muted-foreground">
-                            No households match this filter.
+                            {t("biz.apd.no_match")}
                           </td>
                         </tr>
                       )}
@@ -1209,8 +1230,11 @@ function AgentPortfolio() {
                 {filtered.length > PAGE_SIZE && (
                   <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                     <span>
-                      Showing {page * PAGE_SIZE + 1}–
-                      {Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
+                      {t("biz.lpd.showing", {
+                        from: page * PAGE_SIZE + 1,
+                        to: Math.min((page + 1) * PAGE_SIZE, filtered.length),
+                        total: filtered.length,
+                      })}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -1221,7 +1245,7 @@ function AgentPortfolio() {
                         <ChevronLeft className="h-3 w-3" />
                       </button>
                       <span className="px-2">
-                        Page {page + 1} / {pageCount}
+                        {t("biz.lpd.page", { page: page + 1, pages: pageCount })}
                       </span>
                       <button
                         disabled={page >= pageCount - 1}
