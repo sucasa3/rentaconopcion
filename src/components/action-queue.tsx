@@ -17,12 +17,12 @@ import {
 import {
   TEMPERATURE_META,
   OUTCOME_STAGES,
-  outcomeLabel,
   type Audience,
   type OutcomeStage,
 } from "@/lib/next-best-action";
 import { getActionQueue, draftOutreach, sendOutreach, logOutcome } from "@/lib/nba.functions";
 import { EmptyState } from "@/components/ui-kit";
+import { useT } from "@/lib/i18n";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,13 @@ const channelIcon = {
  * to hear from you, each with the single next thing to do.
  */
 export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: number }) {
+  const t = useT();
+  const oLabel = (s: OutcomeStage): string =>
+    t(
+      (s === "appointment" || s === "application" || s === "closed"
+        ? `biz.outcome.${s}.${kind}`
+        : `biz.outcome.${s}`) as Parameters<typeof t>[0],
+    );
   const qc = useQueryClient();
   const queueFn = useServerFn(getActionQueue);
   const { data, isLoading } = useQuery({
@@ -64,8 +71,8 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
     onSuccess: (_r, v) => {
       toast.success(
         v.stage === "attempted"
-          ? "Reached out — tell us how it went below."
-          : `Logged: ${outcomeLabel(v.stage, kind)}`,
+          ? t("biz.aq.logged_out")
+          : t("biz.aq.logged", { label: oLabel(v.stage) }),
       );
       qc.invalidateQueries({ queryKey: ["action-queue", kind] });
       qc.invalidateQueries({ queryKey: ["business-funnel", kind] });
@@ -74,14 +81,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
   });
 
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">Loading your list…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground">{t("biz.aq.loading")}</div>;
 
   if (!data || data.items.length === 0) {
     return (
       <EmptyState
         icon={<CheckCircle2 className="mx-auto h-7 w-7" />}
-        title="Nothing needs you right now"
-        hint="As soon as a homeowner shows a signal, they'll show up here."
+        title={t("biz.aq.empty_title")}
+        hint={t("biz.aq.empty_hint")}
       />
     );
   }
@@ -98,7 +105,11 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                 className={`mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle ${TEMPERATURE_META[t].dot}`}
                 aria-hidden
               />
-              {TEMPERATURE_META[t].label}
+              {t === "hot"
+                ? t2("biz.temp.hot")
+                : t === "warm"
+                  ? t2("biz.temp.warm")
+                  : t2("biz.temp.nurture")}
             </p>
             <p className="text-xl font-semibold">{data.counts[t]}</p>
           </div>
@@ -107,8 +118,11 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
 
       {data.yesterday.opened + data.yesterday.clicked + data.yesterday.replied > 0 && (
         <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Eye className="h-4 w-4" /> In the last day: {data.yesterday.opened} opened,{" "}
-          {data.yesterday.clicked} clicked, {data.yesterday.replied} replied.
+          <Eye className="h-4 w-4" /> {t("biz.aq.yesterday", {
+            opened: data.yesterday.opened,
+            clicked: data.yesterday.clicked,
+            replied: data.yesterday.replied,
+          })}
         </p>
       )}
 
