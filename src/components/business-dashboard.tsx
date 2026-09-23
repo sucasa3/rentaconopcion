@@ -23,6 +23,7 @@ import { StatCard, SectionHeader, EmptyState } from "@/components/ui-kit";
 import { TaskQueue } from "@/components/tasks-workspace";
 import { ActionQueue } from "@/components/action-queue";
 import { CopilotSearch } from "@/components/copilot-search";
+import { useT } from "@/lib/i18n";
 
 export function categoryIcon(category: string) {
   switch (category) {
@@ -53,6 +54,7 @@ export function BusinessDashboard({
   showQueue?: boolean;
   showHeader?: boolean;
 }) {
+  const t = useT();
   const overviewFn = useServerFn(getBusinessOverview);
   const { data, isLoading } = useQuery({
     queryKey: ["business-overview", kind],
@@ -73,7 +75,7 @@ export function BusinessDashboard({
   const orgName = data?.orgs?.[0]?.name ?? (kind === "agent" ? "Your agency" : "Your team");
 
   if (isLoading) {
-    return <div className="p-5 text-sm text-muted-foreground">Loading…</div>;
+    return <div className="p-5 text-sm text-muted-foreground">{t("biz.cw.loading")}</div>;
   }
 
   if (!data || data.orgs.length === 0) {
@@ -81,8 +83,8 @@ export function BusinessDashboard({
       <div className="p-5">
         <EmptyState
           icon={<Users className="mx-auto h-8 w-8" />}
-          title={kind === "agent" ? "No agency access yet" : "No team access yet"}
-          hint="Ask your administrator to add you, or start a demo book."
+          title={t(kind === "agent" ? "biz.dash.no_access_agent" : "biz.dash.no_access_lender")}
+          hint={t("biz.dash.no_access_hint")}
         />
       </div>
     );
@@ -97,7 +99,7 @@ export function BusinessDashboard({
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-primary">{orgName}</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">Today</h1>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{t("biz.dash.today")}</h1>
         </div>
         {book && (
           <Link
@@ -109,21 +111,21 @@ export function BusinessDashboard({
             params={{ id: book.id } as never}
             className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-soft"
           >
-            <Plus className="h-4 w-4" /> Add homeowner
+            <Plus className="h-4 w-4" /> {t("biz.dash.add_homeowner")}
           </Link>
         )}
       </header>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatCard
-          label="Homeowners"
+          label={t("biz.dash.st_homeowners")}
           value={data.counts.people}
           icon={<Users className="h-4 w-4" />}
           to={book ? `${base}/portfolio/$id` : undefined}
           params={book ? { id: book.id } : undefined}
         />
         <StatCard
-          label="Activated"
+          label={t("biz.dash.st_activated")}
           value={data.counts.activated}
           tone="growth"
           icon={<UserCheck className="h-4 w-4" />}
@@ -132,7 +134,7 @@ export function BusinessDashboard({
           search={book ? { status: "activated" } : undefined}
         />
         <StatCard
-          label="Opportunities"
+          label={t("biz.dash.st_opportunities")}
           value={data.counts.opportunities}
           tone="attention"
           icon={<Sparkles className="h-4 w-4" />}
@@ -140,14 +142,14 @@ export function BusinessDashboard({
           hash="work-queue"
         />
         <StatCard
-          label="Campaigns"
+          label={t("biz.dash.st_campaigns")}
           value={data.counts.campaigns}
           tone="info"
           icon={<Megaphone className="h-4 w-4" />}
           to={`${base}/campaigns`}
         />
         <StatCard
-          label="Tasks due"
+          label={t("biz.dash.st_tasks")}
           value={tasksDue ?? 0}
           tone={tasksDue ? "attention" : "growth"}
           icon={<CheckCircle2 className="h-4 w-4" />}
@@ -171,9 +173,9 @@ export function BusinessDashboard({
 
       {showQueue && (
       <section id="work-queue" className="scroll-mt-6 space-y-3">
-        <SectionHeader title="Who to contact today" />
+        <SectionHeader title={t("biz.dash.queue_title")} />
         <p className="-mt-1 text-sm text-muted-foreground">
-          Ranked by who's most ready to hear from you. Reach out, then tap what happened.
+          {t("biz.dash.queue_hint")}
         </p>
         <ActionQueue kind={kind} />
       </section>
@@ -182,13 +184,13 @@ export function BusinessDashboard({
       {isManager && (
         <section className="space-y-3">
           <SectionHeader
-            title="Pipeline"
+            title={t("biz.dash.pipeline")}
             action={
               <Link
                 to={`${base}/funnel` as never}
                 className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
               >
-                View full report <ArrowRight className="h-4 w-4" />
+                {t("biz.dash.view_full_report")} <ArrowRight className="h-4 w-4" />
               </Link>
             }
           />
@@ -197,33 +199,33 @@ export function BusinessDashboard({
       )}
 
       <section className="space-y-3">
-        <SectionHeader title="Set-up and reminders" />
+        <SectionHeader title={t("biz.dash.setup")} />
         <TaskQueue kind={kind} />
       </section>
 
       <section className="space-y-3">
         <SectionHeader
-          title="Marketing"
+          title={t("biz.dash.marketing")}
           action={
             <Link
               to={`${base}/campaigns` as never}
               className="inline-flex items-center gap-1 text-sm font-semibold text-primary"
             >
-              Manage <ArrowRight className="h-4 w-4" />
+              {t("biz.dash.manage")} <ArrowRight className="h-4 w-4" />
             </Link>
           }
         />
         {data.campaigns.length === 0 ? (
           <EmptyState
             icon={<Megaphone className="mx-auto h-7 w-7" />}
-            title="No campaigns running"
-            hint="Turn one on and SuCasa keeps in touch for you."
+            title={t("biz.dash.no_campaigns_title")}
+            hint={t("biz.dash.no_campaigns_hint")}
             action={
               <Link
                 to={`${base}/campaigns` as never}
                 className="rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
               >
-                Start a campaign
+                {t("biz.dash.start_campaign")}
               </Link>
             }
           />
@@ -234,11 +236,13 @@ export function BusinessDashboard({
           >
             <div className="min-w-0">
               <p className="font-semibold">
-                {data.campaigns.length} campaign{data.campaigns.length === 1 ? "" : "s"} keeping in
-                touch
+                {t(data.campaigns.length === 1 ? "biz.dash.campaigns_active_one" : "biz.dash.campaigns_active_many", { count: data.campaigns.length })}
               </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
-                {totalSent.toLocaleString()} sent · {totalQueued.toLocaleString()} queued
+                {t("biz.dash.sent_queued", {
+                  sent: totalSent.toLocaleString(),
+                  queued: totalQueued.toLocaleString(),
+                })}
               </p>
             </div>
             <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
@@ -248,7 +252,7 @@ export function BusinessDashboard({
 
       {data.books.length > 1 && (
         <section className="space-y-3">
-          <SectionHeader title="Books" />
+          <SectionHeader title={t("biz.dash.books")} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.books.map((b: any) => (
               <Link
@@ -258,7 +262,9 @@ export function BusinessDashboard({
                 className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft"
               >
                 <p className="font-semibold">{b.name}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{b.clientCount} homeowners</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t(b.clientCount === 1 ? "biz.dash.book_homeowners_one" : "biz.dash.book_homeowners_many", { count: b.clientCount })}
+                </p>
               </Link>
             ))}
           </div>
@@ -269,6 +275,7 @@ export function BusinessDashboard({
 }
 
 function FunnelPreview({ kind }: { kind: "agent" | "lender" }) {
+  const t = useT();
   const funnelFn = useServerFn(getFunnel);
   const { data, isLoading } = useQuery({
     queryKey: ["business-funnel-preview", kind],
@@ -276,26 +283,26 @@ function FunnelPreview({ kind }: { kind: "agent" | "lender" }) {
     staleTime: 60_000,
   });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">Loading pipeline…</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground">{t("biz.dash.funnel_loading")}</div>;
   const f = data?.funnel;
   if (!f) {
     return (
       <EmptyState
         icon={<BarChart3 className="mx-auto h-7 w-7" />}
-        title="No pipeline data yet"
-        hint="Start outreach to see your funnel come to life."
+        title={t("biz.dash.funnel_empty_title")}
+        hint={t("biz.dash.funnel_empty_hint")}
       />
     );
   }
 
   const steps = [
-    { label: "Homeowners", value: f.homeowners ?? 0 },
-    { label: "Opportunities", value: f.opportunities ?? 0 },
-    { label: "Contacted", value: f.contacted ?? 0 },
-    { label: "Engaged", value: f.engaged ?? 0 },
-    { label: "Conversations", value: f.conversations ?? 0 },
-    { label: "Appointments", value: f.appointments ?? 0 },
-    { label: "Closed", value: f.closed ?? 0 },
+    { label: t("biz.dash.fs_homeowners"), value: f.homeowners ?? 0 },
+    { label: t("biz.dash.fs_opportunities"), value: f.opportunities ?? 0 },
+    { label: t("biz.dash.fs_contacted"), value: f.contacted ?? 0 },
+    { label: t("biz.dash.fs_engaged"), value: f.engaged ?? 0 },
+    { label: t("biz.dash.fs_conversations"), value: f.conversations ?? 0 },
+    { label: t("biz.dash.fs_appointments"), value: f.appointments ?? 0 },
+    { label: t("biz.dash.fs_closed"), value: f.closed ?? 0 },
   ];
 
   return (
