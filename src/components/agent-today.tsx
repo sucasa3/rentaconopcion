@@ -290,6 +290,7 @@ function NextRelationship({
   onFocus: () => void;
   onAct: (channel: "call" | "text" | "email") => void;
 }) {
+  const t = useT();
   return (
     <li className="rounded-xl border border-border bg-card p-3.5 shadow-soft">
       <div className="flex items-start gap-3">
@@ -320,7 +321,7 @@ function NextRelationship({
               search={{ client: item.clientId } as never}
               className="inline-flex min-h-[38px] items-center rounded-md border border-border px-3 text-sm font-semibold text-primary"
             >
-              View homeowner
+              {t("biz.at.view_homeowner")}
             </Link>
           )}
         </ChannelActions>
@@ -339,6 +340,7 @@ function BestMove({
   onOutcome: (stage: OutcomeStage, note?: string) => void;
   pending: boolean;
 }) {
+  const t = useT();
   const [showOutcomes, setShowOutcomes] = useState(false);
   const meta = TEMPERATURE_META[item.temperature];
   const n = item.narrative;
@@ -358,7 +360,7 @@ function BestMove({
         <h2 className="mt-1 text-[25px] font-semibold leading-tight tracking-tight">{item.name}</h2>
         <p className={cn("mt-1 flex items-center gap-1.5 text-[11px] font-medium", meta.text)}>
           <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
-          {meta.label}
+          {t(`biz.temp.${item.temperature}` as const)}
         </p>
         {supportingFacts.length ? (
           <p className="mt-2 text-[13px] leading-snug text-text-secondary">
@@ -370,7 +372,7 @@ function BestMove({
       <div className="space-y-3.5 px-5 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            Why now
+            {t("biz.at.why_now")}
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed text-primary">
             {n?.whyItMatters ?? item.why}
@@ -379,14 +381,14 @@ function BestMove({
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            Recommended next step
+            {t("biz.at.next_step")}
           </p>
           <p className="mt-1 text-sm font-medium leading-relaxed">{n?.howToBeUseful ?? item.ask}</p>
         </div>
 
 
         {opener && (
-          <IntelligenceSurface label="Suggested opener" compact>
+          <IntelligenceSurface label={t("biz.at.opener")} compact>
             <p className="text-sm leading-relaxed">{opener}</p>
           </IntelligenceSurface>
         )}
@@ -412,7 +414,7 @@ function BestMove({
               search={{ client: item.clientId } as never}
               className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-border-subtle px-5 text-sm font-semibold"
             >
-              View homeowner
+              {t("biz.at.view_homeowner")}
             </Link>
           )}
         </ChannelActions>
@@ -441,7 +443,11 @@ function BestMove({
                   onClick={() => onOutcome(s)}
                   className="rounded-full text-text-secondary shadow-none"
                 >
-                  {outcomeLabel(s, "agent")}
+                  {t(
+                    (s === "appointment" || s === "application" || s === "closed"
+                      ? `biz.outcome.${s}.agent`
+                      : `biz.outcome.${s}`) as Parameters<typeof t>[0],
+                  )}
                 </Button>
               ))}
             </div>
