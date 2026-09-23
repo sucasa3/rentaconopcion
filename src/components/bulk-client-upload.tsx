@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fileToCsv } from "@/lib/spreadsheet-import";
+import { useT } from "@/lib/i18n";
 
 const TEMPLATE_HEADERS = [
   "full_name",
@@ -23,7 +24,8 @@ type Props = {
   hint?: string;
 };
 
-export function BulkClientUpload({ onCsv, busy, title = "Import a list", hint }: Props) {
+export function BulkClientUpload({ onCsv, busy, title, hint }: Props) {
+  const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
 
@@ -32,7 +34,7 @@ export function BulkClientUpload({ onCsv, busy, title = "Import a list", hint }:
     try {
       onCsv(await fileToCsv(f));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not read that file");
+      toast.error(err instanceof Error ? err.message : t("biz.upload.read_error"));
     } finally {
       setReading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -55,14 +57,15 @@ export function BulkClientUpload({ onCsv, busy, title = "Import a list", hint }:
     <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-6">
       <div className="flex items-center gap-2">
         <Upload className="h-4 w-4 text-primary" />
-        <h2 className="text-base font-semibold">{title}</h2>
+        <h2 className="text-base font-semibold">{title ?? t("biz.upload.title")}</h2>
       </div>
       <p className="mt-1 break-words text-xs text-muted-foreground">
         {hint ?? (
           <>
-            Upload an Excel (.xlsx) or CSV file to add many at once. Columns:{" "}
-            <code>full_name, address, city, state, zip, email, loan_balance, rate, note</code>. Only{" "}
-            <code>full_name</code> and <code>address</code> are required.
+            {t("biz.upload.hint_cols")}{" "}
+            <code>full_name, address, city, state, zip, email, loan_balance, rate, note</code>.{" "}
+            {t("biz.upload.hint_req_a")} <code>full_name</code> {t("biz.upload.hint_req_and")}{" "}
+            <code>address</code> {t("biz.upload.hint_req_b")}
           </>
         )}
       </p>
@@ -83,13 +86,13 @@ export function BulkClientUpload({ onCsv, busy, title = "Import a list", hint }:
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-secondary disabled:opacity-60"
         >
           {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-          {pending ? "Importing…" : "Choose Excel or CSV"}
+          {pending ? t("biz.upload.importing") : t("biz.upload.choose")}
         </button>
         <button
           onClick={downloadTemplate}
           className="inline-flex items-center gap-1.5 rounded-full border border-border px-5 py-2.5 text-sm font-medium hover:bg-secondary"
         >
-          <Download className="h-3.5 w-3.5" /> Template
+          <Download className="h-3.5 w-3.5" /> {t("biz.upload.template")}
         </button>
       </div>
     </div>
