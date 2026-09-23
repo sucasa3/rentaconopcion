@@ -38,30 +38,30 @@ function navItems(
   ];
   if (bookId) {
     items.push({
-      label: "Homeowners",
+      label: t("biz.nav.homeowners"),
       to: `${base}/portfolio/$id`,
       params: { id: bookId },
       icon: <Users className="h-5 w-5" />,
     });
   }
   items.push(
-    { label: "Marketing", to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
-    { label: "Network", to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
+    { label: t("biz.nav.marketing"), to: `${base}/campaigns`, icon: <Megaphone className="h-5 w-5" /> },
+    { label: t("biz.nav.network"), to: `${base}/network`, icon: <Network className="h-5 w-5" /> },
   );
   if (isManager) {
     items.push({
-      label: "Pipeline",
+      label: t("biz.nav.pipeline"),
       to: `${base}/funnel`,
       icon: <BarChart3 className="h-5 w-5" />,
     });
     if (kind === "lender") {
       items.push({
-        label: "Capacity",
+        label: t("biz.nav.capacity"),
         to: `${base}/capacity`,
         icon: <Gauge className="h-5 w-5" />,
       });
       items.push({
-        label: "Billing",
+        label: t("biz.nav.billing"),
         to: `${base}/billing`,
         icon: <CreditCard className="h-5 w-5" />,
       });
@@ -87,7 +87,8 @@ export function BusinessShell({
   isManager?: boolean;
   children: ReactNode;
 }) {
-  const items = navItems(kind, bookId, isManager);
+  const t = useT();
+  const items = navItems(kind, bookId, isManager, t);
 
 
 
