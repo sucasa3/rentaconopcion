@@ -31,6 +31,9 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
+import { PostCallNoteDialog } from "@/components/post-call-note";
+import { markCallInitiated } from "@/lib/post-call";
+import { Mic } from "lucide-react";
 
 type QueueItem = Awaited<ReturnType<typeof getActionQueue>>["items"][number];
 
