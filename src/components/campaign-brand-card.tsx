@@ -149,7 +149,18 @@ export function CampaignBrandCard({ org }: { org: OrgBrandRow }) {
           <div className="mt-3 space-y-1 text-xs">
             <p className="font-medium">
               {t("biz.common.from")} {form.sender_name || org.name}
-...
+              {form.reply_to_email ? ` <${form.reply_to_email}>` : ""}
+            </p>
+            <div className="mt-3 border-t border-border pt-3">
+              {form.logo_url && (
+                <img src={form.logo_url} alt={org.name} className="mb-2 h-8 w-auto" />
+              )}
+              {form.signoff && <p className="mb-2 text-muted-foreground">{form.signoff}</p>}
+              {signature.map((line, i) => (
+                <p key={i} className={i === 0 ? "font-semibold" : "text-muted-foreground"}>
+                  {line}
+                </p>
+              ))}
               <p className="mt-3 text-[10px] text-muted-foreground">
                 {t("biz.brand.sent_by", { name: org.name })}
               </p>
