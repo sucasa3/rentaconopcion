@@ -142,7 +142,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                     <span className="text-xs text-muted-foreground">· {item.categoryLabel}</span>
                     {item.shared && (
                       <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium">
-                        Shared
+                        {t("biz.aq.shared")}
                       </span>
                     )}
                   </div>
@@ -158,7 +158,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                     params={{ id: item.portfolioId } as never}
                     search={{ client: item.clientId } as never}
                     className="shrink-0 rounded-full border border-border-subtle p-2 text-muted-foreground"
-                    aria-label={`Open ${item.name}`}
+                    aria-label={t("biz.aq.open", { name: item.name })}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Link>
@@ -202,7 +202,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                         }
                         className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
-                        <Phone className="h-4 w-4" /> Call
+                        <Phone className="h-4 w-4" /> {t("biz.channel.call")}
                       </a>
                     )}
                     {item.channel === "text" && item.phone && (
@@ -217,7 +217,7 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                         }
                         className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
                       >
-                        <MessageSquare className="h-4 w-4" /> Text
+                        <MessageSquare className="h-4 w-4" /> {t("biz.channel.text")}
                       </a>
                     )}
                     <button
@@ -226,14 +226,14 @@ export function ActionQueue({ kind, limit = 25 }: { kind: Audience; limit?: numb
                       disabled={!item.email}
                       className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle px-4 py-2 text-sm font-semibold disabled:opacity-50"
                     >
-                      <Icon className="h-4 w-4" /> {item.email ? "Write email" : "No email on file"}
+                      <Icon className="h-4 w-4" /> {item.email ? t("biz.chan.write_email") : t("biz.aq.no_email")}
                     </button>
                   </div>
                 )}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
-                <span className="self-center text-xs text-muted-foreground">What happened?</span>
+                <span className="self-center text-xs text-muted-foreground">{t("biz.aq.what_happened")}</span>
                 {OUTCOME_STAGES.map((s) => (
                   <button
                     key={s}
