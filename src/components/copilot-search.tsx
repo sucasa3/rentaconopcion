@@ -70,9 +70,9 @@ export function CopilotSearch({
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Sparkles className="h-4 w-4" />
         </span>
-        <h2 className="text-sm font-semibold">Ask about your clients</h2>
+        <h2 className="text-sm font-semibold">{t("biz.copilot.title")}</h2>
         <Badge variant="secondary" className="ml-auto text-[10px]">
-          Beta
+          {t("biz.copilot.beta")}
         </Badge>
       </div>
 
@@ -82,23 +82,23 @@ export function CopilotSearch({
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search a name, or ask — high intent clients with equity over $150k"
+            placeholder={t("biz.copilot.placeholder")}
             className="pl-9"
-            aria-label="Ask the assistant about your clients"
+            aria-label={t("biz.copilot.aria")}
           />
           {q && (
             <button
               type="button"
               onClick={() => setQ("")}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-              aria-label="Clear"
+              aria-label={t("biz.copilot.clear")}
             >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
         <Button type="submit" disabled={mutation.isPending || !q.trim()}>
-          {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+          {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t("biz.copilot.search")}
         </Button>
       </form>
 
@@ -133,19 +133,19 @@ export function CopilotSearch({
               {data.summary}
             </Badge>
             <span>
-              {data.results.length.toLocaleString()} match
-              {data.results.length === 1 ? "" : "es"}
-              {data.total_book ? ` of ${data.total_book.toLocaleString()}` : ""}
+              {t(data.results.length === 1 ? "biz.copilot.match_one" : "biz.copilot.match_many", {
+                count: data.results.length.toLocaleString(),
+              })}
+              {data.total_book ? ` ${t("biz.copilot.of_book", { total: data.total_book.toLocaleString() })}` : ""}
             </span>
             <span className="ml-auto">
-              {data.used}/{data.cap} searches this month
+              {t("biz.copilot.usage", { used: data.used, cap: data.cap })}
             </span>
           </div>
 
           {data.results.length === 0 ? (
             <p className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-              Nothing matched that. Try a wider question — for example drop the location, or ask for
-              "high intent" without the dollar amount.
+              {t("biz.copilot.empty")}
             </p>
           ) : (
             <ul className="divide-y rounded-xl border">
@@ -189,7 +189,7 @@ export function CopilotSearch({
                           <span className="text-muted-foreground">
                             {r.last_contact_at
                               ? new Date(r.last_contact_at).toLocaleDateString()
-                              : "never"}
+                              : t("biz.copilot.never")}
                           </span>
                         )}
                         <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
