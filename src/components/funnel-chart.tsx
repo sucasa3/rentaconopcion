@@ -72,16 +72,23 @@ export function FunnelView({
   costCents?: number;
   days?: number;
 }) {
+  const t = useT();
   if (!data) {
     return (
       <div className="rounded-3xl border border-dashed border-border p-8 text-center">
-        <p className="font-semibold">No funnel data yet</p>
+        <p className="font-semibold">{t("biz.funnel.empty_title")}</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Activity will appear as soon as outreach and outcomes are logged.
+          {t("biz.funnel.empty_desc")}
         </p>
       </div>
     );
   }
+
+  const stages = STAGE_KEYS.map((key) => ({
+    key,
+    label: t(`biz.funnel.stage.${key}` as const),
+    color: STAGE_COLORS[key],
+  }));
 
   const chartData = stages.map((s) => ({
     name: s.label,
@@ -95,14 +102,14 @@ export function FunnelView({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricCard label="Closed value" value={formatCents(closedValue)} tone="growth" />
+        <MetricCard label={t("biz.funnel.closed_value")} value={formatCents(closedValue)} tone="growth" />
         <MetricCard
-          label="SuCasa cost"
+          label={t("biz.funnel.sucasa_cost")}
           value={formatCents(costCents)}
           tone={costCents > 0 ? "attention" : "default"}
         />
         <MetricCard label="ROI" value={`${roi}%`} tone={roi >= 100 ? "growth" : "default"} />
-        <MetricCard label="Closed" value={data.closed} tone="default" />
+        <MetricCard label={t("biz.funnel.stage.closed")} value={data.closed} tone="default" />
       </div>
 
       <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
