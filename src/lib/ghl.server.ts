@@ -356,6 +356,17 @@ export async function pushCampaignContact(p: CampaignContactPush): Promise<strin
 
 
 /**
+ * GoHighLevel reports a channel opt-out as a dndSettings status. A STOP reply
+ * relayed by the carrier lands as "permanent" (Twilio 21610); a manual toggle
+ * lands as "active". Anything other than "inactive" means the provider will not
+ * deliver, so it is treated as do-not-disturb.
+ */
+function isDndStatusOn(status: unknown): boolean {
+  if (typeof status !== "string" || status.length === 0) return false;
+  return status.toLowerCase() !== "inactive";
+}
+
+/**
  * Does the provider hold this number on do-not-disturb? GoHighLevel owns
  * STOP/START natively, so its answer is authoritative; SuCasa mirrors it rather
  * than parsing keywords itself. Returns false when the provider is not
