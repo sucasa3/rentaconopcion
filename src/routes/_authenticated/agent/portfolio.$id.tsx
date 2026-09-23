@@ -1369,6 +1369,7 @@ function ClientDrawer({
   onSaveListing: (v: any) => void;
   saving: boolean;
 }) {
+  const t = useT();
   const isMobile = useIsMobile();
   const [status, setStatus] = useState<string>(client.listing?.status ?? "off_market");
   const [otherAgent, setOtherAgent] = useState<boolean>(
@@ -1378,16 +1379,16 @@ function ClientDrawer({
 
   const opportunityHeadline =
     client.band === "high" || client.band === "hot"
-      ? "Worth a conversation"
+      ? t("biz.apd.opp_worth")
       : client.readiness_label === "list-ready"
-        ? "Strong listing position"
+        ? t("biz.apd.opp_strong")
         : client.readiness_label === "prep-needed"
-          ? "Prep likely needed"
-          : "Future-plans opportunity";
+          ? t("biz.apd.opp_prep")
+          : t("biz.apd.opp_future");
   const opportunityDetail =
     client.signals?.[0]?.detail ??
     client.readiness_checks?.find((check: any) => !check.ok)?.detail ??
-    "Review the supported property facts and relationship status before reaching out.";
+    t("biz.apd.opp_fallback");
   const whyNow = (client.signals ?? []).slice(0, 5);
   const prepRows = (client.recommendations ?? []).slice(0, 4);
 
@@ -1409,56 +1410,56 @@ function ClientDrawer({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative overflow-hidden bg-sucasa-navy px-5 pb-5 pt-6 text-primary-foreground sm:px-7">
-          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close" className="absolute right-3 top-3 text-primary-foreground hover:bg-card/10 hover:text-primary-foreground"><X /></Button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t("biz.common.close")} className="absolute right-3 top-3 text-primary-foreground hover:bg-card/10 hover:text-primary-foreground"><X /></Button>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 pr-8">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">Agent home review</p>
-              <h2 className="mt-2 truncate text-2xl font-semibold leading-tight">{client.name ?? "Household"}</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary-foreground/65">{t("biz.apd.dr_kicker")}</p>
+              <h2 className="mt-2 truncate text-2xl font-semibold leading-tight">{client.name ?? t("biz.apd.pri_household")}</h2>
               <p className="mt-1 flex min-w-0 items-start gap-1.5 text-sm text-primary-foreground/75"><MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span className="min-w-0">{[client.address, client.city, client.state, client.zip].filter(Boolean).join(", ")}</span></p>
             </div>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-foreground/10"><Home className="h-5 w-5" /></span>
           </div>
           <div className="mt-4 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-3">
-            <HeroMetric label="Est. value" value={moneyCompact(client.estimated_value)} />
-            <HeroMetric label="Net proceeds" value={moneyCompact(client.net_proceeds)} info={<NetProceedsInfo sellCostPct={sellCostPct} />} />
-            <HeroMetric label="Tenure" value={client.tenure_years ? `${client.tenure_years.toFixed(1)} yr` : "—"} />
-            <HeroMetric label="Readiness" value={`${client.readiness_score ?? "—"}`} />
+            <HeroMetric label={t("biz.apd.th_est_value")} value={moneyCompact(client.estimated_value)} />
+            <HeroMetric label={t("biz.apd.th_net_proceeds")} value={moneyCompact(client.net_proceeds)} info={<NetProceedsInfo sellCostPct={sellCostPct} />} />
+            <HeroMetric label={t("biz.apd.hm_tenure")} value={client.tenure_years ? t("biz.apd.yr", { count: client.tenure_years.toFixed(1) }) : "—"} />
+            <HeroMetric label={t("biz.apd.th_readiness")} value={`${client.readiness_score ?? "—"}`} />
           </div>
         </div>
 
         <div className="space-y-7 px-5 py-6 sm:px-7">
           <section className="border-l-4 border-sucasa-orange pl-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-opportunity">Opportunity summary</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-opportunity">{t("biz.apd.opp_kicker")}</p>
             <h3 className="mt-1 text-xl font-semibold text-sucasa-navy">{opportunityHeadline}</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{opportunityDetail}</p>
           </section>
 
-          <DetailSection title="Why now">
+          <DetailSection title={t("biz.apd.why_now")}>
             {whyNow.length ? whyNow.map((s: any, i: number) => (
               <SignalRow key={`${s.label}-${i}`} icon={i === 0 ? <Sparkles /> : <CheckCircle2 />} title={s.label} detail={s.detail} tone={i === 0 ? "opportunity" : "positive"} />
-            )) : <p className="text-sm text-text-secondary">{client.has_intel ? "No movement signals yet." : "No property records pulled for this address yet."}</p>}
+            )) : <p className="text-sm text-text-secondary">{client.has_intel ? t("biz.apd.no_signals") : t("biz.apd.no_records")}</p>}
           </DetailSection>
 
           <section className="rounded-lg bg-surface-warm p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3">
-              <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-attention">Agent intelligence</p><h3 className="mt-1 text-lg font-semibold text-sucasa-navy">Home Prep &amp; Listing Readiness</h3></div>
+              <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-status-attention">{t("biz.apd.ai_kicker")}</p><h3 className="mt-1 text-lg font-semibold text-sucasa-navy">{t("biz.apd.ai_title")}</h3></div>
               <Hammer className="h-5 w-5 text-sucasa-orange" />
             </div>
             <div className="mt-3 divide-y divide-surface-warm-border">
               {(prepRows.length ? prepRows : (client.readiness_checks ?? []).filter((c: any) => !c.ok).slice(0, 4)).map((r: any, i: number) => (
                 <div key={r.id ?? r.key ?? i} className="flex items-start justify-between gap-4 py-3">
-                  <div><p className="text-sm font-semibold capitalize text-sucasa-navy">{String(r.system ?? r.label ?? "Property review").replace(/_/g, " ")}</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{r.recommended_action ?? r.detail}</p></div>
-                  <span className="shrink-0 text-xs font-semibold text-status-attention">{r.urgency === "medium" ? "Review due" : r.urgency === "high" ? "Worth checking" : "Prep likely"}</span>
+                  <div><p className="text-sm font-semibold capitalize text-sucasa-navy">{String(r.system ?? r.label ?? t("biz.apd.prop_review")).replace(/_/g, " ")}</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{r.recommended_action ?? r.detail}</p></div>
+                  <span className="shrink-0 text-xs font-semibold text-status-attention">{r.urgency === "medium" ? t("biz.apd.urg_review") : r.urgency === "high" ? t("biz.apd.urg_worth") : t("biz.apd.urg_prep")}</span>
                 </div>
               ))}
-              {!prepRows.length && !(client.readiness_checks ?? []).some((c: any) => !c.ok) && <p className="py-3 text-sm text-text-secondary">No preparation items are currently supported by the information on file.</p>}
+              {!prepRows.length && !(client.readiness_checks ?? []).some((c: any) => !c.ok) && <p className="py-3 text-sm text-text-secondary">{t("biz.apd.prep_none")}</p>}
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">Property Records and homeowner-provided records</p>
+            <p className="mt-2 text-[10px] text-muted-foreground">{t("biz.apd.prep_source")}</p>
           </section>
 
         <div className="rounded-lg border-l-4 border-intelligence-accent bg-surface-intelligence p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-            Suggested opener
+            {t("biz.apd.opener_title")}
           </p>
           <p className="mt-2 text-[15px] leading-relaxed text-sucasa-navy">{client.opener}</p>
           <Button
@@ -1467,11 +1468,11 @@ function ClientDrawer({
             size="sm"
             onClick={() => {
               navigator.clipboard.writeText(client.opener);
-              toast.success("Copied");
+              toast.success(t("biz.apd.copied"));
             }}
             className="mt-2 px-0 text-primary hover:bg-transparent"
           >
-            <Copy className="h-3 w-3" /> Copy
+            <Copy className="h-3 w-3" /> {t("biz.apd.copy")}
           </Button>
         </div>
 
@@ -1485,7 +1486,7 @@ function ClientDrawer({
           ) : (
             <Sparkles className="h-4 w-4" />
           )}
-          Generate listing brief
+          {t("biz.apd.gen_brief")}
         </Button>
         {brief && (
           <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-border bg-card p-3 text-sm">
@@ -1499,7 +1500,7 @@ function ClientDrawer({
               href={`tel:${String(client.phone).replace(/[^0-9+]/g, "")}`}
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
-              <Phone className="h-4 w-4 text-primary" /> Call
+              <Phone className="h-4 w-4 text-primary" /> {t("biz.channel.call")}
             </a>
           )}
           {client.email && (
@@ -1507,24 +1508,24 @@ function ClientDrawer({
               href={`mailto:${client.email}`}
               className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold hover:border-primary"
             >
-              <Mail className="h-4 w-4 text-primary" /> Email
+              <Mail className="h-4 w-4 text-primary" /> {t("biz.channel.email")}
             </a>
           )}
         </div>
 
-        <DetailSection title="Property details">
+        <DetailSection title={t("biz.apd.prop_details")}>
           <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-            <DetailFact label="Equity" value={money(client.equity_dollars)} />
-            <DetailFact label="Beds / baths" value={client.beds ? `${client.beds} / ${client.baths ?? "—"}` : "—"} />
-            <DetailFact label="Square feet" value={client.sqft ? client.sqft.toLocaleString() : "—"} />
-            <DetailFact label="Year built" value={client.year_built ?? "—"} />
-            <DetailFact label="Permitted work" value={money(client.permit_total_value)} info={<PermitsInfo />} />
-            <DetailFact label="Last permit" value={client.last_permit_date ? new Date(client.last_permit_date).toLocaleDateString() : "—"} />
+            <DetailFact label={t("biz.apd.th_equity")} value={money(client.equity_dollars)} />
+            <DetailFact label={t("biz.apd.f_beds")} value={client.beds ? `${client.beds} / ${client.baths ?? "—"}` : "—"} />
+            <DetailFact label={t("biz.apd.f_sqft")} value={client.sqft ? client.sqft.toLocaleString() : "—"} />
+            <DetailFact label={t("biz.apd.f_year")} value={client.year_built ?? "—"} />
+            <DetailFact label={t("biz.apd.f_permits")} value={money(client.permit_total_value)} info={<PermitsInfo />} />
+            <DetailFact label={t("biz.apd.f_last_permit")} value={client.last_permit_date ? new Date(client.last_permit_date).toLocaleDateString() : "—"} />
           </div>
         </DetailSection>
 
         {(client.referrals?.length > 0 || client.touches?.length > 0) && (
-          <DetailSection title="Supporting activity">
+          <DetailSection title={t("biz.apd.supporting")}>
             {client.referrals?.map((r: any) => (
               <div key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
                 <span className="font-medium capitalize text-sucasa-navy">{String(r.category).replace(/_/g, " ")}</span>
@@ -1541,7 +1542,7 @@ function ClientDrawer({
         )}
 
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Listing status
+          {t("biz.apd.listing_status")}
         </h3>
         <select
           value={status}
@@ -1550,7 +1551,7 @@ function ClientDrawer({
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s.replace("_", " ")}
+              {t(`biz.apd.ls.${s}` as TranslationKey)}
             </option>
           ))}
         </select>
@@ -1560,13 +1561,13 @@ function ClientDrawer({
             checked={otherAgent}
             onChange={(e) => setOtherAgent(e.target.checked)}
           />
-          Listed with another agent
+          {t("biz.apd.listed_other")}
         </label>
         {otherAgent && (
           <input
             value={agentName}
             onChange={(e) => setAgentName(e.target.value)}
-            placeholder="Listing agent name"
+            placeholder={t("biz.apd.agent_name_ph")}
             className="mt-2 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm"
           />
         )}
@@ -1582,7 +1583,7 @@ function ClientDrawer({
           variant="outline"
           className="mt-3 w-full rounded-lg"
         >
-          {saving ? "Saving…" : "Save listing status"}
+          {saving ? t("biz.common.saving") : t("biz.apd.save_listing")}
         </Button>
         </div>
       </aside>
