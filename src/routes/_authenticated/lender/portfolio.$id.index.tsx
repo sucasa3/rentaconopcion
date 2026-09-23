@@ -471,9 +471,9 @@ function PortfolioDetail() {
                           </>
                         }
                         metrics={[
-                          { label: "Balance", value: moneyCompact(c.loan_balance_cents) },
+                          { label: t("biz.lpd.balance"), value: moneyCompact(c.loan_balance_cents) },
                           {
-                            label: "Rate / LTV",
+                            label: t("biz.lpd.rate_ltv"),
                             value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}`,
                           },
                         ]}
@@ -486,15 +486,15 @@ function PortfolioDetail() {
                   <table className="w-full min-w-[900px] text-left text-sm">
                     <thead className="sticky top-0 bg-card">
                       <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">Name</th>
-                        <th className="py-2 pr-3 font-medium">Location</th>
-                        <th className="py-2 pr-3 font-medium">Loan @ close</th>
-                        <th className="py-2 pr-3 font-medium">Rate</th>
-                        <th className="py-2 pr-3 font-medium">Balance</th>
-                        <th className="py-2 pr-3 font-medium">Equity</th>
-                        <th className="py-2 pr-3 font-medium">Age</th>
-                        <th className="py-2 pr-3 font-medium">Segment</th>
-                        <th className="py-2 pr-3 font-medium">Consent</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_name")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_location")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_loan_close")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_rate")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_balance")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_equity")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_age")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_segment")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_consent")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -543,7 +543,7 @@ function PortfolioDetail() {
                       {pageRows.length === 0 && (
                         <tr>
                           <td colSpan={9} className="py-8 text-center text-muted-foreground">
-                            No clients match this filter.
+                            {t("biz.lpd.no_match")}
                           </td>
                         </tr>
                       )}
@@ -555,8 +555,11 @@ function PortfolioDetail() {
                 {filtered.length > PAGE_SIZE && (
                   <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                     <span>
-                      Showing {page * PAGE_SIZE + 1}–
-                      {Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
+                      {t("biz.lpd.showing", {
+                        from: page * PAGE_SIZE + 1,
+                        to: Math.min((page + 1) * PAGE_SIZE, filtered.length),
+                        total: filtered.length,
+                      })}
                     </span>
                     <div className="flex items-center gap-1">
                       <button
@@ -567,7 +570,7 @@ function PortfolioDetail() {
                         <ChevronLeft className="h-3 w-3" />
                       </button>
                       <span className="px-2">
-                        Page {page + 1} / {pageCount}
+                        {t("biz.lpd.page", { page: page + 1, pages: pageCount })}
                       </span>
                       <button
                         disabled={page >= pageCount - 1}
@@ -633,15 +636,17 @@ function SegChip({
 }
 
 function ConsentPill({ state }: { state: string }) {
+  const t = useT();
   if (state === "granted")
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-growth/15 px-2 py-0.5 text-[10px] font-medium text-growth">
-        <CheckCircle2 className="h-3 w-3" /> Granted
+        <CheckCircle2 className="h-3 w-3" /> {t("biz.lpd.consent_granted")}
       </span>
     );
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-      <Lock className="h-3 w-3" /> {state === "cold-lead" ? "Cold lead" : "Pending"}
+      <Lock className="h-3 w-3" />{" "}
+      {state === "cold-lead" ? t("biz.lpd.consent_cold") : t("biz.lpd.consent_pending")}
     </span>
   );
 }
