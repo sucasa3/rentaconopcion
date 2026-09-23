@@ -37,6 +37,14 @@ provider STOP/DND restriction bypassed, and no readable phone number in consent 
 If GoHighLevel's actual payload field names differ from the ones the receiver expects, I make the
 minimum field-mapping change in the receiver and rerun this one test. No redesign.
 
+Payload tolerance (your clarification): the receiver accepts the fields each event actually provides.
+*Customer Replied / SMS* carries phone, message, messageId, contactId and any available SMS DND state;
+a *DND change* event carries phone, contactId and the SMS-specific DND state, and is not required to
+provide message or messageId. Events are correlated by the GoHighLevel contact id / provider
+identifiers. START re-consent evidence comes from the actual inbound START message event when
+available; the DND-change event confirms the provider state change. Idempotency for message-less DND
+events uses contact id + DND state + event time, not a fabricated message id.
+
 Test records are deleted afterwards.
 
 ## Gate 2 — Automated verification
