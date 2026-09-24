@@ -48,13 +48,13 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
   const update = useServerFn(updatePredictedAction);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["home-intel"],
+    queryKey: ["home-predicted-actions"],
     queryFn: () => listHomeIntel() as Promise<{ actions: Action[]; facts: any[] }>,
   });
 
   const mutate = useMutation({
     mutationFn: (v: { id: string; status: "done" | "dismissed" }) => update({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["home-intel"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["home-predicted-actions"] }),
   });
 
   const open = (data?.actions ?? []).filter((a) => a.status === "open");
