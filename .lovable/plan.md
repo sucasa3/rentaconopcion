@@ -16,7 +16,7 @@
 ## What gets staged (data only, no code or design changes)
 
 1. **Hero MLO My Home** — create lender.mlo's home profile at 545 Huntwick Place from the existing cached ATTOM record. Nothing is labeled as BatchData; no provider request.
-2. **New demo book** — create "Branch Demo · Hero MLO", assigned to lender.mlo, with about 15–25 demo relationships on existing cached enriched properties, fictitious names/emails, marked as past clients so they pass the lender-access check. **The 76-client Client Roster is not touched.** To keep Today and My Book focused on the demo book, the 76-client book is reassigned away from lender.mlo (assignment only — its rows, owners and history are unchanged), and restored afterwards by the cleanup script. If you prefer it stays assigned, the demo book will still rank at the top via its engagement signals.
+2. **New demo book** — create "Branch Demo · Hero MLO", assigned to lender.mlo, with about 15–25 demo relationships on existing cached enriched properties, fictitious names/emails, marked as past clients so they pass the lender-access check. **The 76-client Client Roster is not touched.** The 76-client book keeps its current assignment too. The demo book dominates Today and My Book through real recent-engagement signals on the demo rows (ranking logic unchanged); if the old book still crowds the top cards, I report it and ask before changing any visibility setting.
 3. **Neil Terc call client** — one record in the demo book: "Neil Terc", 678-485-3054, on a cached enriched property with a strong equity reason and a recent engagement signal so it ranks near the top. No messages sent.
 4. **Three demo agents** — logins isabella.demo@, marcus.demo@, priya.demo@sucasatest.com, each with their own agent org and book (Isabella about 34 homeowners; others about 22 and 48). Connected to SuCasa Demo Lender at the lender-org level, as the product works today.
 5. **Opportunities** — produced only by the existing signal engine. No hand-written counts. Whatever truthful counts result are reported; a category is shown to the lender as an exact number only if it has at least 5.
@@ -31,7 +31,7 @@ Each account needed tomorrow (lender.mlo, lender.manager, isabella.demo, marcus.
 
 - Every row created by staging is recorded by id in a demo manifest.
 - Cleanup first runs a dry run listing the number and type of rows it would delete, and only deletes ids in the manifest.
-- It never deletes cached property intelligence, pre-existing records, or anything not created by this staging. It restores the 76-client book's original assignment.
+- It never deletes cached property intelligence, pre-existing records, or anything not created by this staging.
 
 ## Verification (preview)
 
