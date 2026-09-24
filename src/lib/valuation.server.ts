@@ -675,6 +675,7 @@ export function computeEquityRibbon(
           ltv: mExt?.ltv ?? null,
           lienStatus: mExt?.lienStatus ?? null,
           liens: mExt?.liens ?? null,
+          lastSaleDate: sales?.lastSale?.date ?? null,
         }
       : null,
   });

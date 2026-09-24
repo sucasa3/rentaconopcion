@@ -11,7 +11,7 @@
  */
 
 import { isOfferGrade, type ValueEngineResult, type ValueConfidence } from "@/lib/value-engine";
-import type { LienStatus } from "@/lib/mortgage-position";
+import { SALE_LAG_DAYS, type LienStatus } from "@/lib/mortgage-position";
 
 export interface LienInput {
   /** balance if known — never inferred from an LTV */
@@ -38,6 +38,8 @@ export interface EquityResolverInput {
     /** shared mortgage-position classification; never re-inferred here */
     lienStatus?: LienStatus | null;
     liens?: LienInput[] | null;
+    /** most recent recorded sale; recent sales may not show their lien yet */
+    lastSaleDate?: string | null;
   } | null;
 }
 
@@ -145,6 +147,32 @@ export function resolveEquity(input: EquityResolverInput): ResolvedEquity {
     return b == null ? s : (s ?? 0) + b;
   }, null);
   const balance = noRecord ? 0 : (reported ?? summed ?? pos(m?.balanceEstimate));
+
+  // The current open-lien check came back empty (no open lien count, no lien
+  // rows, no loan on the current-mortgage record) and there is no recent sale
+  // whose lien could still be recording. Show equity as roughly the full value,
+  // as an estimate. Offers stay off: this is not a proven free-and-clear title.
+  const saleT = m?.lastSaleDate ? new Date(m.lastSaleDate).getTime() : NaN;
+  const recentSale =
+    Number.isFinite(saleT) && (Date.now() - saleT) / 86_400_000 <= SALE_LAG_DAYS;
+  const checkFoundNoOpenLien =
+    m != null &&
+    lienStatus === "unconfirmed" &&
+    balance == null &&
+    liens.length === 0 &&
+    (m.openLienCount === 0 || (m.openLienCount == null && m.hasRecord === false));
+  if (checkFoundNoOpenLien && !recentSale) {
+    return {
+      ...base,
+      balance: 0,
+      equityDollars: Math.round(v.value),
+      equityPct: 1,
+      ltvPct: 0,
+      confidence: v.confidence === "high" ? "medium" : v.confidence,
+      suppressionReason:
+        "Estimate: public records show no active mortgage or lien on this home, so estimated equity is about the full estimated value.",
+    };
+  }
 
   // An ambiguous record (no open lien on file, but no payoff trail either, or
   // a sale recent enough that recording may lag) never becomes full equity.
