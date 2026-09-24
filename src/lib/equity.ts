@@ -81,6 +81,12 @@ export interface ResolvedEquity {
   suppressionReason: string | null;
   /** true when a lender may act on this equity position */
   actionable: boolean;
+  /**
+   * Equity inferred as ~full value only because the open-lien check found no
+   * active loan. Display-only: never used to create, strengthen or rank a
+   * professional-facing equity opportunity.
+   */
+  inferredNoLien: boolean;
 }
 
 function pos(n: number | null | undefined): number | null {
@@ -121,6 +127,7 @@ export function resolveEquity(input: EquityResolverInput): ResolvedEquity {
     suppression: null,
     suppressionReason: null,
     actionable: false,
+    inferredNoLien: false,
   };
 
   if (v.value == null) {
@@ -168,6 +175,7 @@ export function resolveEquity(input: EquityResolverInput): ResolvedEquity {
       equityDollars: Math.round(v.value),
       equityPct: 1,
       ltvPct: 0,
+      inferredNoLien: true,
       confidence: v.confidence === "high" ? "medium" : v.confidence,
       suppressionReason:
         "Estimate: public records show no active mortgage or lien on this home, so estimated equity is about the full estimated value.",

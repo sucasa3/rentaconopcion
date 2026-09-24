@@ -49,6 +49,8 @@ export interface ClientFacts {
   ownerOccupied: boolean | null;
   /** Equity figures are safe enough to act on. */
   equityActionable: boolean;
+  /** display-only full-value equity (no active loan found); never ranks Today */
+  equityInferredNoLien?: boolean;
   /** Why equity is withheld, when it is. */
   suppressionReason: string | null;
   /** No current open mortgage found and a prior mortgage trail exists. */

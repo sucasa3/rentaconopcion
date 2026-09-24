@@ -602,6 +602,8 @@ export interface EquityRibbon {
   equityActionable: boolean;
   /** more than one open recorded loan */
   multiLien: boolean;
+  /** display-only full-value equity; see ResolvedEquity.inferredNoLien */
+  equityInferredNoLien: boolean;
 }
 
 
@@ -732,6 +734,7 @@ export function computeEquityRibbon(
     equitySuppressionReason: equity.suppressionReason,
     equityActionable: equityOffersAllowed(equity),
     multiLien: equity.multiLien,
+    equityInferredNoLien: equity.inferredNoLien,
   };
 }
 

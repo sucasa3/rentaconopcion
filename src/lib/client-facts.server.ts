@@ -127,6 +127,7 @@ export function factsFromRecord(
     permitTotalValue: permits?.totalValue ?? null,
     ownerOccupied: ownerOccupied(row),
     equityActionable: ribbon.equityActionable,
+    equityInferredNoLien: ribbon.equityInferredNoLien,
     suppressionReason: ribbon.equitySuppressionReason,
     freeAndClear: ribbon.noMortgageOnRecord,
     lienStatus: ribbon.lienStatus,
