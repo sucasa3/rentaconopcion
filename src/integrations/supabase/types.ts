@@ -5203,6 +5203,7 @@ export type Database = {
           attom_id: string | null
           avm: Json | null
           avm_fetched_at: string | null
+          batchdata_enriched_at: string | null
           city: string | null
           created_at: string
           detail: Json | null
@@ -5220,6 +5221,7 @@ export type Database = {
           risk_fetched_at: string | null
           sales: Json | null
           sales_fetched_at: string | null
+          source: string | null
           state: string | null
           tax: Json | null
           tax_fetched_at: string | null
@@ -5232,6 +5234,7 @@ export type Database = {
           attom_id?: string | null
           avm?: Json | null
           avm_fetched_at?: string | null
+          batchdata_enriched_at?: string | null
           city?: string | null
           created_at?: string
           detail?: Json | null
@@ -5249,6 +5252,7 @@ export type Database = {
           risk_fetched_at?: string | null
           sales?: Json | null
           sales_fetched_at?: string | null
+          source?: string | null
           state?: string | null
           tax?: Json | null
           tax_fetched_at?: string | null
@@ -5261,6 +5265,7 @@ export type Database = {
           attom_id?: string | null
           avm?: Json | null
           avm_fetched_at?: string | null
+          batchdata_enriched_at?: string | null
           city?: string | null
           created_at?: string
           detail?: Json | null
@@ -5278,6 +5283,7 @@ export type Database = {
           risk_fetched_at?: string | null
           sales?: Json | null
           sales_fetched_at?: string | null
+          source?: string | null
           state?: string | null
           tax?: Json | null
           tax_fetched_at?: string | null

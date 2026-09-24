@@ -8,7 +8,9 @@
  *
  * Server-only: reads secrets and writes with the admin client.
  */
-import { batchdataFetchAll, batchdataCostCents } from "./batchdata.server";
+import { batchdataCostCents } from "./batchdata.server";
+import { batchdataLookup } from "./batchdata-live.server";
+import { batchdataToSummaries } from "./batchdata-summaries";
 import {
   firstBatchdataProperty,
   normalizeBatchdataProperty,
@@ -22,7 +24,9 @@ import { normalizeAddress } from "./attom.server";
 
 /** ON only when the operator has explicitly flipped the switch. */
 export function batchdataPrimaryEnabled(): boolean {
-  return (process.env["BATCHDATA_PRIMARY_ENRICHMENT"] ?? "OFF").toUpperCase() === "ON";
+  // BatchData is the live provider. Only an explicit OFF pauses the bundled
+  // worker branch; even then, refreshes go through BatchData (never ATTOM).
+  return (process.env["BATCHDATA_PRIMARY_ENRICHMENT"] ?? "ON").toUpperCase() !== "OFF";
 }
 
 export type PrimaryEnrichResult =
@@ -57,8 +61,18 @@ export async function enrichViaBatchdata(
   address: string,
 ): Promise<PrimaryEnrichResult> {
   const started = Date.now();
-  const res = await batchdataFetchAll(address);
+  const res = await batchdataLookup(address);
   const latencyMs = Date.now() - started;
+  const matchedNow = res.ok && isMatched(normalizeBatchdataProperty(firstBatchdataProperty(res.data)));
+  await supabaseAdmin.from("batchdata_call_log").insert({
+    endpoint: "all-attributes",
+    address_normalized: normalizeAddress(address),
+    cache_hit: false,
+    cost_cents: res.ok ? batchdataCostCents("detail") : 0,
+    status: res.status,
+    error_message: res.ok ? (matchedNow ? null : "no_match") : res.error,
+    revenue_source: "background_enrichment",
+  });
 
   if (!res.ok) {
     return { status: "error", costCents: 0, latencyMs, error: res.error };
@@ -88,25 +102,28 @@ export async function enrichViaBatchdata(
 
   // Each class is stored under the same shape the record assembler already
   // reads, so downstream code is provider-agnostic.
+  const s = batchdataToSummaries(n);
   const patch: Record<string, unknown> = {
     address_normalized: key,
     address_line1: parsed.address_line1 ?? address,
     city: parsed.city,
     state: parsed.state,
     zip: parsed.zip,
-    detail: n.property ?? null,
+    detail: s.detail,
     detail_fetched_at: now,
-    tax: n.valuation ?? null,
+    tax: s.tax,
     tax_fetched_at: now,
-    owner: n.ownership ?? null,
+    owner: s.owner,
     owner_fetched_at: now,
-    sales: n.sales ?? null,
+    sales: s.sales,
     sales_fetched_at: now,
-    mortgage: n.mortgage ?? null,
+    mortgage: s.mortgage,
     mortgage_fetched_at: now,
-    permits: n.permits ?? null,
+    permits: s.permits,
     permits_fetched_at: now,
+    ...(s.avm ? { avm: s.avm, avm_fetched_at: now } : {}),
     source: "batchdata",
+    batchdata_enriched_at: now,
   };
 
   await supabaseAdmin.from("property_intel").upsert(patch, { onConflict: "address_normalized" });

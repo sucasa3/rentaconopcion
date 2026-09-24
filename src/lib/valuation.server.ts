@@ -15,7 +15,7 @@ import { resolveEquity, equityOffersAllowed } from "@/lib/equity";
 import type { LienStatus } from "@/lib/mortgage-position";
 
 
-import { attomCostCents, attomFetch, ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
+import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
 
 export type IntelClass = AttomEndpoint;
 export type DataProvider = "attom" | "batchdata";
@@ -90,240 +90,148 @@ export async function getPropertyIntel(
   const updates: Record<string, unknown> = {};
   let touched = false;
 
-  // Some properties simply have no coverage for a class (the provider answers
-  // "SuccessWithoutResult"). Remember that for 180 days so we never re-buy the
-  // same blank answer — misses live in their own table, apart from spend.
-  const { data: missRows } = await supabaseAdmin
+  // Provider policy: BatchData is the only live source. Historical ATTOM
+  // columns stay as cached fallback, but they are never "fresh" — freshness
+  // exists only for data a BatchData enrichment wrote.
+  const bdEnrichedAt = (existing?.source === "batchdata"
+    ? (existing?.batchdata_enriched_at as string | null)
+    : null) ?? null;
+
+  const serveCached = (cls: IntelClass, stale: boolean) => {
+    const data = existing?.[cls] as unknown;
+    if (!data) return false;
+    const at = (existing?.[`${cls}_fetched_at`] as string | null) ?? new Date(0).toISOString();
+    result.classes[cls] = { data, fetchedAt: at, stale };
+    return true;
+  };
+
+  const needLive: IntelClass[] = [];
+  for (const cls of opts.classes) {
+    const cachedOnly = opts.cachedOnlyClasses?.includes(cls) ?? false;
+    const fresh = !opts.forceRefresh && ttlOk(bdEnrichedAt, cls, opts.ttlOverrides?.[cls]);
+    if (fresh || cachedOnly) {
+      // BatchData-fresh class: serve whatever the enrichment stored (an older
+      // ATTOM value in a class BatchData left empty stays marked stale).
+      const fromBd =
+        !!bdEnrichedAt &&
+        !!existing?.[`${cls}_fetched_at`] &&
+        new Date(existing[`${cls}_fetched_at`] as string).getTime() >=
+          new Date(bdEnrichedAt).getTime() - 60_000;
+      serveCached(cls, !(fresh && fromBd));
+      continue;
+    }
+    needLive.push(cls);
+  }
+
+  // Idempotency guards before any paid call.
+  const { data: bdMiss } = await supabaseAdmin
     .from("property_intel_misses")
-    .select("endpoint, suppressed_until")
+    .select("reason, suppressed_until")
     .eq("address_normalized", normalized)
-    .gt("suppressed_until", new Date().toISOString());
-  const emptyClasses = new Set((missRows ?? []).map((r) => r.endpoint));
+    .eq("endpoint", "batchdata")
+    .gt("suppressed_until", new Date().toISOString())
+    .maybeSingle();
+  // A manual refresh never re-buys a record BatchData filled in the last day.
+  const recentlyEnriched =
+    !!bdEnrichedAt && Date.now() - new Date(bdEnrichedAt).getTime() < 24 * 3600_000;
+  const suppressed =
+    !!bdMiss && (bdMiss.reason === "no_result" || !opts.forceRefresh);
 
-  // Record classes we're currently entitled to call. Anything switched off
-  // (e.g. awaiting provider entitlement) is skipped instead of burning a call.
-  const { data: healthRows } = await supabaseAdmin
-    .from("attom_endpoint_health")
-    .select("endpoint, enabled");
-  const disabledClasses = new Set(
-    (healthRows ?? []).filter((r) => !r.enabled).map((r) => r.endpoint),
-  );
-
-  // Log a miss / disable an endpoint that keeps answering 401.
-  const recordMiss = async (cls: string, status: number | null, error: string) => {
-    const noResult = /SuccessWithoutResult|no record|not found/i.test(error);
-    const unauthorized = status === 401 || status === 403;
-    const days = noResult ? 180 : unauthorized ? 7 : 1;
-    const { data: prev } = await supabaseAdmin
-      .from("property_intel_misses")
-      .select("occurrences")
-      .eq("address_normalized", normalized)
-      .eq("endpoint", cls)
-      .maybeSingle();
-    await supabaseAdmin.from("property_intel_misses").upsert(
-      {
-        address_normalized: normalized,
-        endpoint: cls,
-        reason: noResult ? "no_result" : unauthorized ? "unauthorized" : "error",
-        status,
-        occurrences: (prev?.occurrences ?? 0) + 1,
-        last_seen_at: new Date().toISOString(),
-        suppressed_until: new Date(Date.now() + days * 86400_000).toISOString(),
-      },
-      { onConflict: "address_normalized,endpoint" },
-    );
-    if (unauthorized) {
-      const { data: h } = await supabaseAdmin
-        .from("attom_endpoint_health")
-        .select("unauthorized_count")
-        .eq("endpoint", cls)
-        .maybeSingle();
-      const count = (h?.unauthorized_count ?? 0) + 1;
-      await supabaseAdmin.from("attom_endpoint_health").upsert(
-        {
-          endpoint: cls,
-          unauthorized_count: count,
-          last_unauthorized_at: new Date().toISOString(),
-          enabled: count < 3,
-          note: count >= 3 ? "Auto-disabled after repeated 401s from the provider" : null,
-        },
-        { onConflict: "endpoint" },
-      );
+  const serveStale = (classes: IntelClass[], err: string) => {
+    for (const cls of classes) {
+      if (!serveCached(cls, true)) result.errors[cls] = err;
     }
   };
 
-
-  // Resolve `detail` first: its canonical address + property id are the
-  // fallback keys we use when a raw address string fails to match.
-  const ordered = [...opts.classes].sort((a, b) =>
-    a === "detail" ? -1 : b === "detail" ? 1 : 0,
-  );
-
-  for (const cls of ordered) {
-
-
-    const cachedData = existing?.[cls] as unknown;
-    const cachedAt = existing?.[`${cls}_fetched_at`] as string | null;
-    const cachedOnly = opts.cachedOnlyClasses?.includes(cls) ?? false;
-    const fresh = !opts.forceRefresh && ttlOk(cachedAt, cls, opts.ttlOverrides?.[cls]);
-
-    // Cache hit path
-    if ((fresh || cachedOnly) && cachedData) {
-      result.classes[cls] = { data: cachedData, fetchedAt: cachedAt!, stale: !fresh };
-      await supabaseAdmin.from("attom_call_log").insert({
-        endpoint: cls,
-        address_normalized: normalized,
-        requested_by: opts.requestedBy ?? null,
-        cache_hit: true,
-        cost_cents: 0,
-        status: 200,
-        revenue_source: opts.revenueSource,
-      });
-      continue;
-    }
-    // Caller asked for this class only if free — never spend on it.
-    if (cachedOnly) continue;
-
-    // Cache-only mode: return stale if we have it, else record the miss.
+  if (needLive.length) {
     if (cacheOnly) {
+      serveStale(needLive, "Monthly property-record budget cap reached; no cached data available.");
+    } else if (suppressed) {
+      serveStale(
+        needLive,
+        bdMiss?.reason === "no_result" ? "No record on file for this address." : "Property records temporarily unavailable.",
+      );
+    } else if (recentlyEnriched && opts.forceRefresh) {
+      for (const cls of needLive) serveCached(cls, false);
+    } else {
+      const { batchdataLookup } = await import("./batchdata-live.server");
+      const { firstBatchdataProperty, normalizeBatchdataProperty, isMatched, parseTestAddress } =
+        await import("./batchdata-normalize");
+      const { batchdataToSummaries } = await import("./batchdata-summaries");
 
-      if (cachedData) {
-        result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
-      } else {
-        result.errors[cls] = "Monthly ATTOM budget cap reached; no cached data available.";
-      }
-      continue;
-    }
+      const res = await batchdataLookup(address);
+      const normalizedProp = res.ok ? normalizeBatchdataProperty(firstBatchdataProperty(res.data)) : null;
+      const matched = res.ok && isMatched(normalizedProp);
+      if (res.ok) callsUsed += 1;
 
-    // Known-empty for this address — don't buy the same blank again.
-    if (emptyClasses.has(cls) && !opts.forceRefresh) {
-      if (cachedData) {
-        result.classes[cls] = {
-          data: cachedData,
-          fetchedAt: cachedAt ?? new Date(0).toISOString(),
-          stale: true,
-        };
-      } else {
-        result.errors[cls] = "No record on file for this address.";
-      }
-      continue;
-    }
-
-    // Record class switched off (e.g. no provider entitlement yet).
-    if (disabledClasses.has(cls) && !opts.forceRefresh) {
-      if (cachedData) {
-        result.classes[cls] = {
-          data: cachedData,
-          fetchedAt: cachedAt ?? new Date(0).toISOString(),
-          stale: true,
-        };
-      } else {
-        result.errors[cls] = "This record type is not enabled on our account yet.";
-      }
-      continue;
-    }
-
-    // Cache miss + budget available → live fetch
-    const fetched = await attomFetch(cls, address);
-    const cost = attomCostCents(cls);
-    // Only successful, data-bearing calls count against the monthly allowance.
-    if (fetched.ok) callsUsed += 1;
-
-    await supabaseAdmin.from("attom_call_log").insert({
-      endpoint: cls,
-      address_normalized: normalized,
-      requested_by: opts.requestedBy ?? null,
-      cache_hit: false,
-      cost_cents: fetched.ok ? cost : 0,
-      status: fetched.status,
-      error_message: fetched.ok ? null : fetched.error,
-      revenue_source: opts.revenueSource,
-    });
-
-    if (!fetched.ok) {
-      result.errors[cls] = fetched.error;
-      await recordMiss(cls, fetched.status ?? null, fetched.error);
-      // Serve stale on error if we have it
-      if (cachedData) {
-        result.classes[cls] = { data: cachedData, fetchedAt: cachedAt ?? new Date(0).toISOString(), stale: true };
-      }
-      continue;
-    }
-
-
-    const now = new Date().toISOString();
-    updates[cls] = fetched.data;
-    updates[`${cls}_fetched_at`] = now;
-    touched = true;
-    result.classes[cls] = { data: fetched.data, fetchedAt: now, stale: false };
-  }
-
-  // 2b. Valuation fallback — the AVM endpoint is stricter about address
-  // matching than the rest. When it comes back empty but the detail lookup
-  // matched, retry using the provider's canonical one-line address, then by
-  // property id. Costs at most one extra call and only when we'd otherwise
-  // show a blank value.
-  const wantsAvm = opts.classes.includes("avm");
-  const avmEmpty = !result.classes.avm || extractAvm(result.classes.avm.data).estimate == null;
-  if (
-    wantsAvm &&
-    avmEmpty &&
-    !cacheOnly &&
-    !disabledClasses.has("avm") &&
-    (!emptyClasses.has("avm") || opts.forceRefresh)
-  ) {
-    const detailData = (result.classes.detail?.data ?? existing?.detail) as unknown;
-    const matched = matchedProperty(detailData);
-    const attempts: Array<{ addr: string; attomId?: string | null }> = [];
-    if (matched.oneLine && normalizeAddress(matched.oneLine) !== normalized) {
-      attempts.push({ addr: matched.oneLine });
-    }
-    if (matched.attomId) attempts.push({ addr: address, attomId: matched.attomId });
-
-    for (const attempt of attempts) {
-      const retry = await attomFetch("avm", attempt.addr, { attomId: attempt.attomId ?? null });
-      if (retry.ok) callsUsed += 1;
-      await supabaseAdmin.from("attom_call_log").insert({
-        endpoint: "avm",
+      await supabaseAdmin.from("batchdata_call_log").insert({
+        endpoint: "all-attributes",
         address_normalized: normalized,
         requested_by: opts.requestedBy ?? null,
         cache_hit: false,
-        cost_cents: retry.ok ? attomCostCents("avm") : 0,
-        status: retry.status,
-        error_message: retry.ok ? null : retry.error,
-        revenue_source: `${opts.revenueSource}_avm_fallback`,
+        cost_cents: res.ok ? TRIAL_COST_CENTS_PER_CALL : 0,
+        status: res.status,
+        error_message: res.ok ? (matched ? null : "no_match") : res.error,
+        revenue_source: opts.revenueSource,
       });
-      if (retry.ok && extractAvm(retry.data).estimate != null) {
+
+      if (!res.ok || !matched) {
+        const noResult = res.ok && !matched;
+        const unauthorized = !res.ok && (res.status === 401 || res.status === 403);
+        const days = noResult ? 30 : unauthorized ? 7 : 1;
+        await supabaseAdmin.from("property_intel_misses").upsert(
+          {
+            address_normalized: normalized,
+            endpoint: "batchdata",
+            reason: noResult ? "no_result" : unauthorized ? "unauthorized" : "error",
+            status: res.status,
+            last_seen_at: new Date().toISOString(),
+            suppressed_until: new Date(Date.now() + days * 86400_000).toISOString(),
+          },
+          { onConflict: "address_normalized,endpoint" },
+        );
+        serveStale(needLive, noResult ? "No record on file for this address." : res.ok ? "" : res.error);
+      } else {
         const now = new Date().toISOString();
-        updates["avm"] = retry.data;
-        updates["avm_fetched_at"] = now;
+        const sums = batchdataToSummaries(normalizedProp!);
+        const parsed = parseTestAddress(address);
+        const byClass: Partial<Record<IntelClass, unknown>> = {
+          detail: sums.detail,
+          tax: sums.tax,
+          sales: sums.sales,
+          mortgage: sums.mortgage,
+          permits: sums.permits,
+          owner: sums.owner,
+        };
+        if (sums.avm) byClass.avm = sums.avm;
+        // One bundled response fills every class it covers; classes it leaves
+        // empty keep their historical cache (never deleted).
+        for (const [cls, data] of Object.entries(byClass)) {
+          updates[cls] = data;
+          updates[`${cls}_fetched_at`] = now;
+        }
+        updates.source = "batchdata";
+        updates.batchdata_enriched_at = now;
+        updates.address_line1 = parsed.address_line1 ?? address;
+        updates.city = parsed.city;
+        updates.state = parsed.state;
+        updates.zip = parsed.zip;
         touched = true;
-        result.classes.avm = { data: retry.data, fetchedAt: now, stale: false };
-        delete result.errors.avm;
-        break;
+        for (const cls of needLive) {
+          const data = byClass[cls];
+          if (data) result.classes[cls] = { data, fetchedAt: now, stale: false };
+          else serveCached(cls, true);
+        }
       }
-      if (!retry.ok) await recordMiss("avm", retry.status ?? null, retry.error);
     }
   }
 
-  // NOTE: BatchData is intentionally NOT wired into this production path.
-  // It lives behind an isolated admin test harness (see batchdata-test.server.ts).
-
-
-  // 3. Persist any new/refreshed classes into property_intel (upsert)
+  // 3. Persist the new BatchData enrichment onto the shared property record.
   if (touched) {
-    const parts = address.split(",").map((p) => p.trim());
     await supabaseAdmin
       .from("property_intel")
       .upsert(
-        {
-          address_normalized: normalized,
-          address_line1: parts[0] ?? address,
-          city: parts[1] ?? null,
-          state: parts[2]?.split(" ")[0] ?? null,
-          zip: parts[2]?.split(" ")[1] ?? null,
-          ...updates,
-        },
+        { address_normalized: normalized, address_line1: address, ...updates } as any,
         { onConflict: "address_normalized" },
       );
   }
