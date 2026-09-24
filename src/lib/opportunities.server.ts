@@ -175,6 +175,23 @@ function engineFactsFor(
   if (!row) return null;
   const { ribbon } = ribbonFor(client, row, benchmarkRate);
   if (ribbon.estimatedValue == null) return null;
+  // Inferred full-value equity is display-only; opportunities see no equity.
+  if (ribbon.equityInferredNoLien) {
+    return {
+      value: ribbon.estimatedValue,
+      valueSource: ribbon.valueSource,
+      valueConfidence: ribbon.valueConfidence,
+      valueMethodology: ribbon.valueMethodology,
+      balance: null,
+      equityDollars: null,
+      ltvPct: null,
+      actionable: false,
+      suppressionReason: ribbon.equitySuppressionReason,
+      freeAndClear: ribbon.noMortgageOnRecord,
+      lienStatus: ribbon.lienStatus,
+      multiLien: ribbon.multiLien,
+    };
+  }
   return {
     value: ribbon.estimatedValue,
     valueSource: ribbon.valueSource,

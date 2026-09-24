@@ -468,8 +468,9 @@ export async function readLenderWorkspace(
       legacy: oppsByClient.get(c.id) ?? [],
       facts,
       value,
-      equity,
-      ltv,
+      // Inferred full-value equity (no active loan found) never ranks Today.
+      equity: canonical?.equityInferredNoLien ? null : equity,
+      ltv: canonical?.equityInferredNoLien ? null : ltv,
       loanAgeYears,
       tenureYears,
       engagementLine,

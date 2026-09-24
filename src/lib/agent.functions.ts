@@ -385,8 +385,9 @@ export const getAgentPortfolio = createServerFn({ method: "GET" })
       const f = factsFromRecord(c, intel);
       const value = f.value;
       const balance = f.loanBalance;
-      const equityDollars = f.equityDollars;
-      const equityPct = f.equityPct;
+      // Inferred full-value equity is display-only and never scores Today.
+      const equityDollars = f.equityInferredNoLien ? null : f.equityDollars;
+      const equityPct = f.equityInferredNoLien ? null : f.equityPct;
       const tenureYears = f.tenureYears;
       const tax = { latestTaxAmount: f.taxAmount, taxChangePct: f.taxChangePct };
 
