@@ -1,45 +1,41 @@
-# Post-call voice note + automatic follow-up
+# 100X Mortgage Branch Demo — staging plan (preview only, no publish)
 
-A professional finishes a call, taps "Tell SuCasa how it went", speaks for a few seconds, reviews what SuCasa understood, and saves. The follow-up then comes back on its own in Today at the right time.
+## Audit findings (read-only)
 
-## Step 0 — Publish the already-approved Batch 1 translation
+- **Lender org:** SuCasa Demo Lender (`1111…1111`). Members: lender.manager@sucasatest.com (owner), lender.mlo@sucasatest.com (member), plus Neil's own login (owner).
+- **Hero MLO:** lender.mlo@sucasatest.com. Assigned book "Client Roster · 76 Homeowners" (76 active).
+- **Other books in the same org:** "Demo Book · 250 Clients" (manager, fake addresses — will NOT be enriched), "Manuel Test" (Neil's login, 661 clients).
+- **Agent orgs:** SuCasa Demo Realty (agent.manager / agent.officer, 101-client book) — **not connected** to the demo lender. SuCasa Agent Team (info@sucasa.com, empty book) — the only connected agent. Three other connections are "invited" with no agent attached.
+- **Introductions:** no staged lifecycle examples exist yet.
+- **1010 Arbor Creek Dr:** two cached ATTOM records from August, **no value estimate**, never looked up with BatchData. No home profile is attached to any user. Per your answer, no paid lookup.
+- **545 Huntwick Place, Roswell:** cached ATTOM value $744,126 (range $697k–$791k, confidence 94), mortgage, tax, sales and detail records all present. **Selected as the hero MLO's My Home** — complete, local, no new provider call.
+- **BatchData:** zero properties enriched so far. No paid request is needed for this demo.
+- **Opportunities already computed:** demo lender org has large equity / refinance-review / HELOC / move-up counts but only 9 mortgage-review rows; Demo Realty has 42 equity, 40 refinance-review, 28 HELOC.
+- **Shared database:** preview and sucasa.com use the same data. All staging stays inside test accounts and demo-named orgs (approved).
 
-Batch 1 passed every gate (391 tests, clean typecheck and production build, security scan shows zero dependency findings). It publishes first, on its own, before any new work lands.
+## What gets staged (data only, no code or design changes)
 
-## Audit — what already exists (nothing duplicated)
+1. **Hero MLO My Home** — create lender.mlo's home profile at 545 Huntwick Place from the cached record, so the My Home page shows value, equity, mortgage, Home Score and Home Care.
+2. **Hero MLO book** — keep the existing 76-client book (already assigned). Check its top Today cards and, if fewer than 5 are strong, re-point up to ~20 demo-only rows to existing enriched Roswell/Atlanta addresses with fictitious names and emails, marked as past clients so they pass the lender-access check.
+3. **Neil Terc call client** — add one demo record in that book: "Neil Terc", 678-485-3054, on a cached enriched property with a strong equity reason, with a recent engagement signal so it ranks near the top. No messages sent.
+4. **Three demo agents** — create logins isabella.demo@, marcus.demo@, priya.demo@sucasatest.com (no emails sent), each with their own agent org and book:
+   - Isabella T.: about 34 homeowners, 12 financing opportunities (7 equity, 5 mortgage review), built from existing cached properties with fictitious homeowner names.
+   - Two other agents: about 22 and 48 homeowners with different mixes.
+   - Connect all three to SuCasa Demo Lender (connections stay at the lender-org level, as the product works today).
+5. **Introductions** — three demo examples with Isabella: A requested (awaiting Isabella), B offered to a chosen client (awaiting homeowner), C accepted (only granted contact channels shown to the lender). Delivery is recorded without sending real email or SMS.
+6. **Branch view** — the manager's team roster already lists the MLO books; no changes. Branch totals reported in the final summary for verbal use.
 
-- **Call buttons**: one shared component renders the Call/Text/Email actions (`tel:` links) on the agent and lender Today queues and on the client detail views.
-- **Outcomes**: stored in the existing `opportunity_outcomes` table — one row per touch, with who, when, stage (`no_answer`, `talked`, `appointment`, `application`, `closed`, `not_interested`), a note, and — importantly — `next_step` and `next_step_due_at` fields that already exist.
-- **Follow-ups**: there is no separate reminder system, and none will be added. The most recent outcome's next step and due date ARE the follow-up. Both Today screens already read these: the lender side computes overdue days and feeds them into ranking; the agent queue reads the last outcome per opportunity.
-- **History**: `opportunity_outcomes` is additive and auditable — new rows never overwrite old ones.
-- **AI plumbing**: the app already calls Lovable AI server-side with strict JSON schemas validated before use. Confirmed available: a speech-to-text model and the default chat model, both with zero data retention.
-- **Recording**: nothing exists yet — no microphone code, no audio storage. Audio will be transcribed and discarded; only the transcript is kept.
+## Verification (preview)
 
-## What gets built
+Walk A–H in Playwright as lender.mlo, lender.manager and Isabella, in English and Spanish (language restored afterwards). Includes one real post-call note on the Neil Terc record using the typed fallback, then confirming it resurfaces. Discovery is checked without uploading anything.
 
-**1. One new table: `professional_conversations`** (additive migration, nothing existing changes)
-Holds the rich record: original transcript, detected language (English/Spanish/mixed), AI summary, outcome, key facts with confidence, next step, follow-up date + the original natural phrasing ("first week of January"), suggested opener, who created it, which client/property/workspace, source = post_call_voice, and which fields the professional edited by hand. Row-level security mirrors the existing workspace rules — a professional only ever sees their own book.
+## Technical details
 
-**2. Transcription** (server route)
-The browser records a short clip (5s–2min). The server sends it to the speech-to-text model, which auto-detects English, Spanish, or mixed — no language picker. The audio is never stored; only the transcript returns.
+- Data written with direct inserts (no migrations). Every staged row is tagged in `notes` / names with "DEMO" so it can be removed with one cleanup script, which will be prepared and reported.
+- Opportunities are regenerated by the existing signal engine for the new books rather than hand-written, so the reasons and counts are real and the anonymity threshold (5) applies.
+- New agent logins are created through the admin user API, with confirmed emails and no invitation email.
+- No ATTOM calls, no BatchData calls, no enrichment of the 250-client fake book, no changes to real homeowner records.
 
-**3. AI interpretation** (server function)
-The transcript plus limited context the professional can already see (client name, their role, property, current signal, last outcome, existing next step) goes to the chat model with a strict output schema: summary, language, outcome (mapped onto the EXISTING stage vocabulary — no new statuses), key facts, next step, follow-up (required / resolved date / original timeframe text / reason), suggested opener. Dates are resolved in the professional's own timezone; approximate phrasing keeps its original text. Bad or malformed output fails safely — nothing is written.
+## Final report
 
-**4. Save** (server function, only after the professional confirms)
-One conversation row + one outcome row carrying the next step and follow-up date. Because follow-ups already flow from that outcome row, the relationship resurfaces in Agent Today / Lender Today through the existing ranking with zero changes to those screens' logic.
-
-**5. Interface** (matches the current Today design, EN + ES)
-"Tell SuCasa how it went" appears beside the existing Call action on Today (both roles) and the client detail view. Mic button, typed-note fallback, Cancel. Review panel: summary, outcome, next step, follow-up, things learned, suggested opener — every field editable. Save & schedule / Save without follow-up / Cancel. Cancel writes nothing.
-
-## Safety boundaries (unchanged)
-
-Never sends a text/email/call, never changes consent, never creates financial recommendations, never writes to property or contact records. AI facts live only in the conversation record as relationship intelligence. No new homeowner access for lenders; no cross-workspace exposure.
-
-## Tests
-
-English, Spanish, and mixed transcripts; exact date, "next Friday", "first week of January" (date chosen but original phrasing kept); no follow-up needed; professional edits the outcome and the date before saving; cancel saves nothing; cross-workspace access denied; prior history intact; saved follow-up feeds the existing Today inputs; malformed AI output corrupts nothing.
-
-## Verification before you review
-
-Typecheck, full test suite, production build, and a browser walkthrough as both the test agent and test lender in English and Spanish. Nothing publishes until you approve the result — except Batch 1 (step 0), which you already approved.
+Everything listed in section 17 of your request, plus the cleanup script, then stop for approval. Nothing is published.
