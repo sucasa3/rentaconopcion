@@ -1,0 +1,2 @@
+ALTER TABLE public.homeowner_opportunities DROP CONSTRAINT homeowner_opportunities_category_check;
+ALTER TABLE public.homeowner_opportunities ADD CONSTRAINT homeowner_opportunities_category_check CHECK (category = ANY (ARRAY['equity','heloc','refinance_review','move_up','investment','mortgage_review','home_condition','market_timing','free_and_clear','recent_purchase','mortgage_age','permit_activity','distress']::text[]));
