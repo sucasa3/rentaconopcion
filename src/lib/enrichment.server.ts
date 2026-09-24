@@ -108,9 +108,10 @@ async function missingClasses(
     .maybeSingle();
   if (!row) return { missing: [...wanted], hasRow: false };
 
-  const missing = wanted.filter(
-    (cls) => !row[cls] || !ttlOk(row[`${cls}_fetched_at`] as string | null, cls),
-  );
+  // Historical ATTOM data never counts as a BatchData enrichment: a record
+  // that BatchData has not enriched yet is missing every class.
+  const bdAt = row.source === "batchdata" ? (row.batchdata_enriched_at as string | null) : null;
+  const missing = wanted.filter((cls) => !ttlOk(bdAt, cls));
   return { missing, hasRow: true };
 }
 

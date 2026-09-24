@@ -22,7 +22,9 @@ import { normalizeAddress } from "./attom.server";
 
 /** ON only when the operator has explicitly flipped the switch. */
 export function batchdataPrimaryEnabled(): boolean {
-  return (process.env["BATCHDATA_PRIMARY_ENRICHMENT"] ?? "OFF").toUpperCase() === "ON";
+  // BatchData is the live provider. Only an explicit OFF pauses the bundled
+  // worker branch; even then, refreshes go through BatchData (never ATTOM).
+  return (process.env["BATCHDATA_PRIMARY_ENRICHMENT"] ?? "ON").toUpperCase() !== "OFF";
 }
 
 export type PrimaryEnrichResult =

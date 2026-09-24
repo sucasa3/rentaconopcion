@@ -230,7 +230,10 @@ export async function getPropertyIntel(
   if (touched) {
     await supabaseAdmin
       .from("property_intel")
-      .upsert({ address_normalized: normalized, ...updates }, { onConflict: "address_normalized" });
+      .upsert(
+        { address_normalized: normalized, address_line1: address, ...updates } as any,
+        { onConflict: "address_normalized" },
+      );
   }
 
   // 4. Update budget counter (only for live calls we made this invocation)
