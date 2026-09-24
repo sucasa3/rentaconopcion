@@ -15,27 +15,33 @@
 
 ## What gets staged (data only, no code or design changes)
 
-1. **Hero MLO My Home** — create lender.mlo's home profile at 545 Huntwick Place from the cached record, so the My Home page shows value, equity, mortgage, Home Score and Home Care.
-2. **Hero MLO book** — keep the existing 76-client book (already assigned). Check its top Today cards and, if fewer than 5 are strong, re-point up to ~20 demo-only rows to existing enriched Roswell/Atlanta addresses with fictitious names and emails, marked as past clients so they pass the lender-access check.
-3. **Neil Terc call client** — add one demo record in that book: "Neil Terc", 678-485-3054, on a cached enriched property with a strong equity reason, with a recent engagement signal so it ranks near the top. No messages sent.
-4. **Three demo agents** — create logins isabella.demo@, marcus.demo@, priya.demo@sucasatest.com (no emails sent), each with their own agent org and book:
-   - Isabella T.: about 34 homeowners, 12 financing opportunities (7 equity, 5 mortgage review), built from existing cached properties with fictitious homeowner names.
-   - Two other agents: about 22 and 48 homeowners with different mixes.
-   - Connect all three to SuCasa Demo Lender (connections stay at the lender-org level, as the product works today).
-5. **Introductions** — three demo examples with Isabella: A requested (awaiting Isabella), B offered to a chosen client (awaiting homeowner), C accepted (only granted contact channels shown to the lender). Delivery is recorded without sending real email or SMS.
-6. **Branch view** — the manager's team roster already lists the MLO books; no changes. Branch totals reported in the final summary for verbal use.
+1. **Hero MLO My Home** — create lender.mlo's home profile at 545 Huntwick Place from the existing cached ATTOM record. Nothing is labeled as BatchData; no provider request.
+2. **New demo book** — create "Branch Demo · Hero MLO", assigned to lender.mlo, with about 15–25 demo relationships on existing cached enriched properties, fictitious names/emails, marked as past clients so they pass the lender-access check. **The 76-client Client Roster is not touched.** To keep Today and My Book focused on the demo book, the 76-client book is reassigned away from lender.mlo (assignment only — its rows, owners and history are unchanged), and restored afterwards by the cleanup script. If you prefer it stays assigned, the demo book will still rank at the top via its engagement signals.
+3. **Neil Terc call client** — one record in the demo book: "Neil Terc", 678-485-3054, on a cached enriched property with a strong equity reason and a recent engagement signal so it ranks near the top. No messages sent.
+4. **Three demo agents** — logins isabella.demo@, marcus.demo@, priya.demo@sucasatest.com, each with their own agent org and book (Isabella about 34 homeowners; others about 22 and 48). Connected to SuCasa Demo Lender at the lender-org level, as the product works today.
+5. **Opportunities** — produced only by the existing signal engine. No hand-written counts. Whatever truthful counts result are reported; a category is shown to the lender as an exact number only if it has at least 5.
+6. **Introductions** — three demo examples with Isabella: A requested, B offered to a chosen client, C accepted (only granted contact channels shown). No real email or SMS.
+7. **Branch view** — the manager's existing team roster; totals reported for verbal use.
+
+## Logins
+
+Each account needed tomorrow (lender.mlo, lender.manager, isabella.demo, marcus.demo, priya.demo) is created or confirmed with a verified email and a password set directly, then a real sign-in is tested in the browser — no email delivery needed. Passwords are never shown in the report. If any account can't be signed into this way, I stop and give you the exact secure setup step.
+
+## Cleanup (strictly scoped)
+
+- Every row created by staging is recorded by id in a demo manifest.
+- Cleanup first runs a dry run listing the number and type of rows it would delete, and only deletes ids in the manifest.
+- It never deletes cached property intelligence, pre-existing records, or anything not created by this staging. It restores the 76-client book's original assignment.
 
 ## Verification (preview)
 
-Walk A–H in Playwright as lender.mlo, lender.manager and Isabella, in English and Spanish (language restored afterwards). Includes one real post-call note on the Neil Terc record using the typed fallback, then confirming it resurfaces. Discovery is checked without uploading anything.
+Walk A–H in the browser as lender.mlo, lender.manager and Isabella, English and Spanish (language restored afterwards). One real post-call note on Neil Terc via typed fallback, confirmed to resurface. Discovery checked without uploading.
 
 ## Technical details
 
-- Data written with direct inserts (no migrations). Every staged row is tagged in `notes` / names with "DEMO" so it can be removed with one cleanup script, which will be prepared and reported.
-- Opportunities are regenerated by the existing signal engine for the new books rather than hand-written, so the reasons and counts are real and the anonymity threshold (5) applies.
-- New agent logins are created through the admin user API, with confirmed emails and no invitation email.
+- Data written with direct inserts (no migrations, no code or design changes).
 - No ATTOM calls, no BatchData calls, no enrichment of the 250-client fake book, no changes to real homeowner records.
 
 ## Final report
 
-Everything listed in section 17 of your request, plus the cleanup script, then stop for approval. Nothing is published.
+Everything in section 17 of your request, the actual opportunity counts, login status, and the cleanup dry-run summary. Then stop for approval. Nothing is published.

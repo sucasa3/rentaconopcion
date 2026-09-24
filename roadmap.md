@@ -377,3 +377,14 @@
 - [ ] Today resurfacing: conversation context (why now, last conversation, promises, facts, opener) available to existing Today presentation layer; no ranking-architecture change, no new reminder system
 - [ ] Tests: EN/ES/mixed, exact/relative/approximate dates, edits, cancel, cross-workspace denial, history intact, Today feed, malformed AI output
 - [ ] Verify: typecheck, tests, build, RLS/security, Agent+Lender EN/ES walkthrough; present results; DO NOT publish without approval
+
+## 100X Mortgage Branch Demo (preview staging, do not publish)
+- [x] Read-only audit
+- [ ] New "Branch Demo · Hero MLO" portfolio for lender.mlo (76-client roster untouched)
+- [ ] Hero MLO My Home at 545 Huntwick Place (cached ATTOM, no provider call)
+- [ ] Neil Terc call-demo client
+- [ ] Isabella T. + 2 demo agents, connected; opportunities from signal engine only
+- [ ] Three introduction lifecycle examples
+- [ ] Verify logins work without email (lender.mlo, isabella.demo, others)
+- [ ] Scoped cleanup script (dry-run count first, demo rows only)
+- [ ] Walkthrough A–H EN/ES + final report
