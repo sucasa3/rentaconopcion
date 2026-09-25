@@ -5847,6 +5847,60 @@ export type Database = {
           },
         ]
       }
+      signal_feedback: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string
+          disputed_facts: Json
+          evidence_version: string
+          id: string
+          note: string | null
+          org_id: string
+          portfolio_client_id: string
+          signal_type: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by: string
+          disputed_facts?: Json
+          evidence_version: string
+          id?: string
+          note?: string | null
+          org_id: string
+          portfolio_client_id: string
+          signal_type: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string
+          disputed_facts?: Json
+          evidence_version?: string
+          id?: string
+          note?: string | null
+          org_id?: string
+          portfolio_client_id?: string
+          signal_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_feedback_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signal_feedback_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sponsored_agent_seats: {
         Row: {
           agent_org_id: string
