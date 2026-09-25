@@ -88,6 +88,8 @@ export function AccountMenu({
   async function signOut() {
     setOpen(false);
     await supabase.auth.signOut();
+    // Drop every cached answer so the next account never sees this one's home.
+    qc.clear();
     navigate({ to: "/" });
   }
 
