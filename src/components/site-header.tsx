@@ -23,6 +23,8 @@ export function SiteHeader() {
 
   async function signOut() {
     await supabase.auth.signOut();
+    // Drop every cached answer so the next account never sees this one's home.
+    qc.clear();
     navigate({ to: "/" });
   }
 

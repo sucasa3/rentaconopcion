@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Briefcase, Home, LogOut, Settings, User as UserIcon, Wrench } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyWorkspace } from "@/lib/business.functions";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +50,7 @@ export function AccountMenu({
   showName?: boolean;
 }) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
 
