@@ -95,11 +95,43 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Wipes every cached answer whenever the signed-in person changes.
+ *
+ * Without this, signing out and signing in as someone else in the same tab
+ * reuses the previous account's cached home data (value, equity, score) until
+ * it goes stale, so the new account briefly shows the old home.
+ */
+function AuthCacheReset() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  useEffect(() => {
+    let lastUserId: string | null | undefined;
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const userId = session?.user?.id ?? null;
+      if (event === "INITIAL_SESSION") {
+        lastUserId = userId;
+        return;
+      }
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      if (userId === lastUserId) return;
+      lastUserId = userId;
+      queryClient.clear();
+      router.invalidate();
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [queryClient, router]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
+        <AuthCacheReset />
         <Outlet />
         <Toaster richColors position="top-center" />
       </LanguageProvider>
