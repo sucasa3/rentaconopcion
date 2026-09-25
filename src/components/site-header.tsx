@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import logoAsset from "@/assets/sucasa-logo.png.asset.json";
@@ -13,6 +14,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { t } = useLanguage();
 
   useEffect(() => {
