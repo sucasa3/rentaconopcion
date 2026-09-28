@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -211,4 +211,18 @@ export function SupportingFacts({ entry }: { entry: { facts: EvidenceFact[] } | 
       </ul>
     </div>
   );
+}
+
+const FactsCtx = createContext<Record<string, { facts: EvidenceFact[] } | null> | undefined>(undefined);
+
+/** Wrap a Today list once; each card reads its own facts from one batched request. */
+export function SupportingFactsProvider({ audience, clientIds, children }: { audience: Audience; clientIds: string[]; children: ReactNode }) {
+  const q = useSupportingFacts(audience, clientIds);
+  return <FactsCtx.Provider value={(q.data as any) ?? undefined}>{children}</FactsCtx.Provider>;
+}
+
+export function SupportingFactsFor({ clientId }: { clientId: string | null | undefined }) {
+  const map = useContext(FactsCtx);
+  if (!clientId || !map) return null;
+  return <SupportingFacts entry={map[clientId]} />;
 }
