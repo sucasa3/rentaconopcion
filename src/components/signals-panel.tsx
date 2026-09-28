@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { getSignalHistory, submitSignalFeedback } from "@/lib/signal-history.functions";
+import { getSignalHistory, getSupportingFacts, submitSignalFeedback } from "@/lib/signal-history.functions";
 import { useT } from "@/lib/i18n";
 import type { EvidenceFact, Signal, SignalType, Confidence } from "@/lib/signal-evidence";
 
@@ -190,7 +190,6 @@ export function SignalsPanel({ audience, clientId }: { audience: Audience; clien
 
 /** Batched supporting facts for Today cards. Never reorders cards. */
 export function useSupportingFacts(audience: Audience, clientIds: string[]) {
-  const { getSupportingFacts } = supportingMod;
   const fn = useServerFn(getSupportingFacts);
   const ids = [...new Set(clientIds.filter(Boolean))].slice(0, 40);
   return useQuery({
@@ -213,5 +212,3 @@ export function SupportingFacts({ entry }: { entry: { facts: EvidenceFact[] } | 
     </div>
   );
 }
-
-import * as supportingMod from "@/lib/signal-history.functions";
