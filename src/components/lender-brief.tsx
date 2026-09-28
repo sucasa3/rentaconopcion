@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SignalsPanel } from "@/components/signals-panel";
 
 const QUICK_OUTCOMES = [
   ["talked", "Connected"],
@@ -249,6 +250,8 @@ function BriefBody({
             {m.dataGap && <div className="py-3"><p className="text-sm font-semibold text-sucasa-navy">Information status</p><p className="mt-0.5 text-xs leading-relaxed text-text-secondary">{m.dataGap}</p></div>}
           </div>
         </section>
+
+        {clientId && <SignalsPanel audience="lender" clientId={clientId} />}
 
         <section className="rounded-lg border-l-4 border-intelligence-accent bg-surface-intelligence p-4">
           <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-intelligence-accent"><Quote className="h-3 w-3" /> Suggested conversation</p>

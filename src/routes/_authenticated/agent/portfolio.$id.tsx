@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SignalsPanel } from "@/components/signals-panel";
 import {
   getAgentPortfolio,
   enrichAgentPortfolio,
@@ -1543,6 +1544,8 @@ function ClientDrawer({
           onOpenChange={setNoteOpen}
           onSaved={() => qc.invalidateQueries()}
         />
+
+        <SignalsPanel audience="agent" clientId={client.id} />
 
         <DetailSection title={t("biz.apd.prop_details")}>
           <div className="grid grid-cols-2 gap-x-5 gap-y-4">

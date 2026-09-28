@@ -31,6 +31,7 @@ import { CopilotSearch } from "@/components/copilot-search";
 import { SectionHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
+import { SupportingFactsProvider, SupportingFactsFor } from "@/components/signals-panel";
 import { PostCallNoteDialog } from "@/components/post-call-note";
 import { markCallInitiated } from "@/lib/post-call";
 import { Mic } from "lucide-react";
@@ -150,6 +151,7 @@ export function AgentToday() {
   const greeting = t(hour < 12 ? "biz.greet.morning" : hour < 18 ? "biz.greet.afternoon" : "biz.greet.evening");
 
   return (
+    <SupportingFactsProvider audience="agent" clientIds={[best?.clientId, ...upNext.map((x) => x.clientId)].filter(Boolean) as string[]}>
     <div className="professional-detail space-y-6 bg-background px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       <header className="-mx-4 border-b border-border bg-surface-warm px-4 pb-4 pt-1 sm:-mx-6 sm:px-6">
         <p className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">
@@ -274,6 +276,7 @@ export function AgentToday() {
         bookId={book?.id ?? null}
       />
     </div>
+    </SupportingFactsProvider>
   );
 }
 
@@ -305,6 +308,9 @@ function NextRelationship({
           <p className="mt-0.5 text-xs font-medium text-status-opportunity">{item.categoryLabel}</p>
           <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-text-secondary">{item.why}</p>
         </button>
+      </div>
+      <div className="pl-10">
+        <SupportingFactsFor clientId={item.clientId} />
       </div>
       <div className="mt-2.5 border-t border-border pt-2.5">
         <ChannelActions
@@ -385,6 +391,7 @@ function BestMove({
           <p className="mt-1 text-sm font-medium leading-relaxed text-primary">
             {n?.whyItMatters ?? item.why}
           </p>
+          <SupportingFactsFor clientId={item.clientId} />
         </div>
 
         <div>

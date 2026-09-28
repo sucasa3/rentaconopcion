@@ -18,6 +18,7 @@ import { IntelligenceSurface, OpportunityDot } from "@/components/intelligence-s
 import { ChannelActions } from "@/components/channel-actions";
 import { PostCallNoteDialog } from "@/components/post-call-note";
 import { Button } from "@/components/ui/button";
+import { SupportingFactsFor } from "@/components/signals-panel";
 import type { ChannelOption, ContactChannel } from "@/lib/contact-channels";
 
 function markLenderCall(person: { id: string; name: string }) {
@@ -440,6 +441,7 @@ export function LenderQueueRow({
           <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-text-secondary">
             {fact ?? person.whyToday}
           </p>
+          <SupportingFactsFor clientId={person.id} />
         </div>
       </div>
       <div className="mt-2.5 border-t border-border pt-2.5">

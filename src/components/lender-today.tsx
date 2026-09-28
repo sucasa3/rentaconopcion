@@ -9,6 +9,7 @@ import { LenderSpotlightCard, LenderQueueRow } from "@/components/lender-contact
 import { LenderBriefDialog } from "@/components/lender-brief";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useT } from "@/lib/i18n";
+import { SupportingFactsProvider, SupportingFactsFor } from "@/components/signals-panel";
 import { cn } from "@/lib/utils";
 
 /**
@@ -47,6 +48,7 @@ export function LenderToday() {
   const greeting = t(hour < 12 ? "biz.greet.morning" : hour < 18 ? "biz.greet.afternoon" : "biz.greet.evening");
 
   return (
+    <SupportingFactsProvider audience="lender" clientIds={[spotlight?.id, ...rest.map((x) => x.id)].filter(Boolean) as string[]}>
     <div className="professional-detail space-y-6 bg-background px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       {/* DAILY READ — compact briefing band */}
       <header>
@@ -115,6 +117,7 @@ export function LenderToday() {
             person={spotlight}
             onBrief={() => setBrief({ id: spotlight.id, name: spotlight.name })}
           />
+          <SupportingFactsFor clientId={spotlight.id} />
         </section>
       ) : (
         <div className="rounded-xl border border-surface-warm-border bg-surface-warm p-6 text-center">
