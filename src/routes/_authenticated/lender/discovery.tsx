@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { formatLtvPct, formatRatePct } from "@/lib/format-loan";
 import { LenderBriefDialog } from "@/components/lender-brief";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { Button } from "@/components/ui/button";
@@ -370,9 +371,6 @@ function DiscoveryPage() {
   );
 }
 
-function pct(n: number | null | undefined, digits = 0) {
-  return typeof n === "number" ? `${n.toFixed(digits)}%` : null;
-}
 
 function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; onView: () => void }) {
   const reasons: string[] = (c.reasons ?? [])
@@ -385,8 +383,8 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
       value: money(c.estimatedEquityCents),
     },
     { label: "Estimated balance", value: c.equityInferredNoLien ? null : money(c.estimatedBalanceCents) },
-    { label: "Estimated LTV", value: c.equityInferredNoLien ? null : pct(c.estimatedLtvPct) },
-    { label: "Recorded rate", value: pct(c.recordedRatePct, 2) },
+    { label: "Estimated LTV", value: c.equityInferredNoLien ? null : formatLtvPct(c.estimatedLtvPct) },
+    { label: "Recorded rate", value: formatRatePct(c.recordedRatePct) },
     {
       label: "Mortgage age",
       value: typeof c.loanAgeYears === "number" ? `${c.loanAgeYears} yrs` : null,
@@ -418,6 +416,23 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
             </li>
           ))}
         </ul>
+      ) : null}
+      {(c.alsoReasons ?? []).length ? (
+        <div className="mt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Also worth knowing
+          </p>
+          <ul className="mt-1 space-y-1 text-sm text-foreground">
+            {c.alsoReasons.map((r: any) => (
+              <li key={r.label} className="flex gap-2">
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground" />
+                <span>
+                  <span className="font-medium">{r.label}:</span> {r.why}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
       {metrics.length ? (
         <dl className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-surface p-3 sm:grid-cols-3">
