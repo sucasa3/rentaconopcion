@@ -27,7 +27,16 @@ export type FactClientRow = {
   zip?: string | null;
   close_date?: string | null;
   rate_at_close?: number | null;
+  notes?: string | null;
 };
+
+/** Uploaded rates the backfill filled from market averages ("rate est. (PMMS)")
+ *  are not the borrower's actual loan rate and never count as rate evidence. */
+export function uploadedLoanRate(c: FactClientRow): number | null {
+  if (c.rate_at_close == null) return null;
+  if (c.notes && /rate est\.|pmms/i.test(c.notes)) return null;
+  return c.rate_at_close;
+}
 
 const INTEL_COLUMNS =
   "address_normalized, address_line1, avm, detail, tax, sales, mortgage, permits, owner";
@@ -77,7 +86,7 @@ export function factsFromRecord(
   if (!row) {
     return {
       ...base,
-      ratePct: client.rate_at_close ?? null,
+      ratePct: uploadedLoanRate(client),
       tenureYears: yearsSince(client.close_date),
       lastSaleDate: client.close_date ?? null,
     };
@@ -122,7 +131,7 @@ export function factsFromRecord(
     equityDollars: ribbon.equityDollars,
     equityPct: ribbon.equityPct,
     ltvPct: ribbon.equityPct != null ? Math.round((1 - ribbon.equityPct) * 1000) / 10 : null,
-    ratePct: lienRate ?? client.rate_at_close ?? null,
+    ratePct: lienRate ?? uploadedLoanRate(client),
     rateFromRecord: lienRate != null,
     mortgageRecordedDate: lienDate,
     mortgageLoanType: lienUsable ? (mortgage?.loanType ?? null) : null,
