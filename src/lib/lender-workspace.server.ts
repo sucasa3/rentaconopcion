@@ -485,6 +485,10 @@ export async function readLenderWorkspace(
       equity: canonical?.equityInferredNoLien ? null : equity,
       ltv: canonical?.equityInferredNoLien ? null : ltv,
       loanAgeYears,
+      recordedRatePct: hasScope(access, "mortgage") ? (canonical?.ratePct ?? null) : null,
+      rateFromRecord: !!canonical?.rateFromRecord,
+      noActiveLien: !!canonical?.equityInferredNoLien,
+      rawEquity: equity,
       tenureYears,
       engagementLine,
       askedToConnect: access.category === "asked_to_connect",
@@ -730,6 +734,21 @@ function buildTake(daily: LenderClientRow[], requests: number, total: number): s
  * facts behind it are present — generic property data never creates a mortgage
  * product review on its own.
  */
+/**
+ * No active lien: equity ≈ value, but never phrase it as a share of the home's
+ * value or as borrowable headroom.
+ */
+export function rewriteNoLienEquity(why: string[], equityCents: number | null): string[] {
+  const touches = (l: string) => /% of (your|the) home'?s value|cash-out headroom|loan-to-value/i.test(l);
+  if (!why.some(touches)) return why;
+  const kept = why.filter((l) => !touches(l) && !/of estimated equity$/i.test(l));
+  const lines = [
+    ...(equityCents != null ? [`Estimated equity approximately ${dollars(equityCents)}.`] : []),
+    "No active mortgage or lien was found in the current property record.",
+  ];
+  return [...lines, ...kept.filter((l) => !/estimated equity/i.test(l))].slice(0, 2);
+}
+
 function buildReviews(input: {
   clientId: string;
   legacy: any[];
@@ -738,6 +757,12 @@ function buildReviews(input: {
   equity: number | null;
   ltv: number | null;
   loanAgeYears: number | null;
+  /** Recorded rate tied to the same active lien; null when none on record. */
+  recordedRatePct?: number | null;
+  /** Valuation present but no active mortgage/open lien in the property record. */
+  rateFromRecord?: boolean;
+  noActiveLien?: boolean;
+  rawEquity?: number | null;
   tenureYears: number | null;
   engagementLine: string | null;
   askedToConnect: boolean;
@@ -802,16 +827,26 @@ function buildReviews(input: {
       "mortgage_checkup",
       ["loan_seasoning"],
       ["loan_age"],
-      [`Mortgage is roughly ${input.loanAgeYears} years old.`],
+      [
+        `Recorded mortgage information is approximately ${input.loanAgeYears} years old and may be worth reviewing with the homeowner.`,
+      ],
       48,
     );
   }
-  if (input.loanAgeYears != null && input.loanAgeYears >= 5 && input.facts.estimated_mortgage_balance != null) {
+  // Refinance language needs a recorded rate on the same active loan — age alone
+  // only supports the broader Mortgage review above.
+  const hasRecordedRate = input.recordedRatePct != null;
+  if (
+    hasRecordedRate &&
+    input.loanAgeYears != null &&
+    input.loanAgeYears >= 5 &&
+    input.facts.estimated_mortgage_balance != null
+  ) {
     push(
       "refinance_review",
-      ["loan_seasoning", "recorded_mortgage_present"],
+      ["loan_seasoning", "recorded_mortgage_present", "recorded_rate_present"],
       ["estimated_mortgage_balance", "loan_age"],
-      [`Recorded mortgage information is available and the loan is about ${input.loanAgeYears} years old.`],
+      [`${input.rateFromRecord ? "Recorded rate" : "Rate on file from your upload"}: ${input.recordedRatePct}% on a loan about ${input.loanAgeYears} years old.`],
       50,
     );
   }
@@ -845,13 +880,23 @@ function buildReviews(input: {
 
   // Preserve detections the existing engine already made, in lender wording.
   for (const o of input.legacy) {
-    const type = CATEGORY_TO_REVIEW[o.category];
+    let type = CATEGORY_TO_REVIEW[o.category];
     if (!type) continue;
+    let why: string[] = (o.reasons ?? []).slice(0, 2);
+    if (type === "refinance_review" && !hasRecordedRate) {
+      // No recorded rate: never carry "rate looks refinanceable" style copy.
+      if (input.loanAgeYears == null) continue;
+      type = "mortgage_checkup";
+      why = [
+        `Recorded mortgage information is approximately ${input.loanAgeYears} years old and may be worth reviewing with the homeowner.`,
+      ];
+    }
+    if (input.noActiveLien) why = rewriteNoLienEquity(why, input.rawEquity ?? null);
     push(
       type,
       (o.reason_codes ?? []).length ? o.reason_codes : [`signal_${o.category}`],
       (o.source_fields ?? []) as PermittedRankingInput[],
-      (o.reasons ?? []).slice(0, 2),
+      why,
       Math.min(70, Math.max(30, o.score ?? 40)),
     );
   }

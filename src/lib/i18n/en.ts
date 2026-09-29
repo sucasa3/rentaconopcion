@@ -1525,7 +1525,7 @@ export const en = {
   "biz.lb.priority": "Contact Priority",
   "biz.lb.monitored": "Monitored",
   "biz.lb.rt.equity_review": "Equity review",
-  "biz.lb.rt.mortgage_checkup": "Mortgage checkup",
+  "biz.lb.rt.mortgage_checkup": "Mortgage review",
   "biz.lb.rt.home_equity_conversation": "Home equity conversation",
   "biz.lb.rt.refinance_review": "Refinance review",
   "biz.lb.rt.move_planning": "Move planning",

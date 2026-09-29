@@ -465,7 +465,7 @@ export const REVIEW_TYPES: Record<ReviewType, ReviewMeta> = {
     requires: ["estimated_equity", "estimated_value"],
   },
   mortgage_checkup: {
-    label: "Mortgage checkup",
+    label: "Mortgage review",
     blurb: "It may be worth reviewing the homeowner's current mortgage position.",
     action: "Offer an annual mortgage review",
     requires: ["loan_age"],

@@ -179,9 +179,13 @@ export function evaluateHome(record: HomeRecord): SignalReport {
       score,
       confidence: 0.7,
       title: `${money(financial.equityDollars!)} of estimated equity`,
-      reason: `About ${Math.round((financial.equityPct ?? 0) * 100)}% of your home's value${
-        financial.cashOutHeadroom ? `, with roughly ${money(financial.cashOutHeadroom)} of cash-out headroom` : ""
-      }.`,
+      // No active loan on record: equity ≈ value — never frame as "100% of your home" or borrowable.
+      reason:
+        (financial.equityPct ?? 0) >= 0.995
+          ? "No active mortgage or lien was found in the current property record."
+          : `About ${Math.round((financial.equityPct ?? 0) * 100)}% of your home's value${
+              financial.cashOutHeadroom ? `, with roughly ${money(financial.cashOutHeadroom)} of cash-out headroom` : ""
+            }.`,
       cta: { label: "See your options", to: "/dashboard", tab: "home" },
       freshness: { asOf, stale: stale("avm") },
     });
