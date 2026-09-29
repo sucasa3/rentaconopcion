@@ -83,6 +83,10 @@ export interface LenderClientRow {
   estimatedEquityCents: Cents | null;
   estimatedLtvPct: number | null;
   loanAgeYears: number | null;
+  /** Recorded note rate, percent — mortgage scope only. */
+  recordedRatePct: number | null;
+  /** Equity shown as full value because no active loan was found (display only). */
+  equityInferredNoLien: boolean;
   tenureYears: number | null;
   lastContactAt: string | null;
   engagedRecently: boolean;
@@ -552,6 +556,8 @@ export async function readLenderWorkspace(
       estimatedEquityCents: equity,
       estimatedLtvPct: ltv,
       loanAgeYears,
+      recordedRatePct: hasScope(access, "mortgage") ? (canonical?.ratePct ?? null) : null,
+      equityInferredNoLien: Boolean(canonical?.equityInferredNoLien),
       tenureYears,
       lastContactAt: lastAt,
       engagedRecently: Boolean(engagementLine),

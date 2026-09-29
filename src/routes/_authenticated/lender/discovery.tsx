@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import { LenderBriefDialog } from "@/components/lender-brief";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { Button } from "@/components/ui/button";
 import { DISCOVERY_ALLOWANCE } from "@/lib/discovery";
@@ -42,6 +43,7 @@ function DiscoveryPage() {
   const track = useServerFn(recordAuthenticatedAgentEvent);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
+  const [brief, setBrief] = useState<any>(null);
 
   const snapshot = useQuery({
     queryKey: ["lender-discovery"],
@@ -193,6 +195,32 @@ function DiscoveryPage() {
             </p>
           ) : null}
 
+          {(() => {
+            const found = data.summary?.clientsWithOpportunities ?? 0;
+            const analyzed = data.summary?.analyzed ?? 0;
+            return (
+              <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+                <p className="text-sm text-muted-foreground">We analyzed {analyzed} homeowners.</p>
+                <p className="mt-1 text-xl font-semibold text-foreground">
+                  {found === 0
+                    ? "None has a reason worth reviewing today."
+                    : `${found} ${found === 1 ? "has a reason" : "have a reason"} worth reviewing.`}
+                </p>
+                {data.revealed.length ? (
+                  <p className="mt-1 text-sm text-foreground">
+                    You can explore {data.revealed.length} below.
+                  </p>
+                ) : null}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  SuCasa looks for changes in mortgage, equity and property signals that may give
+                  you a reason to reconnect. These are signals worth reviewing — not a statement
+                  that anyone qualifies for or needs a loan.
+                </p>
+              </section>
+            );
+          })()}
+
+
           {data.groups?.length ? (
             <section className="grid gap-3 sm:grid-cols-2">
               {data.groups.map((g: any) => (
@@ -219,83 +247,40 @@ function DiscoveryPage() {
               </p>
             ) : null}
             {data.revealed.map((c: any) => (
-              <article
+              <DiscoveryCard
                 key={c.id}
-                className="rounded-2xl border border-border bg-card p-5 shadow-soft"
-                onClick={() => void track({ data: { action: "lender_discovery_opportunity_opened" } })}
-              >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h3 className="text-base font-semibold text-foreground">{c.name}</h3>
-                  <span className="text-xs text-muted-foreground">{c.address}</span>
-                </div>
-                {c.whyToday ? (
-                  <p className="mt-2 text-sm text-foreground">{c.whyToday}</p>
-                ) : null}
-                <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-                  {money(c.estimatedValueCents) ? (
-                    <div>
-                      <dt className="inline">Estimated value: </dt>
-                      <dd className="inline font-medium text-foreground">
-                        {money(c.estimatedValueCents)}
-                      </dd>
-                    </div>
-                  ) : null}
-                  {money(c.estimatedEquityCents) ? (
-                    <div>
-                      <dt className="inline">Estimated equity: </dt>
-                      <dd className="inline font-medium text-foreground">
-                        {money(c.estimatedEquityCents)}
-                      </dd>
-                    </div>
-                  ) : null}
-                  {typeof c.loanAgeYears === "number" ? (
-                    <div>
-                      <dt className="inline">Loan age: </dt>
-                      <dd className="inline font-medium text-foreground">
-                        {c.loanAgeYears} yrs
-                      </dd>
-                    </div>
-                  ) : null}
-                </dl>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  {[
-                    { key: "call", label: "Call", Icon: Phone },
-                    { key: "text", label: "Text", Icon: MessageSquare },
-                    { key: "email", label: "Email", Icon: Mail },
-                  ].map(({ key, label, Icon }) => {
-                    const allowed = Boolean(c.channels?.[key]);
-                    return (
-                      <span
-                        key={key}
-                        title={c.channelReasons?.[key] ?? undefined}
-                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${
-                          allowed
-                            ? "border-status-positive/40 text-status-positive"
-                            : "border-border text-muted-foreground"
-                        }`}
-                      >
-                        <Icon className="h-3 w-3" /> {label}
-                      </span>
-                    );
-                  })}
-                </div>
-                {c.opener ? (
-                  <p className="mt-3 rounded-lg bg-surface p-3 text-xs italic text-foreground">
-                    “{c.opener}”
-                  </p>
-                ) : null}
-              </article>
+                c={c}
+                onBrief={() => {
+                  setBrief(c);
+                  void track({ data: { action: "lender_discovery_opportunity_opened" } });
+                }}
+              />
             ))}
           </section>
 
-          {data.summary?.locked > 0 ? (
+          {(data.summary?.previewOnly ?? 0) > 0 || data.revealed.length ? (
             <section className="rounded-3xl border border-surface-intelligence-border bg-surface-intelligence p-6">
               <Lock className="h-5 w-5 text-intelligence-accent" />
               <h2 className="mt-3 text-lg font-semibold text-surface-intelligence-foreground">
-                {data.summary.locked} more are waiting
+                {data.revealed.length ? `You've seen ${data.revealed.length}.` : "There's more to find."}
               </h2>
+              {data.summary.previewOnly > 0 ? (
+                <p className="mt-1 text-base font-semibold text-surface-intelligence-foreground">
+                  SuCasa found {data.summary.previewOnly} additional{" "}
+                  {data.summary.previewOnly === 1 ? "homeowner" : "homeowners"} worth reviewing.
+                </p>
+              ) : null}
+              {data.groups?.length ? (
+                <ul className="mt-3 flex flex-wrap gap-2 text-xs">
+                  {data.groups.map((g: any) => (
+                    <li key={g.key} className="inline-flex items-center gap-1 rounded-full border border-surface-intelligence-border px-2 py-1 text-surface-intelligence-foreground">
+                      <Lock className="h-3 w-3" /> {g.label}: {g.count}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
               <p className="mt-2 text-sm text-surface-intelligence-foreground">
-                The 90-day pilot unlocks every opportunity in this list, keeps watching these homes
+                Activate SuCasa to unlock the rest of this list. The 90-day pilot unlocks every opportunity, keeps watching these homes
                 as records change, and gives you a daily list of who to call and why.
               </p>
               <ul className="mt-4 space-y-2 text-sm text-surface-intelligence-foreground">
@@ -321,6 +306,110 @@ function DiscoveryPage() {
           ) : null}
         </>
       ) : null}
+      <LenderBriefDialog
+        clientId={brief?.id ?? null}
+        name={brief?.name ?? null}
+        subtitle={brief?.address ?? null}
+        email={brief?.email ?? null}
+        phone={brief?.phone ?? null}
+        onClose={() => setBrief(null)}
+      />
     </div>
+  );
+}
+
+function pct(n: number | null | undefined, digits = 0) {
+  return typeof n === "number" ? `${n.toFixed(digits)}%` : null;
+}
+
+function DiscoveryCard({ c, onBrief }: { c: any; onBrief: () => void }) {
+  const reasons: string[] = (c.reasons ?? []).slice(0, 3);
+  const metrics = [
+    { label: "Estimated value", value: money(c.estimatedValueCents) },
+    {
+      label: c.equityInferredNoLien ? "Estimated equity (no active loan found)" : "Estimated equity",
+      value: money(c.estimatedEquityCents),
+    },
+    { label: "Estimated balance", value: c.equityInferredNoLien ? null : money(c.estimatedBalanceCents) },
+    { label: "Estimated LTV", value: c.equityInferredNoLien ? null : pct(c.estimatedLtvPct) },
+    { label: "Recorded rate", value: pct(c.recordedRatePct, 2) },
+    {
+      label: "Mortgage age",
+      value: typeof c.loanAgeYears === "number" ? `${c.loanAgeYears} yrs` : null,
+    },
+  ].filter((m) => m.value);
+  return (
+    <article className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+      {c.categoryLabel ? (
+        <span className="inline-flex rounded-full bg-surface-intelligence px-2.5 py-1 text-xs font-semibold text-intelligence-accent">
+          {c.categoryLabel}
+        </span>
+      ) : null}
+      <div className="mt-2 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-base font-semibold text-foreground">{c.name}</h3>
+        <span className="text-xs text-muted-foreground">{c.address}</span>
+      </div>
+      {c.whyToday ? (
+        <div className="mt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Why now</p>
+          <p className="mt-1 text-sm text-foreground">{c.whyToday}</p>
+        </div>
+      ) : null}
+      {reasons.length ? (
+        <ul className="mt-3 space-y-1 text-sm text-foreground">
+          {reasons.map((r) => (
+            <li key={r} className="flex gap-2">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-intelligence-accent" />
+              <span>{r}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {metrics.length ? (
+        <dl className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-surface p-3 sm:grid-cols-3">
+          {metrics.map((m) => (
+            <div key={m.label}>
+              <dt className="text-[11px] text-muted-foreground">{m.label}</dt>
+              <dd className="text-sm font-semibold text-foreground">{m.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {c.objective ? (
+        <div className="mt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            What to accomplish
+          </p>
+          <p className="mt-1 text-sm text-foreground">{c.objective}</p>
+        </div>
+      ) : null}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-2 text-xs">
+          {[
+            { key: "call", label: "Call", Icon: Phone },
+            { key: "text", label: "Text", Icon: MessageSquare },
+            { key: "email", label: "Email", Icon: Mail },
+          ].map(({ key, label, Icon }) => {
+            const allowed = Boolean(c.channels?.[key]);
+            return (
+              <span
+                key={key}
+                title={c.channelReasons?.[key] ?? undefined}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${
+                  allowed
+                    ? "border-status-positive/40 text-status-positive"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                <Icon className="h-3 w-3" /> {label}
+              </span>
+            );
+          })}
+        </div>
+        <Button size="sm" variant="outline" onClick={onBrief}>
+          30-Second Brief <ArrowRight className="ml-1 h-4 w-4" />
+        </Button>
+      </div>
+    </article>
   );
 }
