@@ -162,6 +162,28 @@ const GROUP_OF: Record<OpportunityCategory, DiscoveryGroup> = {
   distress: "other",
 };
 
+/**
+ * Lender review vocabulary → Discovery group. The lender workspace's top
+ * review is the one canonical classification behind both the Discovery cards
+ * and the Discovery summary counts.
+ */
+export const REVIEW_GROUP: Record<string, DiscoveryGroup> = {
+  refinance_review: "mortgage_review",
+  mortgage_checkup: "mortgage_review",
+  equity_review: "equity",
+  home_equity_conversation: "equity",
+  equity_milestone: "equity",
+  move_planning: "plans",
+  ownership_anniversary: "plans",
+  improvement_planning: "other",
+  value_milestone: "other",
+  property_change: "other",
+};
+
+export function reviewGroupOf(reviewType: string): DiscoveryGroup {
+  return REVIEW_GROUP[reviewType] ?? "other";
+}
+
 export function groupOf(category: OpportunityCategory | string): DiscoveryGroup {
   return GROUP_OF[category as OpportunityCategory] ?? "other";
 }
