@@ -371,9 +371,6 @@ function DiscoveryPage() {
   );
 }
 
-function pct(n: number | null | undefined, digits = 0) {
-  return typeof n === "number" ? `${n.toFixed(digits)}%` : null;
-}
 
 function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; onView: () => void }) {
   const reasons: string[] = (c.reasons ?? [])
