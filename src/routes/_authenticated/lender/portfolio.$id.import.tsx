@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { addPortfolioClient, ingestPortfolioCsv } from "@/lib/lender.functions";
 import { UserPlus } from "lucide-react";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
+import { recordAuthenticatedAgentEvent } from "@/lib/agent-funnel.functions";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   component: PortfolioImport,
@@ -31,10 +32,15 @@ function PortfolioImport() {
   const ingestFn = useServerFn(ingestPortfolioCsv);
   const addFn = useServerFn(addPortfolioClient);
   const [form, setForm] = useState({ ...EMPTY });
+  const track = useServerFn(recordAuthenticatedAgentEvent);
 
   const ingest = useMutation({
-    mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
+    mutationFn: (csv: string) => {
+      void track({ data: { action: "lender_full_upload_started" } }).catch(() => undefined);
+      return ingestFn({ data: { portfolioId: id, csv } });
+    },
     onSuccess: (r: any) => {
+      void track({ data: { action: "lender_full_upload_completed" } }).catch(() => undefined);
       toast.success(`Imported ${r.inserted} clients`);
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
       navigate({ to: "/lender/portfolio/$id", params: { id } });
