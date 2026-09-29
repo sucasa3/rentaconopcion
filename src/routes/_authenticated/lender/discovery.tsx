@@ -143,10 +143,10 @@ function DiscoveryPage() {
         <p className="text-sm font-semibold text-status-opportunity">Opportunity Discovery</p>
         <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">
           {status === "complete"
-            ? (data?.headline ?? "Your Discovery is ready")
+            ? "Your Discovery results"
             : "See what's inside your past-client database"}
         </h1>
-        {status === "complete" && data?.supporting ? (
+        {false ? (
           <p className="mt-2 text-sm text-muted-foreground">{data.supporting}</p>
         ) : null}
       </header>
@@ -375,7 +375,9 @@ function pct(n: number | null | undefined, digits = 0) {
 }
 
 function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; onView: () => void }) {
-  const reasons: string[] = (c.reasons ?? []).slice(0, 3);
+  const reasons: string[] = (c.reasons ?? [])
+    .filter((r: string) => r.trim() !== (c.whyToday ?? "").trim())
+    .slice(0, 3);
   const metrics = [
     { label: "Estimated value", value: money(c.estimatedValueCents) },
     {
