@@ -320,7 +320,7 @@ function DiscoveryPage() {
                 </ul>
               ) : null}
               <Button
-                className="mt-6 bg-action text-action-foreground hover:bg-action/90"
+                className="mt-6"
                 onClick={() => {
                   void track({ data: { action: "lender_activation_clicked" } });
                   pilot.mutate();
