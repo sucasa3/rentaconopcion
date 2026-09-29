@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { syncSubscription } from "@/lib/billing.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -46,17 +47,32 @@ function DiscoveryPage() {
   const polling = useRef(false);
   const [brief, setBrief] = useState<any>(null);
   const [checkoutOk, setCheckoutOk] = useState(false);
-  useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("checkout") === "success") {
-      setCheckoutOk(true);
-      void track({ data: { action: "lender_activation_completed" } });
-    }
-  }, []);
-
+  const syncFn = useServerFn(syncSubscription);
   const snapshot = useQuery({
     queryKey: ["lender-discovery"],
     queryFn: () => getFn({}),
   });
+  const synced = useRef(false);
+  const orgIdForSync = (snapshot.data as any)?.orgId as string | undefined;
+  useEffect(() => {
+    // Returning from checkout only counts once Stripe itself confirms the
+    // subscription; the URL alone never activates or records anything.
+    if (synced.current || !orgIdForSync) return;
+    if (new URLSearchParams(window.location.search).get("checkout") !== "success") return;
+    synced.current = true;
+    void (async () => {
+      try {
+        const r: any = await syncFn({ data: { orgId: orgIdForSync } });
+        if (r?.activated) {
+          setCheckoutOk(true);
+          void track({ data: { action: "lender_activation_completed" } });
+          await qc.invalidateQueries({ queryKey: ["lender-discovery"] });
+        }
+      } catch {
+        /* the webhook will still activate the account */
+      }
+    })();
+  }, [orgIdForSync]);
 
   const data = snapshot.data as any;
   const status: string = data?.status ?? "awaiting_upload";
