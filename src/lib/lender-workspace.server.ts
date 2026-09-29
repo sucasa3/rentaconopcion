@@ -486,6 +486,7 @@ export async function readLenderWorkspace(
       ltv: canonical?.equityInferredNoLien ? null : ltv,
       loanAgeYears,
       recordedRatePct: hasScope(access, "mortgage") ? (canonical?.ratePct ?? null) : null,
+      rateFromRecord: !!canonical?.rateFromRecord,
       noActiveLien: !!canonical?.equityInferredNoLien,
       rawEquity: equity,
       tenureYears,
@@ -759,6 +760,7 @@ function buildReviews(input: {
   /** Recorded rate tied to the same active lien; null when none on record. */
   recordedRatePct?: number | null;
   /** Valuation present but no active mortgage/open lien in the property record. */
+  rateFromRecord?: boolean;
   noActiveLien?: boolean;
   rawEquity?: number | null;
   tenureYears: number | null;
@@ -844,7 +846,7 @@ function buildReviews(input: {
       "refinance_review",
       ["loan_seasoning", "recorded_mortgage_present", "recorded_rate_present"],
       ["estimated_mortgage_balance", "loan_age"],
-      [`Recorded rate: ${input.recordedRatePct}% on a loan about ${input.loanAgeYears} years old.`],
+      [`${input.rateFromRecord ? "Recorded rate" : "Rate on file from your upload"}: ${input.recordedRatePct}% on a loan about ${input.loanAgeYears} years old.`],
       50,
     );
   }
