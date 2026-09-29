@@ -61,8 +61,21 @@ export async function ensureDiscoveryWorkspace(
     .eq("user_id", userId);
   const mine = (memberships ?? []).filter((m: any) => m.lender_orgs?.org_type === "lender");
 
-  let orgId: string | null = mine[0]?.lender_org_id ?? null;
-  let orgName: string = mine[0]?.lender_orgs?.name ?? "";
+  // If this officer already owns an assigned book, that book's organization is
+  // the canonical one — concurrent sign-in events then converge on one org.
+  const { data: ownedBook } = await db
+    .from("lender_portfolios")
+    .select("lender_org_id")
+    .eq("assigned_user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const preferred =
+    mine.find((m: any) => m.lender_org_id === (ownedBook as any)?.lender_org_id) ?? mine[0];
+
+  let orgId: string | null = preferred?.lender_org_id ?? null;
+  let orgName: string = (preferred as any)?.lender_orgs?.name ?? "";
+
 
   if (!orgId) {
     const { data: profile } = await db
