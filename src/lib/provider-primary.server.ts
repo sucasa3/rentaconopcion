@@ -63,7 +63,7 @@ export async function enrichViaBatchdata(
   const started = Date.now();
   const res = await batchdataLookup(address);
   const latencyMs = Date.now() - started;
-  const matchedNow = res.ok && isMatched(normalizeBatchdataProperty(firstBatchdataProperty(res.data)));
+  const matchedNow = res.ok && isMatched(normalizeBatchdataProperty(res.data));
   await supabaseAdmin.from("batchdata_call_log").insert({
     endpoint: "all-attributes",
     address_normalized: normalizeAddress(address),
@@ -79,7 +79,7 @@ export async function enrichViaBatchdata(
   }
 
   const raw = firstBatchdataProperty(res.data);
-  const normalized = normalizeBatchdataProperty(raw);
+  const normalized = normalizeBatchdataProperty(res.data);
   const costCents = batchdataCostCents("detail");
   const parsed = parseTestAddress(address);
 
