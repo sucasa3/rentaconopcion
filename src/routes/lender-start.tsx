@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, CheckCircle2, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { z } from "zod";
@@ -39,6 +39,13 @@ export const Route = createFileRoute("/lender-start")({
   component: LenderStartPage,
 });
 
+/**
+ * Module-level lock: the session check and the auth-state listener can fire in
+ * the same tick, and a remount keeps no memory of an in-flight setup. One
+ * shared promise guarantees workspace setup runs exactly once per page load.
+ */
+let workspaceSetup: Promise<void> | null = null;
+
 function LenderStartPage() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
@@ -50,27 +57,30 @@ function LenderStartPage() {
   const [busy, setBusy] = useState(true);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
 
   async function finish() {
-    if (started.current) return;
-    started.current = true;
     setBusy(true);
     setError(null);
     try {
-      const attribution = getAgentAttribution();
-      void recordAuthenticated({
-        data: { action: "lender_discovery_signup_completed", ...attribution },
-      });
-      await begin({ data: { language } });
+      if (!workspaceSetup) {
+        workspaceSetup = (async () => {
+          const attribution = getAgentAttribution();
+          void recordAuthenticated({
+            data: { action: "lender_discovery_signup_completed", ...attribution },
+          });
+          await begin({ data: { language } });
+        })();
+      }
+      await workspaceSetup;
       await router.invalidate();
       navigate({ to: "/lender/discovery", replace: true });
     } catch (reason) {
-      started.current = false;
+      workspaceSetup = null;
       setError(reason instanceof Error ? reason.message : t("pub.lstart.error_workspace"));
       setBusy(false);
     }
   }
+
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {

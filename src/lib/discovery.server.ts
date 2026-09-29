@@ -61,8 +61,21 @@ export async function ensureDiscoveryWorkspace(
     .eq("user_id", userId);
   const mine = (memberships ?? []).filter((m: any) => m.lender_orgs?.org_type === "lender");
 
-  let orgId: string | null = mine[0]?.lender_org_id ?? null;
-  let orgName: string = mine[0]?.lender_orgs?.name ?? "";
+  // If this officer already owns an assigned book, that book's organization is
+  // the canonical one — concurrent sign-in events then converge on one org.
+  const { data: ownedBook } = await db
+    .from("lender_portfolios")
+    .select("lender_org_id")
+    .eq("assigned_user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  const preferred =
+    mine.find((m: any) => m.lender_org_id === (ownedBook as any)?.lender_org_id) ?? mine[0];
+
+  let orgId: string | null = preferred?.lender_org_id ?? null;
+  let orgName: string = (preferred as any)?.lender_orgs?.name ?? "";
+
 
   if (!orgId) {
     const { data: profile } = await db
@@ -103,7 +116,9 @@ export async function ensureDiscoveryWorkspace(
     () => undefined,
   );
 
-  // Discovery book
+  // Discovery book. A loan officer may hold at most one assigned portfolio
+  // (partial unique index uniq_lender_portfolio_per_officer), so an already
+  // assigned book is always reused instead of inserting a second one.
   const { data: books } = await db
     .from("lender_portfolios")
     .select("id, name")
@@ -114,6 +129,16 @@ export async function ensureDiscoveryWorkspace(
     (books ?? [])[0]?.id ??
     null;
   if (!portfolioId) {
+    const { data: assigned } = await db
+      .from("lender_portfolios")
+      .select("id")
+      .eq("assigned_user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    portfolioId = (assigned as any)?.id ?? null;
+  }
+  if (!portfolioId) {
     const { data: book, error } = await db
       .from("lender_portfolios")
       .insert({
@@ -123,9 +148,23 @@ export async function ensureDiscoveryWorkspace(
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
-    portfolioId = (book as any).id as string;
+    if (error) {
+      // Concurrent sign-in events can race here; fall back to the book the
+      // other request just created rather than surfacing a constraint error.
+      const { data: raced } = await db
+        .from("lender_portfolios")
+        .select("id")
+        .eq("assigned_user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      portfolioId = (raced as any)?.id ?? null;
+      if (!portfolioId) throw new Error(error.message);
+    } else {
+      portfolioId = (book as any).id as string;
+    }
   }
+
 
   // Discovery run (one per org — enforced by a unique index too)
   const { data: existing } = await db
