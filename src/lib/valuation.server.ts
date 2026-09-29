@@ -160,7 +160,7 @@ export async function getPropertyIntel(
       const { batchdataToSummaries } = await import("./batchdata-summaries");
 
       const res = await batchdataLookup(address);
-      const normalizedProp = res.ok ? normalizeBatchdataProperty(firstBatchdataProperty(res.data)) : null;
+      const normalizedProp = res.ok ? normalizeBatchdataProperty(res.data) : null;
       const matched = res.ok && isMatched(normalizedProp);
       if (res.ok) callsUsed += 1;
 
