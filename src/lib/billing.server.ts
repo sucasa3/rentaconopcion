@@ -9,19 +9,56 @@
 
 const STRIPE_API = "https://api.stripe.com/v1";
 
-function stripeKey(): string {
-  const key = process.env["STRIPE_SECRET_KEY"];
-  if (!key) throw new Error("Stripe is not connected yet.");
-  return key;
+export type StripeMode = "live" | "test";
+
+/**
+ * Hosts that run the preview/development build. Only these may ever use the
+ * Stripe test key; the published site and custom domains always run live.
+ */
+function isPreviewHost(host: string | null | undefined): boolean {
+  if (!host) return false;
+  const h = host.toLowerCase().split(":")[0] ?? "";
+  return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h.startsWith("id-preview--") ||
+    /^project--[^.]+-dev\.lovable\.app$/.test(h)
+  );
 }
 
 /**
- * Which price column to use: test-mode keys read stripe_test_price_id,
- * live keys read stripe_price_id. Preview runs on a test key, so it can
- * never charge a real card.
+ * Live vs test is decided by the environment (the host serving the request),
+ * never by who the user is. Test mode also requires a test key to exist.
  */
-export function priceIdColumn(): "stripe_price_id" | "stripe_test_price_id" {
-  return stripeKey().startsWith("sk_test_") ? "stripe_test_price_id" : "stripe_price_id";
+export async function currentStripeMode(): Promise<StripeMode> {
+  if (!process.env["STRIPE_TEST_SECRET_KEY"]) return "live";
+  try {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const host = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host") ?? null;
+    return isPreviewHost(host) ? "test" : "live";
+  } catch {
+    return "live";
+  }
+}
+
+function stripeKey(mode: StripeMode): string {
+  const key =
+    mode === "test" ? process.env["STRIPE_TEST_SECRET_KEY"] : process.env["STRIPE_SECRET_KEY"];
+  if (!key) throw new Error("Stripe is not connected yet.");
+  if (mode === "test" && !key.startsWith("sk_test_") && !key.startsWith("rk_test_")) {
+    throw new Error("The Stripe test key is not a test-mode key.");
+  }
+  return key;
+}
+
+/** Which price column a mode reads. Live and test ids never mix. */
+export function priceIdColumn(mode: StripeMode): "stripe_price_id" | "stripe_test_price_id" {
+  return mode === "test" ? "stripe_test_price_id" : "stripe_price_id";
+}
+
+/** Which customer column a mode reads. */
+export function customerIdColumn(mode: StripeMode): "stripe_customer_id" | "stripe_test_customer_id" {
+  return mode === "test" ? "stripe_test_customer_id" : "stripe_customer_id";
 }
 
 /** Flatten a nested object into Stripe's form-encoded parameter syntax. */
@@ -48,11 +85,13 @@ export async function stripeRequest<T = any>(
   path: string,
   method: "GET" | "POST" = "GET",
   body?: Record<string, unknown>,
+  mode?: StripeMode,
 ): Promise<T> {
+  const m = mode ?? (await currentStripeMode());
   const res = await fetch(`${STRIPE_API}${path}`, {
     method,
     headers: {
-      Authorization: `Bearer ${stripeKey()}`,
+      Authorization: `Bearer ${stripeKey(m)}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: body ? encode(body).join("&") : undefined,
@@ -69,9 +108,12 @@ export async function stripeRequest<T = any>(
  */
 export async function cancelSubscription(subscriptionId: string): Promise<void> {
   try {
-    await stripeRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, "POST", {
-      "cancellation_details[comment]": "Homeowner deleted their SuCasa account",
-    });
+    await stripeRequest(
+      `/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`,
+      "POST",
+      { "cancellation_details[comment]": "Homeowner deleted their SuCasa account" },
+      "live",
+    );
   } catch (e) {
     // Already canceled, or no longer present upstream: that is the end state we
     // wanted, so it is not a failure.
@@ -81,20 +123,28 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
   }
 }
 
-/** Find or create the Stripe customer for an organization. */
+/** Find or create the Stripe customer for an organization, per mode. */
 export async function ensureCustomer(
   supabaseAdmin: any,
-  org: { id: string; name: string; primary_contact_email: string | null; stripe_customer_id: string | null },
+  org: { id: string; name: string; primary_contact_email: string | null; stripe_customer_id: string | null; stripe_test_customer_id?: string | null },
+  mode: StripeMode,
 ): Promise<string> {
-  if (org.stripe_customer_id) return org.stripe_customer_id;
-  const customer = await stripeRequest<{ id: string }>("/customers", "POST", {
-    name: org.name,
-    email: org.primary_contact_email ?? undefined,
-    metadata: { sucasa_org_id: org.id },
-  });
+  const column = customerIdColumn(mode);
+  const existing = (org as any)[column] as string | null | undefined;
+  if (existing) return existing;
+  const customer = await stripeRequest<{ id: string }>(
+    "/customers",
+    "POST",
+    {
+      name: org.name,
+      email: org.primary_contact_email ?? undefined,
+      metadata: { sucasa_org_id: org.id },
+    },
+    mode,
+  );
   await supabaseAdmin
     .from("lender_orgs")
-    .update({ stripe_customer_id: customer.id })
+    .update({ [column]: customer.id })
     .eq("id", org.id);
   return customer.id;
 }
@@ -135,7 +185,9 @@ export async function applySubscription(
       await supabaseAdmin
         .from("lender_orgs")
         .select("id")
-        .eq("stripe_customer_id", subscription.customer)
+        .or(
+          `stripe_customer_id.eq.${subscription.customer},stripe_test_customer_id.eq.${subscription.customer}`,
+        )
         .maybeSingle()
     ).data?.id ??
     null;

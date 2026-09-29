@@ -319,16 +319,17 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
     const orgId = (owner as any).lender_org_id as string;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { ensureCustomer, stripeRequest, priceIdColumn } = await import("./billing.server");
+    const { ensureCustomer, stripeRequest, priceIdColumn, currentStripeMode } = await import("./billing.server");
+    const stripeMode = await currentStripeMode();
 
     const { data: org } = await supabaseAdmin
       .from("lender_orgs")
-      .select("id, name, primary_contact_email, stripe_customer_id")
+      .select("id, name, primary_contact_email, stripe_customer_id, stripe_test_customer_id")
       .eq("id", orgId)
       .maybeSingle();
     if (!org) throw new Error("Organization not found");
 
-    const col = priceIdColumn();
+    const col = priceIdColumn(stripeMode);
     const { data: plans } = await supabaseAdmin
       .from("plan_tiers")
       .select("key, stripe_price_id, stripe_test_price_id")
@@ -341,7 +342,7 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
 
     const session = await stripeRequest<{ id: string; url: string }>("/checkout/sessions", "POST", {
       mode: "subscription",
-      customer: await ensureCustomer(supabaseAdmin, org as any),
+      customer: await ensureCustomer(supabaseAdmin, org as any, stripeMode),
       client_reference_id: orgId,
       success_url: `${data.returnUrl}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${data.returnUrl}?checkout=cancelled`,
@@ -364,7 +365,7 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
         },
       },
       metadata: { sucasa_org_id: orgId, plan_key: "pilot_90" },
-    });
+    }, stripeMode);
 
     const { logNetworkEvent } = await import("./network-events.server");
     await logNetworkEvent(supabaseAdmin, {

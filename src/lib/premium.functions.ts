@@ -40,7 +40,7 @@ export const startPremiumCheckout = createServerFn({ method: "POST" })
       subscription_data: {
         metadata: { sucasa_homeowner_id: context.userId, sucasa_product: "premium_membership" },
       },
-    });
+    }, "live");
     return { url: session.url };
   });
 

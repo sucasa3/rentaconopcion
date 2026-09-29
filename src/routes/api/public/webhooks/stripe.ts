@@ -25,15 +25,26 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env["STRIPE_WEBHOOK_SECRET"];
-        if (!secret) return new Response("Webhook secret not configured", { status: 503 });
+        const liveSecret = process.env["STRIPE_WEBHOOK_SECRET"];
+        const testSecret = process.env["STRIPE_TEST_WEBHOOK_SECRET"];
+        if (!liveSecret && !testSecret)
+          return new Response("Webhook secret not configured", { status: 503 });
 
         const body = await request.text();
-        if (!verify(body, request.headers.get("stripe-signature"), secret)) {
+        const sig = request.headers.get("stripe-signature");
+        // Each mode is verified only with its own signing secret, and the
+        // event's own livemode flag must agree with the secret that signed it.
+        const liveOk = Boolean(liveSecret && verify(body, sig, liveSecret));
+        const testOk = !liveOk && Boolean(testSecret && verify(body, sig, testSecret));
+        if (!liveOk && !testOk) {
           return new Response("Invalid signature", { status: 401 });
         }
 
-        const event = JSON.parse(body) as { type: string; data: { object: any } };
+        const event = JSON.parse(body) as { type: string; livemode?: boolean; data: { object: any } };
+        if (liveOk !== Boolean(event.livemode)) {
+          return new Response("Mode mismatch", { status: 401 });
+        }
+        const mode = liveOk ? ("live" as const) : ("test" as const);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { applySubscription, stripeRequest } = await import("@/lib/billing.server");
 
@@ -71,7 +82,7 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
         switch (event.type) {
           case "checkout.session.completed": {
             const subId = event.data.object?.subscription;
-            if (subId) await route(await stripeRequest(`/subscriptions/${subId}`));
+            if (subId) await route(await stripeRequest(`/subscriptions/${subId}`, "GET", undefined, mode));
             break;
           }
           case "customer.subscription.created":
@@ -81,7 +92,7 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
           case "invoice.payment_succeeded": {
             const obj = event.data.object;
             const sub = obj?.object === "subscription" ? obj : obj?.subscription
-              ? await stripeRequest(`/subscriptions/${obj.subscription}`)
+              ? await stripeRequest(`/subscriptions/${obj.subscription}`, "GET", undefined, mode)
               : null;
             if (sub) await route(sub);
             break;

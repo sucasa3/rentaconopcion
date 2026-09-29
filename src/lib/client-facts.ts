@@ -58,6 +58,17 @@ export interface ClientFacts {
   /** Canonical mortgage-position classification. */
   lienStatus: LienStatus;
   multiLien: boolean;
+  /**
+   * Lender-safe mortgage facts, all taken from the SAME primary lien on the
+   * property record (never mixed across liens). Null unless that lien is the
+   * one the balance/equity read already treats as current.
+   */
+  mortgageRecordedDate?: string | null;
+  mortgageLoanType?: string | null;
+  mortgageLenderName?: string | null;
+  mortgageOriginalAmount?: number | null;
+  /** True when ratePct came from the property record's lien (not the upload). */
+  rateFromRecord?: boolean;
   /** True when there is no cached property record for this address yet. */
   hasRecord: boolean;
 }

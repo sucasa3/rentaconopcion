@@ -10,8 +10,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const listPlans = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { priceIdColumn } = await import("./billing.server");
-    const column = priceIdColumn();
+    const { priceIdColumn, currentStripeMode } = await import("./billing.server");
+    const column = priceIdColumn(await currentStripeMode());
     const { data, error } = await context.supabase
       .from("plan_tiers")
       .select(
@@ -66,11 +66,12 @@ export const startCheckout = createServerFn({ method: "POST" })
     if (!allowed) throw new Error("Forbidden: only an owner or admin can manage billing");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { ensureCustomer, stripeRequest, priceIdColumn } = await import("./billing.server");
+    const { ensureCustomer, stripeRequest, priceIdColumn, currentStripeMode } = await import("./billing.server");
+    const stripeMode = await currentStripeMode();
 
     const { data: org } = await supabaseAdmin
       .from("lender_orgs")
-      .select("id, name, primary_contact_email, stripe_customer_id")
+      .select("id, name, primary_contact_email, stripe_customer_id, stripe_test_customer_id")
       .eq("id", data.orgId)
       .maybeSingle();
     if (!org) throw new Error("Organization not found");
@@ -80,12 +81,12 @@ export const startCheckout = createServerFn({ method: "POST" })
       .select("key, name, stripe_price_id, stripe_test_price_id")
       .eq("key", data.planKey)
       .maybeSingle();
-    const priceId = plan ? (plan as any)[priceIdColumn()] : null;
+    const priceId = plan ? (plan as any)[priceIdColumn(stripeMode)] : null;
     if (!priceId) {
       throw new Error(`Plan "${data.planKey}" has no payment price configured yet.`);
     }
 
-    const customer = await ensureCustomer(supabaseAdmin, org);
+    const customer = await ensureCustomer(supabaseAdmin, org as any, stripeMode);
     const session = await stripeRequest<{ id: string; url: string }>("/checkout/sessions", "POST", {
       mode: "subscription",
       customer,
@@ -98,7 +99,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       payment_method_collection: "if_required",
       subscription_data: { metadata: { sucasa_org_id: org.id } },
       metadata: { sucasa_org_id: org.id, plan_key: plan?.key ?? data.planKey },
-    });
+    }, stripeMode);
 
     return { url: session.url };
   });
@@ -166,17 +167,23 @@ export const syncSubscription = createServerFn({ method: "POST" })
     if (!allowed) throw new Error("Forbidden");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { stripeRequest, applySubscription } = await import("./billing.server");
+    const { stripeRequest, applySubscription, currentStripeMode, customerIdColumn } = await import("./billing.server");
+    const stripeMode = await currentStripeMode();
+    const custCol = customerIdColumn(stripeMode);
 
     const { data: org } = await supabaseAdmin
       .from("lender_orgs")
-      .select("id, stripe_customer_id")
+      .select("id, stripe_customer_id, stripe_test_customer_id")
       .eq("id", data.orgId)
       .maybeSingle();
-    if (!org?.stripe_customer_id) return { status: "none", activated: false };
+    const customerId = (org as any)?.[custCol] as string | null | undefined;
+    if (!customerId) return { status: "none", activated: false };
 
     const subs = await stripeRequest<{ data: any[] }>(
-      `/subscriptions?customer=${org.stripe_customer_id}&status=all&limit=5`,
+      `/subscriptions?customer=${customerId}&status=all&limit=5`,
+      "GET",
+      undefined,
+      stripeMode,
     );
     const sub = subs.data?.find((s) => ["active", "trialing", "past_due"].includes(s.status)) ?? subs.data?.[0];
     if (!sub) return { status: "none", activated: false };
