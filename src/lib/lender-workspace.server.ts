@@ -199,7 +199,7 @@ export async function readLenderWorkspace(
         ? admin()
             .from("lender_portfolio_clients")
             .select(
-              "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, zip, homeowner_id, archived_at, relationship_basis, contact_marketing_permission, intelligence_access_scope, loan_amount_at_close_cents, rate_at_close, term_months, close_date, created_at",
+              "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, zip, homeowner_id, archived_at, relationship_basis, contact_marketing_permission, intelligence_access_scope, loan_amount_at_close_cents, rate_at_close, notes, term_months, close_date, created_at",
             )
             .in("portfolio_id", scope.bookIds)
         : Promise.resolve({ data: [] }),

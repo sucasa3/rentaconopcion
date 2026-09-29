@@ -41,7 +41,11 @@ function PortfolioImport() {
     },
     onSuccess: (r: any) => {
       void track({ data: { action: "lender_full_upload_completed" } }).catch(() => undefined);
-      toast.success(`Imported ${r.inserted} clients`);
+      toast.success(
+        r.existing
+          ? `Imported ${r.inserted} clients · ${r.existing} already in this book were skipped`
+          : `Imported ${r.inserted} clients`,
+      );
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
       navigate({ to: "/lender/portfolio/$id", params: { id } });
     },

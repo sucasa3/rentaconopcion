@@ -401,7 +401,7 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
     const parsedRows = parseClientCsv(data.csv);
-    if (parsedRows.length === 0) return { inserted: 0, suppressed: 0 };
+    if (parsedRows.length === 0) return { inserted: 0, suppressed: 0, existing: 0 };
 
     // Never re-create someone who asked to be deleted or opted out.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -411,12 +411,44 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
       street: r.address,
       zip: r.zip ?? null,
     }));
-    if (rows.length === 0) return { inserted: 0, suppressed: suppressed.length };
+    if (rows.length === 0) return { inserted: 0, suppressed: suppressed.length, existing: 0 };
+
+    // Same-book identity: normalized street + 5-digit ZIP (the property match
+    // key), or the same email. Existing homeowners are skipped, so re-uploads
+    // never create duplicates or start a new property lookup (that only runs
+    // on insert).
+    const { normalizeAddress } = await import("./attom.server");
+    const addrKey = (a: string | null | undefined, z: string | null | undefined) =>
+      `${normalizeAddress(a ?? "")}|${(z ?? "").trim().slice(0, 5)}`;
+    const { data: existingRows, error: exErr } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("address_line1, zip, client_email")
+      .eq("portfolio_id", data.portfolioId);
+    if (exErr) throw new Error(exErr.message);
+    const seenAddr = new Set<string>();
+    const seenEmail = new Set<string>();
+    for (const e of existingRows ?? []) {
+      if (e.address_line1) seenAddr.add(addrKey(e.address_line1, e.zip));
+      if (e.client_email) seenEmail.add(e.client_email.trim().toLowerCase());
+    }
+    let existing = 0;
+    const fresh = rows.filter((r) => {
+      const k = addrKey(r.address, r.zip ?? null);
+      const em = r.email?.trim().toLowerCase() || null;
+      if (seenAddr.has(k) || (em && seenEmail.has(em))) {
+        existing += 1;
+        return false;
+      }
+      seenAddr.add(k);
+      if (em) seenEmail.add(em);
+      return true;
+    });
+    if (fresh.length === 0) return { inserted: 0, suppressed: suppressed.length, existing };
 
     const { assertCapacityForPortfolio } = await import("./capacity.server");
-    await assertCapacityForPortfolio(data.portfolioId, rows.length);
+    await assertCapacityForPortfolio(data.portfolioId, fresh.length);
 
-    const payload = rows.map((r) => ({
+    const payload = fresh.map((r) => ({
       portfolio_id: data.portfolioId,
       client_name: r.full_name,
       client_email: r.email ?? null,
@@ -432,7 +464,7 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
 
-    return { inserted: rows.length, suppressed: suppressed.length };
+    return { inserted: fresh.length, suppressed: suppressed.length, existing };
   });
 
 const AddClientSchema = z.object({
