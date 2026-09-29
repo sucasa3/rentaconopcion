@@ -189,5 +189,5 @@ export const syncSubscription = createServerFn({ method: "POST" })
     if (!sub) return { status: "none", activated: false };
 
     const applied = await applySubscription(supabaseAdmin, sub);
-    return { status: applied.status, planKey: applied.planKey, activated: applied.status === "active" };
+    return { status: applied.status, planKey: applied.planKey, activated: ["active", "trialing", "past_due"].includes(applied.status) };
   });
