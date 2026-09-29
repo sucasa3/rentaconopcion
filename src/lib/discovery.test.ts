@@ -109,3 +109,14 @@ describe("internal unit economics", () => {
     expect(estimatedCostTenThousandths(100, 155)).toBe(15_500);
   });
 });
+
+import { reviewGroupOf as _rg } from "./discovery";
+import { describe as _d, it as _it, expect as _e } from "vitest";
+_d("reviewGroupOf", () => {
+  _it("maps lender review types to one Discovery group", () => {
+    _e(_rg("equity_review")).toBe("equity");
+    _e(_rg("refinance_review")).toBe("mortgage_review");
+    _e(_rg("move_planning")).toBe("plans");
+    _e(_rg("unknown_type")).toBe("other");
+  });
+});
