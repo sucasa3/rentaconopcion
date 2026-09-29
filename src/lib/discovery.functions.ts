@@ -133,6 +133,16 @@ export const advanceDiscovery = createServerFn({ method: "POST" })
         discoveryId: ws.discoveryId,
         portfolioId: ws.portfolioId,
         orgId: ws.orgId,
+        readTopReviews: async () => {
+          const { readLenderWorkspace } = await import("./lender-workspace.server");
+          const lw = await readLenderWorkspace(context.supabase, context.userId, { orgId: ws.orgId });
+          const m = new Map<string, string>();
+          for (const c of (lw?.book ?? []) as any[]) {
+            const t = c.reviews?.[0]?.type;
+            if (c.portfolioId === ws.portfolioId && t) m.set(c.id, t);
+          }
+          return m;
+        },
       });
       return { status: "complete" as const, done: total, total, paused: tick.paused ?? null };
     }

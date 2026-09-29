@@ -18,6 +18,7 @@ import {
   planIntake,
   propertyKey,
   rankClients,
+  reviewGroupOf,
   revealSelection,
   summarize,
   type CandidateOpportunity,
@@ -405,6 +406,11 @@ export async function finalizeDiscovery(input: {
   discoveryId: string;
   portfolioId: string;
   orgId: string;
+  /**
+   * Reads each client's top lender review (type) AFTER opportunities are
+   * persisted — the same classification the lender cards and Today use.
+   */
+  readTopReviews?: () => Promise<Map<string, string>>;
 }): Promise<{ summary: DiscoverySummary; ranked: RankedClient[] }> {
   const db = await adminClient();
   const { persistPortfolioOpportunities, listPortfolioOpportunityRows } = await import(
@@ -424,7 +430,19 @@ export async function finalizeDiscovery(input: {
     valueConfidence: o.value_confidence ?? o.signals?.value_confidence ?? null,
   }));
 
-  const ranked = rankClients(candidates.filter((c) => c.portfolioClientId));
+  let ranked = rankClients(candidates.filter((c) => c.portfolioClientId));
+  if (input.readTopReviews) {
+    // One classification source: the client's top lender review. A client with
+    // a canonical opportunity but no review a lender may see is not counted —
+    // it would render as an unexplained card.
+    const top = await input.readTopReviews();
+    ranked = ranked
+      .filter((r) => top.has(r.portfolioClientId))
+      .map((r, i) => {
+        const type = top.get(r.portfolioClientId)!;
+        return { ...r, primaryCategory: type, primaryGroup: reviewGroupOf(type), rank: i + 1 };
+      });
+  }
   const revealed = new Set(revealSelection(ranked).map((r) => r.portfolioClientId));
 
   const { count: analyzed } = await db
