@@ -235,6 +235,7 @@ export function LenderToday() {
         onClose={() => setBrief(null)}
       />
     </div>
+    </SupportingFactsProvider>
   );
 }
 
