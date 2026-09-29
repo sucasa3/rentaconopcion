@@ -388,3 +388,5 @@
 - [ ] Verify logins work without email (lender.mlo, isabella.demo, others)
 - [ ] Scoped cleanup script (dry-run count first, demo rows only)
 - [ ] Walkthrough A–H EN/ES + final report
+- [x] A. Lender-safe mortgage facts from property records (preview)
+- [ ] B. Stripe test mode: waiting on test secret key + test webhook secret, then create test prices and run the funnel tests
