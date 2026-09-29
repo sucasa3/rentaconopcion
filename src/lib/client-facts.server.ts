@@ -100,6 +100,18 @@ export function factsFromRecord(
 
   const lastSaleDate = sales?.lastSale?.date ?? client.close_date ?? null;
 
+  // Mortgage facts are only trusted when the same lien is the one the equity
+  // read treats as current: not paid off, not "no active loan found".
+  const lienUsable =
+    Boolean(mortgage?.hasRecord) &&
+    ribbon.lienStatus !== "likely_paid_off" &&
+    !ribbon.equityInferredNoLien &&
+    !ribbon.noMortgageOnRecord;
+  const lienDate = lienUsable && mortgage?.originationDate && !Number.isNaN(Date.parse(mortgage.originationDate))
+    ? mortgage.originationDate
+    : null;
+  const lienRate = lienUsable ? (mortgage?.interestRate ?? null) : null;
+
   return {
     clientId: client.id,
     value: ribbon.estimatedValue,
@@ -110,7 +122,12 @@ export function factsFromRecord(
     equityDollars: ribbon.equityDollars,
     equityPct: ribbon.equityPct,
     ltvPct: ribbon.equityPct != null ? Math.round((1 - ribbon.equityPct) * 1000) / 10 : null,
-    ratePct: mortgage?.interestRate ?? client.rate_at_close ?? null,
+    ratePct: lienRate ?? client.rate_at_close ?? null,
+    rateFromRecord: lienRate != null,
+    mortgageRecordedDate: lienDate,
+    mortgageLoanType: lienUsable ? (mortgage?.loanType ?? null) : null,
+    mortgageLenderName: lienUsable ? (mortgage?.lender ?? null) : null,
+    mortgageOriginalAmount: lienUsable ? (mortgage?.loanAmount ?? null) : null,
     tenureYears: ribbon.tenureYears ?? yearsSince(lastSaleDate),
     lastSaleDate,
     lastSalePrice: sales?.lastSale?.amount ?? null,

@@ -442,8 +442,17 @@ export async function readLenderWorkspace(
         : value && balance
           ? Math.round((balance / value) * 1000) / 10
           : null;
-    const loanAgeYears = c.close_date ? Math.round((months / 12) * 10) / 10 : null;
-    const tenureYears = loanAgeYears;
+    // Mortgage age: the lender's own close date first; otherwise the recorded
+    // date of the same active lien the balance comes from. Never year built,
+    // purchase year or an assumption. Tenure stays tied to the uploaded close
+    // date only, exactly as before.
+    const uploadedLoanAge = c.close_date ? Math.round((months / 12) * 10) / 10 : null;
+    const recordLoanAge =
+      uploadedLoanAge == null && hasScope(access, "mortgage") && canonical?.mortgageRecordedDate
+        ? Math.round((monthsBetween(canonical.mortgageRecordedDate, now) / 12) * 10) / 10
+        : null;
+    const loanAgeYears = uploadedLoanAge ?? recordLoanAge;
+    const tenureYears = uploadedLoanAge;
     const dataGap =
       value == null
         ? c.address_line1
