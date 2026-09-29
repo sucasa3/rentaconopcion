@@ -389,4 +389,4 @@
 - [ ] Scoped cleanup script (dry-run count first, demo rows only)
 - [ ] Walkthrough A–H EN/ES + final report
 - [x] A. Lender-safe mortgage facts from property records (preview)
-- [ ] B. Stripe test mode: waiting on test secret key + test webhook secret, then create test prices and run the funnel tests
+- [x] B. Stripe test mode + funnel tests (preview). Open: test webhook signing secret not stored yet (activation verified via return sync)
