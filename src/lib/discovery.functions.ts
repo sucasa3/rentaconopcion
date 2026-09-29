@@ -16,6 +16,7 @@ import {
   GROUP_BLURB,
   GROUP_LABEL,
   headline,
+  reviewGroupOf,
   supportingLine,
   summarize,
   type DiscoveryGroup,
@@ -222,6 +223,16 @@ export const getDiscovery = createServerFn({ method: "GET" })
             whyToday: c.whyToday,
             reasons: (c.reviews?.[0]?.why ?? []) as string[],
             categoryLabel: (c.reviews?.[0]?.label ?? null) as string | null,
+            // Up to 2 other lender-visible reasons from a different group, as
+            // context for the same conversation. Order and primary unchanged.
+            alsoReasons: ((c.reviews ?? []) as any[])
+              .slice(1)
+              .filter(
+                (r) =>
+                  reviewGroupOf(r.type) !== reviewGroupOf(c.reviews[0].type) && r.why?.length,
+              )
+              .slice(0, 2)
+              .map((r) => ({ label: r.label as string, why: String(r.why[r.why.length - 1]) })),
             phone: c.phone ?? null,
             email: c.email ?? null,
             estimatedBalanceCents: c.estimatedBalanceCents,

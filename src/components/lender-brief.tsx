@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatLtvPct } from "@/lib/format-loan";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -221,7 +222,7 @@ function BriefBody({
         <div className="mt-4 grid grid-cols-4 divide-x divide-primary-foreground/15 border-t border-primary-foreground/15 pt-3">
           <HeroMetric label="Est. value" value={formatCents(m.estimatedValueCents)} />
           <HeroMetric label="Equity" value={formatCents(m.estimatedEquityCents)} />
-          <HeroMetric label="Est. LTV" value={m.estimatedLtvPct != null ? `${m.estimatedLtvPct}%` : "—"} />
+          <HeroMetric label="Est. LTV" value={formatLtvPct(m.estimatedLtvPct) ?? "—"} />
           <HeroMetric label="Mortgage age" value={m.loanAgeYears != null ? `${m.loanAgeYears} yr` : "—"} />
         </div>
       </div>
