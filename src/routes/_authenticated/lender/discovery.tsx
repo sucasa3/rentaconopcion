@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -44,6 +44,13 @@ function DiscoveryPage() {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
   const [brief, setBrief] = useState<any>(null);
+  const [checkoutOk, setCheckoutOk] = useState(false);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("checkout") === "success") {
+      setCheckoutOk(true);
+      void track({ data: { action: "lender_activation_completed" } });
+    }
+  }, []);
 
   const snapshot = useQuery({
     queryKey: ["lender-discovery"],
@@ -100,6 +107,7 @@ function DiscoveryPage() {
       },
     });
     void track({ data: { action: "lender_pilot_offer_viewed" } });
+    void track({ data: { action: "lender_discovery_results_viewed" } });
   }, [status, data?.revealed?.length]);
 
   const pilot = useMutation({
@@ -117,6 +125,15 @@ function DiscoveryPage() {
       </div>
     );
   }
+
+  const lockedMix: { key: string; label: string; count: number }[] = (data?.groups ?? [])
+    .map((g: any) => ({
+      key: g.key,
+      label: g.label,
+      count:
+        g.count - (data?.revealed ?? []).filter((r: any) => r.primaryGroup === g.key).length,
+    }))
+    .filter((g: any) => g.count > 0);
 
   const busy = upload.isPending || progress !== null || status === "processing";
 
@@ -249,61 +266,96 @@ function DiscoveryPage() {
             {data.revealed.map((c: any) => (
               <DiscoveryCard
                 key={c.id}
+                onView={() => void track({ data: { action: "lender_discovery_opportunity_opened" } })}
                 c={c}
                 onBrief={() => {
                   setBrief(c);
-                  void track({ data: { action: "lender_discovery_opportunity_opened" } });
+                  void track({ data: { action: "lender_discovery_brief_opened" } });
                 }}
               />
             ))}
           </section>
 
-          {(data.summary?.previewOnly ?? 0) > 0 || data.revealed.length ? (
-            <section className="rounded-3xl border border-surface-intelligence-border bg-surface-intelligence p-6">
-              <Lock className="h-5 w-5 text-intelligence-accent" />
-              <h2 className="mt-3 text-lg font-semibold text-surface-intelligence-foreground">
+          {data.activated || checkoutOk ? (
+            <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+              <p className="text-sm font-semibold text-status-positive">SuCasa is active</p>
+              <h2 className="mt-1 text-xl font-semibold text-foreground">
+                Now let SuCasa analyze the rest of your book.
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                You found opportunities in your Discovery sample. Upload your complete database and
+                SuCasa will analyze it with the same intelligence. The {data.summary?.analyzed ?? 0}{" "}
+                homes already here stay in place — repeats aren't counted twice.
+              </p>
+              <Button asChild className="mt-5">
+                <Link to="/lender/portfolio/$id/import" params={{ id: data.portfolioId }}>
+                  <ArrowRight className="mr-2 h-4 w-4" /> Upload My Full Database
+                </Link>
+              </Button>
+            </section>
+          ) : (
+            <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+              <Lock className="h-5 w-5 text-muted-foreground" />
+              <h2 className="mt-3 text-lg font-semibold text-foreground">
                 {data.revealed.length ? `You've seen ${data.revealed.length}.` : "There's more to find."}
               </h2>
-              {data.summary.previewOnly > 0 ? (
-                <p className="mt-1 text-base font-semibold text-surface-intelligence-foreground">
+              {data.summary?.previewOnly > 0 ? (
+                <p className="mt-1 text-base font-semibold text-foreground">
                   SuCasa found {data.summary.previewOnly} additional{" "}
                   {data.summary.previewOnly === 1 ? "homeowner" : "homeowners"} worth reviewing.
                 </p>
               ) : null}
-              {data.groups?.length ? (
-                <ul className="mt-3 flex flex-wrap gap-2 text-xs">
-                  {data.groups.map((g: any) => (
-                    <li key={g.key} className="inline-flex items-center gap-1 rounded-full border border-surface-intelligence-border px-2 py-1 text-surface-intelligence-foreground">
-                      <Lock className="h-3 w-3" /> {g.label}: {g.count}
+              <p className="mt-2 text-sm text-muted-foreground">
+                Activate SuCasa to unlock the rest of this Discovery and begin monitoring your
+                database for new opportunities.
+              </p>
+              {lockedMix.length ? (
+                <ul className="mt-4 space-y-1 text-sm text-foreground">
+                  {lockedMix.map((g) => (
+                    <li key={g.key} className="flex items-center gap-2">
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                      {g.count} {g.label}
                     </li>
                   ))}
                 </ul>
               ) : null}
-              <p className="mt-2 text-sm text-surface-intelligence-foreground">
-                Activate SuCasa to unlock the rest of this list. The 90-day pilot unlocks every opportunity, keeps watching these homes
-                as records change, and gives you a daily list of who to call and why.
-              </p>
-              <ul className="mt-4 space-y-2 text-sm text-surface-intelligence-foreground">
-                {[
-                  "$447 today for 90 days",
-                  "Then $149/month — cancel any time during the pilot",
-                  "Continuous monitoring of the homes you already know",
-                ].map((line) => (
-                  <li key={line} className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 shrink-0" /> {line}
-                  </li>
-                ))}
-              </ul>
-              <Button className="mt-5" onClick={() => pilot.mutate()} disabled={pilot.isPending}>
+              <Button
+                className="mt-6"
+                onClick={() => {
+                  void track({ data: { action: "lender_activation_clicked" } });
+                  pilot.mutate();
+                }}
+                disabled={pilot.isPending}
+              >
                 {pilot.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <ArrowRight className="mr-2 h-4 w-4" />
                 )}
-                Start my 90-day pilot
+                Unlock My Database
               </Button>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Unlock the remaining Discovery opportunities and let SuCasa continuously analyze your
+                database for meaningful reasons to reconnect.
+              </p>
+              {money(data.pricing?.pilotCents) && money(data.pricing?.growthCents) ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  90-day pilot: {money(data.pricing.pilotCents)} today, then{" "}
+                  {money(data.pricing.growthCents)}/month. Cancel any time during the pilot.
+                </p>
+              ) : null}
+              <div className="mt-6 border-t border-border pt-5">
+                <h3 className="text-sm font-semibold text-foreground">After activation</h3>
+                <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+                  <li>Unlock the remaining opportunities from this Discovery</li>
+                  <li>Upload your complete past-client database</li>
+                  <li>SuCasa creates and watches a Home Profile for each home</li>
+                  <li>Your daily list shows the people who deserve attention</li>
+                  <li>SuCasa explains why they matter and helps prepare the conversation</li>
+                </ol>
+              </div>
             </section>
-          ) : null}
+          )}
         </>
       ) : null}
       <LenderBriefDialog
@@ -322,7 +374,7 @@ function pct(n: number | null | undefined, digits = 0) {
   return typeof n === "number" ? `${n.toFixed(digits)}%` : null;
 }
 
-function DiscoveryCard({ c, onBrief }: { c: any; onBrief: () => void }) {
+function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; onView: () => void }) {
   const reasons: string[] = (c.reasons ?? []).slice(0, 3);
   const metrics = [
     { label: "Estimated value", value: money(c.estimatedValueCents) },
@@ -339,7 +391,7 @@ function DiscoveryCard({ c, onBrief }: { c: any; onBrief: () => void }) {
     },
   ].filter((m) => m.value);
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-soft">
+    <article className="rounded-2xl border border-border bg-card p-5 shadow-soft" onClick={onView}>
       {c.categoryLabel ? (
         <span className="inline-flex rounded-full bg-surface-intelligence px-2.5 py-1 text-xs font-semibold text-intelligence-accent">
           {c.categoryLabel}
