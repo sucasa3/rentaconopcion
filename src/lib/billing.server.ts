@@ -108,9 +108,12 @@ export async function stripeRequest<T = any>(
  */
 export async function cancelSubscription(subscriptionId: string): Promise<void> {
   try {
-    await stripeRequest(`/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`, "POST", {
-      "cancellation_details[comment]": "Homeowner deleted their SuCasa account",
-    });
+    await stripeRequest(
+      `/subscriptions/${encodeURIComponent(subscriptionId)}/cancel`,
+      "POST",
+      { "cancellation_details[comment]": "Homeowner deleted their SuCasa account" },
+      "live",
+    );
   } catch (e) {
     // Already canceled, or no longer present upstream: that is the end state we
     // wanted, so it is not a failure.
