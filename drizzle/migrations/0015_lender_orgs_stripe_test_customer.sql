@@ -1,0 +1,2 @@
+ALTER TABLE public.lender_orgs ADD COLUMN IF NOT EXISTS stripe_test_customer_id text;
+COMMENT ON COLUMN public.lender_orgs.stripe_test_customer_id IS 'Stripe TEST-mode customer id, used only by preview/development. Never read by the live site.';

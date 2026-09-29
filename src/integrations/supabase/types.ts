@@ -3802,6 +3802,7 @@ export type Database = {
           sponsored_allocation: number
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          stripe_test_customer_id: string | null
           subscription_status: string
           updated_at: string
         }
@@ -3838,6 +3839,7 @@ export type Database = {
           sponsored_allocation?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          stripe_test_customer_id?: string | null
           subscription_status?: string
           updated_at?: string
         }
@@ -3874,6 +3876,7 @@ export type Database = {
           sponsored_allocation?: number
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          stripe_test_customer_id?: string | null
           subscription_status?: string
           updated_at?: string
         }
