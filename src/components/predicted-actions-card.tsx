@@ -5,6 +5,7 @@ import { Check, Sparkles, X } from "lucide-react";
 import { listHomeIntel, updatePredictedAction } from "@/lib/documents-intel.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n";
 
 type Action = {
   id: string;
@@ -16,6 +17,10 @@ type Action = {
   est_cost_low_cents: number | null;
   est_cost_high_cents: number | null;
   status: string;
+  source_filename?: string | null;
+  inspection_date?: string | null;
+  source_pages?: number[] | null;
+  needs_confirmation?: boolean | null;
 };
 
 const URGENCY_LABEL: Record<string, string> = {
@@ -45,6 +50,7 @@ function costRange(low: number | null, high: number | null): string | null {
  */
 export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
   const qc = useQueryClient();
+  const t = useT();
   const update = useServerFn(updatePredictedAction);
 
   const { data, isLoading } = useQuery({
@@ -84,6 +90,18 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{a.title}</p>
                   {a.why && <p className="mt-0.5 text-xs text-muted-foreground">{a.why}</p>}
+                  {a.source_filename && (
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {t("mp.from_report", {
+                        file: a.source_filename,
+                        date: a.inspection_date ?? "—",
+                        pages: a.source_pages?.length ? ` · ${t("mp.page", { pages: a.source_pages.join(", ") })}` : "",
+                      })}
+                    </p>
+                  )}
+                  {a.needs_confirmation && (
+                    <p className="mt-0.5 text-[11px] font-medium text-status-attention">{t("mp.confirm")}</p>
+                  )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
                     <Badge variant="secondary">{URGENCY_LABEL[a.urgency] ?? "Plan ahead"}</Badge>
                     {cost && <span className="text-muted-foreground">Typically {cost}</span>}

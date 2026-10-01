@@ -17,6 +17,7 @@ import {
   previewReportReplacements,
   listPendingAgentReports,
   listReportProposals,
+  listMaintenanceProposals,
   respondToAgentReport,
 } from "@/lib/inspection-batch.functions";
 
@@ -132,11 +133,13 @@ function AgentReports() {
   const previewFn = useServerFn(previewReportReplacements);
   const [busy, setBusy] = useState<string | null>(null);
   const [replace, setReplace] = useState<Record<string, string[]>>({});
+  const [choices, setChoices] = useState<Record<string, Record<string, Choice>>>({});
+  const maintFn = useServerFn(listMaintenanceProposals);
   const pending = useQuery({ queryKey: ["agent-reports-pending"], queryFn: () => pendingFn() });
   const proposals = useQuery({ queryKey: ["agent-report-proposals"], queryFn: () => propsFn() });
   const refresh = () =>
     Promise.all(
-      [["agent-reports-pending"], ["agent-report-proposals"], ["home-system-access"], ["home-system-state"]].map((k) =>
+      [["agent-reports-pending"], ["agent-report-proposals"], ["home-system-access"], ["home-system-state"], ["home-predicted-actions"], ["maint-proposals"]].map((k) =>
         qc.invalidateQueries({ queryKey: k }),
       ),
     );
@@ -156,9 +159,12 @@ function AgentReports() {
   async function apply(documentId: string, yes: boolean) {
     setBusy(documentId);
     try {
-      const r = await applyFn({ data: { documentId, apply: yes, replace: replace[documentId] ?? [] } });
+      const actions = Object.entries(choices[documentId] ?? {}).map(([key, c]) => ({ key, ...c }));
+      const r: any = await applyFn({ data: { documentId, apply: yes, replace: replace[documentId] ?? [], actions } });
       if (!r.ok) throw new Error();
-      if (yes) toast.success(t("hmh.prop.applied"));
+      if (yes && r.plan)
+        toast.success(t("mp.result", { created: r.plan.created.length, updated: r.plan.updated.length, kept: r.plan.kept.length }));
+      else if (yes) toast.success(t("hmh.prop.applied"));
       await refresh();
     } catch {
       toast.error(t("hs.save_failed"));
@@ -214,6 +220,14 @@ function AgentReports() {
                     </li>
                   ))}
                 </ul>
+                <MaintenanceReview
+                  documentId={d.id}
+                  filename={d.filename ?? ""}
+                  inspectionDate={d.inspectionDate}
+                  fetchFn={maintFn}
+                  value={choices[d.id] ?? {}}
+                  onChange={(v) => setChoices((c) => ({ ...c, [d.id]: v }))}
+                />
                 <Replacements
                   documentId={d.id}
                   previewFn={previewFn}
@@ -269,6 +283,81 @@ function Replacements({ documentId, previewFn, selected, onChange }: { documentI
           </ul>
         </>
       )}
+    </div>
+  );
+}
+
+type Choice = { selected: boolean; title?: string; dueBy?: string | null; acceptChange: boolean };
+
+/** Homeowner review of proposed maintenance tasks: select, edit, and accept changes to existing tasks. */
+function MaintenanceReview({ documentId, filename, inspectionDate, fetchFn, value, onChange }: {
+  documentId: string; filename: string; inspectionDate: string | null; fetchFn: any;
+  value: Record<string, Choice>; onChange: (v: Record<string, Choice>) => void;
+}) {
+  const t = useT();
+  const q = useQuery({ queryKey: ["maint-proposals", documentId], queryFn: () => fetchFn({ data: { documentId } }) });
+  const rows: any[] = q.data?.proposals ?? [];
+  if (!rows.length) return null;
+  const get = (k: string): Choice => value[k] ?? { selected: false, acceptChange: false };
+  const set = (k: string, patch: Partial<Choice>) => onChange({ ...value, [k]: { ...get(k), ...patch } });
+  return (
+    <div className="mt-3 rounded-lg border border-border p-3 text-xs">
+      <p className="text-sm font-medium">{t("mp.title")}</p>
+      <p className="text-muted-foreground">{t("mp.desc")}</p>
+      <p className="mt-1 text-muted-foreground">{t("mp.source", { file: filename, date: inspectionDate ?? "—" })}</p>
+      <ul className="mt-2 space-y-3">
+        {rows.map((r) => {
+          const c = get(r.key);
+          const locked = r.kind === "same" || r.kind === "kept";
+          return (
+            <li key={r.key} className="rounded-md bg-muted/40 p-2">
+              <label className="flex items-start gap-2">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-primary" disabled={locked}
+                  checked={!locked && c.selected} onChange={(e) => set(r.key, { selected: e.target.checked })} />
+                <span className="min-w-0 flex-1">
+                  {c.selected && !locked ? (
+                    <input aria-label={r.title} className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
+                      value={c.title ?? r.title} maxLength={200} onChange={(e) => set(r.key, { title: e.target.value })} />
+                  ) : (
+                    <span className="font-medium">{r.title}</span>
+                  )}
+                  <span className="mt-0.5 block text-muted-foreground">
+                    {r.urgency ? t(`mp.urgency.${r.urgency}` as any) : t("mp.no_date")}
+                    {r.sourcePages?.length ? ` · ${t("mp.page", { pages: r.sourcePages.join(", ") })}` : ""}
+                  </span>
+                  {r.needsConfirmation && <span className="mt-0.5 block font-medium text-status-attention">{t("mp.confirm")}</span>}
+                  {c.selected && !locked && (
+                    <span className="mt-1 flex items-center gap-2">
+                      <span className="text-muted-foreground">{t("mp.due")}</span>
+                      <input type="date" className="rounded border border-border bg-background px-2 py-0.5"
+                        value={(c.dueBy === undefined ? r.dueBy : c.dueBy) ?? ""}
+                        onChange={(e) => set(r.key, { dueBy: e.target.value || null })} />
+                    </span>
+                  )}
+                  {r.kind === "update" && (
+                    <span className="mt-1 block">
+                      {t("mp.kind.update")}
+                      {r.existing.urgency !== (r.urgency ?? r.existing.urgency) && (
+                        <span className="block">{t("mp.change", { field: "urgency", from: r.existing.urgency, to: r.urgency })}</span>
+                      )}
+                      {r.existing.dueBy !== (r.dueBy ?? r.existing.dueBy) && (
+                        <span className="block">{t("mp.change", { field: t("mp.due"), from: r.existing.dueBy ?? "—", to: r.dueBy })}</span>
+                      )}
+                      <label className="mt-1 flex items-center gap-2">
+                        <input type="checkbox" className="h-4 w-4 accent-primary" checked={c.acceptChange}
+                          onChange={(e) => set(r.key, { acceptChange: e.target.checked, selected: e.target.checked || c.selected })} />
+                        {t("mp.accept_change")}
+                      </label>
+                    </span>
+                  )}
+                  {r.kind === "same" && <span className="mt-1 block text-muted-foreground">{t("mp.kind.same")}</span>}
+                  {r.kind === "kept" && <span className="mt-1 block text-muted-foreground">{t("mp.kind.kept")}</span>}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
