@@ -49,6 +49,7 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
       planKey: org?.plan_key ?? null,
       subscriptionStatus: org?.subscription_status ?? null,
       capacity: { total: Math.max(granted, 0), remaining, active: active ?? 0, hasFree },
+      hasRun: Boolean(run),
       report: (run as any)?.report ?? null,
       pendingCount: ((run as any)?.pending_rows ?? []).length,
       needsAddress: ((run as any)?.needs_address ?? []) as { full_name: string; email: string | null }[],
