@@ -460,6 +460,16 @@ export function HomeCarePanel({
                       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                         {row.detail}
                       </p>
+                      {row.kind === "system" &&
+                        row.item &&
+                        (() => {
+                          const latest = (serviceLog ?? []).find((e) => e.componentKey === row.item!.key);
+                          return latest?.enteredByRole === "agent" ? (
+                            <p className="mt-1 text-xs font-semibold text-primary">
+                              {t(latest.entryKind === "updated" ? "hs.by_agent_updated" : "hs.by_agent_added")}
+                            </p>
+                          ) : null;
+                        })()}
                       <p className="mt-1 text-xs font-medium text-muted-foreground">
                         {row.kind === "system" ? t("care.kind.system") : t("care.kind.routine")} ·{" "}
                         {row.timing}
