@@ -556,6 +556,7 @@ async function approveMaintenance(admin: any, doc: any, choices: Array<{ key: st
       system: p.system,
       service_category: p.serviceCategory,
       urgency: p.urgency ?? "monitor",
+      urgency_specified: p.urgency != null,
       due_from: doc.inspection_date,
       due_by: dueBy,
       document_id: doc.id,
