@@ -116,12 +116,9 @@ export const activateAgentWorkspace = createServerFn({ method: "POST" })
         .insert({ lender_org_id: orgId, user_id: context.userId, role: "owner" });
       if (memberError) throw new Error(memberError.message);
 
-      // The SuCasa-funded starter allowance is independent of lenders,
-      // sponsorships, subscriptions and homeowner permissions.
-      const { error: entitlementError } = await supabaseAdmin
-        .from("agent_base_entitlements")
-        .insert({ org_id: orgId, profile_limit: 100, source: "sucasa" });
-      if (entitlementError) throw new Error(entitlementError.message);
+      // The SuCasa-funded starter allowance (100 Home Profiles) is granted
+      // only after email + SMS phone verification, once per verified phone
+      // (redeem_agent_promotion). Existing organizations keep theirs.
     } else if (data.agencyName?.trim() && created === false) {
       // Owners may rename their agency during setup.
       const { data: role } = await supabaseAdmin
