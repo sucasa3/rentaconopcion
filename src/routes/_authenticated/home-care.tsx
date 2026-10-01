@@ -8,6 +8,7 @@ import { HomePlanSection } from "@/components/home-plan-section";
 import { PredictedActionsCard } from "@/components/predicted-actions-card";
 import { RecommendedProsCard } from "@/components/recommended-pros-card";
 import { RecentRequestsCard } from "@/components/recent-requests-card";
+import { HomeSystemAccessCard } from "@/components/home-system-access-card";
 
 export const Route = createFileRoute("/_authenticated/home-care")({
   ssr: false,
@@ -52,6 +53,7 @@ function HomeCarePage() {
             focusSystem={system}
             onGoToDocuments={() => navigate({ to: "/documents" })}
           />
+          <HomeSystemAccessCard />
           <HomePlanSection />
           <PredictedActionsCard />
           <RecommendedProsCard />

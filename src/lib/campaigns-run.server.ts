@@ -160,9 +160,9 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
   if (homeownerIds.length) {
     const { data: profs } = await supabaseAdmin
       .from("profiles")
-      .select("id, campaign_opt_out, language")
+      .select("id, campaign_opt_out, language, is_test_account")
       .in("id", homeownerIds);
-    for (const p of profs ?? []) if (p.campaign_opt_out) optedOut.add(p.id);
+    for (const p of profs ?? []) if (p.campaign_opt_out || p.is_test_account) optedOut.add(p.id);
   }
 
   const factsCache = new Map<string, Awaited<ReturnType<typeof loadCachedFacts>>>();

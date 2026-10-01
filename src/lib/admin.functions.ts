@@ -27,6 +27,7 @@ export const listAllProfiles = createServerFn({ method: "POST" })
       .select(
         "id, full_name, email, phone, city, state, zip, address, lifecycle_stage, last_activity_at, ghl_last_synced_at, created_at",
       )
+      .eq("is_test_account", false)
       .order("last_activity_at", { ascending: false })
       .limit(limit);
 

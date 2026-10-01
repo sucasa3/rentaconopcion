@@ -47,7 +47,7 @@ async function lookupOrganizations(
   const first = normalized.split(" ")[0] ?? "";
   if (first.length < 3) return { orgs: [], aliases: [] };
   const [{ data: orgs }, { data: aliases }] = await Promise.all([
-    admin.from("lender_orgs").select("id, name").ilike("name", `%${first}%`).limit(50),
+    admin.from("lender_orgs").select("id, name").eq("is_test_account", false).ilike("name", `%${first}%`).limit(50),
     admin
       .from("organization_aliases")
       .select("org_id, alias_normalized, trusted")

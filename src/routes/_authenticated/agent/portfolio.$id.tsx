@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AgentHomeSystemsButton } from "@/components/agent-home-systems-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -1376,6 +1377,7 @@ function ClientDrawer({
   const t = useT();
   const isMobile = useIsMobile();
   const qc = useQueryClient();
+  const { id: portfolioIdParam } = Route.useParams();
   const [noteOpen, setNoteOpen] = useState(false);
   const [status, setStatus] = useState<string>(client.listing?.status ?? "off_market");
   const [otherAgent, setOtherAgent] = useState<boolean>(
@@ -1544,6 +1546,8 @@ function ClientDrawer({
           onOpenChange={setNoteOpen}
           onSaved={() => qc.invalidateQueries()}
         />
+
+        <AgentHomeSystemsButton portfolioId={portfolioIdParam} clientId={client.id} />
 
         <SignalsPanel audience="agent" clientId={client.id} />
 

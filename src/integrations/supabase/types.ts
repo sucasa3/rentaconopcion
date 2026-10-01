@@ -2186,6 +2186,10 @@ export type Database = {
           brand: string | null
           component_key: string
           created_at: string
+          entered_by_org_id: string | null
+          entered_by_role: string
+          entered_by_user_id: string | null
+          entry_kind: string
           id: string
           installed_year: number | null
           model: string | null
@@ -2194,6 +2198,7 @@ export type Database = {
           serviced_on: string | null
           updated_at: string
           user_id: string
+          version: number | null
           warranty_years: number | null
         }
         Insert: {
@@ -2201,6 +2206,10 @@ export type Database = {
           brand?: string | null
           component_key: string
           created_at?: string
+          entered_by_org_id?: string | null
+          entered_by_role?: string
+          entered_by_user_id?: string | null
+          entry_kind?: string
           id?: string
           installed_year?: number | null
           model?: string | null
@@ -2209,6 +2218,7 @@ export type Database = {
           serviced_on?: string | null
           updated_at?: string
           user_id: string
+          version?: number | null
           warranty_years?: number | null
         }
         Update: {
@@ -2216,6 +2226,10 @@ export type Database = {
           brand?: string | null
           component_key?: string
           created_at?: string
+          entered_by_org_id?: string | null
+          entered_by_role?: string
+          entered_by_user_id?: string | null
+          entry_kind?: string
           id?: string
           installed_year?: number | null
           model?: string | null
@@ -2224,6 +2238,7 @@ export type Database = {
           serviced_on?: string | null
           updated_at?: string
           user_id?: string
+          version?: number | null
           warranty_years?: number | null
         }
         Relationships: []
@@ -2597,6 +2612,110 @@ export type Database = {
           stale_classes?: string[]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      home_system_access_grants: {
+        Row: {
+          created_at: string
+          granted_at: string
+          homeowner_user_id: string
+          id: string
+          org_id: string
+          revoked_at: string | null
+          scope: string
+        }
+        Insert: {
+          created_at?: string
+          granted_at?: string
+          homeowner_user_id: string
+          id?: string
+          org_id: string
+          revoked_at?: string | null
+          scope?: string
+        }
+        Update: {
+          created_at?: string
+          granted_at?: string
+          homeowner_user_id?: string
+          id?: string
+          org_id?: string
+          revoked_at?: string | null
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "home_system_access_grants_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      home_system_changes: {
+        Row: {
+          actor_role: string
+          actor_user_id: string
+          change_kind: string
+          component_key: string
+          created_at: string
+          homeowner_user_id: string
+          id: string
+          log_id: string | null
+          new_value: Json | null
+          old_value: Json | null
+          org_id: string | null
+          version: number
+        }
+        Insert: {
+          actor_role: string
+          actor_user_id: string
+          change_kind: string
+          component_key: string
+          created_at?: string
+          homeowner_user_id: string
+          id?: string
+          log_id?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          org_id?: string | null
+          version: number
+        }
+        Update: {
+          actor_role?: string
+          actor_user_id?: string
+          change_kind?: string
+          component_key?: string
+          created_at?: string
+          homeowner_user_id?: string
+          id?: string
+          log_id?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          org_id?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      home_system_versions: {
+        Row: {
+          component_key: string
+          homeowner_user_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          component_key: string
+          homeowner_user_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          component_key?: string
+          homeowner_user_id?: string
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
@@ -3978,6 +4097,7 @@ export type Database = {
           current_period_end: string | null
           discovery_state: string
           id: string
+          is_test_account: boolean
           license_number: string | null
           logo_url: string | null
           name: string
@@ -4015,6 +4135,7 @@ export type Database = {
           current_period_end?: string | null
           discovery_state?: string
           id?: string
+          is_test_account?: boolean
           license_number?: string | null
           logo_url?: string | null
           name: string
@@ -4052,6 +4173,7 @@ export type Database = {
           current_period_end?: string | null
           discovery_state?: string
           id?: string
+          is_test_account?: boolean
           license_number?: string | null
           logo_url?: string | null
           name?: string
@@ -5284,6 +5406,7 @@ export type Database = {
           full_name: string | null
           ghl_last_synced_at: string | null
           id: string
+          is_test_account: boolean
           language: string
           last_activity_at: string
           lifecycle_stage: Database["public"]["Enums"]["lifecycle_stage"]
@@ -5301,6 +5424,7 @@ export type Database = {
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id: string
+          is_test_account?: boolean
           language?: string
           last_activity_at?: string
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
@@ -5318,6 +5442,7 @@ export type Database = {
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id?: string
+          is_test_account?: boolean
           language?: string
           last_activity_at?: string
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
@@ -6306,6 +6431,10 @@ export type Database = {
           spent: number
         }[]
       }
+      agent_home_system_allowed: {
+        Args: { _actor: string; _homeowner: string; _org_id: string }
+        Returns: boolean
+      }
       award_agent_credit: {
         Args: {
           _client_id: string
@@ -6334,9 +6463,14 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["lifecycle_stage"]
       }
+      delete_home_system_entry: { Args: { p_log_id: string }; Returns: Json }
       enqueue_ghl_sync: {
         Args: { _entity_id: string; _entity_type: string; _op?: string }
         Returns: undefined
+      }
+      get_home_systems_for_agent: {
+        Args: { p_client_id: string; p_org_id: string }
+        Returns: Json
       }
       has_role: {
         Args: {
@@ -6356,6 +6490,16 @@ export type Database = {
       is_request_assigned_pro: {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_home_system_access_options: {
+        Args: never
+        Returns: {
+          enabled: boolean
+          granted_at: string
+          member_count: number
+          org_id: string
+          org_name: string
+        }[]
       }
       org_active_profile_count: { Args: { _org_id: string }; Returns: number }
       org_profile_capacity: { Args: { _org_id: string }; Returns: number }
@@ -6400,9 +6544,30 @@ export type Database = {
         Args: { _org_id: string; _phone_hash: string; _user_id: string }
         Returns: string
       }
+      save_home_system: {
+        Args: {
+          p_action: string
+          p_brand: string
+          p_component_key: string
+          p_expected_version: number
+          p_homeowner: string
+          p_installed_year: number
+          p_model: string
+          p_notes: string
+          p_org_id: string
+          p_provider: string
+          p_serviced_on: string
+          p_warranty_years: number
+        }
+        Returns: Json
+      }
       set_agent_plan_capacity: {
         Args: { _org_id: string; _ref: string; _target: number }
         Returns: number
+      }
+      set_home_system_access: {
+        Args: { p_enabled: boolean; p_org_id: string }
+        Returns: Json
       }
     }
     Enums: {

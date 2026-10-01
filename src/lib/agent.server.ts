@@ -294,14 +294,30 @@ export async function executeAction(
       return { ok: true, note: "Service request filed." };
     }
     if (kind === "log_service") {
-      const { error } = await supabase.from("home_component_service_log").insert({
-        user_id: userId,
-        component_key: String(action.payload?.component_key ?? "general"),
-        action: "serviced",
-        serviced_on: new Date().toISOString().slice(0, 10),
-        notes: action.summary ?? action.title,
+      const componentKey = String(action.payload?.component_key ?? "general");
+      // Homeowner-approved action: save through the versioned path (fresh read, no stale screen).
+      const { data: ver } = await supabase
+        .from("home_system_versions")
+        .select("version")
+        .eq("homeowner_user_id", userId)
+        .eq("component_key", componentKey)
+        .maybeSingle();
+      const { data: res, error } = await supabase.rpc("save_home_system", {
+        p_homeowner: userId,
+        p_component_key: componentKey,
+        p_org_id: null as unknown as string,
+        p_expected_version: ver?.version ?? 0,
+        p_action: "serviced",
+        p_installed_year: null as unknown as number,
+        p_serviced_on: new Date().toISOString().slice(0, 10),
+        p_brand: null as unknown as string,
+        p_model: null as unknown as string,
+        p_warranty_years: null as unknown as number,
+        p_provider: null as unknown as string,
+        p_notes: action.summary ?? action.title,
       });
       if (error) throw error;
+      if (!(res as { ok?: boolean })?.ok) throw new Error("Could not log that service");
       return { ok: true, note: "Logged to your home record." };
     }
     return { ok: true, note: "Noted." };
