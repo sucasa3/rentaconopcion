@@ -2014,4 +2014,9 @@ export const es: Dictionary = {
   "adisc.keep_body": "Su plan ahora cubre {total}. Elija hasta {total} para conservar. El resto se archiva con su historial y puede reactivarlos después.",
   "adisc.keep_save": "Conservar seleccionados ({count})",
   "adisc.upload_cta": "Subir mi base de datos",
+  "adisc.send.not_configured": "La verificación por mensaje de texto aún no está activada. Vuelva pronto.",
+  "adisc.send.cooldown": "Espere un minuto antes de pedir otro código.",
+  "adisc.send.hourly_limit": "Demasiados códigos solicitados. Intente en una hora.",
+  "adisc.send.provider_stop": "Los mensajes a este número están bloqueados porque respondió STOP. Responda START desde ese teléfono y vuelva a intentarlo.",
+  "adisc.send.send_failed": "No pudimos enviar el código. Intente de nuevo.",
 };

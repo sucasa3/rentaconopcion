@@ -252,7 +252,7 @@ function VerifyPhone({ portfolioId, smsReady, onDone }: { portfolioId: string; s
     mutationFn: () => sendFn({ data: { phone } }),
     onSuccess: (r) => {
       if (r.sent) setSent(true);
-      else toast.error(t("adisc.sms_unavailable"));
+      else toast.error(t(`adisc.send.${r.reason}` as any));
     },
     onError: (e: any) => toast.error(e.message),
   });

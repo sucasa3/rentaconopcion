@@ -1973,6 +1973,11 @@ export const en = {
   "adisc.keep_body": "Your plan now covers {total}. Pick up to {total} to keep. The rest are archived with their history kept, and you can bring them back later.",
   "adisc.keep_save": "Keep selected ({count})",
   "adisc.upload_cta": "Upload my database",
+  "adisc.send.not_configured": "Text-message verification isn't switched on yet. Please check back soon.",
+  "adisc.send.cooldown": "Please wait a minute before requesting another code.",
+  "adisc.send.hourly_limit": "Too many codes requested. Try again in an hour.",
+  "adisc.send.provider_stop": "Texts to this number are blocked because it replied STOP. Reply START from that phone, then try again.",
+  "adisc.send.send_failed": "We couldn't send the code. Please try again.",
 } as const;
 
 export type TranslationKey = keyof typeof en;
