@@ -198,7 +198,7 @@ export const processInspectionBatch = createServerFn({ method: "POST" })
 
 export const retryInspectionFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ fileId: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) => z.object({ fileId: z.string().uuid(), replace: z.array(z.string().max(40)).max(10).default([]) }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -351,7 +351,7 @@ export const confirmInspectionFiles = createServerFn({ method: "POST" })
 /** Agent opens the workspace copy of an original report. */
 export const getInspectionFileUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ fileId: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) => z.object({ fileId: z.string().uuid(), replace: z.array(z.string().max(40)).max(10).default([]) }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -435,7 +435,7 @@ export const listReportProposals = createServerFn({ method: "POST" })
  */
 export const applyReportProposals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ documentId: z.string().uuid(), apply: z.boolean() }).parse(i))
+  .inputValidator((i: unknown) => z.object({ documentId: z.string().uuid(), apply: z.boolean(), replace: z.array(z.string().max(40)).max(10).default([]) }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -475,7 +475,7 @@ export const applyReportProposals = createServerFn({ method: "POST" })
       }
     }
     const { applyInstalledYears } = await import("./inspection-batch.server");
-    const sys = await applyInstalledYears(context.supabase, admin, context.userId, null, doc);
+    const sys = await applyInstalledYears(context.supabase, admin, context.userId, null, doc, data.replace);
     await admin.from("home_documents").update({ extraction_status: "ready", extracted_at: new Date().toISOString() }).eq("id", doc.id);
     return { ok: true, ...sys };
   });
@@ -483,7 +483,7 @@ export const applyReportProposals = createServerFn({ method: "POST" })
 /** Agent applies stated system details from an attached report — only under Workstream 3 permission. */
 export const agentApplyReportSystems = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ fileId: z.string().uuid() }).parse(i))
+  .inputValidator((i: unknown) => z.object({ fileId: z.string().uuid(), replace: z.array(z.string().max(40)).max(10).default([]) }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -499,5 +499,19 @@ export const agentApplyReportSystems = createServerFn({ method: "POST" })
     });
     if (!allowed) return { ok: false, error: "no_permission" };
     const { applyInstalledYears } = await import("./inspection-batch.server");
-    return { ok: true, ...(await applyInstalledYears(context.supabase, admin, doc.user_id, org.id, doc)) };
+    return { ok: true, ...(await applyInstalledYears(context.supabase, admin, doc.user_id, org.id, doc, data.replace)) };
+  });
+
+/** Homeowner preview: which proposed system values would replace populated ones. Read-only. */
+export const previewReportReplacements = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ documentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: doc } = await admin.from("home_documents").select("*").eq("id", data.documentId).maybeSingle();
+    if (!doc || doc.user_id !== context.userId) return { ok: false as const, needsApproval: [] };
+    const { applyInstalledYears } = await import("./inspection-batch.server");
+    const r = await applyInstalledYears(null, admin, context.userId, null, doc, [], true);
+    return { ok: true as const, needsApproval: r.needsApproval, fills: r.applied, skippedOlder: r.skippedOlder };
   });
