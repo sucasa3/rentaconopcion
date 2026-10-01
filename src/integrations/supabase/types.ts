@@ -6463,7 +6463,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["lifecycle_stage"]
       }
-      delete_home_system_entry: { Args: { p_log_id: string }; Returns: Json }
+      delete_home_system_entry: {
+        Args: { p_expected_version: number; p_log_id: string }
+        Returns: Json
+      }
       enqueue_ghl_sync: {
         Args: { _entity_id: string; _entity_type: string; _op?: string }
         Returns: undefined
@@ -6494,6 +6497,7 @@ export type Database = {
       list_home_system_access_options: {
         Args: never
         Returns: {
+          connected: boolean
           enabled: boolean
           granted_at: string
           member_count: number

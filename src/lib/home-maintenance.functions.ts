@@ -164,20 +164,26 @@ export const logComponentService = createServerFn({ method: "POST" })
 /** Undo a logged service record (homeowner only, recorded in history). */
 export const deleteComponentService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), expectedVersion: z.number().int().min(0) }).parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { data: res, error } = await context.supabase.rpc("delete_home_system_entry", {
       p_log_id: data.id,
+      p_expected_version: data.expectedVersion,
     });
-    if (error || !(res as { ok?: boolean })?.ok)
-      return { ok: false as const, error: "Could not remove that record" };
-    return { ok: true as const };
+    const r = res as { ok?: boolean; error?: string } | null;
+    if (!error && r?.ok) return { ok: true as const };
+    if (r?.error === "conflict") return { ok: false as const, error: "conflict" as const };
+    return { ok: false as const, error: "Could not remove that record" };
   });
 
 export type HomeSystemAccessOption = {
   orgId: string;
   orgName: string;
   memberCount: number;
+  /** Homeowner has an accepted, active general connection with this workspace. */
+  connected: boolean;
   enabled: boolean;
   grantedAt: string | null;
 };
@@ -191,6 +197,7 @@ export const listHomeSystemAccess = createServerFn({ method: "POST" })
       orgId: r.org_id,
       orgName: r.org_name,
       memberCount: r.member_count,
+      connected: !!r.connected,
       enabled: !!r.enabled,
       grantedAt: r.granted_at ?? null,
     })) satisfies HomeSystemAccessOption[];
