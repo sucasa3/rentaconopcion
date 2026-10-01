@@ -2019,4 +2019,5 @@ export const es: Dictionary = {
   "adisc.send.hourly_limit": "Demasiados códigos solicitados. Intente en una hora.",
   "adisc.send.provider_stop": "Los mensajes a este número están bloqueados porque respondió STOP. Responda START desde ese teléfono y vuelva a intentarlo.",
   "adisc.send.send_failed": "No pudimos enviar el código. Intente de nuevo.",
+  "adisc.send.no_contact": "La verificación por texto para números nuevos aún no está activada.",
 };

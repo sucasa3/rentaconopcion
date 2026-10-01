@@ -196,26 +196,39 @@ export function smsConfigured(): boolean {
  * upsert, no tags, no workflows, no marketing consent, provider STOP honored).
  */
 export async function sendSmsCode(userId: string, e164: string): Promise<
-  { sent: true } | { sent: false; reason: "cooldown" | "hourly_limit" | "provider_stop" | "send_failed"; detail?: string }
+  | { sent: true }
+  | { sent: false; reason: "cooldown" | "hourly_limit" | "provider_stop" | "send_failed" | "no_contact"; detail?: string }
 > {
   if (!smsConfigured()) throw new Error("SMS_NOT_CONFIGURED");
   const { canIssue, AGENT_CODE_TTL_MS } = await import("./agent-phone-challenge");
   const { generateCode, hashCode } = await import("./account.server");
-  // Provider suppression (STOP / carrier opt-out) is the last word: check it
-  // before issuing a code, and never clear or work around it.
-  const { lookupContactDnd } = await import("./ghl.server");
-  if (await lookupContactDnd(e164)) return { sent: false, reason: "provider_stop" };
+  const { findContactIdByPhone, lookupContactDndById, sendProSms } = await import("./ghl.server");
   const db = await admin();
   const ph = await phoneHash(e164);
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
   const [{ data: byUser }, { data: byPhone }] = await Promise.all([
-    db.from("agent_phone_challenges").select("created_at").eq("user_id", userId).gte("created_at", hourAgo),
-    db.from("agent_phone_challenges").select("created_at").eq("phone_hash", ph).gte("created_at", hourAgo),
+    db.from("agent_phone_challenges").select("created_at, delivery_status").eq("user_id", userId).gte("created_at", hourAgo),
+    db.from("agent_phone_challenges").select("created_at, delivery_status").eq("phone_hash", ph).gte("created_at", hourAgo),
   ]);
   for (const rows of [byUser ?? [], byPhone ?? []]) {
-    const d = canIssue(rows, Date.now());
+    // Cooldown / hourly limits count only messages the provider accepted;
+    // failed dispatches are capped separately so they can't be hammered.
+    const d = canIssue(rows.filter((r: { delivery_status: string | null }) => r.delivery_status !== "failed" && r.delivery_status !== "provider_stop"), Date.now());
     if (!d.ok) return { sent: false, reason: d.reason };
+    if (rows.length >= 10) return { sent: false, reason: "hourly_limit" };
   }
+  // Reuse the provider's existing contact for this number. Contact creation
+  // is withheld until verification-only contacts can be excluded from GHL
+  // contact-created workflows by an enforced condition.
+  let contactId: string | null;
+  try {
+    contactId = await findContactIdByPhone(e164);
+  } catch (e) {
+    return { sent: false, reason: "send_failed", detail: (e as Error).message.slice(0, 300) };
+  }
+  if (!contactId) return { sent: false, reason: "no_contact" };
+  // Provider suppression is the last word: never cleared or worked around.
+  if ((await lookupContactDndById(contactId)) === true) return { sent: false, reason: "provider_stop" };
   const now = new Date().toISOString();
   await db.from("agent_phone_challenges").update({ consumed_at: now }).eq("user_id", userId).is("consumed_at", null);
   const code = generateCode();
@@ -230,16 +243,17 @@ export async function sendSmsCode(userId: string, e164: string): Promise<
     .select("id")
     .single();
   if (error) throw new Error(error.message);
-  const { sendProSms } = await import("./ghl.server");
   try {
     const r = await sendProSms(e164, `Your SuCasa verification code is ${code}. It expires in 10 minutes.`, {
       purpose: "transactional",
+      contactId,
     });
     if (!r.sent) {
       await db.from("agent_phone_challenges").update({ consumed_at: now, delivery_status: "provider_stop" }).eq("id", row.id);
       return { sent: false, reason: "provider_stop" };
     }
   } catch (e) {
+    // A failed dispatch invalidates its code immediately.
     await db.from("agent_phone_challenges").update({ consumed_at: now, delivery_status: "failed" }).eq("id", row.id);
     return { sent: false, reason: "send_failed", detail: (e as Error).message.slice(0, 300) };
   }
