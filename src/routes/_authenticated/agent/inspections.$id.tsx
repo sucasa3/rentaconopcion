@@ -48,7 +48,7 @@ function InspectionsPage() {
   const [rejected, setRejected] = useState<{ filename: string; reason?: string }[]>([]);
 
   const q = useQuery({ queryKey: KEY, queryFn: () => listFn() });
-  const files = q.data?.files ?? [];
+  const files: BatchFileView[] = q.data?.files ?? [];
   const limits = q.data?.limits;
   const active = files.filter((f) => f.status === "queued" || f.status === "processing");
 
