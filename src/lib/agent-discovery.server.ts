@@ -201,6 +201,10 @@ export async function sendSmsCode(userId: string, e164: string): Promise<
   if (!smsConfigured()) throw new Error("SMS_NOT_CONFIGURED");
   const { canIssue, AGENT_CODE_TTL_MS } = await import("./agent-phone-challenge");
   const { generateCode, hashCode } = await import("./account.server");
+  // Provider suppression (STOP / carrier opt-out) is the last word: check it
+  // before issuing a code, and never clear or work around it.
+  const { lookupContactDnd } = await import("./ghl.server");
+  if (await lookupContactDnd(e164)) return { sent: false, reason: "provider_stop" };
   const db = await admin();
   const ph = await phoneHash(e164);
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
