@@ -227,7 +227,7 @@ export const confirmAgentPhone = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEvent } = await import("./network-events.server");
     await logNetworkEvent(supabaseAdmin, {
-      action: outcome === "granted" ? "agent_promo_redeemed" : outcome === "already_entitled" ? "agent_phone_verified" : "agent_promo_denied",
+      action: outcome === "granted" ? "agent_promo_redeemed" : outcome === "already_entitled" || outcome === "verified_only" ? "agent_phone_verified" : "agent_promo_denied",
       actorUserId: context.userId,
       orgId,
       entityType: "agent_organization",
