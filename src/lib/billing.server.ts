@@ -218,6 +218,27 @@ export async function applySubscription(
     if (!existing?.activated_at) patch["activated_at"] = new Date().toISOString();
   }
 
+  const { data: orgRow } = await supabaseAdmin
+    .from("lender_orgs")
+    .select("org_type")
+    .eq("id", orgId)
+    .maybeSingle();
+  const isAgent = orgRow?.org_type === "agent";
+  // An agent's free access never depends on a subscription being active.
+  if (isAgent && !active) delete patch["active"];
+
   await supabaseAdmin.from("lender_orgs").update(patch).eq("id", orgId);
+
+  if (isAgent) {
+    // Paid agent capacity is TOTAL (it includes the free 100). The ledger gets
+    // a single top-up step per change; webhook retries compute a zero delta.
+    const { planCapacityTopUp } = await import("./agent-discovery");
+    const target = active && plan ? planCapacityTopUp(plan.profile_allowance) : 0;
+    await supabaseAdmin.rpc("set_agent_plan_capacity", {
+      _org_id: orgId,
+      _target: target,
+      _ref: subscription.id,
+    });
+  }
   return { orgId, planKey: plan?.key ?? null, status: subscription.status };
 }
