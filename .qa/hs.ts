@@ -24,7 +24,7 @@ const args = (h: string, org: string | null, v: number | null, year: number) => 
 const H = await user("home"), A = await user("agentA"), A2 = await user("teammate"), B = await user("agentB");
 const OA = await org("A", A.uid); await db.from("lender_members").insert({ lender_org_id: OA.orgId, user_id: A2.uid, role: "member" });
 const OB = await org("B", B.uid);
-const { data: cA } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OA.bookId, address_line1: "1 QA Synthetic Way", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single();
+const { data: cA, error: eA } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OA.bookId, address_line1: "1 QA Synthetic Way", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single(); if (eA) { console.log(eA); process.exit(1); }
 const { data: cB } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OB.bookId, address_line1: "1 QA Synthetic Way", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single();
 
 // Default off; imported match grants nothing
