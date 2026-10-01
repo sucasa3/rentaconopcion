@@ -203,7 +203,20 @@ export async function sendSmsCode(userId: string, e164: string): Promise<
   const { canIssue, AGENT_CODE_TTL_MS } = await import("./agent-phone-challenge");
   const { generateCode, hashCode } = await import("./account.server");
   const { ensureVerificationContact, lookupContactDndById, sendProSms } = await import("./ghl.server");
-...
+  const db = await admin();
+  const ph = await phoneHash(e164);
+  const hourAgo = new Date(Date.now() - 3600_000).toISOString();
+  const [{ data: byUser }, { data: byPhone }] = await Promise.all([
+    db.from("agent_phone_challenges").select("created_at, delivery_status").eq("user_id", userId).gte("created_at", hourAgo),
+    db.from("agent_phone_challenges").select("created_at, delivery_status").eq("phone_hash", ph).gte("created_at", hourAgo),
+  ]);
+  for (const rows of [byUser ?? [], byPhone ?? []]) {
+    // Cooldown / hourly limits count only messages the provider accepted;
+    // failed dispatches are capped separately so they can't be hammered.
+    const d = canIssue(rows.filter((r: { delivery_status: string | null }) => r.delivery_status !== "failed" && r.delivery_status !== "provider_stop"), Date.now());
+    if (!d.ok) return { sent: false, reason: d.reason };
+    if (rows.length >= 10) return { sent: false, reason: "hourly_limit" };
+  }
   // Reuse the provider's existing contact for this number, or create a
   // minimal verification-only one (tagged, no consent, no DND changes).
   let contactId: string | null;
