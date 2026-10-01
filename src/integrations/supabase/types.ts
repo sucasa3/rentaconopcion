@@ -2298,45 +2298,74 @@ export type Database = {
       }
       home_documents: {
         Row: {
+          contributed_by_org: string | null
+          contributed_by_user: string | null
           created_at: string
           extracted_at: string | null
           extraction_error: string | null
           extraction_status: string | null
           id: string
+          inspection_date: string | null
           kind: string
           original_filename: string | null
+          proposals_applied_at: string | null
+          proposals_status: string | null
+          proposed_findings: Json | null
           size_bytes: number | null
+          source_batch_file_id: string | null
           storage_path: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          contributed_by_org?: string | null
+          contributed_by_user?: string | null
           created_at?: string
           extracted_at?: string | null
           extraction_error?: string | null
           extraction_status?: string | null
           id?: string
+          inspection_date?: string | null
           kind: string
           original_filename?: string | null
+          proposals_applied_at?: string | null
+          proposals_status?: string | null
+          proposed_findings?: Json | null
           size_bytes?: number | null
+          source_batch_file_id?: string | null
           storage_path: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          contributed_by_org?: string | null
+          contributed_by_user?: string | null
           created_at?: string
           extracted_at?: string | null
           extraction_error?: string | null
           extraction_status?: string | null
           id?: string
+          inspection_date?: string | null
           kind?: string
           original_filename?: string | null
+          proposals_applied_at?: string | null
+          proposals_status?: string | null
+          proposed_findings?: Json | null
           size_bytes?: number | null
+          source_batch_file_id?: string | null
           storage_path?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "home_documents_contributed_by_org_fkey"
+            columns: ["contributed_by_org"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       home_inspection_findings: {
         Row: {
@@ -3163,6 +3192,157 @@ export type Database = {
             columns: ["relationship_id"]
             isOneToOne: false
             referencedRelation: "relationships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_batch_files: {
+        Row: {
+          address_pages: number[] | null
+          attach_state: string | null
+          attempts: number
+          batch_id: string
+          candidate_client_ids: string[]
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          document_id: string | null
+          duplicate_of: string | null
+          error: string | null
+          extracted_address: string | null
+          extracted_date: string | null
+          extracted_unit: string | null
+          filename: string
+          findings: Json | null
+          id: string
+          lease_until: string | null
+          match_status: string | null
+          older_than_records: boolean
+          org_id: string
+          page_count: number | null
+          proposed_client_id: string | null
+          sha256: string | null
+          size_bytes: number
+          status: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          address_pages?: number[] | null
+          attach_state?: string | null
+          attempts?: number
+          batch_id: string
+          candidate_client_ids?: string[]
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          document_id?: string | null
+          duplicate_of?: string | null
+          error?: string | null
+          extracted_address?: string | null
+          extracted_date?: string | null
+          extracted_unit?: string | null
+          filename: string
+          findings?: Json | null
+          id?: string
+          lease_until?: string | null
+          match_status?: string | null
+          older_than_records?: boolean
+          org_id: string
+          page_count?: number | null
+          proposed_client_id?: string | null
+          sha256?: string | null
+          size_bytes?: number
+          status?: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          address_pages?: number[] | null
+          attach_state?: string | null
+          attempts?: number
+          batch_id?: string
+          candidate_client_ids?: string[]
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          document_id?: string | null
+          duplicate_of?: string | null
+          error?: string | null
+          extracted_address?: string | null
+          extracted_date?: string | null
+          extracted_unit?: string | null
+          filename?: string
+          findings?: Json | null
+          id?: string
+          lease_until?: string | null
+          match_status?: string | null
+          older_than_records?: boolean
+          org_id?: string
+          page_count?: number | null
+          proposed_client_id?: string | null
+          sha256?: string | null
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_batch_files_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_batch_files_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "home_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_batch_files_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_batch_files_proposed_client_id_fkey"
+            columns: ["proposed_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_batches: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_batches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -6431,6 +6611,10 @@ export type Database = {
           spent: number
         }[]
       }
+      agent_documents_allowed: {
+        Args: { _actor: string; _homeowner: string; _org_id: string }
+        Returns: boolean
+      }
       agent_home_system_allowed: {
         Args: { _actor: string; _homeowner: string; _org_id: string }
         Returns: boolean
@@ -6498,6 +6682,7 @@ export type Database = {
         Args: never
         Returns: {
           connected: boolean
+          documents: boolean
           enabled: boolean
           granted_at: string
           member_count: number
@@ -6568,6 +6753,10 @@ export type Database = {
       set_agent_plan_capacity: {
         Args: { _org_id: string; _ref: string; _target: number }
         Returns: number
+      }
+      set_help_manage_home: {
+        Args: { p_enabled: boolean; p_org_id: string }
+        Returns: Json
       }
       set_home_system_access: {
         Args: { p_enabled: boolean; p_org_id: string }

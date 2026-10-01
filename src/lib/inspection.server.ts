@@ -162,3 +162,88 @@ export async function extractFindingsFromFile(
     source_excerpt: f.source_excerpt ? String(f.source_excerpt).slice(0, 300) : null,
   }));
 }
+
+// ---------------------------------------------------------------------------
+// Workstream 4: batch header + findings extraction (same gateway/model).
+// ---------------------------------------------------------------------------
+export type BatchExtraction = {
+  readable: boolean;
+  address: { street: string | null; unit: string | null; city: string | null; state: string | null; zip: string | null };
+  inspection_date: string | null;
+  address_pages: number[];
+  findings: (Finding & { installed_year: number | null; source_pages: number[] })[];
+};
+
+const BATCH_PROMPT = `You are reading a home inspection report (PDF).
+1) Identify the INSPECTED PROPERTY address exactly as printed (not the inspector's or client's mailing address): street, unit (apartment/suite, or null), city, state, zip. Record the 1-based page numbers where it appears.
+2) The inspection date (YYYY-MM-DD) or null.
+3) Findings for major systems the report discusses (same rules as a home inspection analyst: never invent). Each finding also has installed_year (only if the report states it, else null) and source_pages (1-based pages).
+If the document is not legible or not an inspection report, set readable=false and return empty findings. Never guess missing values — use null.
+Return strict JSON only.`;
+
+export async function extractBatchInspection(
+  fileBytes: Uint8Array,
+  filename: string,
+): Promise<BatchExtraction> {
+  const apiKey = process.env.LOVABLE_API_KEY;
+  if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
+  const res = await fetch(GATEWAY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: "system", content: BATCH_PROMPT },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Extract the property address, inspection date and findings as JSON." },
+            { type: "file", file: { filename, file_data: `data:application/pdf;base64,${bytesToBase64(fileBytes)}` } },
+          ],
+        },
+      ],
+      response_format: { type: "json_object" },
+    }),
+  });
+  if (!res.ok) {
+    const e: any = new Error(`AI Gateway ${res.status}`);
+    e.status = res.status;
+    throw e;
+  }
+  const json: any = await res.json();
+  const content: string = json?.choices?.[0]?.message?.content ?? "";
+  const m = content.match(/\{[\s\S]*\}/);
+  if (!m) return emptyExtraction();
+  return normalizeBatchExtraction(JSON.parse(m[0]));
+}
+
+export function emptyExtraction(): BatchExtraction {
+  return { readable: false, address: { street: null, unit: null, city: null, state: null, zip: null }, inspection_date: null, address_pages: [], findings: [] };
+}
+
+export function normalizeBatchExtraction(p: any): BatchExtraction {
+  const s = (v: any, n = 120) => (v == null || v === "" ? null : String(v).slice(0, n));
+  const pages = (v: any) => (Array.isArray(v) ? v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 20) : []);
+  const date = typeof p?.inspection_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.inspection_date) ? p.inspection_date : null;
+  const a = p?.address ?? {};
+  const findings = (Array.isArray(p?.findings) ? p.findings : []).slice(0, 40).map((f: any) => ({
+    system: String(f.system ?? "other").slice(0, 40),
+    condition: s(f.condition, 20),
+    remaining_life_years: typeof f.remaining_life_years === "number" ? Math.max(0, Math.min(100, f.remaining_life_years)) : null,
+    urgency: s(f.urgency, 20),
+    defects: Array.isArray(f.defects) ? f.defects.slice(0, 4).map((d: any) => String(d).slice(0, 200)) : [],
+    recommended_action: s(f.recommended_action, 300),
+    recommended_category: s(f.recommended_category, 60),
+    source_excerpt: s(f.source_excerpt, 300),
+    installed_year: Number.isInteger(f.installed_year) && f.installed_year > 1850 && f.installed_year <= new Date().getFullYear() ? f.installed_year : null,
+    source_pages: pages(f.source_pages),
+  }));
+  const street = s(a.street);
+  return {
+    readable: p?.readable !== false && (!!street || findings.length > 0),
+    address: { street, unit: s(a.unit, 20), city: s(a.city, 60), state: s(a.state, 20), zip: s(a.zip, 10) },
+    inspection_date: date,
+    address_pages: pages(p?.address_pages),
+    findings,
+  };
+}

@@ -169,6 +169,27 @@
       "when": 1790890850758,
       "tag": "0023_fix_test_ghl_sync_block",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790892693120,
+      "tag": "0024_ws4_inspection_batches_help_manage_home",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790892841977,
+      "tag": "0025_ws4_proposal_status_and_decline",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790893013965,
+      "tag": "0026_ws4_revoke_doc_check_from_clients",
+      "breakpoints": true
     }
   ]
 }
