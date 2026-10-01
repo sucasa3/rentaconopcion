@@ -10,7 +10,7 @@ export const listHomeIntel = createServerFn({ method: "GET" })
       context.supabase
         .from("home_predicted_actions")
         .select(
-          "id, action_key, title, why, system, service_category, urgency, due_from, due_by, est_cost_low_cents, est_cost_high_cents, status, document_id, source_filename, inspection_date, source_pages, needs_confirmation",
+          "id, action_key, title, why, system, service_category, urgency, due_from, due_by, est_cost_low_cents, est_cost_high_cents, status, document_id, source_filename, inspection_date, source_pages, needs_confirmation, urgency_specified",
         )
         .eq("user_id", context.userId)
         .order("due_by", { ascending: true }),
