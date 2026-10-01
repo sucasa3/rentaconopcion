@@ -10,17 +10,19 @@ import { INSPECTION_LIMITS, inspectPdf } from "./inspection-batch";
  */
 
 async function agentOrg(_supabase: any, userId: string): Promise<{ id: string; isTest: boolean } | null> {
-  // Membership is resolved server-side with the privileged client, scoped to the verified caller.
+  // Resolve the verified caller's agent workspace server-side (no embed: lender_orgs has several FKs).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await (supabaseAdmin as any)
+  const admin = supabaseAdmin as any;
+  const { data: mem } = await admin
     .from("lender_members")
-    .select("lender_org_id, lender_orgs!inner(org_type, is_test_account)")
+    .select("lender_org_id, created_at")
     .eq("user_id", userId)
-    .eq("lender_orgs.org_type", "agent")
-    .order("created_at", { ascending: true })
-    .limit(1);
-  const r = data?.[0];
-  return r ? { id: r.lender_org_id, isTest: !!r.lender_orgs?.is_test_account } : null;
+    .order("created_at", { ascending: true });
+  const ids = (mem ?? []).map((m: any) => m.lender_org_id);
+  if (!ids.length) return null;
+  const { data: orgs } = await admin.from("lender_orgs").select("id, org_type, is_test_account").in("id", ids).eq("org_type", "agent");
+  const pick = ids.map((id: string) => (orgs ?? []).find((o: any) => o.id === id)).find(Boolean);
+  return pick ? { id: pick.id, isTest: !!pick.is_test_account } : null;
 }
 
 async function requireBatch(admin: any, supabase: any, userId: string, batchId: string) {
