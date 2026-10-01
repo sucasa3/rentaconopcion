@@ -2522,6 +2522,7 @@ export type Database = {
       home_predicted_actions: {
         Row: {
           action_key: string
+          approved_at: string | null
           completed_at: string | null
           created_at: string
           dismissed_at: string | null
@@ -2531,7 +2532,11 @@ export type Database = {
           est_cost_high_cents: number | null
           est_cost_low_cents: number | null
           id: string
+          inspection_date: string | null
+          needs_confirmation: boolean
           service_category: string | null
+          source_filename: string | null
+          source_pages: number[] | null
           status: string
           system: string | null
           title: string
@@ -2542,6 +2547,7 @@ export type Database = {
         }
         Insert: {
           action_key: string
+          approved_at?: string | null
           completed_at?: string | null
           created_at?: string
           dismissed_at?: string | null
@@ -2551,7 +2557,11 @@ export type Database = {
           est_cost_high_cents?: number | null
           est_cost_low_cents?: number | null
           id?: string
+          inspection_date?: string | null
+          needs_confirmation?: boolean
           service_category?: string | null
+          source_filename?: string | null
+          source_pages?: number[] | null
           status?: string
           system?: string | null
           title: string
@@ -2562,6 +2572,7 @@ export type Database = {
         }
         Update: {
           action_key?: string
+          approved_at?: string | null
           completed_at?: string | null
           created_at?: string
           dismissed_at?: string | null
@@ -2571,7 +2582,11 @@ export type Database = {
           est_cost_high_cents?: number | null
           est_cost_low_cents?: number | null
           id?: string
+          inspection_date?: string | null
+          needs_confirmation?: boolean
           service_category?: string | null
+          source_filename?: string | null
+          source_pages?: number[] | null
           status?: string
           system?: string | null
           title?: string
