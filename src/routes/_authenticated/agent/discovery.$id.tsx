@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, Loader2, Phone, Sparkles } from "lucide-react";
-import { AGENT_RESEND_COOLDOWN_MS } from "@/lib/agent-phone-challenge";
+import { AGENT_RESEND_COOLDOWN_MS, CHECK_MESSAGES } from "@/lib/agent-phone-challenge";
 import { z } from "zod";
 import { BusinessShell } from "@/components/business-shell";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
@@ -348,7 +348,10 @@ function VerifyPhone({
       onVerified();
       claim.mutate();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      const reason = (Object.keys(CHECK_MESSAGES) as (keyof typeof CHECK_MESSAGES)[]).find((k) => CHECK_MESSAGES[k] === e?.message);
+      toast.error(reason ? t(`adisc.check.${reason}` as any) : e.message);
+    },
   });
 
   const input = "mt-1 w-full rounded-full border border-border bg-background px-3 py-2 text-base sm:text-sm";
