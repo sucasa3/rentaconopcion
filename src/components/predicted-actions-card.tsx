@@ -21,14 +21,9 @@ type Action = {
   inspection_date?: string | null;
   source_pages?: number[] | null;
   needs_confirmation?: boolean | null;
+  urgency_specified?: boolean | null;
 };
 
-const URGENCY_LABEL: Record<string, string> = {
-  immediate: "Do now",
-  "12_months": "This year",
-  "1_3_years": "Next few years",
-  monitor: "Keep an eye on it",
-};
 
 const DOT: Record<string, string> = {
   immediate: "bg-destructive",
@@ -73,11 +68,10 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Sparkles className="h-4 w-4" />
         </span>
-        <h2 className="text-base font-semibold">What your documents say you'll need</h2>
+        <h2 className="text-base font-semibold">{t("pa.title")}</h2>
       </div>
       <p className="mb-3 text-sm text-muted-foreground">
-        We read your uploaded reports, policies, warranties and permits, and turned them into a
-        plain-English to-do list.
+        {t("pa.sub")}
       </p>
 
       <ul className="space-y-2">
@@ -103,11 +97,11 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
                     <p className="mt-0.5 text-[11px] font-medium text-status-attention">{t("mp.confirm")}</p>
                   )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                    <Badge variant="secondary">{URGENCY_LABEL[a.urgency] ?? "Plan ahead"}</Badge>
-                    {cost && <span className="text-muted-foreground">Typically {cost}</span>}
+                    <Badge variant="secondary">{a.urgency_specified === false ? t("pa.u.none") : t(`pa.u.${a.urgency}`)}</Badge>
+                    {cost && <span className="text-muted-foreground">{t("pa.cost", { cost })}</span>}
                     {a.due_by && (
                       <span className="text-muted-foreground">
-                        by {new Date(a.due_by).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                        {t("pa.by", { date: new Date(a.due_by).toLocaleDateString(t("pa.locale"), { month: "short", year: "numeric" }) })}
                       </span>
                     )}
                   </div>
@@ -117,7 +111,7 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
                 {a.service_category && (
                   <Button asChild size="sm" className="h-8">
                     <Link to="/request" search={{ category: a.service_category } as any}>
-                      Get this done
+                      {t("pa.do")}
                     </Link>
                   </Button>
                 )}
@@ -127,7 +121,7 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
                   className="h-8"
                   onClick={() => mutate.mutate({ id: a.id, status: "done" })}
                 >
-                  <Check className="mr-1 h-3.5 w-3.5" /> Already done
+                  <Check className="mr-1 h-3.5 w-3.5" /> {t("pa.done")}
                 </Button>
                 <Button
                   size="sm"
@@ -135,7 +129,7 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
                   className="h-8 text-muted-foreground"
                   onClick={() => mutate.mutate({ id: a.id, status: "dismissed" })}
                 >
-                  <X className="mr-1 h-3.5 w-3.5" /> Not for me
+                  <X className="mr-1 h-3.5 w-3.5" /> {t("pa.dismiss")}
                 </Button>
               </div>
             </li>
@@ -144,7 +138,7 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
       </ul>
       {open.length > limit && (
         <p className="mt-2 text-xs text-muted-foreground">
-          +{open.length - limit} more in your home plan.
+          {t("pa.more", { n: open.length - limit })}
         </p>
       )}
     </section>
