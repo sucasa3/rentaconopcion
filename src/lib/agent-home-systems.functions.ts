@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { SystemFields, rpcArgs, toSaveResult, type SaveResult } from "@/lib/home-maintenance.functions";
+import { SystemFields, rpcArgs, toSaveResult, type SaveResult, type SystemValue } from "@/lib/home-maintenance.functions";
 
 /**
  * Agent view/update of a client's home systems. Access exists only while the
@@ -42,8 +42,8 @@ export type AgentHomeSystems =
         version: number;
         actor_role: string;
         change_kind: string;
-        old_value: Record<string, unknown> | null;
-        new_value: Record<string, unknown> | null;
+        old_value: SystemValue | null;
+        new_value: SystemValue | null;
         created_at: string;
         by_this_workspace: boolean | null;
       }>;

@@ -1,15 +1,16 @@
+import type { SystemValue } from "@/lib/home-maintenance.functions";
 import { useT, type TranslationKey } from "@/lib/i18n";
 
 export type HistoryItem = {
   componentKey: string;
   actorRole: string;
   changeKind: string;
-  oldValue: Record<string, unknown> | null;
-  newValue: Record<string, unknown> | null;
+  oldValue: SystemValue | null;
+  newValue: SystemValue | null;
   createdAt: string;
 };
 
-function summary(v: Record<string, unknown> | null): string {
+function summary(v: SystemValue | null): string {
   if (!v) return "—";
   const parts = [
     v.installed_year ? String(v.installed_year) : null,

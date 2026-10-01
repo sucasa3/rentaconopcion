@@ -19,13 +19,16 @@ export type ComponentServiceEntry = {
   entryKind: "added" | "updated";
 };
 
+/** Serializable snapshot of one saved system entry. */
+export type SystemValue = Record<string, string | number | boolean | null>;
+
 export type HomeSystemChange = {
   componentKey: string;
   version: number;
   actorRole: "homeowner" | "agent";
   changeKind: "added" | "updated" | "removed";
-  oldValue: Record<string, unknown> | null;
-  newValue: Record<string, unknown> | null;
+  oldValue: SystemValue | null;
+  newValue: SystemValue | null;
   createdAt: string;
 };
 
@@ -137,8 +140,8 @@ export const getMyHomeSystemState = createServerFn({ method: "POST" })
         version: h.version,
         actorRole: h.actor_role as "homeowner" | "agent",
         changeKind: h.change_kind as HomeSystemChange["changeKind"],
-        oldValue: (h.old_value ?? null) as Record<string, unknown> | null,
-        newValue: (h.new_value ?? null) as Record<string, unknown> | null,
+        oldValue: (h.old_value ?? null) as SystemValue | null,
+        newValue: (h.new_value ?? null) as SystemValue | null,
         createdAt: h.created_at,
       })) satisfies HomeSystemChange[],
     };
