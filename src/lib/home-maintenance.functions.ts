@@ -149,9 +149,8 @@ export const logComponentService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => SystemFields.parse(input))
   .handler(async ({ data, context }): Promise<SaveResult> => {
-    let d = data;
-    // Seasonal check-offs have no editable state to go stale; read fresh.
-    if (d.expectedVersion == null && d.componentKey.startsWith("seasonal:")) d = { ...d };
+    // Seasonal check-offs are append-only; the database skips the version check for them.
+    const d = data;
     const { data: res, error } = await context.supabase.rpc(
       "save_home_system",
       rpcArgs(context.userId, null, d),

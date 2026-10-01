@@ -64,7 +64,21 @@ export const getClientHomeSystems = createServerFn({ method: "POST" })
     const r = (res ?? { allowed: false, reason: "no_permission" }) as any;
     if (!r.allowed) return { allowed: false, reason: r.reason ?? "no_permission" };
     // Never pass the homeowner id or actor ids back to the browser.
-    return { allowed: true, entries: r.entries, versions: r.versions, history: r.history };
+    const strip = (v: any) => {
+      if (!v || typeof v !== "object") return v ?? null;
+      const { entered_by_user_id: _a, entered_by_org_id: _b, user_id: _c, ...rest } = v;
+      return rest;
+    };
+    return {
+      allowed: true,
+      entries: (r.entries ?? []).map(strip),
+      versions: r.versions ?? {},
+      history: (r.history ?? []).map((h: any) => ({
+        ...h,
+        old_value: strip(h.old_value),
+        new_value: strip(h.new_value),
+      })),
+    };
   });
 
 export const saveClientHomeSystem = createServerFn({ method: "POST" })
