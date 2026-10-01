@@ -177,7 +177,7 @@ export const sendAgentPhoneCode = createServerFn({ method: "POST" })
       const r = await sendSmsCode(context.userId, e164);
       if (!r.sent) {
         if (r.detail) console.error("agent verification send failed:", r.detail);
-        return { sent: false, reason: r.reason };
+        return { sent: false, reason: r.reason, detail: r.detail };
       }
     } catch (e) {
       if ((e as Error).message === "SMS_NOT_CONFIGURED") return { sent: false, reason: "not_configured" as const };
