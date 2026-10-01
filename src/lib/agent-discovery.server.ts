@@ -308,7 +308,7 @@ export async function recordVerifiedPhoneAndRedeem(input: {
   licenseNumber: string | null;
   licenseState: string | null;
   skipRedeem?: boolean;
-}): Promise<PromoOutcome> {
+}): Promise<PromoOutcome | "not_verified"> {
   await recordVerifiedPhone(input);
   return redeemForVerifiedUser({ userId: input.userId, orgId: input.orgId, skipRedeem: input.skipRedeem });
 }
