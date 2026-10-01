@@ -152,8 +152,12 @@ export async function applyInstalledYears(
   homeowner: string,
   orgId: string | null,
   doc: { inspection_date: string | null; proposed_findings: any[] | null; original_filename: string | null },
+  approvedReplace: string[] = [],
+  dryRun = false,
 ) {
   const applied: string[] = [];
+  const unchanged: string[] = [];
+  const needsApproval: Array<{ key: string; current: number; proposed: number; historyBacked: boolean }> = [];
   const skippedOlder: string[] = [];
   const conflicts: string[] = [];
   for (const f of doc.proposed_findings ?? []) {
@@ -170,6 +174,17 @@ export async function applyInstalledYears(
       skippedOlder.push(key);
       continue;
     }
+    // Populated values (with or without history) have unknown or newer recency:
+    // never replace without explicit approval for that system.
+    const current = await currentInstalledYear(admin, homeowner, key);
+    if (current != null) {
+      if (current === f.installed_year) { unchanged.push(key); continue; }
+      if (!approvedReplace.includes(key)) {
+        needsApproval.push({ key, current, proposed: f.installed_year, historyBacked: !!last?.[0] });
+        continue;
+      }
+    }
+    if (dryRun) { applied.push(key); continue; }
     const { data: ver } = await admin
       .from("home_system_versions")
       .select("version")
@@ -193,7 +208,20 @@ export async function applyInstalledYears(
     if ((res as any)?.ok) applied.push(key);
     else conflicts.push(key);
   }
-  return { applied, skippedOlder, conflicts };
+  return { applied, skippedOlder, conflicts, unchanged, needsApproval };
+}
+
+/** Latest recorded installed year for a system, from any entry path. */
+export async function currentInstalledYear(admin: any, homeowner: string, key: string): Promise<number | null> {
+  const { data } = await admin
+    .from("home_component_service_log")
+    .select("installed_year")
+    .eq("user_id", homeowner)
+    .eq("component_key", key)
+    .not("installed_year", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  return data?.[0]?.installed_year ?? null;
 }
 
 export { INSPECTION_LIMITS };

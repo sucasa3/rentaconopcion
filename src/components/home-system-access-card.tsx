@@ -14,6 +14,7 @@ import { HomeSystemHistory } from "@/components/home-system-history";
 import { Button } from "@/components/ui/button";
 import {
   applyReportProposals,
+  previewReportReplacements,
   listPendingAgentReports,
   listReportProposals,
   respondToAgentReport,
@@ -128,7 +129,9 @@ function AgentReports() {
   const propsFn = useServerFn(listReportProposals);
   const respondFn = useServerFn(respondToAgentReport);
   const applyFn = useServerFn(applyReportProposals);
+  const previewFn = useServerFn(previewReportReplacements);
   const [busy, setBusy] = useState<string | null>(null);
+  const [replace, setReplace] = useState<Record<string, string[]>>({});
   const pending = useQuery({ queryKey: ["agent-reports-pending"], queryFn: () => pendingFn() });
   const proposals = useQuery({ queryKey: ["agent-report-proposals"], queryFn: () => propsFn() });
   const refresh = () =>
@@ -153,7 +156,7 @@ function AgentReports() {
   async function apply(documentId: string, yes: boolean) {
     setBusy(documentId);
     try {
-      const r = await applyFn({ data: { documentId, apply: yes } });
+      const r = await applyFn({ data: { documentId, apply: yes, replace: replace[documentId] ?? [] } });
       if (!r.ok) throw new Error();
       if (yes) toast.success(t("hmh.prop.applied"));
       await refresh();
@@ -211,6 +214,12 @@ function AgentReports() {
                     </li>
                   ))}
                 </ul>
+                <Replacements
+                  documentId={d.id}
+                  previewFn={previewFn}
+                  selected={replace[d.id] ?? []}
+                  onChange={(keys) => setReplace((r) => ({ ...r, [d.id]: keys }))}
+                />
                 <div className="mt-2 flex gap-2">
                   <Button size="sm" disabled={busy === d.id} onClick={() => apply(d.id, true)}>
                     {t("hmh.prop.apply")}
@@ -225,5 +234,41 @@ function AgentReports() {
         </>
       )}
     </section>
+  );
+}
+
+/** Populated values a report would replace: shown side by side, opt-in per system. */
+function Replacements({ documentId, previewFn, selected, onChange }: { documentId: string; previewFn: any; selected: string[]; onChange: (k: string[]) => void }) {
+  const t = useT();
+  const q = useQuery({ queryKey: ["report-replacements", documentId], queryFn: () => previewFn({ data: { documentId } }) });
+  const rows: Array<{ key: string; current: number; proposed: number }> = q.data?.needsApproval ?? [];
+  const fills: string[] = q.data?.fills ?? [];
+  if (!rows.length && !fills.length) return null;
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-muted/40 p-3 text-xs">
+      {fills.length > 0 && <p className="text-muted-foreground">{t("hmh.prop.fill_note")}</p>}
+      {rows.length > 0 && (
+        <>
+          <p className={`font-medium ${fills.length ? "mt-2" : ""}`}>{t("hmh.prop.replace_title")}</p>
+          <ul className="mt-2 space-y-2">
+            {rows.map((r) => (
+              <li key={r.key}>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary"
+                    checked={selected.includes(r.key)}
+                    onChange={(e) => onChange(e.target.checked ? [...selected, r.key] : selected.filter((k) => k !== r.key))}
+                  />
+                  <span>
+                    {t("hmh.prop.replace_check")} — {t("hmh.prop.replace_row", { system: r.key, current: String(r.current), proposed: String(r.proposed) })}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   );
 }
