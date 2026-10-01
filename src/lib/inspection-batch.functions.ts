@@ -493,7 +493,8 @@ export const agentApplyReportSystems = createServerFn({ method: "POST" })
     });
     if (!allowed) return { ok: false, error: "no_permission" };
     const { applyInstalledYears } = await import("./inspection-batch.server");
-    return { ok: true, ...(await applyInstalledYears(context.supabase, admin, doc.user_id, org.id, doc, data.replace)) };
+    // Agents only fill blanks: populated values always stay for homeowner review.
+    return { ok: true, ...(await applyInstalledYears(context.supabase, admin, doc.user_id, org.id, doc, [])) };
   });
 
 /** Homeowner preview: which proposed system values would replace populated ones. Read-only. */
