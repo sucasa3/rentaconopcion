@@ -141,6 +141,20 @@
       "when": 1790888253484,
       "tag": "0019_qa_account_isolation",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790889203207,
+      "tag": "0020_qa_exclude_crm_enqueue",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790889863055,
+      "tag": "0021_qa_no_enrichment_for_test_orgs",
+      "breakpoints": true
     }
   ]
 }
