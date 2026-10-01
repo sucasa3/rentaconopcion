@@ -202,7 +202,7 @@ export async function sendSmsCode(userId: string, e164: string): Promise<
   if (!smsConfigured()) throw new Error("SMS_NOT_CONFIGURED");
   const { canIssue, AGENT_CODE_TTL_MS } = await import("./agent-phone-challenge");
   const { generateCode, hashCode } = await import("./account.server");
-  const { findContactIdByPhone, lookupContactDndById, sendProSms } = await import("./ghl.server");
+  const { ensureVerificationContact, lookupContactDndById, sendProSms } = await import("./ghl.server");
   const db = await admin();
   const ph = await phoneHash(e164);
   const hourAgo = new Date(Date.now() - 3600_000).toISOString();
@@ -217,12 +217,11 @@ export async function sendSmsCode(userId: string, e164: string): Promise<
     if (!d.ok) return { sent: false, reason: d.reason };
     if (rows.length >= 10) return { sent: false, reason: "hourly_limit" };
   }
-  // Reuse the provider's existing contact for this number. Contact creation
-  // is withheld until verification-only contacts can be excluded from GHL
-  // contact-created workflows by an enforced condition.
+  // Reuse the provider's existing contact for this number, or create a
+  // minimal verification-only one (tagged, no consent, no DND changes).
   let contactId: string | null;
   try {
-    contactId = await findContactIdByPhone(e164);
+    contactId = await ensureVerificationContact(e164);
   } catch (e) {
     return { sent: false, reason: "send_failed", detail: (e as Error).message.slice(0, 300) };
   }
