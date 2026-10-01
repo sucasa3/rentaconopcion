@@ -193,7 +193,7 @@ function AgentDiscovery() {
                 </Button>
               ) : (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {d.plans.map((p) => (
+                  {d.plans.map((p: any) => (
                     <div key={p.key} className="rounded-2xl border border-border bg-card p-4">
                       <p className="font-semibold">{p.name}</p>
                       <p className="mt-1 text-2xl font-semibold">
