@@ -338,7 +338,7 @@ export const confirmInspectionFiles = createServerFn({ method: "POST" })
         _homeowner: client.homeowner_id,
       });
       if (!allowed) {
-        await admin.from("inspection_batch_files").update({ attach_state: "pending_permission" }).eq("id", f.id).neq("attach_state", "declined");
+        await admin.from("inspection_batch_files").update({ attach_state: "pending_permission" }).eq("id", f.id).or("attach_state.is.null,attach_state.neq.declined");
         outcomes.push({ fileId: f.id, result: "pending_permission" });
         continue;
       }
