@@ -435,7 +435,7 @@ export const listReportProposals = createServerFn({ method: "POST" })
  */
 export const applyReportProposals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ documentId: z.string().uuid(), apply: z.boolean(), replace: z.array(z.string().max(40)).max(10).default([]) }).parse(i))
+  .inputValidator((i: unknown) => z.object({ documentId: z.string().uuid(), apply: z.boolean(), replace: z.array(z.string().max(40)).max(10).default([]), actions: ActionChoices }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
@@ -466,18 +466,12 @@ export const applyReportProposals = createServerFn({ method: "POST" })
           source_excerpt: [f.source_excerpt, f.source_pages?.length ? `p. ${f.source_pages.join(", ")}` : null, doc.inspection_date].filter(Boolean).join(" · ").slice(0, 400),
         })),
       );
-      const { actionsFromFindings } = await import("./documents-ai.server");
-      for (const a of actionsFromFindings(findings)) {
-        await admin.from("home_predicted_actions").upsert(
-          { user_id: doc.user_id, document_id: doc.id, ...a },
-          { onConflict: "user_id,action_key", ignoreDuplicates: true },
-        );
-      }
     }
+    const plan = await approveMaintenance(admin, doc, data.actions);
     const { applyInstalledYears } = await import("./inspection-batch.server");
     const sys = await applyInstalledYears(context.supabase, admin, context.userId, null, doc, data.replace);
     await admin.from("home_documents").update({ extraction_status: "ready", extracted_at: new Date().toISOString() }).eq("id", doc.id);
-    return { ok: true, ...sys };
+    return { ok: true, ...sys, plan };
   });
 
 /** Agent applies stated system details from an attached report — only under Workstream 3 permission. */
@@ -499,7 +493,8 @@ export const agentApplyReportSystems = createServerFn({ method: "POST" })
     });
     if (!allowed) return { ok: false, error: "no_permission" };
     const { applyInstalledYears } = await import("./inspection-batch.server");
-    return { ok: true, ...(await applyInstalledYears(context.supabase, admin, doc.user_id, org.id, doc, data.replace)) };
+    // Agents only fill blanks: populated values always stay for homeowner review.
+    return { ok: true, ...(await applyInstalledYears(context.supabase, admin, doc.user_id, org.id, doc, [])) };
   });
 
 /** Homeowner preview: which proposed system values would replace populated ones. Read-only. */
@@ -514,4 +509,86 @@ export const previewReportReplacements = createServerFn({ method: "POST" })
     const { applyInstalledYears } = await import("./inspection-batch.server");
     const r = await applyInstalledYears(null, admin, context.userId, null, doc, [], true);
     return { ok: true as const, needsApproval: r.needsApproval, fills: r.applied, skippedOlder: r.skippedOlder };
+  });
+
+const ActionChoices = z
+  .array(
+    z.object({
+      key: z.string().min(1).max(120),
+      selected: z.boolean(),
+      title: z.string().trim().min(1).max(200).optional(),
+      dueBy: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+      acceptChange: z.boolean().default(false),
+    }),
+  )
+  .max(12)
+  .default([]);
+
+async function existingActions(admin: any, userId: string) {
+  const { data } = await admin
+    .from("home_predicted_actions")
+    .select("action_key, title, urgency, due_by, status")
+    .eq("user_id", userId)
+    .like("action_key", "inspection:%");
+  return (data ?? []) as any[];
+}
+
+/**
+ * Homeowner-approved maintenance actions only. New tasks are created with the
+ * report as source; open tasks change only when the homeowner accepts the shown
+ * change; completed/dismissed tasks are never touched. Upsert by action key
+ * makes repeats, retries and overlapping reports idempotent.
+ */
+async function approveMaintenance(admin: any, doc: any, choices: Array<{ key: string; selected: boolean; title?: string; dueBy?: string | null; acceptChange: boolean }>) {
+  const { proposeMaintenanceActions } = await import("./inspection-maintenance");
+  const proposals = proposeMaintenanceActions(doc.proposed_findings ?? [], doc.inspection_date, await existingActions(admin, doc.user_id));
+  const created: string[] = [];
+  const updated: string[] = [];
+  const kept: string[] = [];
+  for (const p of proposals) {
+    const c = choices.find((x) => x.key === p.key);
+    if (!c?.selected) continue;
+    if (p.kind === "kept" || p.kind === "same") { kept.push(p.key); continue; }
+    const dueBy = c.dueBy === undefined ? p.dueBy : c.dueBy;
+    const row = {
+      title: c.title ?? p.title,
+      why: p.why ? `Your inspection report noted: ${p.why}.` : "Flagged on your inspection report.",
+      system: p.system,
+      service_category: p.serviceCategory,
+      urgency: p.urgency ?? "monitor",
+      due_from: doc.inspection_date,
+      due_by: dueBy,
+      document_id: doc.id,
+      source_filename: doc.original_filename,
+      inspection_date: doc.inspection_date,
+      source_pages: p.sourcePages,
+      needs_confirmation: p.needsConfirmation,
+      approved_at: new Date().toISOString(),
+    };
+    if (p.kind === "update") {
+      if (!c.acceptChange) { kept.push(p.key); continue; }
+      const { data: u } = await admin.from("home_predicted_actions").update(row)
+        .eq("user_id", doc.user_id).eq("action_key", p.key).eq("status", "open").select("id");
+      (u?.length ? updated : kept).push(p.key);
+      continue;
+    }
+    const { data: ins } = await admin.from("home_predicted_actions")
+      .upsert({ user_id: doc.user_id, action_key: p.key, ...row }, { onConflict: "user_id,action_key", ignoreDuplicates: true })
+      .select("id");
+    (ins?.length ? created : kept).push(p.key);
+  }
+  return { created, updated, kept };
+}
+
+/** Homeowner preview of the maintenance actions a report would propose. Read-only. */
+export const listMaintenanceProposals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ documentId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: doc } = await admin.from("home_documents").select("id, user_id, inspection_date, proposed_findings").eq("id", data.documentId).maybeSingle();
+    if (!doc || doc.user_id !== context.userId) return { ok: false as const, proposals: [] };
+    const { proposeMaintenanceActions } = await import("./inspection-maintenance");
+    return { ok: true as const, proposals: proposeMaintenanceActions(doc.proposed_findings ?? [], doc.inspection_date, await existingActions(admin, context.userId)) };
   });

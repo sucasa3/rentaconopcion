@@ -212,6 +212,7 @@ function FileCard({ f, onConfirm, busy }: { f: BatchFileView; onConfirm: (client
   const applyFn = useServerFn(agentApplyReportSystems);
   const searchFn = useServerFn(listAssignableClients);
   const [pick, setPick] = useState<string | null>(null);
+  const [summary, setSummary] = useState<{ applied: string[]; unchanged: string[]; needsApproval: { key: string }[]; skippedOlder: string[]; conflicts: string[] } | null>(null);
   const [search, setSearch] = useState("");
   const s = statusKey(f);
   const tone = { ok: "text-status-positive", warn: "text-status-attention", bad: "text-destructive", muted: "text-muted-foreground" }[s.tone];
@@ -314,12 +315,29 @@ function FileCard({ f, onConfirm, busy }: { f: BatchFileView; onConfirm: (client
           onClick={async () => {
             const r: any = await applyFn({ data: { fileId: f.id } });
             if (!r.ok) toast.error(t(r.error === "no_permission" ? "insp.apply.no_permission" : "insp.err.generic"));
-            else toast.success(t("insp.apply.done", { applied: r.applied.length, older: r.skippedOlder.length }));
+            else setSummary(r);
           }}
         >
           {t("insp.apply.cta")}
         </Button>
       )}
+      {summary && (
+        <div className="mt-3 rounded-lg border border-border bg-muted/40 p-3 text-xs" role="status">
+          <p className="font-medium">{t("insp.sum.title")}</p>
+          <ul className="mt-1 space-y-1">
+            {summary.applied.map((k) => <li key={`a${k}`}>✓ {sysName(k)} — {t("insp.sum.applied")}</li>)}
+            {summary.unchanged.map((k) => <li key={`u${k}`}>{sysName(k)} — {t("insp.sum.unchanged")}</li>)}
+            {summary.needsApproval.map((r) => <li key={`n${r.key}`}>{sysName(r.key)} — {t("insp.sum.kept")}</li>)}
+            {summary.skippedOlder.map((k) => <li key={`o${k}`}>{sysName(k)} — {t("insp.sum.older")}</li>)}
+            {summary.conflicts.map((k) => <li key={`c${k}`}>{sysName(k)} — {t("insp.sum.conflict")}</li>)}
+            {!summary.applied.length && !summary.unchanged.length && !summary.needsApproval.length && !summary.skippedOlder.length && !summary.conflicts.length && <li>{t("insp.sum.none")}</li>}
+          </ul>
+        </div>
+      )}
     </li>
   );
+}
+
+function sysName(k: string) {
+  return k.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
