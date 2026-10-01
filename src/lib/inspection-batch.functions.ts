@@ -9,12 +9,15 @@ import { INSPECTION_LIMITS, inspectPdf } from "./inspection-batch";
  * requires the homeowner's "Help manage my home" permission for that workspace.
  */
 
-async function agentOrg(supabase: any, userId: string): Promise<{ id: string; isTest: boolean } | null> {
-  const { data } = await supabase
+async function agentOrg(_supabase: any, userId: string): Promise<{ id: string; isTest: boolean } | null> {
+  // Membership is resolved server-side with the privileged client, scoped to the verified caller.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await (supabaseAdmin as any)
     .from("lender_members")
     .select("lender_org_id, lender_orgs!inner(org_type, is_test_account)")
     .eq("user_id", userId)
     .eq("lender_orgs.org_type", "agent")
+    .order("created_at", { ascending: true })
     .limit(1);
   const r = data?.[0];
   return r ? { id: r.lender_org_id, isTest: !!r.lender_orgs?.is_test_account } : null;
