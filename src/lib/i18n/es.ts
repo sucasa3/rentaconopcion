@@ -2117,6 +2117,7 @@ export const es: Dictionary = {
   "pa.done": "Ya lo hice",
   "pa.dismiss": "No me interesa",
   "pa.more": "+{n} más en tu plan del hogar.",
+  "mp.urgency_field": "Urgencia",
   "mp.select": "Agregar “{title}” a mi plan",
   "mp.title": "Tareas de mantenimiento propuestas",
   "mp.desc": "Elige cuáles agregar a tu plan. Puedes editar el título o la fecha antes.",

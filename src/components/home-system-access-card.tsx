@@ -322,7 +322,7 @@ function MaintenanceReview({ documentId, filename, inspectionDate, fetchFn, valu
                     <span className="font-medium">{r.title}</span>
                   )}
                   <span className="mt-0.5 block text-muted-foreground">
-                    {r.urgency ? t(`mp.urgency.${r.urgency}` as any) : t("mp.no_date")}
+                    {r.urgency ? t(`mp.urgency.${r.urgency}` as any) : t("pa.u.none")}
                     {r.sourcePages?.length ? ` · ${t("mp.page", { pages: r.sourcePages.join(", ") })}` : ""}
                   </span>
                   {r.needsConfirmation && <span className="mt-0.5 block font-medium text-status-attention">{t("mp.confirm")}</span>}
@@ -338,7 +338,7 @@ function MaintenanceReview({ documentId, filename, inspectionDate, fetchFn, valu
                     <span className="mt-1 block">
                       {t("mp.kind.update")}
                       {r.existing.urgency !== (r.urgency ?? r.existing.urgency) && (
-                        <span className="block">{t("mp.change", { field: "urgency", from: r.existing.urgency, to: r.urgency })}</span>
+                        <span className="block">{t("mp.change", { field: t("mp.urgency_field"), from: t(`pa.u.${r.existing.urgency}` as any), to: t(`pa.u.${r.urgency}` as any) })}</span>
                       )}
                       {r.existing.dueBy !== (r.dueBy ?? r.existing.dueBy) && (
                         <span className="block">{t("mp.change", { field: t("mp.due"), from: r.existing.dueBy ?? "—", to: r.dueBy })}</span>
