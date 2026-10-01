@@ -164,8 +164,8 @@ function AgentReports() {
     }
   }
 
-  const p = pending.data ?? [];
-  const pr = proposals.data ?? [];
+  const p: Array<{ id: string; filename: string; orgName: string }> = pending.data ?? [];
+  const pr: Array<{ id: string; filename: string | null; inspectionDate: string | null; findings: any[] }> = proposals.data ?? [];
   if (!p.length && !pr.length) return null;
   return (
     <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
