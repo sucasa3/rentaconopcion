@@ -529,12 +529,21 @@ function AgentPortfolio() {
             >
               <ArrowLeft className="h-3 w-3" /> {t("biz.apd.all_lists")}
             </Link>
-            <Link
-              to="/agent/network"
-              className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-            >
-              {t("biz.apd.lender_network")}
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/agent/inspections/$id"
+                params={{ id }}
+                className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                {t("insp.cta")}
+              </Link>
+              <Link
+                to="/agent/network"
+                className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+              >
+                {t("biz.apd.lender_network")}
+              </Link>
+            </div>
           </div>
 
 

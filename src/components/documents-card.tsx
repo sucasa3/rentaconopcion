@@ -234,8 +234,13 @@ export function DocumentsCard({ onGoToCare }: { onGoToCare?: () => void }) {
                             ? t("docs.badge.analyzed")
                             : d.extraction_status === "failed"
                               ? t("docs.badge.failed")
-                              : d.extraction_status}
+                              : d.extraction_status === "awaiting_review"
+                                ? t("docs.badge.review")
+                                : d.extraction_status}
                       </span>
+                    )}
+                    {d.contributed_by_org && (
+                      <span className="text-[11px] text-muted-foreground">· {t("hmh.added_by_agent")}</span>
                     )}
                   </div>
                 </div>

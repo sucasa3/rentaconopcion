@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.agent_documents_allowed(uuid, uuid, uuid) FROM authenticated;
