@@ -18,7 +18,7 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
       await Promise.all([
         db.from("agent_discovery_runs").select("report, pending_rows, needs_address, updated_at").eq("portfolio_id", data.portfolioId).maybeSingle(),
         db.from("agent_credit_ledger").select("kind, delta").eq("org_id", orgId),
-        db.from("agent_identity").select("phone_last4, phone_verified_at, license_state").eq("user_id", context.userId).maybeSingle(),
+        db.from("agent_identity").select("phone_hash, phone_last4, phone_verified_at, license_state").eq("user_id", context.userId).maybeSingle(),
         db.from("agent_base_entitlements").select("profile_limit").eq("org_id", orgId).maybeSingle(),
         db.from("plan_tiers").select("key, name, price_cents, profile_allowance, stripe_price_id, stripe_test_price_id").in("key", ["agent", "agent_growth"]).eq("active", true),
         db.from("lender_portfolio_clients").select("id, lender_portfolios!inner(lender_org_id)", { count: "exact", head: true }).eq("lender_portfolios.lender_org_id", orgId).is("archived_at", null),
@@ -54,7 +54,20 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
       pendingCount: ((run as any)?.pending_rows ?? []).length,
       needsAddress: ((run as any)?.needs_address ?? []) as { full_name: string; email: string | null }[],
       identity: identity
-        ? { phoneLast4: (identity as any).phone_last4, verified: Boolean((identity as any).phone_verified_at) }
+        ? {
+            phoneLast4: (identity as any).phone_last4,
+            verified: Boolean((identity as any).phone_verified_at),
+            phoneUsed: await (async () => {
+              if (hasFree || !(identity as any).phone_hash) return false;
+              const { data: used } = await db
+                .from("agent_promo_redemptions")
+                .select("org_id")
+                .eq("phone_hash", (identity as any).phone_hash)
+                .neq("org_id", orgId)
+                .limit(1);
+              return (used ?? []).length > 0;
+            })(),
+          }
         : null,
       smsReady: smsConfigured(),
       top,
