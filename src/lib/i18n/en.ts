@@ -2085,6 +2085,7 @@ export const en = {
   "hmh.prop.dismiss": "Dismiss",
   "hmh.prop.applied": "Applied. Newer information was kept where it existed.",
   "hmh.added_by_agent": "Added by your agent",
+  "docs.badge.review": "Suggested updates to review",
   "hs.access.title": "Agent access to your home systems",
   "hs.access.desc": "Off by default. When on, everyone on that agent team in SuCasa can view and update your home systems (roof, HVAC, water heater, windows, electrical, siding). It doesn't share anything else and isn't marketing permission.",
   "hs.access.toggle": "Let {org} view and update my home systems",

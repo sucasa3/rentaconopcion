@@ -2126,6 +2126,7 @@ export const es: Dictionary = {
   "hmh.prop.dismiss": "Descartar",
   "hmh.prop.applied": "Aplicado. Se conservó la información más reciente donde existía.",
   "hmh.added_by_agent": "Agregado por su agente",
+  "docs.badge.review": "Actualizaciones sugeridas por revisar",
   "hs.access.title": "Acceso de tu agente a los sistemas de tu casa",
   "hs.access.desc": "Desactivado por defecto. Al activarlo, todo el equipo de ese agente en SuCasa puede ver y actualizar los sistemas de tu casa (techo, climatización, calentador de agua, ventanas, electricidad, revestimiento). No comparte nada más y no es permiso de marketing.",
   "hs.access.toggle": "Permitir que {org} vea y actualice los sistemas de mi casa",
