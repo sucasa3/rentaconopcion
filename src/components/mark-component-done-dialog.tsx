@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { logComponentService } from "@/lib/home-maintenance.functions";
+import { getMyHomeSystemState, logComponentService } from "@/lib/home-maintenance.functions";
+import { useT } from "@/lib/i18n";
 import type { TimelineItem } from "@/lib/maintenance-rules";
 
 type Props = {
@@ -45,6 +46,17 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange, requireYearC
   const thisYear = new Date().getFullYear();
   const logFn = useServerFn(logComponentService);
   const qc = useQueryClient();
+  const t = useT();
+  const stateFn = useServerFn(getMyHomeSystemState);
+  const { data: sysState } = useQuery({
+    queryKey: ["home-system-state"],
+    queryFn: () => stateFn(),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+  // Version seen when this form opened; a newer save since then is refused.
+  const [seenVersion, setSeenVersion] = useState<number | null>(null);
+  if (seenVersion === null && sysState) setSeenVersion(sysState.versions[item.key] ?? 0);
 
   const [action, setAction] = useState<"replaced" | "serviced">("replaced");
   const [year, setYear] = useState(String(thisYear));
@@ -79,14 +91,23 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange, requireYearC
           warrantyYears: warranty.trim() ? Number(warranty) : null,
           provider: provider.trim() || null,
           notes: notes.trim() || null,
+          expectedVersion: seenVersion ?? 0,
         },
       });
       if (!res.ok) {
-        toast.error(res.error);
+        if (res.code === "conflict") {
+          toast.error(t("hs.conflict"));
+          await qc.invalidateQueries({ queryKey: ["component-service-log"] });
+          await qc.invalidateQueries({ queryKey: ["home-system-state"] });
+          onOpenChange(false);
+          return;
+        }
+        toast.error(t("hs.save_failed"));
         return;
       }
       toast.success(`${item.label} updated — your timeline now starts from ${parsedYear}.`);
       await qc.invalidateQueries({ queryKey: ["component-service-log"] });
+      await qc.invalidateQueries({ queryKey: ["home-system-state"] });
       onOpenChange(false);
     } catch {
       toast.error("Could not save that just now");
@@ -205,7 +226,7 @@ export function MarkComponentDoneDialog({ item, open, onOpenChange, requireYearC
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={busy || (requireYearConfirm && !yearTouched)}>
+          <Button onClick={submit} disabled={busy || seenVersion === null || (requireYearConfirm && !yearTouched)}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {requireYearConfirm ? "Save details" : "Save and reset clock"}
           </Button>
