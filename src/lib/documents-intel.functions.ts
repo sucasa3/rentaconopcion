@@ -34,7 +34,7 @@ export const updatePredictedAction = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => UpdateSchema.parse(i))
   .handler(async ({ data, context }) => {
     const now = new Date().toISOString();
-    const { error } = await context.supabase
+    const { data: rows, error } = await context.supabase
       .from("home_predicted_actions")
       .update({
         status: data.status,
@@ -42,7 +42,9 @@ export const updatePredictedAction = createServerFn({ method: "POST" })
         dismissed_at: data.status === "dismissed" ? now : null,
       })
       .eq("id", data.id)
-      .eq("user_id", context.userId);
+      .eq("user_id", context.userId)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!rows?.length) return { ok: false, error: "not_found" };
     return { ok: true };
   });
