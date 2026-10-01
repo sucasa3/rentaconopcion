@@ -212,6 +212,9 @@ export const confirmAgentPhone = createServerFn({ method: "POST" })
     const check = await checkSmsCode(context.userId, e164, data.code);
     if (!check.ok) throw new Error(check.message);
 
+    // Designated QA accounts (flag set server-side in app_metadata, never
+    // user-editable) verify the phone without redeeming the promotion.
+    const verifyOnly = (u.user.app_metadata as any)?.sucasa_verify_only === true;
     const outcome = await recordVerifiedPhoneAndRedeem({
       userId: context.userId,
       orgId,
@@ -219,6 +222,7 @@ export const confirmAgentPhone = createServerFn({ method: "POST" })
       licenseKey: licenseKey(data.licenseNumber, data.licenseState),
       licenseNumber: data.licenseNumber?.trim() || null,
       licenseState: data.licenseState?.trim().toUpperCase() || null,
+      skipRedeem: verifyOnly,
     });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEvent } = await import("./network-events.server");

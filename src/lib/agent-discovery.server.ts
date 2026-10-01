@@ -330,6 +330,7 @@ export async function recordVerifiedPhoneAndRedeem(input: {
     }
   }
 
+  if (input.skipRedeem) return "verified_only";
   const { data, error } = await db.rpc("redeem_agent_promotion", {
     _user_id: input.userId,
     _org_id: input.orgId,

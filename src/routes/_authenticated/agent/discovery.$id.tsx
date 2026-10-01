@@ -263,7 +263,7 @@ function VerifyPhone({ portfolioId, smsReady, onDone }: { portfolioId: string; s
       }),
     onSuccess: (r) => {
       if (r.outcome === "granted") toast.success(t("adisc.granted"));
-      else if (r.outcome === "already_entitled") toast.success(t("adisc.already"));
+      else if (r.outcome === "already_entitled" || r.outcome === "verified_only") toast.success(t("adisc.already"));
       else toast.error(t("adisc.phone_used"));
       onDone();
     },
