@@ -1,0 +1,2 @@
+ALTER TABLE public.home_predicted_actions ADD COLUMN IF NOT EXISTS urgency_specified boolean;
+COMMENT ON COLUMN public.home_predicted_actions.urgency_specified IS 'False when the source report stated no urgency; null for legacy rows.';

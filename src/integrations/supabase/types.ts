@@ -2542,6 +2542,7 @@ export type Database = {
           title: string
           updated_at: string
           urgency: string
+          urgency_specified: boolean | null
           user_id: string
           why: string | null
         }
@@ -2567,6 +2568,7 @@ export type Database = {
           title: string
           updated_at?: string
           urgency?: string
+          urgency_specified?: boolean | null
           user_id: string
           why?: string | null
         }
@@ -2592,6 +2594,7 @@ export type Database = {
           title?: string
           updated_at?: string
           urgency?: string
+          urgency_specified?: boolean | null
           user_id?: string
           why?: string | null
         }
