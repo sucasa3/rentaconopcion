@@ -155,6 +155,20 @@
       "when": 1790889863055,
       "tag": "0021_qa_no_enrichment_for_test_orgs",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790890738613,
+      "tag": "0022_home_system_connection_and_versioned_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790890850758,
+      "tag": "0023_fix_test_ghl_sync_block",
+      "breakpoints": true
     }
   ]
 }

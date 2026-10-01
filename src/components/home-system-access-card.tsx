@@ -35,6 +35,9 @@ export function HomeSystemAccessCard() {
     try {
       const res = await setFn({ data: { orgId, enabled } });
       if (!res.ok) throw new Error();
+      qc.setQueryData(["home-system-access"], (prev: typeof options) =>
+        prev?.map((o) => (o.orgId === orgId ? { ...o, enabled } : o)),
+      );
       toast.success(t(enabled ? "hs.access.saved_on" : "hs.access.saved_off", { org: orgName }));
       await qc.invalidateQueries({ queryKey: ["home-system-access"] });
     } catch {
@@ -65,11 +68,16 @@ export function HomeSystemAccessCard() {
                     ? ` · ${t("hs.access.on_since", { date: new Date(o.grantedAt).toLocaleDateString() })}`
                     : ""}
                 </span>
+                {!o.connected && (
+                  <span className="mt-1 block text-xs text-muted-foreground">
+                    {t("hs.access.needs_connection")}
+                  </span>
+                )}
               </label>
               <Switch
                 id={`hsa-${o.orgId}`}
-                checked={o.enabled}
-                disabled={busy === o.orgId}
+                checked={o.enabled && o.connected}
+                disabled={busy === o.orgId || (!o.connected && !o.enabled)}
                 onCheckedChange={(v) => toggle(o.orgId, o.orgName, v)}
                 className="mt-1 shrink-0"
               />
