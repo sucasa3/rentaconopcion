@@ -2062,6 +2062,7 @@ export const en = {
   "insp.sum.older": "Skipped—newer information on file",
   "insp.sum.conflict": "Not saved—changed by someone else; reopen and try again",
   "insp.sum.none": "The report had no system details to apply.",
+  "mp.select": "Add “{title}” to my plan",
   "mp.title": "Proposed maintenance tasks",
   "mp.desc": "Choose which to add to your home plan. You can edit the title or date first.",
   "mp.source": "{file} · inspected {date}",

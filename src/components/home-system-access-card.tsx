@@ -311,8 +311,8 @@ function MaintenanceReview({ documentId, filename, inspectionDate, fetchFn, valu
           const locked = r.kind === "same" || r.kind === "kept";
           return (
             <li key={r.key} className="rounded-md bg-muted/40 p-2">
-              <label className="flex items-start gap-2">
-                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-primary" disabled={locked}
+              <div className="flex items-start gap-2">
+                <input type="checkbox" aria-label={t("mp.select", { title: r.title })} className="mt-0.5 h-4 w-4 accent-primary" disabled={locked}
                   checked={!locked && c.selected} onChange={(e) => set(r.key, { selected: e.target.checked })} />
                 <span className="min-w-0 flex-1">
                   {c.selected && !locked ? (
@@ -353,7 +353,7 @@ function MaintenanceReview({ documentId, filename, inspectionDate, fetchFn, valu
                   {r.kind === "same" && <span className="mt-1 block text-muted-foreground">{t("mp.kind.same")}</span>}
                   {r.kind === "kept" && <span className="mt-1 block text-muted-foreground">{t("mp.kind.kept")}</span>}
                 </span>
-              </label>
+              </div>
             </li>
           );
         })}

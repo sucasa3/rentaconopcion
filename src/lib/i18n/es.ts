@@ -2103,6 +2103,7 @@ export const es: Dictionary = {
   "insp.sum.older": "Omitido: hay información más reciente",
   "insp.sum.conflict": "No se guardó: otra persona lo cambió; vuelve a abrir e inténtalo de nuevo",
   "insp.sum.none": "El informe no tenía datos de sistemas para aplicar.",
+  "mp.select": "Agregar “{title}” a mi plan",
   "mp.title": "Tareas de mantenimiento propuestas",
   "mp.desc": "Elige cuáles agregar a tu plan. Puedes editar el título o la fecha antes.",
   "mp.source": "{file} · inspección del {date}",
