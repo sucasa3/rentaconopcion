@@ -401,9 +401,11 @@ export const respondToAgentReport = createServerFn({ method: "POST" })
       return { ok: true };
     }
     if (data.choice === "add_and_allow") {
+      // Grant first only if the general connection allows it; otherwise refuse without attaching.
       const { data: r } = await context.supabase.rpc("set_help_manage_home" as any, { p_org_id: f.org_id, p_enabled: true });
       if (!(r as any)?.ok) return { ok: false, error: (r as any)?.error ?? "error" };
     }
+    // Attachment is idempotent per report (unique source report), so a retry after a partial failure is safe.
     await attachToHomeowner(admin, f, context.userId, f.confirmed_by ?? context.userId);
     return { ok: true };
   });
