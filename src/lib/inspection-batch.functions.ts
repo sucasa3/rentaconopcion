@@ -10,17 +10,19 @@ import { INSPECTION_LIMITS, inspectPdf } from "./inspection-batch";
  */
 
 async function agentOrg(_supabase: any, userId: string): Promise<{ id: string; isTest: boolean } | null> {
-  // Membership is resolved server-side with the privileged client, scoped to the verified caller.
+  // Resolve the verified caller's agent workspace server-side (no embed: lender_orgs has several FKs).
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await (supabaseAdmin as any)
+  const admin = supabaseAdmin as any;
+  const { data: mem } = await admin
     .from("lender_members")
-    .select("lender_org_id, lender_orgs!inner(org_type, is_test_account)")
+    .select("lender_org_id, created_at")
     .eq("user_id", userId)
-    .eq("lender_orgs.org_type", "agent")
-    .order("created_at", { ascending: true })
-    .limit(1);
-  const r = data?.[0];
-  return r ? { id: r.lender_org_id, isTest: !!r.lender_orgs?.is_test_account } : null;
+    .order("created_at", { ascending: true });
+  const ids = (mem ?? []).map((m: any) => m.lender_org_id);
+  if (!ids.length) return null;
+  const { data: orgs } = await admin.from("lender_orgs").select("id, org_type, is_test_account").in("id", ids).eq("org_type", "agent");
+  const pick = ids.map((id: string) => (orgs ?? []).find((o: any) => o.id === id)).find(Boolean);
+  return pick ? { id: pick.id, isTest: !!pick.is_test_account } : null;
 }
 
 async function requireBatch(admin: any, supabase: any, userId: string, batchId: string) {
@@ -336,7 +338,7 @@ export const confirmInspectionFiles = createServerFn({ method: "POST" })
         _homeowner: client.homeowner_id,
       });
       if (!allowed) {
-        await admin.from("inspection_batch_files").update({ attach_state: "pending_permission" }).eq("id", f.id).neq("attach_state", "declined");
+        await admin.from("inspection_batch_files").update({ attach_state: "pending_permission" }).eq("id", f.id).or("attach_state.is.null,attach_state.neq.declined");
         outcomes.push({ fileId: f.id, result: "pending_permission" });
         continue;
       }
@@ -399,9 +401,11 @@ export const respondToAgentReport = createServerFn({ method: "POST" })
       return { ok: true };
     }
     if (data.choice === "add_and_allow") {
+      // Grant first only if the general connection allows it; otherwise refuse without attaching.
       const { data: r } = await context.supabase.rpc("set_help_manage_home" as any, { p_org_id: f.org_id, p_enabled: true });
       if (!(r as any)?.ok) return { ok: false, error: (r as any)?.error ?? "error" };
     }
+    // Attachment is idempotent per report (unique source report), so a retry after a partial failure is safe.
     await attachToHomeowner(admin, f, context.userId, f.confirmed_by ?? context.userId);
     return { ok: true };
   });
