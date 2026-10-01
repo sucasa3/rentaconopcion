@@ -38,10 +38,16 @@ export const drainGhlQueue = createServerFn({ method: "POST" })
         if (job.entity_type === "homeowner") {
           const { data: profile } = await supabaseAdmin
             .from("profiles")
-            .select("id, full_name, email, phone, city, state, lifecycle_stage, language")
+            .select("id, full_name, email, phone, city, state, lifecycle_stage, language, is_test_account")
             .eq("id", job.entity_id)
             .maybeSingle();
           if (!profile) throw new Error(`Profile ${job.entity_id} not found`);
+          if (profile.is_test_account) {
+            // Labeled QA accounts never reach the CRM.
+            await markDone(job.id);
+            skipped++;
+            continue;
+          }
 
           const contactId = await ghl.upsertContact({
             userId: profile.id,
