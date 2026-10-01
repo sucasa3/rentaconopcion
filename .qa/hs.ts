@@ -15,7 +15,7 @@ async function org(tag: string, memberUid: string) {
   const { data: o } = await db.from("lender_orgs").insert({ name: `TEST-SYNTHETIC QA hs ${tag}`, org_type: "agent", plan: "starter" }).select("id").single();
   await db.from("lender_members").insert({ lender_org_id: o.id, user_id: memberUid, role: "owner" });
   const { data: b } = await db.from("lender_portfolios").insert({ lender_org_id: o.id, name: `TEST-SYNTHETIC QA hs ${tag} book` }).select("id").single();
-  await db.from("agent_credit_ledger").insert({ org_id: o.id, kind: "base", delta: 5, reason: "TEST-SYNTHETIC QA fixture" });
+  const le = await db.from("agent_credit_ledger").insert({ org_id: o.id, kind: "base", delta: 5, reason: "TEST-SYNTHETIC QA fixture", event_key: `qa-base:${o.id}` }); const be = await db.from("agent_base_entitlements").insert({ org_id: o.id, profile_limit: 5, reason: "TEST-SYNTHETIC QA fixture", source: "qa" }); if (le.error || be.error) console.log(le.error, be.error);
   return { orgId: o.id as string, bookId: b.id as string };
 }
 const results: [string, boolean, string][] = [];
