@@ -213,7 +213,7 @@ export async function sendSmsCode(userId: string, e164: string): Promise<
   for (const rows of [byUser ?? [], byPhone ?? []]) {
     // Cooldown / hourly limits count only messages the provider accepted;
     // failed dispatches are capped separately so they can't be hammered.
-    const d = canIssue(rows.filter((r) => r.delivery_status !== "failed" && r.delivery_status !== "provider_stop"), Date.now());
+    const d = canIssue(rows.filter((r: { delivery_status: string | null }) => r.delivery_status !== "failed" && r.delivery_status !== "provider_stop"), Date.now());
     if (!d.ok) return { sent: false, reason: d.reason };
     if (rows.length >= 10) return { sent: false, reason: "hourly_limit" };
   }
