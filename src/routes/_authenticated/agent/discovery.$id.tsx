@@ -277,7 +277,7 @@ function VerifyPhone({ portfolioId, smsReady, onDone }: { portfolioId: string; s
         <Phone className="h-4 w-4 text-primary" /> {t("adisc.verify_title")}
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("adisc.verify_body")}</p>
-      {!smsReady && <p className="mt-2 text-sm text-status-warning">{t("adisc.sms_unavailable")}</p>}
+      {!smsReady && <p className="mt-2 text-sm text-destructive">{t("adisc.sms_unavailable")}</p>}
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
         <label className="text-xs text-muted-foreground">
           {t("adisc.phone")}
@@ -324,7 +324,7 @@ function KeepProfiles({ portfolioId, total, onDone }: { portfolioId: string; tot
     onError: (e: any) => toast.error(e.message),
   });
   return (
-    <section className="rounded-3xl border border-status-warning/40 bg-card p-4 shadow-soft sm:p-5">
+    <section className="rounded-3xl border border-destructive/40 bg-card p-4 shadow-soft sm:p-5">
       <h2 className="text-base font-semibold">{t("adisc.keep_title")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("adisc.keep_body", { total })}</p>
       <ul className="mt-3 max-h-72 space-y-1 overflow-y-auto">
