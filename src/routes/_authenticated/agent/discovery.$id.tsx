@@ -54,7 +54,7 @@ function AgentDiscovery() {
   // Returning from checkout: sync once; the webhook is the source of truth.
   useEffect(() => {
     if (search.checkout !== "success" || !d?.orgId) return;
-    syncFn({ data: { orgId: d.orgId, sessionId: search.session_id } as any })
+    syncFn({ data: { orgId: d.orgId } })
       .catch(() => undefined)
       .finally(() => {
         toast.success(t("adisc.upgraded"));
