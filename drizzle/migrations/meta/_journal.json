@@ -134,6 +134,13 @@
       "when": 1790887827933,
       "tag": "0018_home_system_agent_access",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790888253484,
+      "tag": "0019_qa_account_isolation",
+      "breakpoints": true
     }
   ]
 }

@@ -4097,6 +4097,7 @@ export type Database = {
           current_period_end: string | null
           discovery_state: string
           id: string
+          is_test_account: boolean
           license_number: string | null
           logo_url: string | null
           name: string
@@ -4134,6 +4135,7 @@ export type Database = {
           current_period_end?: string | null
           discovery_state?: string
           id?: string
+          is_test_account?: boolean
           license_number?: string | null
           logo_url?: string | null
           name: string
@@ -4171,6 +4173,7 @@ export type Database = {
           current_period_end?: string | null
           discovery_state?: string
           id?: string
+          is_test_account?: boolean
           license_number?: string | null
           logo_url?: string | null
           name?: string
@@ -5403,6 +5406,7 @@ export type Database = {
           full_name: string | null
           ghl_last_synced_at: string | null
           id: string
+          is_test_account: boolean
           language: string
           last_activity_at: string
           lifecycle_stage: Database["public"]["Enums"]["lifecycle_stage"]
@@ -5420,6 +5424,7 @@ export type Database = {
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id: string
+          is_test_account?: boolean
           language?: string
           last_activity_at?: string
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
@@ -5437,6 +5442,7 @@ export type Database = {
           full_name?: string | null
           ghl_last_synced_at?: string | null
           id?: string
+          is_test_account?: boolean
           language?: string
           last_activity_at?: string
           lifecycle_stage?: Database["public"]["Enums"]["lifecycle_stage"]
