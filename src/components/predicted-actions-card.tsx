@@ -97,7 +97,7 @@ export function PredictedActionsCard({ limit = 4 }: { limit?: number }) {
                     <p className="mt-0.5 text-[11px] font-medium text-status-attention">{t("mp.confirm")}</p>
                   )}
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-                    <Badge variant="secondary">{a.urgency_specified === false ? t("pa.u.none") : t(`pa.u.${a.urgency}`)}</Badge>
+                    <Badge variant="secondary">{a.urgency_specified === false ? t("pa.u.none") : t(`pa.u.${a.urgency}` as any)}</Badge>
                     {cost && <span className="text-muted-foreground">{t("pa.cost", { cost })}</span>}
                     {a.due_by && (
                       <span className="text-muted-foreground">
