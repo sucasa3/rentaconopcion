@@ -308,23 +308,35 @@ export async function recordVerifiedPhoneAndRedeem(input: {
   licenseNumber: string | null;
   licenseState: string | null;
   skipRedeem?: boolean;
-}): Promise<PromoOutcome> {
+}): Promise<PromoOutcome | "not_verified"> {
+  await recordVerifiedPhone(input);
+  return redeemForVerifiedUser({ userId: input.userId, orgId: input.orgId, skipRedeem: input.skipRedeem });
+}
+
+/** Store a server-verified phone. License fields are only written when supplied, so stored values persist. */
+export async function recordVerifiedPhone(input: {
+  userId: string;
+  orgId: string;
+  e164: string;
+  licenseKey: string | null;
+  licenseNumber: string | null;
+  licenseState: string | null;
+}) {
   const db = await admin();
   const hash = await phoneHash(input.e164);
-
-  await db.from("agent_identity").upsert(
-    {
-      user_id: input.userId,
-      phone_hash: hash,
-      phone_last4: input.e164.slice(-4),
-      phone_verified_at: new Date().toISOString(),
-      license_number: input.licenseNumber,
-      license_state: input.licenseState,
-      license_key: input.licenseKey,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "user_id" },
-  );
+  const row: Record<string, unknown> = {
+    user_id: input.userId,
+    phone_hash: hash,
+    phone_last4: input.e164.slice(-4),
+    phone_verified_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  if (input.licenseKey) {
+    row.license_number = input.licenseNumber;
+    row.license_state = input.licenseState;
+    row.license_key = input.licenseKey;
+  }
+  await db.from("agent_identity").upsert(row, { onConflict: "user_id" });
 
   if (input.licenseKey) {
     const { data: sameLicense } = await db
@@ -343,8 +355,26 @@ export async function recordVerifiedPhoneAndRedeem(input: {
       });
     }
   }
+}
 
+/**
+ * Redeem the free allowance for an account whose phone is already verified
+ * server-side. Uses the stored phone hash; never asks for another code.
+ */
+export async function redeemForVerifiedUser(input: {
+  userId: string;
+  orgId: string;
+  skipRedeem?: boolean;
+}): Promise<PromoOutcome | "not_verified"> {
+  const db = await admin();
+  const { data: ident } = await db
+    .from("agent_identity")
+    .select("phone_hash, phone_last4, phone_verified_at")
+    .eq("user_id", input.userId)
+    .maybeSingle();
+  if (!ident?.phone_verified_at || !ident.phone_hash) return "not_verified";
   if (input.skipRedeem) return "verified_only";
+  const hash = ident.phone_hash as string;
   const { data, error } = await db.rpc("redeem_agent_promotion", {
     _user_id: input.userId,
     _org_id: input.orgId,
@@ -364,7 +394,7 @@ export async function recordVerifiedPhoneAndRedeem(input: {
       userId: input.userId,
       orgId: input.orgId,
       relatedUserId: (prior as any)?.user_id ?? null,
-      signals: { phone_last4: input.e164.slice(-4) },
+      signals: { phone_last4: ident.phone_last4 },
     });
   }
   return outcome;

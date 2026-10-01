@@ -49,6 +49,7 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
       planKey: org?.plan_key ?? null,
       subscriptionStatus: org?.subscription_status ?? null,
       capacity: { total: Math.max(granted, 0), remaining, active: active ?? 0, hasFree },
+      hasRun: Boolean(run),
       report: (run as any)?.report ?? null,
       pendingCount: ((run as any)?.pending_rows ?? []).length,
       needsAddress: ((run as any)?.needs_address ?? []) as { full_name: string; email: string | null }[],
@@ -194,46 +195,58 @@ export const confirmAgentPhone = createServerFn({ method: "POST" })
         portfolioId: uuid,
         phone: z.string().min(7).max(25),
         code: z.string().regex(/^\d{4,10}$/),
-        licenseNumber: z.string().trim().max(40).optional(),
-        licenseState: z.string().trim().max(2).optional(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    // Email must already be verified for the promotion.
     const { data: u } = await context.supabase.auth.getUser();
     if (!u?.user?.email_confirmed_at) throw new Error("Confirm your email address first.");
-
-    const { toE164, licenseKey } = await import("./agent-discovery");
+    const { toE164 } = await import("./agent-discovery");
     const e164 = toE164(data.phone);
     if (!e164) throw new Error("Enter a valid mobile number.");
-    const { requireAgentBook, checkSmsCode, recordVerifiedPhoneAndRedeem } = await import("./agent-discovery.server");
+    const { requireAgentBook, checkSmsCode, recordVerifiedPhone } = await import("./agent-discovery.server");
     const { orgId } = await requireAgentBook(context.supabase, context.userId, data.portfolioId);
     const check = await checkSmsCode(context.userId, e164, data.code);
     if (!check.ok) throw new Error(check.message);
-
-    // Designated QA accounts (flag set server-side in app_metadata, never
-    // user-editable) verify the phone without redeeming the promotion.
-    const verifyOnly = (u.user.app_metadata as any)?.sucasa_verify_only === true;
-    const outcome = await recordVerifiedPhoneAndRedeem({
-      userId: context.userId,
-      orgId,
-      e164,
-      licenseKey: licenseKey(data.licenseNumber, data.licenseState),
-      licenseNumber: data.licenseNumber?.trim() || null,
-      licenseState: data.licenseState?.trim().toUpperCase() || null,
-      skipRedeem: verifyOnly,
-    });
+    // License fields are not collected here; stored values are preserved.
+    await recordVerifiedPhone({ userId: context.userId, orgId, e164, licenseKey: null, licenseNumber: null, licenseState: null });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEvent } = await import("./network-events.server");
     await logNetworkEvent(supabaseAdmin, {
-      action: outcome === "granted" ? "agent_promo_redeemed" : outcome === "already_entitled" || outcome === "verified_only" ? "agent_phone_verified" : "agent_promo_denied",
+      action: "agent_phone_verified",
       actorUserId: context.userId,
       orgId,
       entityType: "agent_organization",
       entityId: orgId,
-      metadata: { outcome },
+      metadata: {},
     });
+    return { verified: true };
+  });
+
+/** Claim the free allowance using the already-verified phone. No new code needed. */
+export const claimAgentFree = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ portfolioId: uuid }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: u } = await context.supabase.auth.getUser();
+    if (!u?.user?.email_confirmed_at) throw new Error("Confirm your email address first.");
+    const { requireAgentBook, redeemForVerifiedUser } = await import("./agent-discovery.server");
+    const { orgId } = await requireAgentBook(context.supabase, context.userId, data.portfolioId);
+    // Designated QA accounts (server-set app_metadata) never redeem.
+    const verifyOnly = (u.user.app_metadata as any)?.sucasa_verify_only === true;
+    const outcome = await redeemForVerifiedUser({ userId: context.userId, orgId, skipRedeem: verifyOnly });
+    if (outcome !== "not_verified") {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { logNetworkEvent } = await import("./network-events.server");
+      await logNetworkEvent(supabaseAdmin, {
+        action: outcome === "granted" ? "agent_promo_redeemed" : outcome === "already_entitled" || outcome === "verified_only" ? "agent_phone_verified" : "agent_promo_denied",
+        actorUserId: context.userId,
+        orgId,
+        entityType: "agent_organization",
+        entityId: orgId,
+        metadata: { outcome },
+      });
+    }
     return { outcome };
   });
 

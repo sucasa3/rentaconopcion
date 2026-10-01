@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fileToCsv } from "@/lib/spreadsheet-import";
@@ -22,9 +22,12 @@ type Props = {
   busy?: boolean;
   title?: string;
   hint?: string;
+  /** When set, detailed column requirements sit in a disclosure beside the template. */
+  columnsLabel?: string;
+  footer?: ReactNode;
 };
 
-export function BulkClientUpload({ onCsv, busy, title, hint }: Props) {
+export function BulkClientUpload({ onCsv, busy, title, hint, columnsLabel, footer }: Props) {
   const t = useT();
   const fileRef = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
@@ -95,6 +98,18 @@ export function BulkClientUpload({ onCsv, busy, title, hint }: Props) {
           <Download className="h-3.5 w-3.5" /> {t("biz.upload.template")}
         </button>
       </div>
+      {columnsLabel && (
+        <details className="mt-3 text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-medium text-foreground">{columnsLabel}</summary>
+          <p className="mt-1 break-words">
+            {t("biz.upload.hint_cols")}{" "}
+            <code>full_name, address, city, state, zip, email, loan_balance, rate, note</code>.{" "}
+            {t("biz.upload.hint_req_a")} <code>full_name</code> {t("biz.upload.hint_req_and")}{" "}
+            <code>address</code> {t("biz.upload.hint_req_b")}
+          </p>
+        </details>
+      )}
+      {footer}
     </div>
   );
 }
