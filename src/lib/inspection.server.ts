@@ -179,7 +179,9 @@ const BATCH_PROMPT = `You are reading a home inspection report (PDF).
 2) The inspection date (YYYY-MM-DD) or null.
 3) Findings for major systems the report discusses (same rules as a home inspection analyst: never invent). Each finding also has installed_year (only if the report states it, else null) and source_pages (1-based pages).
 If the document is not legible or not an inspection report, set readable=false and return empty findings. Never guess missing values — use null.
-Return strict JSON only.`;
+Return strict JSON only, exactly this shape:
+{"readable": true, "address": {"street": "123 Main St", "unit": null, "city": "", "state": "", "zip": ""}, "address_pages": [1], "inspection_date": "YYYY-MM-DD",
+ "findings": [{"system": "roof|hvac|water_heater|windows|electrical|siding|plumbing|foundation|other (lowercase)", "condition": "good|fair|poor|end_of_life|null", "remaining_life_years": null, "urgency": "immediate|12_months|1_3_years|monitor|null", "defects": ["..."], "recommended_action": "...", "recommended_category": null, "source_excerpt": "short verbatim quote", "installed_year": null, "source_pages": [2]}]}`;
 
 export async function extractBatchInspection(
   fileBytes: Uint8Array,
@@ -225,9 +227,10 @@ export function normalizeBatchExtraction(p: any): BatchExtraction {
   const s = (v: any, n = 120) => (v == null || v === "" ? null : String(v).slice(0, n));
   const pages = (v: any) => (Array.isArray(v) ? v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 20) : []);
   const date = typeof p?.inspection_date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(p.inspection_date) ? p.inspection_date : null;
-  const a = p?.address ?? {};
+  const rawA = p?.address ?? p?.property_address ?? p?.property ?? {};
+  const a = typeof rawA === "string" ? { street: rawA } : rawA;
   const findings = (Array.isArray(p?.findings) ? p.findings : []).slice(0, 40).map((f: any) => ({
-    system: String(f.system ?? "other").slice(0, 40),
+    system: String(f.system ?? "other").trim().toLowerCase().replace(/[\s-]+/g, "_").slice(0, 40),
     condition: s(f.condition, 20),
     remaining_life_years: typeof f.remaining_life_years === "number" ? Math.max(0, Math.min(100, f.remaining_life_years)) : null,
     urgency: s(f.urgency, 20),
