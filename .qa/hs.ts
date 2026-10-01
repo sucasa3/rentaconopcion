@@ -15,6 +15,7 @@ async function org(tag: string, memberUid: string) {
   const { data: o } = await db.from("lender_orgs").insert({ name: `TEST-SYNTHETIC QA hs ${tag}`, org_type: "agent", plan: "starter" }).select("id").single();
   await db.from("lender_members").insert({ lender_org_id: o.id, user_id: memberUid, role: "owner" });
   const { data: b } = await db.from("lender_portfolios").insert({ lender_org_id: o.id, name: `TEST-SYNTHETIC QA hs ${tag} book` }).select("id").single();
+  await db.from("agent_credit_ledger").insert({ org_id: o.id, kind: "base", delta: 5, reason: "TEST-SYNTHETIC QA fixture" });
   return { orgId: o.id as string, bookId: b.id as string };
 }
 const results: [string, boolean, string][] = [];
@@ -24,8 +25,8 @@ const args = (h: string, org: string | null, v: number | null, year: number) => 
 const H = await user("home"), A = await user("agentA"), A2 = await user("teammate"), B = await user("agentB");
 const OA = await org("A", A.uid); await db.from("lender_members").insert({ lender_org_id: OA.orgId, user_id: A2.uid, role: "member" });
 const OB = await org("B", B.uid);
-const { data: cA, error: eA } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OA.bookId, address_line1: "1 QA Synthetic Way", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single(); if (eA) { console.log(eA); process.exit(1); }
-const { data: cB } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OB.bookId, address_line1: "1 QA Synthetic Way", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single();
+const { data: cA, error: eA } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OA.bookId, address_line1: "", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single(); if (eA) { console.log(eA); process.exit(1); }
+const { data: cB } = await db.from("lender_portfolio_clients").insert({ portfolio_id: OB.bookId, address_line1: "", client_name: "TEST-SYNTHETIC QA", homeowner_id: H.uid }).select("id").single();
 
 // Default off; imported match grants nothing
 let r = (await A.c.rpc("get_home_systems_for_agent", { p_org_id: OA.orgId, p_client_id: cA.id })).data;
