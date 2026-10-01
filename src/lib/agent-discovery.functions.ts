@@ -28,6 +28,9 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
     const remaining = rows.reduce((s, r) => s + r.delta, 0);
     const granted = rows.filter((r) => r.kind !== "spend" && r.kind !== "refund").reduce((s, r) => s + r.delta, 0);
     const hasFree = rows.some((r) => r.kind === "base" || r.kind === "sponsor") || Boolean(base);
+    // Server-confirmed size of the free allowance actually granted (may differ from 100 for test fixtures).
+    const freeGranted = rows.filter((r) => r.kind === "base" || r.kind === "sponsor").reduce((s, r) => s + r.delta, 0)
+      || Number((base as any)?.profile_limit ?? 0);
 
     const { buildActionQueue } = await import("./nba.server");
     let top: { clientId: string; name: string; categoryLabel: string; why: string; headline: string }[] = [];
@@ -48,7 +51,7 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
       orgId,
       planKey: org?.plan_key ?? null,
       subscriptionStatus: org?.subscription_status ?? null,
-      capacity: { total: Math.max(granted, 0), remaining, active: active ?? 0, hasFree },
+      capacity: { total: Math.max(granted, 0), remaining, active: active ?? 0, hasFree, freeGranted: Math.max(freeGranted, 0) },
       hasRun: Boolean(run),
       report: (run as any)?.report ?? null,
       pendingCount: ((run as any)?.pending_rows ?? []).length,
