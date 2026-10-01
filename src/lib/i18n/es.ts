@@ -2028,6 +2028,8 @@ export const es: Dictionary = {
   "adisc.v2.resend": "Reenviar código",
   "adisc.v2.resend_in": "Reenviar en {s}s",
   "adisc.v2.ready": "Sus 100 Perfiles de Hogar gratis están listos",
+  "adisc.v2.ready_n": "Sus Perfiles de Hogar gratis están listos: {count} disponibles",
+  "adisc.v2.claimed": "Sus Perfiles de Hogar gratis están listos",
   "adisc.v2.phone_verified": "Teléfono verificado",
   "adisc.v2.unlock": "Desbloquear mis 100 gratis",
   "adisc.v2.claim_failed": "No pudimos desbloquear sus 100 gratis. Su teléfono sigue verificado; inténtelo de nuevo.",

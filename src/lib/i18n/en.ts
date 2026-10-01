@@ -1987,6 +1987,8 @@ export const en = {
   "adisc.v2.resend": "Resend code",
   "adisc.v2.resend_in": "Resend in {s}s",
   "adisc.v2.ready": "Your 100 free Home Profiles are ready",
+  "adisc.v2.ready_n": "Your free Home Profiles are ready: {count} available",
+  "adisc.v2.claimed": "Your free Home Profiles are ready",
   "adisc.v2.phone_verified": "Phone verified",
   "adisc.v2.unlock": "Unlock my free 100",
   "adisc.v2.claim_failed": "We couldn't unlock your free 100. Your phone is still verified — try again.",

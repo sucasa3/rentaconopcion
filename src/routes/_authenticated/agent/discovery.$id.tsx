@@ -135,7 +135,10 @@ function AgentDiscovery() {
           )}
           {d && d.capacity.hasFree && (
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-positive">
-              <CheckCircle2 className="h-4 w-4" /> {t("adisc.v2.ready")}
+              <CheckCircle2 className="h-4 w-4" />{" "}
+              {d.capacity.freeGranted === 100
+                ? t("adisc.v2.ready")
+                : t("adisc.v2.ready_n", { count: d.capacity.freeGranted })}
             </p>
           )}
 
@@ -330,7 +333,7 @@ function VerifyPhone({
     onSuccess: (r) => {
       if (r.outcome === "granted" || r.outcome === "already_entitled") {
         setClaimFailed(false);
-        toast.success(t("adisc.v2.ready"));
+        toast.success(t("adisc.v2.claimed"));
         onClaimed();
       } else if (r.outcome === "verified_only") {
         setTestOnly(true);
