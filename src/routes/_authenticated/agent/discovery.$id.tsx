@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowRight, CheckCircle2, Phone, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, Phone, Sparkles } from "lucide-react";
+import { AGENT_RESEND_COOLDOWN_MS } from "@/lib/agent-phone-challenge";
 import { z } from "zod";
 import { BusinessShell } from "@/components/business-shell";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import {
+  claimAgentFree,
   confirmAgentPhone,
   getAgentDiscovery,
   importAgentPending,
@@ -269,75 +271,192 @@ function AgentDiscovery() {
   );
 }
 
-function VerifyPhone({ portfolioId, smsReady, onDone }: { portfolioId: string; smsReady: boolean; onDone: () => void }) {
+function VerifyPhone({
+  portfolioId,
+  smsReady,
+  verified,
+  last4,
+  onVerified,
+  onClaimed,
+}: {
+  portfolioId: string;
+  smsReady: boolean;
+  verified: boolean;
+  last4: string | null;
+  onVerified: () => void;
+  onClaimed: () => void;
+}) {
   const t = useT();
   const sendFn = useServerFn(sendAgentPhoneCode);
   const confirmFn = useServerFn(confirmAgentPhone);
+  const claimFn = useServerFn(claimAgentFree);
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
-  const [lic, setLic] = useState("");
-  const [licState, setLicState] = useState("");
   const [sent, setSent] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const [claimFailed, setClaimFailed] = useState(false);
+  const [testOnly, setTestOnly] = useState(false);
+  const codeRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (cooldownUntil <= now) return;
+    const h = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(h);
+  }, [cooldownUntil, now]);
+  const wait = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+  const digits = phone.replace(/\D/g, "");
+  const masked = `(•••) •••-${digits.slice(-4)}`;
 
   const send = useMutation({
     mutationFn: () => sendFn({ data: { phone } }),
     onSuccess: (r) => {
-      if (r.sent) setSent(true);
-      else toast.error(t(`adisc.send.${r.reason}` as any), { description: (r as any).detail });
+      if (r.sent) {
+        setSent(true);
+        setCode("");
+        setCooldownUntil(Date.now() + AGENT_RESEND_COOLDOWN_MS);
+        setNow(Date.now());
+        setTimeout(() => codeRef.current?.focus(), 50);
+      } else toast.error(t(`adisc.send.${r.reason}` as any), { description: (r as any).detail });
     },
     onError: (e: any) => toast.error(e.message),
   });
-  const confirm = useMutation({
-    mutationFn: () =>
-      confirmFn({
-        data: { portfolioId, phone, code, licenseNumber: lic || undefined, licenseState: licState || undefined },
-      }),
+  const claim = useMutation({
+    mutationFn: () => claimFn({ data: { portfolioId } }),
     onSuccess: (r) => {
-      if (r.outcome === "granted") toast.success(t("adisc.granted"));
-      else if (r.outcome === "already_entitled" || r.outcome === "verified_only") toast.success(t("adisc.already"));
-      else toast.error(t("adisc.phone_used"));
-      onDone();
+      if (r.outcome === "granted" || r.outcome === "already_entitled") {
+        setClaimFailed(false);
+        toast.success(t("adisc.v2.ready"));
+        onClaimed();
+      } else if (r.outcome === "verified_only") {
+        setTestOnly(true);
+      } else if (r.outcome === "phone_used" || r.outcome === "user_used" || r.outcome === "org_used") {
+        toast.error(t("adisc.phone_used"));
+        onVerified();
+      } else setClaimFailed(true);
+    },
+    onError: () => setClaimFailed(true),
+  });
+  const confirm = useMutation({
+    mutationFn: () => confirmFn({ data: { portfolioId, phone, code } }),
+    onSuccess: () => {
+      onVerified();
+      claim.mutate();
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  const input = "mt-1 w-full rounded-full border border-border bg-background px-3 py-2 text-sm";
+  const input = "mt-1 w-full rounded-full border border-border bg-background px-3 py-2 text-base sm:text-sm";
+
+  // Phone already verified server-side; only the claim remains.
+  if (verified) {
+    return (
+      <section className="rounded-3xl border border-primary/30 bg-card p-4 shadow-soft sm:p-5">
+        <p className="inline-flex items-center gap-2 text-base font-semibold">
+          <CheckCircle2 className="h-4 w-4 text-status-positive" /> {t("adisc.v2.phone_verified")}
+          {last4 ? <span className="text-sm font-normal text-muted-foreground">· {last4}</span> : null}
+        </p>
+        {testOnly ? (
+          <p className="mt-2 text-sm text-muted-foreground">{t("adisc.v2.test_account")}</p>
+        ) : (
+          <>
+            {claimFailed && <p className="mt-2 text-sm text-destructive">{t("adisc.v2.claim_failed")}</p>}
+            <Button className="mt-3 min-h-11 w-full sm:w-auto" disabled={claim.isPending} onClick={() => claim.mutate()}>
+              {claim.isPending && <Loader2 className="animate-spin" />}
+              {claimFailed ? t("adisc.v2.retry") : t("adisc.v2.unlock")}
+            </Button>
+          </>
+        )}
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-3xl border border-primary/30 bg-card p-4 shadow-soft sm:p-5">
       <h2 className="inline-flex items-center gap-2 text-base font-semibold">
-        <Phone className="h-4 w-4 text-primary" /> {t("adisc.verify_title")}
+        <Phone className="h-4 w-4 shrink-0 text-primary" /> {t("adisc.verify_title")}
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("adisc.verify_body")}</p>
       {!smsReady && <p className="mt-2 text-sm text-destructive">{t("adisc.sms_unavailable")}</p>}
-      <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
-        <label className="text-xs text-muted-foreground">
-          {t("adisc.phone")}
-          <input className={input} inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        </label>
-        <Button className="min-h-11 self-end" disabled={!smsReady || !phone || send.isPending} onClick={() => send.mutate()}>
-          {t("adisc.send_code")}
-        </Button>
-      </div>
-      <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_6rem]">
-        <label className="text-xs text-muted-foreground">
-          {t("adisc.license")}
-          <input className={input} value={lic} onChange={(e) => setLic(e.target.value)} />
-        </label>
-        <label className="text-xs text-muted-foreground">
-          {t("adisc.license_state")}
-          <input className={input} maxLength={2} value={licState} onChange={(e) => setLicState(e.target.value)} />
-        </label>
-      </div>
-      {sent && (
-        <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
+      {!sent ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
           <label className="text-xs text-muted-foreground">
-            {t("adisc.code")}
-            <input className={input} inputMode="numeric" value={code} onChange={(e) => setCode(e.target.value)} />
+            {t("adisc.phone")}
+            <input
+              className={input}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
           </label>
-          <Button className="min-h-11 self-end" disabled={!code || confirm.isPending} onClick={() => confirm.mutate()}>
-            {t("adisc.confirm")}
+          <Button
+            className="min-h-11 self-end"
+            disabled={!smsReady || digits.length < 10 || send.isPending}
+            onClick={() => send.mutate()}
+          >
+            {send.isPending && <Loader2 className="animate-spin" />}
+            {t("adisc.send_code")}
           </Button>
         </div>
+      ) : (
+        <form
+          className="mt-3 space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (code.length === 6 && !confirm.isPending && !claim.isPending) confirm.mutate();
+          }}
+        >
+          <label className="block text-sm text-muted-foreground">
+            {t("adisc.v2.code_sent", { masked })}
+            <input
+              ref={codeRef}
+              className={`${input} tracking-[0.4em]`}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onPaste={(e) => {
+                const p = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                if (p) {
+                  e.preventDefault();
+                  setCode(p);
+                }
+              }}
+            />
+          </label>
+          <Button
+            type="submit"
+            className="min-h-11 w-full"
+            disabled={code.length !== 6 || confirm.isPending || claim.isPending}
+          >
+            {(confirm.isPending || claim.isPending) && <Loader2 className="animate-spin" />}
+            {t("adisc.v2.verify_unlock")}
+          </Button>
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-sm">
+            <button
+              type="button"
+              className="min-h-11 font-medium text-primary"
+              onClick={() => {
+                setSent(false);
+                setCode("");
+              }}
+            >
+              {t("adisc.v2.change")}
+            </button>
+            <button
+              type="button"
+              className="min-h-11 font-medium text-primary disabled:text-muted-foreground"
+              disabled={wait > 0 || send.isPending}
+              onClick={() => send.mutate()}
+            >
+              {wait > 0 ? t("adisc.v2.resend_in", { s: wait }) : t("adisc.v2.resend")}
+            </button>
+          </div>
+        </form>
       )}
     </section>
   );
