@@ -87,6 +87,11 @@ function AgentDiscovery() {
 
   const r = d?.report as Record<string, number> | null | undefined;
   const overCapacity = d ? d.capacity.active > d.capacity.total && d.capacity.hasFree : false;
+  // Paid accounts already have capacity; only unclaimed, unpaid accounts see the free-100 flow.
+  const needsClaim = d ? !d.capacity.hasFree && d.capacity.total === 0 : false;
+  const refresh = () => qc.invalidateQueries({ queryKey: key });
+  const scrollToUpload = () =>
+    setTimeout(() => document.getElementById("discovery-upload")?.scrollIntoView({ behavior: "smooth", block: "center" }), 150);
 
   return (
     <BusinessShell kind="agent" bookId={id}>
@@ -96,35 +101,59 @@ function AgentDiscovery() {
             <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-status-opportunity">
               <Sparkles className="h-3.5 w-3.5" /> Discovery
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{t("adisc.title")}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">{t("adisc.sub")}</p>
-            <p className="mt-2 text-xs text-muted-foreground">{t("adisc.consent_note")}</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">{t("adisc.v2.title")}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{t("adisc.v2.sub")}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("adisc.v2.signals")}</p>
           </header>
 
           {d && (
             <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-5">
               <p className="text-sm font-semibold">
-                {t("adisc.capacity", { active: d.capacity.active, total: d.capacity.total })}
+                {needsClaim
+                  ? t("adisc.v2.free_available")
+                  : t("adisc.capacity", { active: d.capacity.active, total: d.capacity.total })}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">{t("adisc.capacity_note")}</p>
+              {!needsClaim && <p className="mt-1 text-xs text-muted-foreground">{t("adisc.capacity_note")}</p>}
             </div>
           )}
 
-          {d && !d.capacity.hasFree && <VerifyPhone portfolioId={id} smsReady={d.smsReady} onDone={() => qc.invalidateQueries({ queryKey: key })} />}
-          {d?.identity?.verified && (
-            <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-              <CheckCircle2 className="h-3.5 w-3.5 text-status-positive" />
-              {t("adisc.verified_as", { last4: d.identity.phoneLast4 })}
+          {d && needsClaim && (
+            <VerifyPhone
+              portfolioId={id}
+              smsReady={d.smsReady}
+              verified={Boolean(d.identity?.verified)}
+              last4={d.identity?.phoneLast4 ?? null}
+              onVerified={refresh}
+              onClaimed={() => {
+                refresh();
+                scrollToUpload();
+              }}
+            />
+          )}
+          {d && d.capacity.hasFree && (
+            <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-positive">
+              <CheckCircle2 className="h-4 w-4" /> {t("adisc.v2.ready")}
             </p>
           )}
 
-          {overCapacity && d && <KeepProfiles portfolioId={id} total={d.capacity.total} onDone={() => qc.invalidateQueries({ queryKey: key })} />}
+          {overCapacity && d && <KeepProfiles portfolioId={id} total={d.capacity.total} onDone={refresh} />}
 
-          <BulkClientUpload
-            onCsv={(csv) => upload.mutate(csv)}
-            busy={upload.isPending}
-            title={t("adisc.upload_cta")}
-          />
+          <div id="discovery-upload" className="scroll-mt-20 scroll-mb-28">
+            <BulkClientUpload
+              onCsv={(csv) => upload.mutate(csv)}
+              busy={upload.isPending}
+              title={t("adisc.upload_cta")}
+              hint={t("adisc.v2.upload_hint")}
+              columnsLabel={t("adisc.v2.columns")}
+              footer={<p className="mt-3 text-xs text-muted-foreground">{t("adisc.consent_note")}</p>}
+            />
+          </div>
+
+          {upload.isPending && (
+            <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("adisc.v2.processing")}
+            </p>
+          )}
 
           {r && (
             <section className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-5">
@@ -141,9 +170,9 @@ function AgentDiscovery() {
                     ["overAllowance", "adisc.r.over"],
                   ] as const
                 ).map(([k, label]) => (
-                  <div key={k} className="flex items-center justify-between rounded-2xl bg-secondary/60 px-3 py-2">
-                    <dt className="text-muted-foreground">{t(label)}</dt>
-                    <dd className="font-semibold tabular-nums">{r[k] ?? 0}</dd>
+                  <div key={k} className="flex items-center justify-between gap-3 rounded-2xl bg-secondary/60 px-3 py-2">
+                    <dt className="min-w-0 text-muted-foreground">{t(label)}</dt>
+                    <dd className="shrink-0 font-semibold tabular-nums">{r[k] ?? 0}</dd>
                   </div>
                 ))}
               </dl>
@@ -153,9 +182,11 @@ function AgentDiscovery() {
           {d && (
             <section className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-5">
               <h2 className="text-base font-semibold">{t("adisc.top_title")}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">{t("adisc.top_note")}</p>
+              {d.top.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{t("adisc.top_note")}</p>}
               {d.top.length === 0 ? (
-                <p className="mt-3 text-sm text-muted-foreground">{t("adisc.top_empty")}</p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {d.hasRun || d.capacity.active > 0 ? t("adisc.v2.no_results") : t("adisc.v2.before_upload")}
+                </p>
               ) : (
                 <ol className="mt-3 space-y-2">
                   {d.top.map((c, i) => (
@@ -165,7 +196,7 @@ function AgentDiscovery() {
                           <p className="text-xs font-semibold text-status-opportunity">
                             {i + 1}. {c.categoryLabel}
                           </p>
-                          <p className="mt-0.5 font-semibold">{c.name}</p>
+                          <p className="mt-0.5 break-words font-semibold">{c.name}</p>
                           <p className="mt-1 text-sm text-muted-foreground">{c.why || c.headline}</p>
                         </div>
                         <Link
