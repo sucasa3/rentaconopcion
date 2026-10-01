@@ -1978,6 +1978,7 @@ export const en = {
   "adisc.send.hourly_limit": "Too many codes requested. Try again in an hour.",
   "adisc.send.provider_stop": "Texts to this number are blocked because it replied STOP. Reply START from that phone, then try again.",
   "adisc.send.send_failed": "We couldn't send the code. Please try again.",
+  "adisc.send.no_contact": "Text verification for new numbers isn't switched on yet.",
 } as const;
 
 export type TranslationKey = keyof typeof en;
