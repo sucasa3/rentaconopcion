@@ -168,17 +168,19 @@ export const startAgentUpgrade = createServerFn({ method: "POST" })
 export const sendAgentPhoneCode = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ phone: z.string().min(7).max(25) }).parse(i))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { toE164 } = await import("./agent-discovery");
     const e164 = toE164(data.phone);
     if (!e164) throw new Error("Enter a valid mobile number.");
     const { sendSmsCode } = await import("./agent-discovery.server");
     try {
-      await sendSmsCode(e164);
-    } catch (e) {
-      if ((e as Error).message === "SMS_NOT_CONFIGURED") {
-        return { sent: false, reason: "not_configured" as const };
+      const r = await sendSmsCode(context.userId, e164);
+      if (!r.sent) {
+        if (r.detail) console.error("agent verification send failed:", r.detail);
+        return { sent: false, reason: r.reason };
       }
+    } catch (e) {
+      if ((e as Error).message === "SMS_NOT_CONFIGURED") return { sent: false, reason: "not_configured" as const };
       throw e;
     }
     return { sent: true, reason: null };
@@ -207,8 +209,8 @@ export const confirmAgentPhone = createServerFn({ method: "POST" })
     if (!e164) throw new Error("Enter a valid mobile number.");
     const { requireAgentBook, checkSmsCode, recordVerifiedPhoneAndRedeem } = await import("./agent-discovery.server");
     const { orgId } = await requireAgentBook(context.supabase, context.userId, data.portfolioId);
-    const ok = await checkSmsCode(e164, data.code);
-    if (!ok) throw new Error("That code didn't match. Try again or request a new code.");
+    const check = await checkSmsCode(context.userId, e164, data.code);
+    if (!check.ok) throw new Error(check.message);
 
     const outcome = await recordVerifiedPhoneAndRedeem({
       userId: context.userId,

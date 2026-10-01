@@ -622,6 +622,42 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_phone_challenges: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          delivery_status: string
+          expires_at: string
+          id: string
+          phone_hash: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          delivery_status?: string
+          expires_at: string
+          id?: string
+          phone_hash: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          delivery_status?: string
+          expires_at?: string
+          id?: string
+          phone_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agent_plans: {
         Row: {
           created_at: string

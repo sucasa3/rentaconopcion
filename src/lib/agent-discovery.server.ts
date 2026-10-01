@@ -187,39 +187,94 @@ export async function importPendingRows(orgId: string, portfolioId: string) {
 // ---------------------------------------------------------------------------
 
 export function smsConfigured(): boolean {
-  return Boolean(
-    process.env["LOVABLE_API_KEY"] &&
-      process.env["TWILIO_API_KEY"] &&
-      process.env["TWILIO_VERIFY_SERVICE_SID"],
-  );
+  return Boolean(process.env["GHL_API_KEY"] && process.env["GHL_LOCATION_ID"]);
 }
 
-async function twilio(path: string, body: Record<string, string>) {
-  const res = await fetch(`https://connector-gateway.lovable.dev/twilio${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
-      "X-Connection-Api-Key": process.env["TWILIO_API_KEY"]!,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams(body),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Text message service error [${res.status}]: ${text.slice(0, 200)}`);
-  return JSON.parse(text);
-}
-
-export async function sendSmsCode(e164: string) {
+/**
+ * Issue a SuCasa-generated code bound to this account + phone and deliver it
+ * through the existing GoHighLevel sender (transactional purpose: no contact
+ * upsert, no tags, no workflows, no marketing consent, provider STOP honored).
+ */
+export async function sendSmsCode(userId: string, e164: string): Promise<
+  { sent: true } | { sent: false; reason: "cooldown" | "hourly_limit" | "provider_stop" | "send_failed"; detail?: string }
+> {
   if (!smsConfigured()) throw new Error("SMS_NOT_CONFIGURED");
-  const sid = process.env["TWILIO_VERIFY_SERVICE_SID"]!;
-  await twilio(`/verify/v2/Services/${sid}/Verifications`, { To: e164, Channel: "sms" });
+  const { canIssue, AGENT_CODE_TTL_MS } = await import("./agent-phone-challenge");
+  const { generateCode, hashCode } = await import("./account.server");
+  // Provider suppression (STOP / carrier opt-out) is the last word: check it
+  // before issuing a code, and never clear or work around it.
+  const { lookupContactDnd } = await import("./ghl.server");
+  if (await lookupContactDnd(e164)) return { sent: false, reason: "provider_stop" };
+  const db = await admin();
+  const ph = await phoneHash(e164);
+  const hourAgo = new Date(Date.now() - 3600_000).toISOString();
+  const [{ data: byUser }, { data: byPhone }] = await Promise.all([
+    db.from("agent_phone_challenges").select("created_at").eq("user_id", userId).gte("created_at", hourAgo),
+    db.from("agent_phone_challenges").select("created_at").eq("phone_hash", ph).gte("created_at", hourAgo),
+  ]);
+  for (const rows of [byUser ?? [], byPhone ?? []]) {
+    const d = canIssue(rows, Date.now());
+    if (!d.ok) return { sent: false, reason: d.reason };
+  }
+  const now = new Date().toISOString();
+  await db.from("agent_phone_challenges").update({ consumed_at: now }).eq("user_id", userId).is("consumed_at", null);
+  const code = generateCode();
+  const { data: row, error } = await db
+    .from("agent_phone_challenges")
+    .insert({
+      user_id: userId,
+      phone_hash: ph,
+      code_hash: hashCode(code, `agent:${userId}:${e164}`),
+      expires_at: new Date(Date.now() + AGENT_CODE_TTL_MS).toISOString(),
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const { sendProSms } = await import("./ghl.server");
+  try {
+    const r = await sendProSms(e164, `Your SuCasa verification code is ${code}. It expires in 10 minutes.`, {
+      purpose: "transactional",
+    });
+    if (!r.sent) {
+      await db.from("agent_phone_challenges").update({ consumed_at: now, delivery_status: "provider_stop" }).eq("id", row.id);
+      return { sent: false, reason: "provider_stop" };
+    }
+  } catch (e) {
+    await db.from("agent_phone_challenges").update({ consumed_at: now, delivery_status: "failed" }).eq("id", row.id);
+    return { sent: false, reason: "send_failed", detail: (e as Error).message.slice(0, 300) };
+  }
+  await db.from("agent_phone_challenges").update({ delivery_status: "accepted" }).eq("id", row.id);
+  return { sent: true };
 }
 
-export async function checkSmsCode(e164: string, code: string): Promise<boolean> {
-  if (!smsConfigured()) throw new Error("SMS_NOT_CONFIGURED");
-  const sid = process.env["TWILIO_VERIFY_SERVICE_SID"]!;
-  const r = await twilio(`/verify/v2/Services/${sid}/VerificationCheck`, { To: e164, Code: code });
-  return r?.status === "approved";
+/** Check a code server-side: single-use, expiring, attempt-limited, bound to account + phone. */
+export async function checkSmsCode(userId: string, e164: string, code: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { evaluateCheck, CHECK_MESSAGES } = await import("./agent-phone-challenge");
+  const { codeMatches } = await import("./account.server");
+  const db = await admin();
+  const ph = await phoneHash(e164);
+  const { data: c } = await db
+    .from("agent_phone_challenges")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const matches = c ? codeMatches(code, `agent:${userId}:${e164}`, c.code_hash) : false;
+  const d = evaluateCheck(c, { userId, phoneHash: ph, matches, now: Date.now() });
+  if (!d.ok) {
+    if (d.reason === "mismatch") await db.from("agent_phone_challenges").update({ attempts: c.attempts + 1 }).eq("id", c.id);
+    return { ok: false, message: CHECK_MESSAGES[d.reason] };
+  }
+  // Consume atomically: only one concurrent check can win.
+  const { data: won } = await db
+    .from("agent_phone_challenges")
+    .update({ consumed_at: new Date().toISOString() })
+    .eq("id", c.id)
+    .is("consumed_at", null)
+    .select("id");
+  if (!won?.length) return { ok: false, message: CHECK_MESSAGES.used };
+  return { ok: true };
 }
 
 // ---------------------------------------------------------------------------
