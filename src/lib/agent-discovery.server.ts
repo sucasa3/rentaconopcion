@@ -281,7 +281,7 @@ export async function checkSmsCode(userId: string, e164: string, code: string): 
 // Promotion redemption
 // ---------------------------------------------------------------------------
 
-export type PromoOutcome = "granted" | "already_entitled" | "phone_used" | "user_used" | "org_used";
+export type PromoOutcome = "verified_only" | "granted" | "already_entitled" | "phone_used" | "user_used" | "org_used";
 
 /**
  * Record a server-verified phone, then redeem atomically. Shared license or
@@ -294,6 +294,7 @@ export async function recordVerifiedPhoneAndRedeem(input: {
   licenseKey: string | null;
   licenseNumber: string | null;
   licenseState: string | null;
+  skipRedeem?: boolean;
 }): Promise<PromoOutcome> {
   const db = await admin();
   const hash = await phoneHash(input.e164);
@@ -330,6 +331,7 @@ export async function recordVerifiedPhoneAndRedeem(input: {
     }
   }
 
+  if (input.skipRedeem) return "verified_only";
   const { data, error } = await db.rpc("redeem_agent_promotion", {
     _user_id: input.userId,
     _org_id: input.orgId,
