@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { fileToCsv } from "@/lib/spreadsheet-import";
@@ -24,7 +24,7 @@ type Props = {
   hint?: string;
   /** When set, detailed column requirements sit in a disclosure beside the template. */
   columnsLabel?: string;
-  footer?: React.ReactNode;
+  footer?: ReactNode;
 };
 
 export function BulkClientUpload({ onCsv, busy, title, hint, columnsLabel, footer }: Props) {
