@@ -186,6 +186,8 @@ export type HomeSystemAccessOption = {
   connected: boolean;
   enabled: boolean;
   grantedAt: string | null;
+  /** True when the grant is the combined "Help manage my home" scope (systems + inspection reports). */
+  documents: boolean;
 };
 
 /** Agent workspaces this homeowner could let view/update their home systems. */
@@ -200,6 +202,7 @@ export const listHomeSystemAccess = createServerFn({ method: "POST" })
       connected: !!r.connected,
       enabled: !!r.enabled,
       grantedAt: r.granted_at ?? null,
+      documents: !!r.documents,
     })) satisfies HomeSystemAccessOption[];
   });
 
@@ -210,7 +213,9 @@ export const setHomeSystemAccess = createServerFn({ method: "POST" })
     z.object({ orgId: z.string().uuid(), enabled: z.boolean() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: res, error } = await context.supabase.rpc("set_home_system_access", {
+    // One combined control: turning on grants (or expands an existing systems-only grant to)
+    // "Help manage my home"; turning off revokes everything for that workspace.
+    const { data: res, error } = await context.supabase.rpc("set_help_manage_home", {
       p_org_id: data.orgId,
       p_enabled: data.enabled,
     });
