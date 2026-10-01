@@ -390,3 +390,13 @@
 - [ ] Walkthrough A–H EN/ES + final report
 - [x] A. Lender-safe mortgage facts from property records (preview)
 - [x] B. Stripe test mode + funnel tests (preview). Open: test webhook signing secret not stored yet (activation verified via return sync)
+
+## Workstream 2: Agent Discovery + Upsells (preview only, do not publish)
+- [ ] Discovery upload report (matched / duplicates / duplicate contacts / needs address / excluded / over allowance) + top 3 from Agent Today
+- [ ] Address-key dedupe incl. unit, DB uniqueness; excess rows held (not enriched) until upgrade
+- [ ] Upgrade: Agent $49 (250) / Agent Growth $99 (1,000) total capacity; checkout → webhook grants capacity idempotently → confirm import remaining
+- [ ] Downgrade: choose profiles to keep, archive the rest (history kept)
+- [ ] Phone (SMS) verification + one promo redemption per phone (atomic, DB-unique); license number/state as review signal
+- [ ] Admin review queue with audited decisions
+- [ ] EN/ES labels; tests for redemption, units, dedupe, webhook idempotency
+- [ ] Blocked: SMS provider (Twilio Verify) not connected
