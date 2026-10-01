@@ -416,6 +416,13 @@ export async function lookupContactDndById(contactId: string): Promise<boolean |
  * marketing or relationship text passes through the messaging policy first, so
  * no feature can text someone who opted out. Errors bubble to the caller.
  */
+/** Existing provider contact id for a phone number in our location, or null. */
+export async function findContactIdByPhone(phone: string): Promise<string | null> {
+  const q = new URLSearchParams({ locationId: env("GHL_LOCATION_ID"), number: phone });
+  const r = await ghlFetch(`/contacts/search/duplicate?${q}`);
+  return r?.contact?.id ?? null;
+}
+
 export async function sendProSms(
   toPhone: string,
   message: string,
@@ -423,6 +430,7 @@ export async function sendProSms(
     purpose: import("./messaging-policy.server").MessagePurpose;
     email?: string | null;
     userId?: string | null;
+    contactId?: string | null;
   },
 ): Promise<{ sent: boolean; reason?: string }> {
   if (!opts?.purpose) throw new Error("sendProSms requires a declared message purpose");
@@ -441,11 +449,13 @@ export async function sendProSms(
   }
 
   try {
+    const contactId = opts.contactId ?? (await findContactIdByPhone(toPhone));
+    if (!contactId) throw new Error("No GHL contact exists for this number");
     await ghlFetch(`/conversations/messages`, {
       method: "POST",
       body: JSON.stringify({
         type: "SMS",
-        locationId: env("GHL_LOCATION_ID"),
+        contactId,
         message,
         toNumber: toPhone,
       }),
