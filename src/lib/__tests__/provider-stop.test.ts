@@ -65,7 +65,7 @@ describe("provider STOP / DND enforcement", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ ok: true }), { status: 201 })));
     const { sendProSms } = await loadGhl();
     await expect(
-      sendProSms("+15555550123", "Your code is 123456", { purpose: "transactional" }),
+      sendProSms("+15555550123", "Your code is 123456", { purpose: "transactional", contactId: "c-1" }),
     ).resolves.toEqual({ sent: true });
   });
 

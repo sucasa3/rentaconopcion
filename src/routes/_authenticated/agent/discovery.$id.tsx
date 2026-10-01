@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, Loader2, Phone, Sparkles } from "lucide-react";
-import { AGENT_RESEND_COOLDOWN_MS } from "@/lib/agent-phone-challenge";
+import { AGENT_RESEND_COOLDOWN_MS, CHECK_MESSAGES } from "@/lib/agent-phone-challenge";
 import { z } from "zod";
 import { BusinessShell } from "@/components/business-shell";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
@@ -125,6 +125,7 @@ function AgentDiscovery() {
               smsReady={d.smsReady}
               verified={Boolean(d.identity?.verified)}
               last4={d.identity?.phoneLast4 ?? null}
+              phoneUsed={Boolean(d.identity?.phoneUsed)}
               onVerified={refresh}
               onClaimed={() => {
                 refresh();
@@ -276,6 +277,7 @@ function VerifyPhone({
   smsReady,
   verified,
   last4,
+  phoneUsed,
   onVerified,
   onClaimed,
 }: {
@@ -283,6 +285,7 @@ function VerifyPhone({
   smsReady: boolean;
   verified: boolean;
   last4: string | null;
+  phoneUsed: boolean;
   onVerified: () => void;
   onClaimed: () => void;
 }) {
@@ -297,6 +300,7 @@ function VerifyPhone({
   const [now, setNow] = useState(Date.now());
   const [claimFailed, setClaimFailed] = useState(false);
   const [testOnly, setTestOnly] = useState(false);
+  const [usedNow, setUsedNow] = useState(false);
   const codeRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -331,7 +335,8 @@ function VerifyPhone({
       } else if (r.outcome === "verified_only") {
         setTestOnly(true);
       } else if (r.outcome === "phone_used" || r.outcome === "user_used" || r.outcome === "org_used") {
-        toast.error(t("adisc.phone_used"));
+        setUsedNow(true);
+        setClaimFailed(false);
         onVerified();
       } else setClaimFailed(true);
     },
@@ -343,7 +348,10 @@ function VerifyPhone({
       onVerified();
       claim.mutate();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => {
+      const reason = (Object.keys(CHECK_MESSAGES) as (keyof typeof CHECK_MESSAGES)[]).find((k) => CHECK_MESSAGES[k] === e?.message);
+      toast.error(reason ? t(`adisc.check.${reason}` as any) : e.message);
+    },
   });
 
   const input = "mt-1 w-full rounded-full border border-border bg-background px-3 py-2 text-base sm:text-sm";
@@ -358,6 +366,8 @@ function VerifyPhone({
         </p>
         {testOnly ? (
           <p className="mt-2 text-sm text-muted-foreground">{t("adisc.v2.test_account")}</p>
+        ) : phoneUsed || usedNow ? (
+          <p className="mt-2 text-sm text-destructive">{t("adisc.phone_used")}</p>
         ) : (
           <>
             {claimFailed && <p className="mt-2 text-sm text-destructive">{t("adisc.v2.claim_failed")}</p>}
@@ -393,11 +403,11 @@ function VerifyPhone({
           </label>
           <Button
             className="min-h-11 self-end"
-            disabled={!smsReady || digits.length < 10 || send.isPending}
+            disabled={!smsReady || digits.length < 10 || send.isPending || wait > 0}
             onClick={() => send.mutate()}
           >
             {send.isPending && <Loader2 className="animate-spin" />}
-            {t("adisc.send_code")}
+            {wait > 0 ? t("adisc.v2.resend_in", { s: wait }) : t("adisc.send_code")}
           </Button>
         </div>
       ) : (
