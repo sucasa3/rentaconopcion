@@ -73,7 +73,11 @@ const num = (v?: string) => {
   return Number.isFinite(n) ? n : null;
 };
 
-export function parseClientCsv(csv: string): ClientRow[] {
+export function parseClientCsv(
+  csv: string,
+  /** Optional: collects named rows with no address and unusable rows. */
+  sink?: { addressless: ClientRow[]; invalid: number },
+): ClientRow[] {
   const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) return [];
 
@@ -149,6 +153,8 @@ export function parseClientCsv(csv: string): ClientRow[] {
       note: cNote >= 0 ? cells[cNote] || null : null,
     };
     if (row.full_name && row.address) out.push(row);
+    else if (sink && row.full_name && !row.address) sink.addressless.push(row);
+    else if (sink && cells.some((c) => (c ?? "").trim())) sink.invalid += 1;
 
   }
   return out;
