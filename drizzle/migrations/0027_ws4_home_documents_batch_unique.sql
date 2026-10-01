@@ -1,0 +1,1 @@
+ALTER TABLE public.home_documents ADD CONSTRAINT home_documents_source_batch_file_key UNIQUE (source_batch_file_id);
