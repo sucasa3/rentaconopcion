@@ -423,6 +423,21 @@ export async function findContactIdByPhone(phone: string): Promise<string | null
   return r?.contact?.id ?? null;
 }
 
+/**
+ * Minimal verification-only contact: phone + location + `sucasa-verify-only`
+ * tag in the initial request. No name, email, consent, DND or workflow fields.
+ * Upsert dedupes on phone, so repeats/races converge on one contact.
+ */
+export async function ensureVerificationContact(phone: string): Promise<string> {
+  const existing = await findContactIdByPhone(phone);
+  if (existing) return existing;
+  const body = { locationId: env("GHL_LOCATION_ID"), phone, tags: ["sucasa-verify-only"] };
+  const r = await ghlFetch("/contacts/upsert", { method: "POST", body: JSON.stringify(body) });
+  const id = r?.contact?.id ?? r?.id;
+  if (!id) throw new Error(`ensureVerificationContact: no id in response`);
+  return id;
+}
+
 export async function sendProSms(
   toPhone: string,
   message: string,
