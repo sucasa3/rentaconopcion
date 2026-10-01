@@ -13,6 +13,7 @@ import { AdminLenderPanel } from "@/components/admin-lender-panel";
 import { AdminProfilesPanel } from "@/components/admin-profiles-panel";
 import { AdminPartnerPanel } from "@/components/admin-partner-panel";
 import { AdminCampaignPanel } from "@/components/admin-campaign-panel";
+import { AgentIdentityReviewPanel } from "@/components/agent-identity-review-panel";
 import { ADMIN_HOMEOWNERS, ADMIN_PROS } from "@/lib/mock-data";
 import { Building2, Users, Wrench, DollarSign, ShieldAlert } from "lucide-react";
 
@@ -131,6 +132,8 @@ function Admin() {
 
 
           <AdminLenderPanel />
+
+          <AgentIdentityReviewPanel />
 
           <AdminCampaignPanel />
 

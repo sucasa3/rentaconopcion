@@ -326,6 +326,57 @@ export type Database = {
           },
         ]
       }
+      agent_discovery_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          needs_address: Json
+          org_id: string
+          pending_rows: Json
+          portfolio_id: string
+          report: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          needs_address?: Json
+          org_id: string
+          pending_rows?: Json
+          portfolio_id: string
+          report?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          needs_address?: Json
+          org_id?: string
+          pending_rows?: Json
+          portfolio_id?: string
+          report?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_discovery_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_discovery_runs_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: true
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_feed_seen: {
         Row: {
           created_at: string
@@ -358,6 +409,87 @@ export type Database = {
           portfolio_id?: string
           reviewed_at?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_identity: {
+        Row: {
+          created_at: string
+          license_key: string | null
+          license_number: string | null
+          license_state: string | null
+          phone_hash: string | null
+          phone_last4: string | null
+          phone_verified_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          license_key?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          phone_hash?: string | null
+          phone_last4?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          license_key?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          phone_hash?: string | null
+          phone_last4?: string | null
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      agent_identity_reviews: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          decision_note: string | null
+          id: string
+          kind: string
+          org_id: string | null
+          related_user_id: string | null
+          signals: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_note?: string | null
+          id?: string
+          kind: string
+          org_id?: string | null
+          related_user_id?: string | null
+          signals?: Json
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          decision_note?: string | null
+          id?: string
+          kind?: string
+          org_id?: string | null
+          related_user_id?: string | null
+          signals?: Json
+          status?: string
           user_id?: string
         }
         Relationships: []
@@ -533,6 +665,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agent_promo_redemptions: {
+        Row: {
+          id: string
+          org_id: string
+          phone_hash: string
+          profile_grant: number
+          promo_key: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          phone_hash: string
+          profile_grant?: number
+          promo_key?: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          phone_hash?: string
+          profile_grant?: number
+          promo_key?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       ai_usage_log: {
         Row: {
@@ -3899,6 +4061,7 @@ export type Database = {
       }
       lender_portfolio_clients: {
         Row: {
+          address_key: string | null
           address_line1: string
           archived_at: string | null
           archived_reason: string | null
@@ -3924,6 +4087,7 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          address_key?: string | null
           address_line1: string
           archived_at?: string | null
           archived_reason?: string | null
@@ -3949,6 +4113,7 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          address_key?: string | null
           address_line1?: string
           archived_at?: string | null
           archived_reason?: string | null
@@ -6194,6 +6359,14 @@ export type Database = {
           p_transcript: string
         }
         Returns: string
+      }
+      redeem_agent_promotion: {
+        Args: { _org_id: string; _phone_hash: string; _user_id: string }
+        Returns: string
+      }
+      set_agent_plan_capacity: {
+        Args: { _org_id: string; _ref: string; _target: number }
+        Returns: number
       }
     }
     Enums: {

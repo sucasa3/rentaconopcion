@@ -1523,8 +1523,28 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     // Import up to the remaining balance and say plainly what was held back.
     const { remainingCreditsForPortfolio } = await import("./credits-stats.server");
     const remaining = await remainingCreditsForPortfolio(context.supabase, data.portfolioId);
-    const rows = remaining == null ? parsed : parsed.slice(0, Math.max(0, remaining));
-    const skipped = parsed.length - rows.length;
+    // Same property already in this book (full address incl. unit + ZIP) is
+    // skipped, so a re-upload never duplicates a profile or a paid lookup.
+    const { planAgentIntake, addressKey } = await import("./agent-discovery");
+    const { data: existingRows } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("address_key, address_line1, city, state, zip")
+      .eq("portfolio_id", data.portfolioId)
+      .is("archived_at", null);
+    const intake = planAgentIntake(parsed as any[], {
+      existingKeys: (existingRows ?? []).map(
+        (c: any) =>
+          c.address_key ??
+          addressKey({ address: c.address_line1 ?? "", zip: c.zip, city: c.city, state: c.state }),
+      ),
+      remaining,
+    });
+    const rows = intake.toImport;
+    const skipped = intake.overAllowance.length;
+    const duplicates = intake.duplicateProperties;
+    if (rows.length === 0 && skipped === 0) {
+      return { inserted: 0, skipped: 0, duplicates, suppressed: suppressedRows.length, remaining };
+    }
     if (rows.length === 0) {
       throw new Error(
         `You're out of homeowner credits, so none of these ${parsed.length} rows were imported. Unlock more homeowner connections to continue.`,
@@ -1540,6 +1560,7 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
       state: r.state ?? null,
       zip: r.zip ?? null,
       notes: r.note ?? null,
+      address_key: r.address_key,
     }));
     const { error } = await context.supabase.from("lender_portfolio_clients").insert(payload);
     if (error) throw new Error(error.message);
@@ -1562,6 +1583,7 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     return {
       inserted: rows.length,
       skipped,
+      duplicates,
       suppressed: suppressedRows.length,
       remaining: remaining == null ? null : Math.max(0, remaining - rows.length),
     };
