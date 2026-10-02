@@ -250,7 +250,7 @@ function FileCard({ f, onConfirm, busy }: { f: BatchFileView; onConfirm: (client
             <dt className="text-muted-foreground">{t("insp.f.address")}</dt>
             <dd>
               {f.address ?? t("insp.unknown")}
-              {f.unit ? ` · ${t("insp.f.unit")} ${f.unit}` : ""}
+              {f.unit ? ` · ${t("insp.f.unit")} ${String(f.unit).replace(/^(unit|apt\.?|apartment|#)\s*/i, "")}` : ""}
               {f.addressPages.length ? ` (${t("insp.f.pages", { pages: f.addressPages.join(", ") })})` : ""}
             </dd>
           </div>
@@ -325,11 +325,11 @@ function FileCard({ f, onConfirm, busy }: { f: BatchFileView; onConfirm: (client
         <div className="mt-3 rounded-lg border border-border bg-muted/40 p-3 text-xs" role="status">
           <p className="font-medium">{t("insp.sum.title")}</p>
           <ul className="mt-1 space-y-1">
-            {summary.applied.map((k) => <li key={`a${k}`}>✓ {sysName(k)} — {t("insp.sum.applied")}</li>)}
-            {summary.unchanged.map((k) => <li key={`u${k}`}>{sysName(k)} — {t("insp.sum.unchanged")}</li>)}
-            {summary.needsApproval.map((r) => <li key={`n${r.key}`}>{sysName(r.key)} — {t("insp.sum.kept")}</li>)}
-            {summary.skippedOlder.map((k) => <li key={`o${k}`}>{sysName(k)} — {t("insp.sum.older")}</li>)}
-            {summary.conflicts.map((k) => <li key={`c${k}`}>{sysName(k)} — {t("insp.sum.conflict")}</li>)}
+            {summary.applied.map((k) => <li key={`a${k}`}>✓ {sysName(t, k)} — {t("insp.sum.applied")}</li>)}
+            {summary.unchanged.map((k) => <li key={`u${k}`}>{sysName(t, k)} — {t("insp.sum.unchanged")}</li>)}
+            {summary.needsApproval.map((r) => <li key={`n${r.key}`}>{sysName(t, r.key)} — {t("insp.sum.kept")}</li>)}
+            {summary.skippedOlder.map((k) => <li key={`o${k}`}>{sysName(t, k)} — {t("insp.sum.older")}</li>)}
+            {summary.conflicts.map((k) => <li key={`c${k}`}>{sysName(t, k)} — {t("insp.sum.conflict")}</li>)}
             {!summary.applied.length && !summary.unchanged.length && !summary.needsApproval.length && !summary.skippedOlder.length && !summary.conflicts.length && <li>{t("insp.sum.none")}</li>}
           </ul>
         </div>
@@ -338,6 +338,8 @@ function FileCard({ f, onConfirm, busy }: { f: BatchFileView; onConfirm: (client
   );
 }
 
-function sysName(k: string) {
-  return k.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+function sysName(t: (k: any) => string, k: string) {
+  const key = `insp.sys.${k}`;
+  const v = t(key);
+  return v !== key ? v : k.replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
 }
