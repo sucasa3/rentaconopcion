@@ -29,8 +29,9 @@ export function HomeSystemHistory({ items }: { items: HistoryItem[] }) {
       {items.map((h, i) => (
         <li key={i} className="py-2.5 text-sm">
           <p className="font-medium">
-            {h.actorRole === "agent" ? t("hs.history.by_agent") : t("hs.history.by_you")}{" "}
-            {t(`hs.history.${h.changeKind}` as TranslationKey)}{" "}
+            {h.actorRole === "agent"
+              ? `${t("hs.history.by_agent")} ${t(`hs.history.${h.changeKind}` as TranslationKey)}`
+              : t(`hs.history.you.${h.changeKind}` as TranslationKey)}{" "}
             {t(`care.system.${h.componentKey}` as TranslationKey)}
           </p>
           <p className="text-muted-foreground">

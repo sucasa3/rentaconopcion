@@ -22,6 +22,12 @@ import {
 } from "@/lib/inspection-batch.functions";
 
 /** Homeowner-only control: which agent team may view/update home systems. Default off. */
+/** Translate a data-driven key, falling back to readable text when no label exists. */
+function tl(t: (k: any, v?: any) => string, key: string, fallback: string) {
+  const v = t(key as any);
+  return v === key ? fallback : v;
+}
+
 export function HomeSystemAccessCard() {
   const t = useT();
   const qc = useQueryClient();
@@ -212,11 +218,11 @@ function AgentReports() {
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
                   {d.findings.slice(0, 8).map((f: any, i: number) => (
                     <li key={i}>
-                      <span className="font-medium">{f.system}</span>
-                      {f.condition ? ` · ${f.condition}` : ""}
+                      <span className="font-medium">{tl(t, `insp.sys.${f.system}`, String(f.system ?? "").replace(/_/g, " "))}</span>
+                      {f.condition ? ` · ${tl(t, `insp.cond.${f.condition}`, String(f.condition).replace(/_/g, " "))}` : ""}
                       {f.installed_year ? ` · ${f.installed_year}` : ""}
                       {f.recommended_action ? ` — ${f.recommended_action}` : ""}
-                      {f.source_pages?.length ? ` (p. ${f.source_pages.join(", ")})` : ""}
+                      {f.source_pages?.length ? ` (${t("mp.page", { pages: f.source_pages.join(", ") })})` : ""}
                     </li>
                   ))}
                 </ul>
