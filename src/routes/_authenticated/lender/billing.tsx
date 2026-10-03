@@ -114,7 +114,8 @@ function BillingPage() {
 
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
-      <div className="space-y-6">
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Plan &amp; billing</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -226,6 +227,7 @@ function BillingPage() {
           smaller plan&apos;s limits. Your homeowner records are never deleted.
         </p>
       </div>
+      </main>
     </BusinessShell>
   );
 }

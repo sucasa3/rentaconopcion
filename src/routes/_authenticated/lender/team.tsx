@@ -124,7 +124,8 @@ function TeamPage() {
 
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
-      <div className="space-y-5">
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-5xl space-y-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t("team.title")}</h1>
           {team && (
@@ -338,6 +339,7 @@ function TeamPage() {
           </Card>
         )}
       </div>
+      </main>
     </BusinessShell>
   );
 }
