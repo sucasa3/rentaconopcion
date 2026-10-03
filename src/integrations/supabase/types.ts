@@ -5160,6 +5160,7 @@ export type Database = {
           price_cents: number | null
           profile_allowance: number | null
           seat_limit: number | null
+          selectable: boolean
           sort_order: number
           sponsored_allocation: number | null
           sponsored_seats: number | null
@@ -5179,6 +5180,7 @@ export type Database = {
           price_cents?: number | null
           profile_allowance?: number | null
           seat_limit?: number | null
+          selectable?: boolean
           sort_order?: number
           sponsored_allocation?: number | null
           sponsored_seats?: number | null
@@ -5198,6 +5200,7 @@ export type Database = {
           price_cents?: number | null
           profile_allowance?: number | null
           seat_limit?: number | null
+          selectable?: boolean
           sort_order?: number
           sponsored_allocation?: number | null
           sponsored_seats?: number | null
@@ -6654,6 +6657,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_webhook_events: {
+        Row: {
+          event_created: string | null
+          event_id: string
+          event_type: string
+          livemode: boolean
+          object_id: string | null
+          received_at: string
+        }
+        Insert: {
+          event_created?: string | null
+          event_id: string
+          event_type: string
+          livemode: boolean
+          object_id?: string | null
+          received_at?: string
+        }
+        Update: {
+          event_created?: string | null
+          event_id?: string
+          event_type?: string
+          livemode?: boolean
+          object_id?: string | null
+          received_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
