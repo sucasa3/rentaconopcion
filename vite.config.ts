@@ -12,7 +12,4 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Cold dynamic imports in a few tests can exceed vitest's 5s default when
-  // the full suite runs in parallel; this was the intermittent failure source.
-  vite: { test: { testTimeout: 30000 } } as any,
 });
