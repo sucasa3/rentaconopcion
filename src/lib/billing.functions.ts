@@ -18,6 +18,7 @@ export const listPlans = createServerFn({ method: "GET" })
         "key, name, audience, price_cents, positioning, seat_limit, team_enabled, sponsored_allocation, profile_allowance, stripe_price_id, stripe_test_price_id, sort_order",
       )
       .eq("active", true)
+      .eq("selectable", true)
       .order("sort_order");
     if (error) throw new Error(error.message);
     return (data ?? []).map((p: any) => ({
@@ -78,9 +79,13 @@ export const startCheckout = createServerFn({ method: "POST" })
 
     const { data: plan } = await supabaseAdmin
       .from("plan_tiers")
-      .select("key, name, stripe_price_id, stripe_test_price_id")
+      .select("key, name, stripe_price_id, stripe_test_price_id, active, selectable")
       .eq("key", data.planKey)
       .maybeSingle();
+    // Retired plans stay on record for existing subscriptions but cannot be bought.
+    if (!plan || !(plan as any).active || !(plan as any).selectable) {
+      throw new Error("PLAN_NOT_AVAILABLE");
+    }
     const priceId = plan ? (plan as any)[priceIdColumn(stripeMode)] : null;
     if (!priceId) {
       throw new Error(`Plan "${data.planKey}" has no payment price configured yet.`);
@@ -127,8 +132,9 @@ export const activateComped = createServerFn({ method: "POST" })
       .select("key, profile_allowance, sponsored_allocation, seat_limit")
       .eq("key", data.planKey)
       .eq("active", true)
+      .eq("selectable", true)
       .maybeSingle();
-    if (!plan) throw new Error("Plan not found");
+    if (!plan) throw new Error("PLAN_NOT_AVAILABLE");
 
     const { data: org } = await supabaseAdmin
       .from("lender_orgs")

@@ -40,13 +40,29 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
           return new Response("Invalid signature", { status: 401 });
         }
 
-        const event = JSON.parse(body) as { type: string; livemode?: boolean; data: { object: any } };
+        const event = JSON.parse(body) as { id?: string; type: string; created?: number; livemode?: boolean; data: { object: any } };
         if (liveOk !== Boolean(event.livemode)) {
           return new Response("Mode mismatch", { status: 401 });
         }
         const mode = liveOk ? ("live" as const) : ("test" as const);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { applySubscription, stripeRequest } = await import("@/lib/billing.server");
+
+        // Each provider event is processed at most once; retries and replays
+        // of an already-recorded event id are acknowledged without effect.
+        if (event.id) {
+          const { error: dupErr } = await (supabaseAdmin as any).from("stripe_webhook_events").insert({
+            event_id: event.id,
+            event_type: event.type,
+            livemode: Boolean(event.livemode),
+            object_id: event.data?.object?.id ?? null,
+            event_created: event.created ? new Date(event.created * 1000).toISOString() : null,
+          });
+          if (dupErr) {
+            if ((dupErr as any).code === "23505") return new Response("duplicate");
+            return new Response("Could not record event", { status: 500 });
+          }
+        }
 
         /**
          * A homeowner's own Premium membership is a separate product from a
