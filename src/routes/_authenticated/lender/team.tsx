@@ -273,7 +273,7 @@ function TeamPage() {
                   <span className="flex items-center gap-2">
                     <Badge variant="secondary">{t(`team.role.${m.role}` as any)}</Badge>
                     {team?.isTeamManager && m.role !== "owner" && !m.isMe && (
-                      <Button size="sm" variant="ghost" onClick={() => remove.mutate(m.userId)}>
+                      <Button size="sm" variant="ghost" onClick={() => { if (window.confirm(t("team.remove_confirm", { name: m.name }))) remove.mutate(m.userId); }}>
                         {t("team.remove")}
                       </Button>
                     )}
