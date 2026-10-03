@@ -175,7 +175,7 @@ export const acceptLoanOfficerInvite = createServerFn({ method: "POST" })
       _token_hash: await hashToken(data.token),
     });
     rpcError(error);
-    if (!orgId) throw new Error("This invitation has expired. Ask your manager to resend it.");
+    if (!orgId) throw new Error("This invitation has expired. Ask your manager for a new link.");
     return { orgId: orgId as string };
   });
 

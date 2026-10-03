@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { acceptLoanOfficerInvite } from "@/lib/lender-team.functions";
+import { inviteErrorKey } from "@/lib/lender-team";
 import { useT } from "@/lib/i18n";
 
 const AFTER_AUTH_KEY = "sucasa.after_auth";
@@ -46,7 +47,9 @@ function TeamInvite() {
       await acceptFn({ data: { token } });
       setState("done");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not accept");
+      const msg = e instanceof Error ? e.message : "Could not accept";
+      const key = inviteErrorKey(msg);
+      setError(key ? t(key as any) : msg);
       setState("idle");
     }
   };
@@ -82,7 +85,7 @@ function TeamInvite() {
             </Button>
           </>
         )}
-        {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="mt-4 text-sm text-destructive">{error}</p>}
       </main>
     </div>
   );
