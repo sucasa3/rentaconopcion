@@ -5,9 +5,9 @@ export const AGENT_PUBLIC_PLANS = [
 ] as const;
 
 export const LENDER_PUBLIC_PLANS = [
-  { key: "mlo", name: "MLO", price: "$79/month", profiles: "250", agents: "3", description: "For a single loan officer getting started" },
-  { key: "mlo_growth_v2", name: "MLO Growth", price: "$149/month", profiles: "1,000", agents: "10", description: "For a growing book and a small agent network" },
-  { key: "branch", name: "Branch", price: "$499/month", profiles: "5,000", agents: "25", description: "For a branch team with an active referral network" },
-  { key: "branch_pro_v2", name: "Branch Pro", price: "$799/month", profiles: "10,000", agents: "50", description: "For a large branch running outreach at scale" },
-  { key: "network", name: "Network", price: "$1,499/month", profiles: "25,000", agents: "100", description: "For multi-branch lending networks" },
+  { key: "mlo", name: "MLO", price: "$79/month", profiles: "250", agents: "3", seats: 1, team: false, description: "For a single loan officer getting started" },
+  { key: "mlo_growth_v2", name: "MLO Growth", price: "$149/month", profiles: "1,000", agents: "10", seats: 1, team: false, description: "For a growing book and a small agent network" },
+  { key: "branch", name: "Branch", price: "$499/month", profiles: "5,000", agents: "25", seats: 5, team: true, description: "For a branch team with an active referral network" },
+  { key: "branch_pro_v2", name: "Branch Pro", price: "$799/month", profiles: "10,000", agents: "50", seats: 15, team: true, description: "For a large branch running outreach at scale" },
+  { key: "network", name: "Network", price: "$1,499/month", profiles: "25,000", agents: "100", seats: 30, team: true, description: "For multi-branch lending networks" },
 ] as const;
