@@ -232,6 +232,13 @@
       "when": 1791036074275,
       "tag": "0032_qa_lender_team_harness_temp",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791036144326,
+      "tag": "0033_qa_lender_team_harness_temp_fix",
+      "breakpoints": true
     }
   ]
 }
