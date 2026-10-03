@@ -411,3 +411,11 @@
 - [x] Always-visible "Add homeowners" on Agent Today + client book
 - [x] Acceptance checks with synthetic accounts
 - [ ] Release 2 (deferred): homeowner activation invitations w/ identity verification
+
+## Lender seats Release 1 — verification (preview, not published)
+- [x] Browser checks: pricing, billing, Team, join page, Add homeowners (desktop + 390px, EN/ES)
+- [x] Expired / canceled / reused / wrong-account invite acceptance
+- [x] Scheduled downgrade selection, save, enforcement
+- [x] Paused-member direct server denial
+- [x] Intermittent test failure (timeouts) fixed
+- [ ] Publish — awaiting user approval

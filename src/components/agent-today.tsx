@@ -138,7 +138,7 @@ export function AgentToday() {
   });
 
   if (mode === "preparing") {
-    return <PreparingBook count={clientCount} />;
+    return <PreparingBook count={clientCount} bookId={book?.id ?? null} />;
   }
 
   const best = items[cursor] ?? null;
@@ -656,7 +656,7 @@ function EmptyBook({ bookId }: { bookId: string | null }) {
   );
 }
 
-function PreparingBook({ count }: { count: number }) {
+function PreparingBook({ count, bookId }: { count: number; bookId: string | null }) {
   const t = useT();
   const steps = [
     t("biz.at.prep_s1"),
@@ -677,6 +677,7 @@ function PreparingBook({ count }: { count: number }) {
         <p className="mt-2 text-sm text-muted-foreground">
           {t("biz.at.prep_body", { count: count.toLocaleString() })}
         </p>
+        {bookId && <AddHomeownersActions bookId={bookId} />}
         <ul className="mt-6 space-y-3">
           {steps.map((s, i) => (
             <li key={i} className="flex items-center gap-3 text-sm">
