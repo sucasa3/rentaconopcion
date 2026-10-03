@@ -2218,7 +2218,7 @@ export const en = {
   "team.solo": "Your plan includes 1 loan officer. Upgrade to Branch to add your team.",
   "team.members": "Members",
   "team.you": "You",
-  "team.remove": "Remove",
+  "team.remove": "Pause access",
   "team.invites": "Invitations",
   "team.expired": "Expired",
   "team.expires": "Expires {date}",

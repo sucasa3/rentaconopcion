@@ -2259,7 +2259,7 @@ export const es: Dictionary = {
   "team.solo": "Tu plan incluye 1 oficial de préstamos. Cambia a Branch para agregar a tu equipo.",
   "team.members": "Miembros",
   "team.you": "Tú",
-  "team.remove": "Quitar",
+  "team.remove": "Pausar acceso",
   "team.invites": "Invitaciones",
   "team.expired": "Vencida",
   "team.expires": "Vence el {date}",
