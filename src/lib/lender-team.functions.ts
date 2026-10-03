@@ -14,8 +14,17 @@ async function newToken(): Promise<string> {
   const { randomBytes } = await import("crypto");
   return randomBytes(32).toString("base64url");
 }
-function inviteUrl(token: string): string {
-  const site = process.env["SITE_URL"] ?? "https://sucasa.com";
+async function inviteUrl(token: string): Promise<string> {
+  let site = process.env["SITE_URL"] ?? "https://sucasa.com";
+  try {
+    // Links made in preview open in preview, so testing never sends people to the live site.
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const { isPreviewHost } = await import("./stripe-mode");
+    const host = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host") ?? null;
+    if (host && isPreviewHost(host)) site = `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
+  } catch {
+    /* fall back to the public site */
+  }
   return `${site}/team-invite?t=${encodeURIComponent(token)}`;
 }
 function rpcError(error: { message: string } | null) {
@@ -133,7 +142,7 @@ export const inviteLoanOfficer = createServerFn({ method: "POST" })
     });
     rpcError(error);
     // Release 1: the manager shares the link; no email is sent automatically.
-    return { id: id as string, url: inviteUrl(token) };
+    return { id: id as string, url: await inviteUrl(token) };
   });
 
 export const resendLoanOfficerInvite = createServerFn({ method: "POST" })
@@ -146,7 +155,7 @@ export const resendLoanOfficerInvite = createServerFn({ method: "POST" })
       _token_hash: await hashToken(token),
     });
     rpcError(error);
-    return { url: inviteUrl(token) };
+    return { url: await inviteUrl(token) };
   });
 
 export const cancelLoanOfficerInvite = createServerFn({ method: "POST" })
@@ -166,7 +175,7 @@ export const acceptLoanOfficerInvite = createServerFn({ method: "POST" })
       _token_hash: await hashToken(data.token),
     });
     rpcError(error);
-    if (!orgId) throw new Error("This invitation has expired. Ask your manager to resend it.");
+    if (!orgId) throw new Error("This invitation has expired. Ask your manager for a new link.");
     return { orgId: orgId as string };
   });
 
@@ -192,6 +201,26 @@ export const setRetainedOfficers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ orgId: uuid, userIds: z.array(uuid).max(200) }).parse(i))
   .handler(async ({ data, context }) => {
+    // Never accept more picks than the scheduled plan can keep (the owner always takes one seat).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: org } = await supabaseAdmin
+      .from("lender_orgs")
+      .select("pending_plan_key")
+      .eq("id", data.orgId)
+      .maybeSingle();
+    if (org?.pending_plan_key) {
+      const { data: plan } = await supabaseAdmin.from("plan_tiers").select("seat_limit").eq("key", org.pending_plan_key).maybeSingle();
+      const { data: owners } = await supabaseAdmin
+        .from("lender_members")
+        .select("user_id")
+        .eq("lender_org_id", data.orgId)
+        .eq("role", "owner");
+      const ownerIds = new Set((owners ?? []).map((o) => o.user_id));
+      const picks = new Set(data.userIds.filter((id) => !ownerIds.has(id)));
+      if (plan?.seat_limit != null && ownerIds.size + picks.size > plan.seat_limit) {
+        throw new Error(`Your new plan keeps ${plan.seat_limit} seat(s), including the owner. Choose fewer people.`);
+      }
+    }
     const { error } = await context.supabase.rpc("set_lender_retained_members", { _org_id: data.orgId, _user_ids: data.userIds });
     rpcError(error);
     return { ok: true };

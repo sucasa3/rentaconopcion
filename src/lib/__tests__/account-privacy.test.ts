@@ -114,5 +114,7 @@ describe("contact-change security notification", () => {
     const body = text.slice(text.indexOf("YOUR CONTACT"), text.indexOf("secure your account"));
     expect(body.replace("September 22, 2026", "")).not.toMatch(/\d/);
     expect(text).not.toMatch(/verification code is/i);
-  });
+  // Cold dynamic import of the email renderer can exceed the 5s default
+  // when the full suite runs in parallel; this was the intermittent failure.
+  }, 30000);
 })

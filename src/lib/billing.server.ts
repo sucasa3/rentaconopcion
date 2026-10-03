@@ -11,20 +11,7 @@ const STRIPE_API = "https://api.stripe.com/v1";
 
 export type StripeMode = "live" | "test";
 
-/**
- * Hosts that run the preview/development build. Only these may ever use the
- * Stripe test key; the published site and custom domains always run live.
- */
-function isPreviewHost(host: string | null | undefined): boolean {
-  if (!host) return false;
-  const h = host.toLowerCase().split(":")[0] ?? "";
-  return (
-    h === "localhost" ||
-    h === "127.0.0.1" ||
-    h.startsWith("id-preview--") ||
-    /^project--[^.]+-dev\.lovable\.app$/.test(h)
-  );
-}
+import { isPreviewHost } from "./stripe-mode";
 
 /**
  * Live vs test is decided by the environment (the host serving the request),

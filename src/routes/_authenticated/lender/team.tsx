@@ -59,6 +59,7 @@ function TeamPage() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"member" | "manager">("member");
   const [link, setLink] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
   const [keep, setKeep] = useState<string[]>([]);
   useEffect(() => {
     if (team) setKeep(team.retainedMemberIds);
@@ -71,6 +72,7 @@ function TeamPage() {
     mutationFn: () => inviteFn({ data: { orgId: orgId!, email, role } }),
     onSuccess: (r) => {
       setLink(r.url);
+      setResent(false);
       setEmail("");
       refresh();
     },
@@ -80,6 +82,7 @@ function TeamPage() {
     mutationFn: (inviteId: string) => resendFn({ data: { inviteId } }),
     onSuccess: (r) => {
       setLink(r.url);
+      setResent(true);
       refresh();
     },
     onError: onErr,
@@ -115,9 +118,14 @@ function TeamPage() {
       ? team.pendingSeatLimit
       : null;
 
+  const ownerIds = new Set((team?.members ?? []).filter((m) => m.role === "owner").map((m) => m.userId));
+  const keptCount =
+    ownerIds.size + keep.filter((id) => !ownerIds.has(id) && team?.members.some((m) => m.userId === id)).length;
+
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
-      <div className="space-y-5">
+      <main className="px-4 py-6 sm:px-5 sm:py-8">
+      <div className="mx-auto max-w-5xl space-y-5">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{t("team.title")}</h1>
           {team && (
@@ -152,16 +160,20 @@ function TeamPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p className="text-muted-foreground">{t("team.downgrade_body", { limit: downgrade })}</p>
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {t("team.downgrade_count", { count: keptCount, limit: downgrade })}
+              </p>
               <ul className="space-y-1">
                 {team.members.map((m) => {
                   const owner = m.role === "owner";
+                  const atLimit = keptCount >= downgrade && !keep.includes(m.userId);
                   return (
                     <li key={m.userId}>
                       <label className="flex min-h-11 items-center gap-2">
                         <input
                           type="checkbox"
                           checked={owner || keep.includes(m.userId)}
-                          disabled={owner}
+                          disabled={owner || atLimit}
                           onChange={(e) =>
                             setKeep((k) =>
                               e.target.checked ? [...k, m.userId] : k.filter((x) => x !== m.userId),
@@ -174,7 +186,7 @@ function TeamPage() {
                   );
                 })}
               </ul>
-              <Button size="sm" disabled={retain.isPending} onClick={() => retain.mutate()}>
+              <Button size="sm" disabled={retain.isPending || keptCount > downgrade} onClick={() => retain.mutate()}>
                 {t("team.downgrade_save")}
               </Button>
             </CardContent>
@@ -187,6 +199,7 @@ function TeamPage() {
               <CardTitle className="text-base">{t("team.invite_title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">{t("team.invite_how")}</p>
               {full ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                   <p className="text-muted-foreground">{t("team.full")}</p>
@@ -226,9 +239,9 @@ function TeamPage() {
               )}
               {link && (
                 <div className="rounded-md border border-border bg-surface p-3 text-sm">
-                  <p className="text-muted-foreground">{t("team.invite_link")}</p>
+                  <p className="text-muted-foreground" role="status">{t(resent ? "team.resend_note" : "team.invite_link")}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <code className="min-w-0 flex-1 truncate text-xs">{link}</code>
+                    <code className="min-w-0 flex-1 truncate text-xs" data-testid="invite-link">{link}</code>
                     <Button
                       size="sm"
                       variant="outline"
@@ -260,7 +273,7 @@ function TeamPage() {
                   <span className="flex items-center gap-2">
                     <Badge variant="secondary">{t(`team.role.${m.role}` as any)}</Badge>
                     {team?.isTeamManager && m.role !== "owner" && !m.isMe && (
-                      <Button size="sm" variant="ghost" onClick={() => remove.mutate(m.userId)}>
+                      <Button size="sm" variant="ghost" onClick={() => { if (window.confirm(t("team.remove_confirm", { name: m.name }))) remove.mutate(m.userId); }}>
                         {t("team.remove")}
                       </Button>
                     )}
@@ -326,6 +339,7 @@ function TeamPage() {
           </Card>
         )}
       </div>
+      </main>
     </BusinessShell>
   );
 }
