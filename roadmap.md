@@ -400,3 +400,14 @@
 - [ ] Admin review queue with audited decisions
 - [ ] EN/ES labels; tests for redemption, units, dedupe, webhook idempotency
 - [ ] Blocked: SMS provider (Twilio Verify) not connected
+
+## Lender seats & branch teams — Release 1 (preview only)
+- [ ] EN/ES pricing + billing seat copy
+- [ ] Explicit team entitlement (plan_tiers.team_enabled) + role checks
+- [ ] Atomic seat enforcement on every lender_members write (trigger) + invite reservations
+- [ ] Team invitations (create/cancel/resend/accept) + Team screen + /team-invite
+- [ ] Officer permissions + agent collaboration ownership
+- [ ] Downgrade retention (selection or owner-first deterministic order); manual reactivation
+- [ ] Always-visible "Add homeowners" on Agent Today + client book
+- [ ] Acceptance checks with synthetic accounts
+- [ ] Release 2 (deferred): homeowner activation invitations w/ identity verification
