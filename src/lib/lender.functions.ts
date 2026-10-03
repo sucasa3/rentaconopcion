@@ -592,7 +592,7 @@ export const addLenderMember = createServerFn({ method: "POST" })
       .from("lender_members")
       .insert({ lender_org_id: data.orgId, user_id: profile.id, role: data.role });
     if (mErr && !mErr.message.includes("duplicate")) {
-      const { teamErrorMessage } = await import("./lender-team.functions");
+      const { teamErrorMessage } = await import("./lender-team");
       throw new Error(teamErrorMessage(mErr.message));
     }
 
