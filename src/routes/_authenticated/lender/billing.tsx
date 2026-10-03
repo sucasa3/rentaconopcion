@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useT } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { listPlans, startCheckout, syncSubscription, getBillingState, activateComped } from "@/lib/billing.functions";
 
@@ -28,8 +29,8 @@ export const Route = createFileRoute("/_authenticated/lender/billing")({
   component: BillingPage,
 });
 
-function money(cents: number | null): string {
-  if (cents == null) return "Custom";
+function money(cents: number | null, custom: string): string {
+  if (cents == null) return custom;
   return `$${(cents / 100).toLocaleString()}`;
 }
 
@@ -44,6 +45,17 @@ function BillingPage() {
   const compFn = useServerFn(activateComped);
   const [busy, setBusy] = useState<string | null>(null);
   const t = useT();
+  // The complimentary-activation shortcut is shown to platform admins only (the server also refuses others).
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return false;
+      const { data } = await supabase.rpc("has_role", { _user_id: u.user.id, _role: "admin" });
+      return Boolean(data);
+    },
+    staleTime: 300_000,
+  });
 
   const { data: overview } = useQuery({
     queryKey: ["business-overview", "lender"],
@@ -103,48 +115,43 @@ function BillingPage() {
   };
 
   const status = (state as any)?.subscription_status ?? "none";
-  const activeLabel: Record<string, string> = {
-    active: "Active",
-    trialing: "Trial",
-    past_due: "Payment failed — retrying",
-    canceled: "Cancelled",
-    comped: "Complimentary",
-    none: "No plan yet",
-  };
+  const known = ["active", "trialing", "past_due", "canceled", "comped", "none"];
+  const statusLabel = known.includes(status) ? t(`bill.st.${status}` as any) : status;
+  const planKey = (state as any)?.plan_key as string | undefined;
+  const planName = planKey ? ((plans ?? []).find((p: any) => p.key === planKey)?.name ?? planKey) : null;
 
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Plan &amp; billing</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("bill.title")}</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Every plan includes the full SuCasa intelligence platform. Choose the plan based on the
-            size of your homeowner database and agent network.
+            {t("bill.lede")}
           </p>
           <p className="text-muted-foreground text-xs mt-1">
-            90-day initial commitment. Month-to-month after that.
+            {t("bill.commit")}
           </p>
         </div>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Current status</CardTitle>
+            <CardTitle className="text-base">{t("bill.status")}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap items-center gap-3 text-sm">
             <Badge variant={status === "active" ? "default" : "secondary"}>
-              {activeLabel[status] ?? status}
+              {statusLabel}
             </Badge>
-            {(state as any)?.plan_key && <span>Plan: {(state as any).plan_key}</span>}
-            <span>Home Profiles: {(state as any)?.profile_allowance ?? 0}</span>
-            <span>Sponsored agents: {(state as any)?.sponsored_allocation ?? 0}</span>
+            {planName && <span>{t("bill.plan", { name: planName })}</span>}
+            <span>{t("bill.profiles", { count: ((state as any)?.profile_allowance ?? 0).toLocaleString() })}</span>
+            <span>{t("bill.sponsored", { count: (state as any)?.sponsored_allocation ?? 0 })}</span>
             {(state as any)?.current_period_end && (
               <span className="text-muted-foreground">
-                Renews {new Date((state as any).current_period_end).toLocaleDateString()}
+                {t("bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString() })}
               </span>
             )}
             <Button asChild size="sm" variant="outline" className="ml-auto">
-              <a href="/lender/capacity">Manage capacity</a>
+              <a href="/lender/capacity">{t("bill.capacity")}</a>
             </Button>
           </CardContent>
         </Card>
@@ -156,7 +163,7 @@ function BillingPage() {
             <Card key={p.key} className="flex flex-col">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{p.name}</CardTitle>
-                <p className="text-2xl font-semibold">{money(p.price_cents)}</p>
+                <p className="text-2xl font-semibold">{money(p.price_cents, t("bill.custom"))}</p>
                 {p.positioning && (
                   <p className="text-muted-foreground text-sm">{p.positioning}</p>
                 )}
@@ -181,16 +188,16 @@ function BillingPage() {
                 >
                   {p.purchasable
                     ? busy === p.key
-                      ? "Opening checkout…"
-                      : "Choose this plan"
-                    : "Contact us"}
+                      ? t("bill.opening")
+                      : t("bill.choose")
+                    : t("bill.contact")}
                 </Button>
                 {!p.purchasable && (
                   <p className="text-muted-foreground text-xs">
-                    This plan isn&apos;t set up for self-serve payment yet.
+                    {t("bill.not_self_serve")}
                   </p>
                 )}
-                {p.purchasable && (
+                {p.purchasable && isAdmin && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -198,7 +205,7 @@ function BillingPage() {
                     disabled={busy === `comp:${p.key}` || !orgId}
                     onClick={() => comp(p.key)}
                   >
-                    {busy === `comp:${p.key}` ? "Activating…" : "Activate without payment (admin)"}
+                    {busy === `comp:${p.key}` ? t("bill.activating") : t("bill.comp")}
                   </Button>
                 )}
               </CardContent>
@@ -210,21 +217,19 @@ function BillingPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Need more room?</CardTitle>
+            <CardTitle className="text-base">{t("bill.more")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm text-muted-foreground">
-            <p>+500 Home Profiles — $49/month</p>
-            <p>+5 Sponsored Agents — $29/month</p>
+            <p>{t("bill.addon_profiles")}</p>
+            <p>{t("bill.addon_agents")}</p>
             <p className="text-xs">
-              Add-ons are coming to self-serve checkout. Ask us to add capacity in the meantime.
+              {t("bill.addon_note")}
             </p>
           </CardContent>
         </Card>
 
         <p className="text-muted-foreground text-xs">
-          Upgrades take effect immediately. Downgrades take effect at your next billing date, and
-          we&apos;ll tell you exactly what to archive or reassign first if you&apos;re over the
-          smaller plan&apos;s limits. Your homeowner records are never deleted.
+          {t("bill.changes")}
         </p>
       </div>
       </main>
