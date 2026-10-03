@@ -2270,6 +2270,7 @@ export const es: Dictionary = {
   "team.reactivate": "Reactivar",
   "team.downgrade_title": "Cambio de plan el {date}",
   "team.downgrade_body": "Tu nuevo plan incluye {limit} puesto(s). Elige quién conserva el acceso. El propietario siempre se mantiene.",
+  "team.downgrade_count": "{count} de {limit} puestos elegidos, incluido el propietario.",
   "team.downgrade_save": "Guardar selección",
   "team.downgrade_saved": "Selección guardada",
   "team.role.owner": "Propietario",

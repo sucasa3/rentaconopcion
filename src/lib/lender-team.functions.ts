@@ -201,6 +201,26 @@ export const setRetainedOfficers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ orgId: uuid, userIds: z.array(uuid).max(200) }).parse(i))
   .handler(async ({ data, context }) => {
+    // Never accept more picks than the scheduled plan can keep (the owner always takes one seat).
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: org } = await supabaseAdmin
+      .from("lender_orgs")
+      .select("pending_plan_key")
+      .eq("id", data.orgId)
+      .maybeSingle();
+    if (org?.pending_plan_key) {
+      const { data: plan } = await supabaseAdmin.from("plan_tiers").select("seat_limit").eq("key", org.pending_plan_key).maybeSingle();
+      const { data: owners } = await supabaseAdmin
+        .from("lender_members")
+        .select("user_id")
+        .eq("lender_org_id", data.orgId)
+        .eq("role", "owner");
+      const ownerIds = new Set((owners ?? []).map((o) => o.user_id));
+      const picks = new Set(data.userIds.filter((id) => !ownerIds.has(id)));
+      if (plan?.seat_limit != null && ownerIds.size + picks.size > plan.seat_limit) {
+        throw new Error(`Your new plan keeps ${plan.seat_limit} seat(s), including the owner. Choose fewer people.`);
+      }
+    }
     const { error } = await context.supabase.rpc("set_lender_retained_members", { _org_id: data.orgId, _user_ids: data.userIds });
     rpcError(error);
     return { ok: true };

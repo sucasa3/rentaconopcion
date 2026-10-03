@@ -2229,6 +2229,7 @@ export const en = {
   "team.reactivate": "Reactivate",
   "team.downgrade_title": "Plan change on {date}",
   "team.downgrade_body": "Your new plan includes {limit} seat(s). Choose who keeps access. The owner always stays.",
+  "team.downgrade_count": "{count} of {limit} seats chosen, including the owner.",
   "team.downgrade_save": "Save selection",
   "team.downgrade_saved": "Selection saved",
   "team.role.owner": "Owner",

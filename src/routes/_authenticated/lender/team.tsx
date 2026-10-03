@@ -118,6 +118,10 @@ function TeamPage() {
       ? team.pendingSeatLimit
       : null;
 
+  const ownerIds = new Set((team?.members ?? []).filter((m) => m.role === "owner").map((m) => m.userId));
+  const keptCount =
+    ownerIds.size + keep.filter((id) => !ownerIds.has(id) && team?.members.some((m) => m.userId === id)).length;
+
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
       <div className="space-y-5">
@@ -155,16 +159,20 @@ function TeamPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               <p className="text-muted-foreground">{t("team.downgrade_body", { limit: downgrade })}</p>
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {t("team.downgrade_count", { count: keptCount, limit: downgrade })}
+              </p>
               <ul className="space-y-1">
                 {team.members.map((m) => {
                   const owner = m.role === "owner";
+                  const atLimit = keptCount >= downgrade && !keep.includes(m.userId);
                   return (
                     <li key={m.userId}>
                       <label className="flex min-h-11 items-center gap-2">
                         <input
                           type="checkbox"
                           checked={owner || keep.includes(m.userId)}
-                          disabled={owner}
+                          disabled={owner || atLimit}
                           onChange={(e) =>
                             setKeep((k) =>
                               e.target.checked ? [...k, m.userId] : k.filter((x) => x !== m.userId),
@@ -177,7 +185,7 @@ function TeamPage() {
                   );
                 })}
               </ul>
-              <Button size="sm" disabled={retain.isPending} onClick={() => retain.mutate()}>
+              <Button size="sm" disabled={retain.isPending || keptCount > downgrade} onClick={() => retain.mutate()}>
                 {t("team.downgrade_save")}
               </Button>
             </CardContent>
