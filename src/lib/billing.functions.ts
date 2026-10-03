@@ -15,7 +15,7 @@ export const listPlans = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("plan_tiers")
       .select(
-        "key, name, audience, price_cents, positioning, seat_limit, sponsored_allocation, profile_allowance, stripe_price_id, stripe_test_price_id, sort_order",
+        "key, name, audience, price_cents, positioning, seat_limit, team_enabled, sponsored_allocation, profile_allowance, stripe_price_id, stripe_test_price_id, sort_order",
       )
       .eq("active", true)
       .order("sort_order");
@@ -148,6 +148,7 @@ export const activateComped = createServerFn({ method: "POST" })
     if (!org.activated_at) patch["activated_at"] = new Date().toISOString();
 
     await supabaseAdmin.from("lender_orgs").update(patch as any).eq("id", data.orgId);
+    await supabaseAdmin.rpc("apply_lender_seat_allowance" as any, { _org_id: data.orgId });
     return { status: "comped", planKey: plan.key, activated: true };
   });
 

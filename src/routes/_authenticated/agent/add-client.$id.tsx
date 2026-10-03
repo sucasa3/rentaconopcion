@@ -127,6 +127,7 @@ function AddAgentClient() {
             </div>
           </div>
 
+          <div id="upload" className="scroll-mt-20" />
           <BulkClientUpload
             onCsv={(csv) => ingest.mutate(csv)}
             busy={ingest.isPending}

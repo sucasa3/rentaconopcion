@@ -33,7 +33,15 @@ export const getLenderNetwork = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ lenderOrgId: uuid }).parse(i))
   .handler(async ({ data, context }) => {
     await assertMember(context.supabase, context.userId, data.lenderOrgId);
-    return lenderNetworkSummary(context.supabase, data.lenderOrgId);
+    const { data: teamManager } = await context.supabase.rpc("lender_is_team_manager", {
+      _user_id: context.userId,
+      _org_id: data.lenderOrgId,
+    });
+    const summary = await lenderNetworkSummary(context.supabase, data.lenderOrgId, {
+      userId: context.userId,
+      teamManager: Boolean(teamManager),
+    });
+    return { ...summary, isTeamManager: Boolean(teamManager), myUserId: context.userId };
   });
 
 /** Invite an agent to connect, by email. */
@@ -60,6 +68,7 @@ export const inviteAgent = createServerFn({ method: "POST" })
         message: data.message ?? null,
         status: "invited",
         invited_by: context.userId,
+        owner_user_id: context.userId,
       })
       .select("id")
       .maybeSingle();

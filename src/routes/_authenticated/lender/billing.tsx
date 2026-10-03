@@ -7,6 +7,7 @@ import { BusinessShell } from "@/components/business-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useT } from "@/lib/i18n";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { listPlans, startCheckout, syncSubscription, getBillingState, activateComped } from "@/lib/billing.functions";
 
@@ -42,6 +43,7 @@ function BillingPage() {
   const syncFn = useServerFn(syncSubscription);
   const compFn = useServerFn(activateComped);
   const [busy, setBusy] = useState<string | null>(null);
+  const t = useT();
 
   const { data: overview } = useQuery({
     queryKey: ["business-overview", "lender"],
@@ -160,9 +162,17 @@ function BillingPage() {
               </CardHeader>
               <CardContent className="mt-auto space-y-3 text-sm">
                 <ul className="text-muted-foreground space-y-1">
-                  <li>{(p.profile_allowance ?? 0).toLocaleString()} Home Profiles</li>
-                  <li>Up to {p.sponsored_allocation ?? 0} sponsored agents</li>
+                  <li>{t("pub.lpricing.profiles", { count: (p.profile_allowance ?? 0).toLocaleString() })}</li>
+                  <li>
+                    {p.team_enabled
+                      ? t("plan.seats_team", { count: p.seat_limit ?? 0 })
+                      : t("plan.seats_solo")}{" "}
+                    · {t("pub.lpricing.collabs", { count: p.sponsored_allocation ?? 0 })}
+                  </li>
                 </ul>
+                {p.team_enabled && (
+                  <p className="text-xs text-muted-foreground">{t("plan.team_invite")}</p>
+                )}
                 <Button
                   className="w-full"
                   disabled={!p.purchasable || busy === p.key || !orgId}
@@ -194,6 +204,8 @@ function BillingPage() {
             </Card>
           ))}
         </div>
+
+        <p className="text-muted-foreground text-xs">{t("plan.team_note")}</p>
 
         <Card>
           <CardHeader className="pb-2">

@@ -99,6 +99,7 @@ export interface AgentNetworkSummary {
   opportunity_count: number;
   by_category: Record<string, number>;
   created_at: string;
+  owner_user_id?: string | null;
 }
 
 /**
@@ -108,15 +109,19 @@ export interface AgentNetworkSummary {
 export async function lenderNetworkSummary(
   supabase: any,
   lenderOrgId: string,
+  viewer?: { userId: string; teamManager: boolean },
 ): Promise<{ agents: AgentNetworkSummary[]; totals: { agents: number; homeowners: number; opportunities: number; by_category: Record<string, number> } }> {
   const { data: connections, error } = await supabase
     .from("agent_lender_connections")
-    .select("id, agent_org_id, invited_email, invited_name, status, created_at, lender_orgs!agent_lender_connections_agent_org_id_fkey(name)")
+    .select("id, agent_org_id, invited_email, invited_name, status, created_at, owner_user_id, lender_orgs!agent_lender_connections_agent_org_id_fkey(name)")
     .eq("lender_org_id", lenderOrgId)
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
 
-  const rows = connections ?? [];
+  // Each officer sees the agent relationships they own; branch managers see all.
+  const rows = (connections ?? []).filter(
+    (c: any) => !viewer || viewer.teamManager || c.owner_user_id === viewer.userId,
+  );
   const connectedIds = rows
     .filter((c: any) => c.status === "connected" && c.agent_org_id)
     .map((c: any) => c.agent_org_id as string);
@@ -184,6 +189,7 @@ export async function lenderNetworkSummary(
       opportunity_count: Object.values(broad).reduce((a: number, b: number) => a + b, 0),
       by_category: byCategory,
       created_at: c.created_at,
+      owner_user_id: c.owner_user_id ?? null,
     };
   });
 

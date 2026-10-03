@@ -505,6 +505,7 @@ export type Database = {
           invited_name: string | null
           lender_org_id: string
           message: string | null
+          owner_user_id: string | null
           responded_at: string | null
           responded_by: string | null
           status: string
@@ -520,6 +521,7 @@ export type Database = {
           invited_name?: string | null
           lender_org_id: string
           message?: string | null
+          owner_user_id?: string | null
           responded_at?: string | null
           responded_by?: string | null
           status?: string
@@ -535,6 +537,7 @@ export type Database = {
           invited_name?: string | null
           lender_org_id?: string
           message?: string | null
+          owner_user_id?: string | null
           responded_at?: string | null
           responded_by?: string | null
           status?: string
@@ -4308,6 +4311,7 @@ export type Database = {
           profile_allowance: number
           reply_to_email: string | null
           reserved_profiles: number
+          retained_member_ids: string[] | null
           scenario_rate_label: string | null
           scenario_rate_pct: number | null
           scenario_rate_set_at: string | null
@@ -4346,6 +4350,7 @@ export type Database = {
           profile_allowance?: number
           reply_to_email?: string | null
           reserved_profiles?: number
+          retained_member_ids?: string[] | null
           scenario_rate_label?: string | null
           scenario_rate_pct?: number | null
           scenario_rate_set_at?: string | null
@@ -4384,6 +4389,7 @@ export type Database = {
           profile_allowance?: number
           reply_to_email?: string | null
           reserved_profiles?: number
+          retained_member_ids?: string[] | null
           scenario_rate_label?: string | null
           scenario_rate_pct?: number | null
           scenario_rate_set_at?: string | null
@@ -4532,6 +4538,100 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lender_portfolios_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_suspended_members: {
+        Row: {
+          id: string
+          lender_org_id: string
+          member_since: string | null
+          reason: string
+          role: string
+          suspended_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          lender_org_id: string
+          member_since?: string | null
+          reason?: string
+          role?: string
+          suspended_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          lender_org_id?: string
+          member_since?: string | null
+          reason?: string
+          role?: string
+          suspended_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_suspended_members_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lender_team_invitations: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          canceled_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          lender_org_id: string
+          role: string
+          status: string
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          lender_org_id: string
+          role?: string
+          status?: string
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          canceled_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          lender_org_id?: string
+          role?: string
+          status?: string
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lender_team_invitations_lender_org_id_fkey"
             columns: ["lender_org_id"]
             isOneToOne: false
             referencedRelation: "lender_orgs"
@@ -5065,6 +5165,7 @@ export type Database = {
           sponsored_seats: number | null
           stripe_price_id: string | null
           stripe_test_price_id: string | null
+          team_enabled: boolean
           updated_at: string
         }
         Insert: {
@@ -5083,6 +5184,7 @@ export type Database = {
           sponsored_seats?: number | null
           stripe_price_id?: string | null
           stripe_test_price_id?: string | null
+          team_enabled?: boolean
           updated_at?: string
         }
         Update: {
@@ -5101,6 +5203,7 @@ export type Database = {
           sponsored_seats?: number | null
           stripe_price_id?: string | null
           stripe_test_price_id?: string | null
+          team_enabled?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -6619,6 +6722,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_lender_team_invite: {
+        Args: { _token_hash: string }
+        Returns: string
+      }
       agent_credit_summary: {
         Args: { _org_id: string }
         Returns: {
@@ -6636,6 +6743,10 @@ export type Database = {
       agent_home_system_allowed: {
         Args: { _actor: string; _homeowner: string; _org_id: string }
         Returns: boolean
+      }
+      apply_lender_seat_allowance: {
+        Args: { _org_id: string }
+        Returns: number
       }
       award_agent_credit: {
         Args: {
@@ -6661,9 +6772,22 @@ export type Database = {
           opportunities: number
         }[]
       }
+      cancel_lender_team_invite: {
+        Args: { _invite_id: string }
+        Returns: undefined
+      }
       compute_lifecycle_stage: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["lifecycle_stage"]
+      }
+      create_lender_team_invite: {
+        Args: {
+          _email: string
+          _org_id: string
+          _role: string
+          _token_hash: string
+        }
+        Returns: string
       }
       delete_home_system_entry: {
         Args: { p_expected_version: number; p_log_id: string }
@@ -6696,6 +6820,25 @@ export type Database = {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
+      lender_book_visible: {
+        Args: { _assigned: string; _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      lender_is_team_manager: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      lender_seat_limit: { Args: { _org_id: string }; Returns: number }
+      lender_seat_usage: {
+        Args: { _org_id: string }
+        Returns: {
+          active_members: number
+          pending_invites: number
+          seat_limit: number
+          team_enabled: boolean
+        }[]
+      }
+      lender_team_enabled: { Args: { _org_id: string }; Returns: boolean }
       list_home_system_access_options: {
         Args: never
         Returns: {
@@ -6725,6 +6868,10 @@ export type Database = {
           value_request_at: string
         }[]
       }
+      reactivate_lender_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: undefined
+      }
       record_post_call_save: {
         Args: {
           p_client_id: string
@@ -6750,6 +6897,14 @@ export type Database = {
       redeem_agent_promotion: {
         Args: { _org_id: string; _phone_hash: string; _user_id: string }
         Returns: string
+      }
+      remove_lender_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: undefined
+      }
+      resend_lender_team_invite: {
+        Args: { _invite_id: string; _token_hash: string }
+        Returns: undefined
       }
       save_home_system: {
         Args: {
@@ -6779,6 +6934,10 @@ export type Database = {
       set_home_system_access: {
         Args: { p_enabled: boolean; p_org_id: string }
         Returns: Json
+      }
+      set_lender_retained_members: {
+        Args: { _org_id: string; _user_ids: string[] }
+        Returns: undefined
       }
     }
     Enums: {
