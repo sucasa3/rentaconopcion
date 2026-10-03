@@ -59,6 +59,7 @@ function TeamPage() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"member" | "manager">("member");
   const [link, setLink] = useState<string | null>(null);
+  const [resent, setResent] = useState(false);
   const [keep, setKeep] = useState<string[]>([]);
   useEffect(() => {
     if (team) setKeep(team.retainedMemberIds);
@@ -71,6 +72,7 @@ function TeamPage() {
     mutationFn: () => inviteFn({ data: { orgId: orgId!, email, role } }),
     onSuccess: (r) => {
       setLink(r.url);
+      setResent(false);
       setEmail("");
       refresh();
     },
@@ -80,6 +82,7 @@ function TeamPage() {
     mutationFn: (inviteId: string) => resendFn({ data: { inviteId } }),
     onSuccess: (r) => {
       setLink(r.url);
+      setResent(true);
       refresh();
     },
     onError: onErr,
@@ -187,6 +190,7 @@ function TeamPage() {
               <CardTitle className="text-base">{t("team.invite_title")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <p className="text-xs text-muted-foreground">{t("team.invite_how")}</p>
               {full ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                   <p className="text-muted-foreground">{t("team.full")}</p>
@@ -226,9 +230,9 @@ function TeamPage() {
               )}
               {link && (
                 <div className="rounded-md border border-border bg-surface p-3 text-sm">
-                  <p className="text-muted-foreground">{t("team.invite_link")}</p>
+                  <p className="text-muted-foreground" role="status">{t(resent ? "team.resend_note" : "team.invite_link")}</p>
                   <div className="mt-2 flex items-center gap-2">
-                    <code className="min-w-0 flex-1 truncate text-xs">{link}</code>
+                    <code className="min-w-0 flex-1 truncate text-xs" data-testid="invite-link">{link}</code>
                     <Button
                       size="sm"
                       variant="outline"
