@@ -62,13 +62,26 @@ export const listMyPortfolios = createServerFn({ method: "GET" })
       role: m.role,
     }));
 
-    const isManager = isAdmin || orgs.some((o: any) => o.role === "owner");
+    const isManager = isAdmin || orgs.some((o: any) => ["owner", "admin", "manager"].includes(o.role));
+    const teamOrgIds = new Set<string>();
+    for (const oid of orgIds) {
+      const { data: t } = await context.supabase.rpc("lender_is_team_manager", {
+        _user_id: context.userId,
+        _org_id: oid,
+      });
+      if (t) teamOrgIds.add(oid);
+    }
+    const isTeamManager = teamOrgIds.size > 0;
 
     return {
       orgs,
       isManager,
+      isTeamManager,
       myUserId: context.userId,
-      members: (allMembers ?? []).map((m: any) => ({
+      // Cross-officer roster only for Branch/team managers.
+      members: (allMembers ?? [])
+        .filter((m: any) => teamOrgIds.has(m.lender_org_id) || m.user_id === context.userId)
+        .map((m: any) => ({
         org_id: m.lender_org_id,
         user_id: m.user_id,
         role: m.role,
@@ -112,7 +125,16 @@ export const assignPortfolioOwner = createServerFn({ method: "POST" })
         .eq("lender_org_id", (portfolio as any).lender_org_id)
         .eq("user_id", context.userId)
         .maybeSingle();
-      if (!me || me.role !== "owner") throw new Error("Forbidden: manager access required");
+      if (!me || !["owner", "admin", "manager"].includes(me.role))
+        throw new Error("Forbidden: manager access required");
+    }
+    // Assigning a book to another officer is a Branch/team capability.
+    if (data.userId && data.userId !== context.userId) {
+      const { data: teamOk } = await context.supabase.rpc("lender_is_team_manager", {
+        _user_id: context.userId,
+        _org_id: (portfolio as any).lender_org_id,
+      });
+      if (!teamOk) throw new Error("Assigning books to other loan officers requires a Branch plan.");
     }
 
     if (data.userId) {
@@ -569,7 +591,10 @@ export const addLenderMember = createServerFn({ method: "POST" })
     const { error: mErr } = await supabaseAdmin
       .from("lender_members")
       .insert({ lender_org_id: data.orgId, user_id: profile.id, role: data.role });
-    if (mErr && !mErr.message.includes("duplicate")) throw new Error(mErr.message);
+    if (mErr && !mErr.message.includes("duplicate")) {
+      const { teamErrorMessage } = await import("./lender-team.functions");
+      throw new Error(teamErrorMessage(mErr.message));
+    }
 
     await supabaseAdmin.from("user_roles").insert({ user_id: profile.id, role: "lender" });
 
