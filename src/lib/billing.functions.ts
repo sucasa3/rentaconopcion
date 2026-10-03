@@ -15,7 +15,7 @@ export const listPlans = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("plan_tiers")
       .select(
-        "key, name, audience, price_cents, positioning, seat_limit, sponsored_allocation, profile_allowance, stripe_price_id, stripe_test_price_id, sort_order",
+        "key, name, audience, price_cents, positioning, seat_limit, team_enabled, sponsored_allocation, profile_allowance, stripe_price_id, stripe_test_price_id, sort_order",
       )
       .eq("active", true)
       .order("sort_order");
