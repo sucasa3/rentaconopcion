@@ -6868,7 +6868,6 @@ export type Database = {
           value_request_at: string
         }[]
       }
-      qa_lender_team_checks: { Args: never; Returns: string[] }
       reactivate_lender_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: undefined

@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.qa_lender_team_checks();
