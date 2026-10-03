@@ -256,7 +256,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
 
     // Pricing and activation state come from configuration, never hard-coded.
     const [{ data: tiers }, { data: org }] = await Promise.all([
-      supabaseAdmin.from("plan_tiers").select("key, price_cents").in("key", ["pilot_90", "mlo_growth"]),
+      supabaseAdmin.from("plan_tiers").select("key, price_cents").in("key", ["pilot_90", "mlo_growth_v2"]),
       supabaseAdmin
         .from("lender_orgs")
         .select("subscription_status")
@@ -271,7 +271,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
       discoveryId: (run as any).id,
       portfolioId: (run as any).portfolio_id,
       activated,
-      pricing: { pilotCents: priceOf("pilot_90"), growthCents: priceOf("mlo_growth") },
+      pricing: { pilotCents: priceOf("pilot_90"), growthCents: priceOf("mlo_growth_v2") },
       orgId: (run as any).org_id,
       status: (run as any).status as string,
       allowance: (run as any).allowance ?? DISCOVERY_ALLOWANCE,
@@ -333,9 +333,9 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
     const { data: plans } = await supabaseAdmin
       .from("plan_tiers")
       .select("key, stripe_price_id, stripe_test_price_id")
-      .in("key", ["pilot_90", "mlo_growth"]);
+      .in("key", ["pilot_90", "mlo_growth_v2"]);
     const pilotPrice = (plans ?? []).find((p: any) => p.key === "pilot_90")?.[col] ?? null;
-    const growthPrice = (plans ?? []).find((p: any) => p.key === "mlo_growth")?.[col] ?? null;
+    const growthPrice = (plans ?? []).find((p: any) => p.key === "mlo_growth_v2")?.[col] ?? null;
     if (!pilotPrice || !growthPrice) {
       throw new Error("Pilot pricing is not configured yet.");
     }
