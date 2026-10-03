@@ -27,7 +27,7 @@ async function myOrgs(supabase: any, userId: string, orgType: "agent" | "lender"
   return {
     orgs: mine.map((m: any) => m.lender_orgs),
     isAdmin: false,
-    isManager: mine.some((m: any) => m.role === "owner"),
+    isManager: mine.some((m: any) => ["owner", "admin", "manager"].includes(m.role)),
   };
 }
 
@@ -77,8 +77,18 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       .select("id, name, lender_org_id, assigned_user_id")
       .in("lender_org_id", orgIds);
 
+    const teamOrgs = new Set<string>();
+    if (data.orgType === "lender") {
+      for (const oid of orgIds) {
+        const { data: t } = await supabase.rpc("lender_team_enabled", { _org_id: oid });
+        if (t) teamOrgs.add(oid);
+      }
+    }
     const visible = (portfolios ?? []).filter(
-      (p: any) => isManager || !p.assigned_user_id || p.assigned_user_id === userId,
+      (p: any) =>
+        isManager ||
+        p.assigned_user_id === userId ||
+        (!p.assigned_user_id && !teamOrgs.has(p.lender_org_id)),
     );
     const bookIds = visible.map((p: any) => p.id);
     if (!bookIds.length) return { ...empty, orgs };
