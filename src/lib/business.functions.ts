@@ -70,7 +70,19 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       today: [] as any[],
       campaigns: [] as any[],
     };
-    if (!orgIds.length) return empty;
+    if (!orgIds.length) {
+      // A member paused by a seat reduction gets an explicit message, not "no access yet".
+      let paused = false;
+      if (data.orgType === "lender") {
+        const { data: s } = await supabase
+          .from("lender_suspended_members")
+          .select("id")
+          .eq("user_id", userId)
+          .limit(1);
+        paused = Boolean(s?.length);
+      }
+      return { ...empty, paused };
+    }
 
     const { data: portfolios } = await supabase
       .from("lender_portfolios")

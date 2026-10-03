@@ -83,8 +83,14 @@ export function BusinessDashboard({
       <div className="p-5">
         <EmptyState
           icon={<Users className="mx-auto h-8 w-8" />}
-          title={t(kind === "agent" ? "biz.dash.no_access_agent" : "biz.dash.no_access_lender")}
-          hint={t("biz.dash.no_access_hint")}
+          title={t(
+            kind === "agent"
+              ? "biz.dash.no_access_agent"
+              : (data as any)?.paused
+                ? "biz.dash.paused_lender"
+                : "biz.dash.no_access_lender",
+          )}
+          hint={t((data as any)?.paused ? "biz.dash.paused_hint" : "biz.dash.no_access_hint")}
         />
       </div>
     );

@@ -77,11 +77,20 @@ function BillingPage() {
     if (search.checkout !== "success" || !orgId) return;
     syncFn({ data: { orgId } })
       .then((r: any) => {
-        if (r.activated) toast.success("Payment received — your account is active.");
+        if (r.activated) toast.success(t("bill.toast.paid"));
         qc.invalidateQueries({ queryKey: ["billing-state", orgId] });
       })
-      .catch((e: Error) => toast.error(e.message));
+      .catch((e: Error) => toast.error(billErr(e, "bill.toast.sync_failed")));
   }, [search.checkout, orgId, syncFn, qc]);
+
+  // Server messages are mapped to translated text; raw English never reaches the toast.
+  const billErr = (e: unknown, fallback: string) => {
+    const m = e instanceof Error ? e.message : "";
+    if (m.includes("PLAN_NOT_AVAILABLE")) return t("bill.toast.plan_unavailable");
+    if (m.startsWith("Forbidden")) return t("bill.toast.forbidden");
+    if (m.includes("no payment price")) return t("bill.toast.no_price");
+    return t(fallback as any);
+  };
 
   const buy = async (planKey: string) => {
     if (!orgId) return;
@@ -92,7 +101,7 @@ function BillingPage() {
       });
       if (url) window.location.href = url;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not start checkout");
+      toast.error(billErr(e, "bill.toast.checkout_failed"));
     } finally {
       setBusy(null);
     }
@@ -105,10 +114,10 @@ function BillingPage() {
     setBusy(`comp:${planKey}`);
     try {
       await compFn({ data: { orgId, planKey } });
-      toast.success("Activated on a complimentary basis.");
+      toast.success(t("bill.toast.comped"));
       qc.invalidateQueries({ queryKey: ["billing-state", orgId] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not activate");
+      toast.error(billErr(e, "bill.toast.comp_failed"));
     } finally {
       setBusy(null);
     }
