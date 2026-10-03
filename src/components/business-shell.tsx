@@ -62,6 +62,11 @@ function navItems(
         icon: <Gauge className="h-5 w-5" />,
       });
       items.push({
+        label: t("team.nav"),
+        to: `${base}/team`,
+        icon: <Users className="h-5 w-5" />,
+      });
+      items.push({
         label: t("biz.nav.billing"),
         to: `${base}/billing`,
         icon: <CreditCard className="h-5 w-5" />,

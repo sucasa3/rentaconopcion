@@ -28,6 +28,12 @@ function AuthPage() {
 
   // Agents and lenders go straight to their business dashboard; homeowners home.
   async function landing() {
+    // Return to a pending team invitation after sign-in (same-origin path only).
+    const next = typeof window !== "undefined" ? sessionStorage.getItem("sucasa.after_auth") : null;
+    if (next && next.startsWith("/team-invite?")) {
+      sessionStorage.removeItem("sucasa.after_auth");
+      return next as "/dashboard";
+    }
     try {
       const { home } = await getMyWorkspace();
       return home as "/agent" | "/lender" | "/admin" | "/dashboard";

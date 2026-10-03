@@ -168,6 +168,7 @@ export function AgentToday() {
           <DailyMetric value={tasksDue} label={t("biz.at.followups")} />
           <DailyMetric value={monitored} label={t("biz.at.monitored")} />
         </dl>
+        {book?.id && <AddHomeownersActions bookId={book.id} />}
         {handled > 0 && (
           <p className="mt-2.5 flex items-center gap-1.5 text-[13px] font-semibold text-status-positive">
             <CheckCircle2 className="h-4 w-4" />{" "}
@@ -703,6 +704,30 @@ function TodaySkeleton() {
       <div className="h-64 animate-pulse rounded-[28px] bg-secondary" />
       <div className="h-16 animate-pulse rounded-2xl bg-secondary" />
       <div className="h-16 animate-pulse rounded-2xl bg-secondary" />
+    </div>
+  );
+}
+
+/** Always-visible entry to the existing manual-add / list-upload page. */
+export function AddHomeownersActions({ bookId }: { bookId: string }) {
+  const t = useT();
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={t("biz.at.add_homeowners")}>
+      <Link
+        to="/agent/add-client/$id"
+        params={{ id: bookId }}
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-soft"
+      >
+        <UserPlus className="h-4 w-4" /> {t("biz.at.add_one")}
+      </Link>
+      <Link
+        to="/agent/add-client/$id"
+        params={{ id: bookId }}
+        hash="upload"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border bg-card px-4 text-sm font-semibold"
+      >
+        <Upload className="h-4 w-4" /> {t("biz.at.upload_list")}
+      </Link>
     </div>
   );
 }

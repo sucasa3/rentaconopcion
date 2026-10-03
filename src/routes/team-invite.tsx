@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { acceptLoanOfficerInvite } from "@/lib/lender-team.functions";
 import { useT } from "@/lib/i18n";
 
-export const AFTER_AUTH_KEY = "sucasa.after_auth";
+const AFTER_AUTH_KEY = "sucasa.after_auth";
 
 export const Route = createFileRoute("/team-invite")({
   validateSearch: (s: Record<string, unknown>) => ({

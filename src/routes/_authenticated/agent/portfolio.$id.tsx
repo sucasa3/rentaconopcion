@@ -1,5 +1,6 @@
 import { useMemo, useState, useRef, useEffect, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AddHomeownersActions } from "@/components/agent-today";
 import { AgentHomeSystemsButton } from "@/components/agent-home-systems-sheet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -582,6 +583,7 @@ function AgentPortfolio() {
                   {t("biz.apd.lender_network")}
                 </Link>
               </div>
+              <AddHomeownersActions bookId={id} />
 
               {/* 1. What to do now */}
               {priority && (
