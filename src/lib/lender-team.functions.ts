@@ -14,8 +14,17 @@ async function newToken(): Promise<string> {
   const { randomBytes } = await import("crypto");
   return randomBytes(32).toString("base64url");
 }
-function inviteUrl(token: string): string {
-  const site = process.env["SITE_URL"] ?? "https://sucasa.com";
+async function inviteUrl(token: string): Promise<string> {
+  let site = process.env["SITE_URL"] ?? "https://sucasa.com";
+  try {
+    // Links made in preview open in preview, so testing never sends people to the live site.
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const { isPreviewHost } = await import("./stripe-mode");
+    const host = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host") ?? null;
+    if (host && isPreviewHost(host)) site = `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
+  } catch {
+    /* fall back to the public site */
+  }
   return `${site}/team-invite?t=${encodeURIComponent(token)}`;
 }
 function rpcError(error: { message: string } | null) {
@@ -133,7 +142,7 @@ export const inviteLoanOfficer = createServerFn({ method: "POST" })
     });
     rpcError(error);
     // Release 1: the manager shares the link; no email is sent automatically.
-    return { id: id as string, url: inviteUrl(token) };
+    return { id: id as string, url: await inviteUrl(token) };
   });
 
 export const resendLoanOfficerInvite = createServerFn({ method: "POST" })
@@ -146,7 +155,7 @@ export const resendLoanOfficerInvite = createServerFn({ method: "POST" })
       _token_hash: await hashToken(token),
     });
     rpcError(error);
-    return { url: inviteUrl(token) };
+    return { url: await inviteUrl(token) };
   });
 
 export const cancelLoanOfficerInvite = createServerFn({ method: "POST" })
