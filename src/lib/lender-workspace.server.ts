@@ -162,8 +162,18 @@ export async function lenderScope(supabase: any, userId: string, orgId?: string 
     .from("lender_portfolios")
     .select("id, name, lender_org_id, assigned_user_id")
     .in("lender_org_id", orgIds);
+  // Officers see books assigned to them. Unassigned books are shared only in
+  // single-officer orgs; on Branch plans they stay with the manager.
+  const teamOrgs = new Set<string>();
+  for (const oid of orgIds) {
+    const { data: t } = await supabase.rpc("lender_team_enabled", { _org_id: oid });
+    if (t) teamOrgs.add(oid);
+  }
   const visible = (books ?? []).filter(
-    (b: any) => isManager || !b.assigned_user_id || b.assigned_user_id === userId,
+    (b: any) =>
+      isManager ||
+      b.assigned_user_id === userId ||
+      (!b.assigned_user_id && !teamOrgs.has(b.lender_org_id)),
   );
   const { data: org } = await admin()
     .from("lender_orgs")

@@ -60,8 +60,16 @@ export async function buildBusinessTasks(
     .from("lender_portfolios")
     .select("id, name, lender_org_id, assigned_user_id")
     .in("lender_org_id", orgIds);
+  const teamOrgs = new Set<string>();
+  for (const oid of orgIds) {
+    const { data: t } = await supabase.rpc("lender_team_enabled", { _org_id: oid });
+    if (t) teamOrgs.add(oid);
+  }
   const visible = (portfolios ?? []).filter(
-    (p: any) => isManager || !p.assigned_user_id || p.assigned_user_id === userId,
+    (p: any) =>
+      isManager ||
+      p.assigned_user_id === userId ||
+      (!p.assigned_user_id && !teamOrgs.has(p.lender_org_id)),
   );
   const bookIds = visible.map((p: any) => p.id);
   const orgByBook = new Map(visible.map((p: any) => [p.id, p.lender_org_id]));
