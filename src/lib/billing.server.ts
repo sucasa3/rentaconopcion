@@ -229,6 +229,12 @@ export async function applySubscription(
 
   await supabaseAdmin.from("lender_orgs").update(patch).eq("id", orgId);
 
+  // Seat allowance follows the plan: excess members are suspended (data kept)
+  // using the manager's retained selection, then owner-first deterministic order.
+  if (!isAgent && plan) {
+    await supabaseAdmin.rpc("apply_lender_seat_allowance" as any, { _org_id: orgId });
+  }
+
   if (isAgent) {
     // Paid agent capacity is TOTAL (it includes the free 100). The ledger gets
     // a single top-up step per change; webhook retries compute a zero delta.

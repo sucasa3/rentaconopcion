@@ -148,6 +148,7 @@ export const activateComped = createServerFn({ method: "POST" })
     if (!org.activated_at) patch["activated_at"] = new Date().toISOString();
 
     await supabaseAdmin.from("lender_orgs").update(patch as any).eq("id", data.orgId);
+    await supabaseAdmin.rpc("apply_lender_seat_allowance" as any, { _org_id: data.orgId });
     return { status: "comped", planKey: plan.key, activated: true };
   });
 
