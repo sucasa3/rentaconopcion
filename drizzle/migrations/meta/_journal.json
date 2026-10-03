@@ -225,6 +225,13 @@
       "when": 1791035914521,
       "tag": "0031_lender_book_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791036074275,
+      "tag": "0032_qa_lender_team_harness_temp",
+      "breakpoints": true
     }
   ]
 }
