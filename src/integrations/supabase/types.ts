@@ -6820,6 +6820,10 @@ export type Database = {
         Args: { _request_id: string; _user_id: string }
         Returns: boolean
       }
+      lender_book_visible: {
+        Args: { _assigned: string; _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       lender_is_team_manager: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean

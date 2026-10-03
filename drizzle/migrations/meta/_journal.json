@@ -218,6 +218,13 @@
       "when": 1791035505464,
       "tag": "0030_lender_seats_and_teams",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791035914521,
+      "tag": "0031_lender_book_visibility",
+      "breakpoints": true
     }
   ]
 }
