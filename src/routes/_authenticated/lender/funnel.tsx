@@ -8,6 +8,7 @@ import { FunnelView } from "@/components/funnel-chart";
 import { EmptyState } from "@/components/ui-kit";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { getFunnel } from "@/lib/nba.functions";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/lender/funnel")({
   head: () => ({
@@ -23,13 +24,14 @@ export const Route = createFileRoute("/_authenticated/lender/funnel")({
   component: LenderFunnel,
 });
 
-const DAY_OPTIONS = [
-  { label: "30 days", value: 30 },
-  { label: "90 days", value: 90 },
-  { label: "12 months", value: 365 },
+const DAY_OPTIONS: { label: "lfun.d30" | "lfun.d90" | "lfun.d365"; value: number }[] = [
+  { label: "lfun.d30", value: 30 },
+  { label: "lfun.d90", value: 90 },
+  { label: "lfun.d365", value: 365 },
 ];
 
 function LenderFunnel() {
+  const t = useT();
   const [days, setDays] = useState(30);
   const overviewFn = useServerFn(getBusinessOverview);
   const funnelFn = useServerFn(getFunnel);
@@ -57,16 +59,16 @@ function LenderFunnel() {
               to="/lender"
               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
             >
-              <ArrowLeft className="h-3 w-3" /> Back to Today
+              <ArrowLeft className="h-3 w-3" /> {t("lfun.back")}
             </Link>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Pipeline & ROI
+              {t("lfun.title")}
             </h1>
             <div className="mt-6">
               <EmptyState
                 icon={<BarChart3 className="mx-auto h-7 w-7" />}
-                title="Manager view only"
-                hint="Ask your organization owner to share manager access."
+                title={t("lfun.mgr_only")}
+                hint={t("lfun.mgr_only_hint")}
               />
             </div>
           </div>
@@ -85,10 +87,10 @@ function LenderFunnel() {
                 to="/lender"
                 className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                <ArrowLeft className="h-3 w-3" /> Back to Today
+                <ArrowLeft className="h-3 w-3" /> {t("lfun.back")}
               </Link>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                Pipeline & ROI
+                {t("lfun.title")}
               </h1>
             </div>
             <div className="flex items-center gap-1 rounded-2xl border border-border/70 bg-card p-1">
@@ -103,14 +105,14 @@ function LenderFunnel() {
                   }`}
                 >
                   {o.value === 365 && <Calendar className="h-3.5 w-3.5" />}
-                  {o.label}
+                  {t(o.label as "lfun.d30")}
                 </button>
               ))}
             </div>
           </div>
 
           {isLoading ? (
-            <div className="text-sm text-muted-foreground">Loading pipeline…</div>
+            <div className="text-sm text-muted-foreground">{t("lfun.loading")}</div>
           ) : (
             <FunnelView data={funnel?.funnel ?? null} costCents={funnel?.costCents ?? 0} days={days} />
           )}
