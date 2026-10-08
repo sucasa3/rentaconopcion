@@ -40,6 +40,38 @@ import {
 import { assertConnection, assertMember } from "./network.server";
 import { signTypedInviteToken, verifyTypedInviteToken } from "./invite-token.server";
 
+
+/**
+ * Officer scoping: branch managers see every connection in the org; regular
+ * officers only the agent connections they own. Returns null for "all".
+ */
+async function ownedConnectionIds(
+  supabase: any,
+  userId: string,
+  lenderOrgId: string,
+): Promise<Set<string> | null> {
+  const { data: mgr } = await supabase.rpc("lender_is_team_manager", {
+    _user_id: userId,
+    _org_id: lenderOrgId,
+  });
+  if (mgr) return null;
+  const { data } = await supabaseAdmin
+    .from("agent_lender_connections")
+    .select("id")
+    .eq("lender_org_id", lenderOrgId)
+    .eq("owner_user_id", userId);
+  return new Set((data ?? []).map((r: any) => r.id));
+}
+
+async function assertOwnsConnection(
+  supabase: any,
+  lenderOrgId: string,
+  connectionId: string,
+) {
+  const owned = await ownedConnectionIds(supabase, await callerId(supabase), lenderOrgId);
+  if (owned && !owned.has(connectionId)) throw new Error("This agent relationship belongs to another officer");
+}
+
 const INVITE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
@@ -57,7 +89,8 @@ export async function aggregateOpportunitiesForLender(
   lenderOrgId: string,
   agentOrgId: string,
 ): Promise<{ categories: AggregateOpportunity[]; threshold: number }> {
-  await assertConnection(supabase, lenderOrgId, agentOrgId);
+  const cid = await assertConnection(supabase, lenderOrgId, agentOrgId);
+  await assertOwnsConnection(supabase, lenderOrgId, cid);
 
   const { data, error } = await supabaseAdmin
     .from("homeowner_opportunities")
@@ -89,6 +122,7 @@ export async function requestIntroductionForCategory(
   requestedBy: string,
 ) {
   const connectionId = await assertConnection(supabase, lenderOrgId, agentOrgId);
+  await assertOwnsConnection(supabase, lenderOrgId, connectionId);
   if (!(category in LENDER_CATEGORIES)) throw new Error("Unknown opportunity category");
 
   // One open ask per agent + category keeps this from becoming a drip of
@@ -147,15 +181,17 @@ export async function listIntroductionsForLender(
   supabase: any,
   lenderOrgId: string,
 ): Promise<LenderIntroductionRow[]> {
-  await assertMember(supabase, await callerId(supabase), lenderOrgId);
+  const me = await callerId(supabase);
+  await assertMember(supabase, me, lenderOrgId);
+  const owned = await ownedConnectionIds(supabase, me, lenderOrgId);
   const { data, error } = await supabaseAdmin
     .from("introductions")
-    .select("id, agent_org_id, category, state, lender_requested_at, homeowner_responded_at")
+    .select("id, connection_id, agent_org_id, category, state, lender_requested_at, homeowner_responded_at")
     .eq("lender_org_id", lenderOrgId)
     .order("lender_requested_at", { ascending: false })
     .limit(200);
   if (error) throw new Error(error.message);
-  const rows = data ?? [];
+  const rows = (data ?? []).filter((r: any) => !owned || owned.has(r.connection_id));
   if (!rows.length) return [];
 
   const { data: orgs } = await supabaseAdmin
@@ -692,6 +728,8 @@ export async function acceptedIntroductionForLender(
 ): Promise<AcceptedIntroductionDetail> {
   const intro = await loadIntroduction(introductionId);
   await assertMember(supabase, userId, intro.lender_org_id);
+  const owned = await ownedConnectionIds(supabase, userId, intro.lender_org_id);
+  if (owned && !owned.has((intro as any).connection_id)) throw new Error("Introduction not found");
 
   const grants = (await grantsByIntroduction([intro.id])).get(intro.id) ?? [];
   if (!canRevealHomeowner(intro.state, grants)) {
@@ -816,7 +854,7 @@ async function loadIntroduction(id: string) {
   const { data, error } = await supabaseAdmin
     .from("introductions")
     .select(
-      "id, state, category, lender_org_id, agent_org_id, portfolio_client_id, homeowner_responded_at",
+      "id, connection_id, state, category, lender_org_id, agent_org_id, portfolio_client_id, homeowner_responded_at",
     )
     .eq("id", id)
     .maybeSingle();
