@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, Home, User } from "lucide-react";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
@@ -28,6 +29,27 @@ const num = (s: string) => Number(s.replace(/,/g, ""));
 const priceNum = (p: Plan) => p.price.replace("/month", "");
 const seatsLabel = (t: T, p: Plan) => (p.seats === 1 ? t("pub.lp2.seats_one") : t("pub.lp2.seats_team", { count: p.seats, others: p.seats - 1 }));
 
+// Signed-in lender managers already have an organization: plan buttons take
+// them to their existing Plan & Billing page instead of repeating Discovery.
+function useIsLenderManager() {
+  const [mgr, setMgr] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: rows } = await supabase.from("lender_members").select("role").eq("user_id", data.user.id);
+      setMgr((rows ?? []).some((r: any) => ["owner", "admin", "manager"].includes(r.role)));
+    });
+  }, []);
+  return mgr;
+}
+
+function PlanCta({ planKey, label, variant, className, size, track }: { planKey: string; label: string; variant: "default" | "outline"; className: string; size?: "sm"; track: (a: TrackAction) => void }) {
+  const mgr = useIsLenderManager();
+  return <Button asChild variant={variant} size={size} className={className}>{mgr
+    ? <Link to="/lender/billing" search={{ checkout: undefined }} onClick={() => track("lender_pricing_subscribe_clicked")}>{label} <ArrowRight /></Link>
+    : <Link to="/lender-start" search={{ source: `lender_pricing_${planKey}` }} onClick={() => track("lender_pricing_subscribe_clicked")}>{label} <ArrowRight /></Link>}</Button>;
+}
+
 function LenderPricing() {
   const { t } = useLanguage();
   const record = useServerFn(recordPublicAgentEvent);
@@ -52,7 +74,7 @@ function LenderPricing() {
         <div className="flex items-baseline justify-between gap-3"><h3 className="font-semibold">{p.name}</h3><p className="font-semibold">{priceNum(p)}<span className="text-sm font-normal text-muted-foreground">{t("pub.lp2.month")}</span></p></div>
         <p className="mt-1 text-xs text-muted-foreground">{t(`pub.lp2.aud.${k}` as TranslationKey)}</p>
         <ul className="mt-3 space-y-1 text-sm text-muted-foreground"><li>{p.seats === 1 ? t("pub.lp2.seats_one") : t("pub.lp2.seats_short", { count: p.seats })}</li><li>{t("pub.lp2.agents", { count: p.agents })}</li><li>{t("pub.lp2.homes", { count: p.profiles })}</li></ul>
-        <Button asChild variant="outline" size="sm" className="mt-4 w-full"><Link to="/lender-start" search={{ source: `lender_pricing_${k}` }} onClick={() => track("lender_pricing_subscribe_clicked")}>{t("pub.lp2.choose", { name: p.name })} <ArrowRight /></Link></Button>
+        <PlanCta planKey={k} label={t("pub.lp2.choose", { name: p.name })} variant="outline" size="sm" className="mt-4 w-full" track={track} />
       </article>; })}</div>
 
       <div className="mt-8 rounded-lg border border-surface-warm-border bg-surface-warm p-5">
@@ -76,7 +98,7 @@ function VisualPlan({ plan, t, track }: { plan: Plan; t: T; track: (a: TrackActi
       <Row label={t("pub.lp2.agents", { count: plan.agents })} sr={t("pub.lp2.row.agents")}><Icons n={agents} Icon={User} className="h-4 w-4 text-intelligence-accent" /></Row>
       <Row label={t("pub.lp2.homes", { count: plan.profiles })} sr={t("pub.lp2.row.homes")}><Icons n={homes} Icon={Home} className="h-4 w-4 text-sucasa-orange" /></Row>
     </div>
-    <Button asChild variant={pro ? "default" : "outline"} className="mt-5 w-full sm:w-auto"><Link to="/lender-start" search={{ source: `lender_pricing_${plan.key}` }} onClick={() => track("lender_pricing_subscribe_clicked")}>{t("pub.lp2.choose", { name: plan.name })} <ArrowRight /></Link></Button>
+    <PlanCta planKey={plan.key} label={t("pub.lp2.choose", { name: plan.name })} variant={pro ? "default" : "outline"} className="mt-5 w-full sm:w-auto" track={track} />
   </article>;
 }
 
