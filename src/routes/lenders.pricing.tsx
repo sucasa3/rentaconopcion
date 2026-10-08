@@ -46,8 +46,8 @@ function useIsLenderManager() {
 function PlanCta({ planKey, label, variant, className, size, track }: { planKey: string; label: string; variant: "default" | "outline"; className: string; size?: "sm"; track: (a: TrackAction) => void }) {
   const mgr = useIsLenderManager();
   return <Button asChild variant={variant} size={size} className={className}>{mgr
-    ? <Link to="/lender/billing" search={{ checkout: undefined }} onClick={() => track("lender_pricing_subscribe_clicked")}>{label} <ArrowRight /></Link>
-    : <Link to="/lender-start" search={{ source: `lender_pricing_${planKey}` }} onClick={() => track("lender_pricing_subscribe_clicked")}>{label} <ArrowRight /></Link>}</Button>;
+    ? <Link to="/lender/billing" search={{ checkout: undefined, plan: planKey }} onClick={() => track("lender_pricing_subscribe_clicked")}>{label} <ArrowRight /></Link>
+    : <Link to="/lender-start" search={{ source: `lender_pricing_${planKey}`, plan: planKey }} onClick={() => track("lender_pricing_subscribe_clicked")}>{label} <ArrowRight /></Link>}</Button>;
 }
 
 function LenderPricing() {

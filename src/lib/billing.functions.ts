@@ -101,13 +101,25 @@ export const startCheckout = createServerFn({ method: "POST" })
       throw new Error(`Plan "${data.planKey}" has no payment price configured yet.`);
     }
 
+    // One subscription per organization: a retried or reloaded checkout after
+    // activation must not start a second paid subscription.
+    const { data: subState } = await supabaseAdmin
+      .from("lender_orgs")
+      .select("subscription_status")
+      .eq("id", data.orgId)
+      .maybeSingle();
+    if (["active", "trialing", "past_due"].includes((subState as any)?.subscription_status ?? "")) {
+      throw new Error("ALREADY_SUBSCRIBED");
+    }
+
     const customer = await ensureCustomer(supabaseAdmin, org as any, stripeMode);
+    const sep = data.returnUrl.includes("?") ? "&" : "?";
     const session = await stripeRequest<{ id: string; url: string }>("/checkout/sessions", "POST", {
       mode: "subscription",
       customer,
       client_reference_id: org.id,
-      success_url: `${data.returnUrl}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${data.returnUrl}?checkout=cancelled`,
+      success_url: `${data.returnUrl}${sep}checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${data.returnUrl}${sep}checkout=cancelled`,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       // A 100%-off pilot code should not demand a card just to test the flow.

@@ -141,7 +141,7 @@ function TeamPage() {
             <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6 text-sm">
               <p>{t("team.solo")}</p>
               <Button asChild size="sm">
-                <Link to="/lender/billing" search={{ checkout: undefined }}>{t("team.upgrade")}</Link>
+                <Link to="/lender/billing" search={{ checkout: undefined, plan: undefined }}>{t("team.upgrade")}</Link>
               </Button>
             </CardContent>
           </Card>
@@ -204,7 +204,7 @@ function TeamPage() {
                 <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                   <p className="text-muted-foreground">{t("team.full")}</p>
                   <Button asChild size="sm" variant="outline">
-                    <Link to="/lender/billing" search={{ checkout: undefined }}>{t("team.upgrade")}</Link>
+                    <Link to="/lender/billing" search={{ checkout: undefined, plan: undefined }}>{t("team.upgrade")}</Link>
                   </Button>
                 </div>
               ) : (

@@ -26,6 +26,7 @@ import {
   uploadDiscoveryCsv,
 } from "@/lib/discovery.functions";
 import { recordAuthenticatedAgentEvent } from "@/lib/agent-funnel.functions";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/lender/discovery")({
   component: DiscoveryPage,
@@ -43,6 +44,7 @@ function DiscoveryPage() {
   const advanceFn = useServerFn(advanceDiscovery);
   const pilotFn = useServerFn(startPilotCheckout);
   const track = useServerFn(recordAuthenticatedAgentEvent);
+  const tr = useT();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
   const [brief, setBrief] = useState<any>(null);
@@ -163,6 +165,9 @@ function DiscoveryPage() {
             ? "Your Discovery results"
             : "See what's inside your past-client database"}
         </h1>
+        <Link to="/lender/billing" search={{ checkout: undefined, plan: undefined }} className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary underline">
+          {tr("disc.skip")} <ArrowRight className="h-4 w-4" />
+        </Link>
         {false ? (
           <p className="mt-2 text-sm text-muted-foreground">{data.supporting}</p>
         ) : null}
