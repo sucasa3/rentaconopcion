@@ -127,3 +127,64 @@ export function PlanCard({ name, price, description, features, featured, footer 
     </article>
   );
 }
+
+/** Vector house icon; `fill` 0–1 fills from the left over a light silhouette. */
+export function HouseIcon({ fill = 1, className }: { fill?: number; className?: string }) {
+  const id = `h${Math.round(fill * 100)}`;
+  const path = "M12 2 1 11.5h3V22h16V11.5h3z";
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={cn("h-9 w-9 shrink-0 text-sucasa-orange", className)}>
+      <defs><clipPath id={id}><rect x="0" y="0" width={24 * fill} height="24" /></clipPath></defs>
+      {fill < 1 && <path d={path} fill="currentColor" opacity="0.22" />}
+      <path d={path} fill="currentColor" clipPath={fill < 1 ? `url(#${id})` : undefined} />
+    </svg>
+  );
+}
+
+/** Public, presentation-only move-up example (fictional). */
+export function AgentMoveUpPreview() {
+  const { t } = useLanguage();
+  const facts: [TranslationKey, string][] = [["pub.mu.value", "$480,000"], ["pub.mu.balance", "$260,000"], ["pub.mu.equity", "$220,000"]];
+  return (
+    <div className="mx-auto w-full max-w-[470px] md:mx-0 md:justify-self-end">
+      <div className="mb-2 flex items-center justify-between px-1 text-[11px] font-semibold text-muted-foreground">
+        <span>{t("pub.mu.label")}</span>
+        <span className="rounded-full border border-border bg-card px-2 py-1">{t("pub.preview.demo_badge")}</span>
+      </div>
+      <article className="overflow-hidden rounded-lg border border-border bg-card shadow-elevated">
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-sucasa-navy px-4 py-3 text-primary-foreground sm:px-5">
+          <p className="min-w-0 font-semibold">{t("pub.mu.opportunity")}</p>
+          <span className="shrink-0 rounded-full bg-primary-foreground/10 px-2.5 py-1 text-[10px] font-semibold">{t("pub.mu.badge")}</span>
+        </div>
+        <div className="space-y-4 p-4 sm:p-5">
+          <div>
+            <p className="text-[10px] font-semibold text-status-opportunity">{t("pub.mu.who")}</p>
+            <h2 className="mt-1 text-xl font-semibold">Jordan Rivera</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t("pub.mu.disclosure")}</p>
+          </div>
+          <div className="border-l-2 border-sucasa-orange pl-3">
+            <p className="text-[10px] font-semibold text-muted-foreground">{t("pub.preview.why_now")}</p>
+            <p className="mt-1 text-sm leading-relaxed">{t("pub.mu.why")}</p>
+          </div>
+          <div className="rounded-md border border-border bg-surface-warm p-3">
+            <p className="text-[10px] font-semibold text-muted-foreground">{t("pub.mu.interest_label")} · {t("pub.mu.interest_src")}</p>
+            <p className="mt-1 text-sm font-semibold">{t("pub.mu.interest")}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {facts.map(([k, v]) => <div key={k} className="min-w-0 rounded-md bg-secondary p-2"><p className="text-[10px] leading-tight text-muted-foreground">{t(k)}</p><p className="mt-1 text-sm font-semibold tabular-nums">{v}</p></div>)}
+          </div>
+          <p className="text-[11px] text-muted-foreground">{t("pub.mu.estimates")}</p>
+          <div className="rounded-md bg-surface-intelligence p-3">
+            <p className="text-[10px] font-semibold text-surface-intelligence-foreground">{t("pub.preview.what_to_say")}</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{t("pub.mu.say")}</p>
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+            <div className="min-w-0"><p className="text-[10px] font-semibold text-muted-foreground">{t("pub.preview.what_next")}</p><p className="mt-1 text-sm font-semibold">{t("pub.mu.next")}</p></div>
+            <span aria-hidden="true" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sucasa-orange text-sucasa-orange-foreground"><ArrowRight className="h-4 w-4" /></span>
+          </div>
+        </div>
+      </article>
+      <p className="mt-3 text-center text-[11px] text-muted-foreground">{t("pub.preview.all_fictional")}</p>
+    </div>
+  );
+}

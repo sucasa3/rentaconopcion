@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import { FourAnswers, ProfessionalPreview, TrustStatement } from "@/components/professional-public";
+import { AgentMoveUpPreview, FourAnswers, TrustStatement } from "@/components/professional-public";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { getAgentAttribution } from "@/lib/agent-funnel";
@@ -41,7 +41,7 @@ function AgentsLandingPage() {
           <p className="mt-3 text-sm text-muted-foreground">{t("pub.agents.microcopy")}</p>
           <Link to="/agent-start" search={{ source: "agents_signin" }} onClick={() => track("agent_signin_clicked")} className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-primary">{t("pub.agents.signin")} <ChevronRight className="h-4 w-4" /></Link>
         </div>
-        <ProfessionalPreview kind="agent" />
+        <AgentMoveUpPreview />
       </div>
     </section>
     <FourAnswers audience="agent" />
