@@ -1,3 +1,4 @@
+import { useLanguage } from "@/lib/i18n";
 import { useEffect, useRef } from "react";
 import {
   createFileRoute,
@@ -26,6 +27,8 @@ export const Route = createFileRoute("/_authenticated/lender/portfolio/$id")({
 });
 
 function PortfolioLayout() {
+  const { language: __lang } = useLanguage();
+  const L = (en: string, es: string) => (__lang === "es" ? es : en);
   const { id } = Route.useParams();
   const getFn = useServerFn(getPortfolio);
   const listFn = useServerFn(listMyPortfolios);
@@ -73,7 +76,7 @@ function PortfolioLayout() {
               to="/lender"
               className="inline-flex items-center gap-1 text-xs font-medium text-primary"
             >
-              <ArrowLeft className="h-3 w-3" /> Team roster
+              <ArrowLeft className="h-3 w-3" /> {L("Team roster", "Equipo")}
             </Link>
           )}
 
@@ -98,13 +101,13 @@ function PortfolioLayout() {
           </div>
 
           <nav className="sticky top-0 z-20 -mx-1 grid grid-cols-2 gap-1 border-b border-border bg-background/90 px-1 py-2 backdrop-blur sm:flex sm:flex-wrap">
-            <Tab to="/lender/portfolio/$id" id={id} exact label="Clients" icon={Users} />
-            <Tab to="/lender/portfolio/$id/campaigns" id={id} label="Campaigns" icon={Mail} />
-            <Tab to="/lender/portfolio/$id/import" id={id} label="Add clients" icon={Upload} />
+            <Tab to="/lender/portfolio/$id" id={id} exact label={L("Clients", "Clientes")} icon={Users} />
+            <Tab to="/lender/portfolio/$id/campaigns" id={id} label={L("Campaigns", "Campañas")} icon={Mail} />
+            <Tab to="/lender/portfolio/$id/import" id={id} label={L("Add clients", "Agregar clientes")} icon={Upload} />
             <Tab
               to="/lender/portfolio/$id/network"
               id={id}
-              label="Agent network"
+              label={L("Agent network", "Red de agentes")}
               icon={Handshake}
             />
           </nav>
