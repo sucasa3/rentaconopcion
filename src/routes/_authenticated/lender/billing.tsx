@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/lender/billing")({
   }),
   validateSearch: (s: Record<string, unknown>) => ({
     checkout: typeof s['checkout'] === "string" ? (s['checkout'] as string) : undefined,
+    plan: typeof s['plan'] === "string" ? (s['plan'] as string).slice(0, 40) : undefined,
   }),
   component: BillingPage,
 });
@@ -45,6 +46,13 @@ function BillingPage() {
   const compFn = useServerFn(activateComped);
   const [busy, setBusy] = useState<string | null>(null);
   const t = useT();
+  const navigate = useNavigate();
+  // The plan chosen on the pricing page survives sign-in, reloads and a canceled checkout.
+  const [chosen, setChosen] = useState<string | undefined>(search.plan);
+  useEffect(() => {
+    if (search.plan) sessionStorage.setItem("sucasa.lender_plan", search.plan);
+    else setChosen((c) => c ?? sessionStorage.getItem("sucasa.lender_plan") ?? undefined);
+  }, [search.plan]);
   // The complimentary-activation shortcut is shown to platform admins only (the server also refuses others).
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin"],
@@ -77,8 +85,12 @@ function BillingPage() {
     if (search.checkout !== "success" || !orgId) return;
     syncFn({ data: { orgId } })
       .then((r: any) => {
-        if (r.activated) toast.success(t("bill.toast.paid"));
         qc.invalidateQueries({ queryKey: ["billing-state", orgId] });
+        if (r.activated) {
+          toast.success(t("bill.toast.paid"));
+          sessionStorage.removeItem("sucasa.lender_plan");
+          navigate({ to: "/lender/welcome", replace: true });
+        }
       })
       .catch((e: Error) => toast.error(billErr(e, "bill.toast.sync_failed")));
   }, [search.checkout, orgId, syncFn, qc]);
@@ -86,6 +98,7 @@ function BillingPage() {
   // Server messages are mapped to translated text; raw English never reaches the toast.
   const billErr = (e: unknown, fallback: string) => {
     const m = e instanceof Error ? e.message : "";
+    if (m.includes("ALREADY_SUBSCRIBED")) return t("bill.toast.already");
     if (m.includes("PLAN_NOT_AVAILABLE")) return t("bill.toast.plan_unavailable");
     if (m.startsWith("Forbidden")) return t("bill.toast.forbidden");
     if (m.includes("no payment price")) return t("bill.toast.no_price");
@@ -97,7 +110,7 @@ function BillingPage() {
     setBusy(planKey);
     try {
       const { url } = await checkoutFn({
-        data: { orgId, planKey, returnUrl: `${window.location.origin}/lender/billing` },
+        data: { orgId, planKey, returnUrl: `${window.location.origin}/lender/billing?plan=${encodeURIComponent(planKey)}` },
       });
       if (url) window.location.href = url;
     } catch (e) {
@@ -131,6 +144,9 @@ function BillingPage() {
     ? ((state as any)?.plan_name ?? (plans ?? []).find((p: any) => p.key === planKey)?.name ?? planKey)
     : null;
 
+  const selected = (plans ?? []).find((p: any) => p.key === chosen && p.purchasable && p.audience !== "agent") as any;
+  const hasPlan = ["active", "trialing", "past_due"].includes(status);
+
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
       <main className="px-4 py-6 sm:px-5 sm:py-8">
@@ -144,6 +160,28 @@ function BillingPage() {
             {t("bill.commit")}
           </p>
         </div>
+
+        {search.checkout === "cancelled" && (
+          <p role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">{t("bill.cancelled")}</p>
+        )}
+        {search.checkout === "success" && !hasPlan && (
+          <p role="status" className="rounded-lg border border-border bg-muted p-3 text-sm">{t("bill.confirming")}</p>
+        )}
+        {selected && !hasPlan && (
+          <Card className="border-2 border-primary">
+            <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-muted-foreground">{t("bill.selected")}</p>
+                <p className="mt-1 text-2xl font-semibold">{selected.name} · {money(selected.price_cents, t("bill.custom"))}<span className="text-sm font-normal text-muted-foreground">{t("pub.lp2.month")}</span></p>
+                <p className="mt-1 text-sm text-muted-foreground">{t("bill.selected_sub", { name: selected.name, price: money(selected.price_cents, "") })}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{t("bill.change_plan")}</p>
+              </div>
+              <Button size="lg" className="w-full sm:w-auto" disabled={busy === selected.key || !orgId} onClick={() => buy(selected.key)}>
+                {busy === selected.key ? t("bill.opening") : t("bill.checkout_cta")}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader className="pb-3">
@@ -171,9 +209,9 @@ function BillingPage() {
           {(plans ?? [])
             .filter((p: any) => p.audience !== "agent")
             .map((p: any) => (
-            <Card key={p.key} className="flex flex-col">
+            <Card key={p.key} className={`flex flex-col ${p.key === selected?.key ? "border-2 border-primary" : ""}`}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">{p.name}</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">{p.name}{p.key === selected?.key && <Badge>{t("bill.selected_badge")}</Badge>}</CardTitle>
                 <p className="text-2xl font-semibold">{money(p.price_cents, t("bill.custom"))}</p>
                 {p.positioning && (
                   <p className="text-muted-foreground text-sm">{p.positioning}</p>
@@ -194,8 +232,8 @@ function BillingPage() {
                 )}
                 <Button
                   className="w-full"
-                  disabled={!p.purchasable || busy === p.key || !orgId}
-                  onClick={() => buy(p.key)}
+                  disabled={!p.purchasable || busy === p.key || !orgId || hasPlan}
+                  onClick={() => { setChosen(p.key); sessionStorage.setItem("sucasa.lender_plan", p.key); void buy(p.key); }}
                 >
                   {p.purchasable
                     ? busy === p.key

@@ -45,6 +45,8 @@ export function GuidedOnboarding({
   useEffect(() => {
     if (!autoOpen || userId === undefined) return;
     if (readOnboarding(role, userId)) return;
+    // Never cover the add-clients screen someone just chose to open.
+    if (window.location.pathname.endsWith("/import")) return;
     const t = setTimeout(() => setOpen(true), 500);
     return () => clearTimeout(t);
   }, [autoOpen, role, userId]);

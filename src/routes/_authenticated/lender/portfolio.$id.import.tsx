@@ -86,7 +86,7 @@ function PortfolioImport() {
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
         <div className="flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-primary" />
-          <h2 className="text-base font-semibold">Add one client</h2>
+          <h2 id="one" className="scroll-mt-20 text-base font-semibold">Add one client</h2>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
           Name and address are required — everything else fills in from property records.
@@ -112,6 +112,7 @@ function PortfolioImport() {
         </button>
       </div>
 
+      <div id="csv" className="scroll-mt-20" />
       <BulkClientUpload onCsv={(csv) => ingest.mutate(csv)} busy={ingest.isPending} />
     </div>
   );

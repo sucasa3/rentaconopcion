@@ -13,8 +13,9 @@ import {
 } from "@/lib/agent-funnel.functions";
 import { startDiscovery } from "@/lib/discovery.functions";
 import { useLanguage } from "@/lib/i18n";
+import { LENDER_PUBLIC_PLANS } from "@/lib/public-plans";
 
-const searchSchema = z.object({ source: z.string().max(80).optional() });
+const searchSchema = z.object({ source: z.string().max(80).optional(), plan: z.string().max(40).optional() });
 
 export const Route = createFileRoute("/lender-start")({
   validateSearch: searchSchema,
@@ -50,6 +51,16 @@ function LenderStartPage() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const router = useRouter();
+  const search = Route.useSearch();
+  // A plan picked on the pricing page skips Discovery and survives the email round-trip.
+  const [planKey, setPlanKey] = useState<string | undefined>(search.plan);
+  const plan = LENDER_PUBLIC_PLANS.find((p) => p.key === planKey);
+  useEffect(() => {
+    if (search.plan) sessionStorage.setItem("sucasa.lender_plan", search.plan);
+    // Choosing Free Discovery explicitly drops any earlier plan choice.
+    else if (search.source) sessionStorage.removeItem("sucasa.lender_plan");
+    else setPlanKey(sessionStorage.getItem("sucasa.lender_plan") ?? undefined);
+  }, [search.plan]);
   const begin = useServerFn(startDiscovery);
   const recordPublic = useServerFn(recordPublicAgentEvent);
   const recordAuthenticated = useServerFn(recordAuthenticatedAgentEvent);
@@ -73,7 +84,10 @@ function LenderStartPage() {
       }
       await workspaceSetup;
       await router.invalidate();
-      navigate({ to: "/lender/discovery", replace: true });
+      const picked = search.plan ?? sessionStorage.getItem("sucasa.lender_plan");
+      if (picked && LENDER_PUBLIC_PLANS.some((p) => p.key === picked)) {
+        navigate({ to: "/lender/billing", search: { checkout: undefined, plan: picked }, replace: true });
+      } else navigate({ to: "/lender/discovery", replace: true });
     } catch (reason) {
       workspaceSetup = null;
       setError(reason instanceof Error ? reason.message : t("pub.lstart.error_workspace"));
@@ -102,7 +116,7 @@ function LenderStartPage() {
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/lender-start` },
+        options: { emailRedirectTo: `${window.location.origin}/lender-start${plan ? `?plan=${plan.key}` : ""}` },
       });
       if (otpError) throw otpError;
       setSent(true);
@@ -156,8 +170,8 @@ function LenderStartPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">{t("pub.lstart.form_title")}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{t("pub.lstart.form_sub")}</p>
+                <h2 className="text-lg font-semibold text-foreground">{plan ? t("pub.lstart.plan_title", { name: plan.name }) : t("pub.lstart.form_title")}</h2>
+                <p className="mt-1 text-sm text-muted-foreground">{plan ? t("pub.lstart.plan_sub", { price: plan.price.replace("/month", "") }) : t("pub.lstart.form_sub")}</p>
               </div>
               <label className="block text-sm font-medium text-foreground">
                 {t("pub.lstart.email_label")}
