@@ -854,7 +854,7 @@ async function loadIntroduction(id: string) {
   const { data, error } = await supabaseAdmin
     .from("introductions")
     .select(
-      "id, state, category, lender_org_id, agent_org_id, portfolio_client_id, homeowner_responded_at",
+      "id, connection_id, state, category, lender_org_id, agent_org_id, portfolio_client_id, homeowner_responded_at",
     )
     .eq("id", id)
     .maybeSingle();
