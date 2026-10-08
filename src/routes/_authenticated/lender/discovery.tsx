@@ -26,7 +26,12 @@ import {
   uploadDiscoveryCsv,
 } from "@/lib/discovery.functions";
 import { recordAuthenticatedAgentEvent } from "@/lib/agent-funnel.functions";
-import { useT } from "@/lib/i18n";
+import { useT, useLanguage } from "@/lib/i18n";
+
+function useL() {
+  const { language } = useLanguage();
+  return (en: string, es: string) => (language === "es" ? es : en);
+}
 
 export const Route = createFileRoute("/_authenticated/lender/discovery")({
   component: DiscoveryPage,
@@ -45,6 +50,7 @@ function DiscoveryPage() {
   const pilotFn = useServerFn(startPilotCheckout);
   const track = useServerFn(recordAuthenticatedAgentEvent);
   const tr = useT();
+  const L = useL();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
   const [brief, setBrief] = useState<any>(null);
@@ -82,7 +88,7 @@ function DiscoveryPage() {
   const upload = useMutation({
     mutationFn: (csv: string) => uploadFn({ data: { csv } }),
     onSuccess: async (r: any) => {
-      toast.success(`${r.accepted} properties accepted`);
+      toast.success(L(`${r.accepted} properties accepted`, `${r.accepted} propiedades aceptadas`));
       await qc.invalidateQueries({ queryKey: ["lender-discovery"] });
       void runProcessing();
     },
@@ -105,7 +111,7 @@ function DiscoveryPage() {
         await new Promise((r) => setTimeout(r, 1200));
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Processing stopped");
+      toast.error(e?.message ?? L("Processing stopped", "El análisis se detuvo"));
     } finally {
       polling.current = false;
       setProgress(null);
@@ -159,11 +165,11 @@ function DiscoveryPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
       <header>
-        <p className="text-sm font-semibold text-status-opportunity">Opportunity Discovery</p>
+        <p className="text-sm font-semibold text-status-opportunity">{L("Opportunity Discovery", "Discovery de oportunidades")}</p>
         <h1 className="mt-1 text-2xl font-semibold text-foreground sm:text-3xl">
           {status === "complete"
-            ? "Your Discovery results"
-            : "See what's inside your past-client database"}
+            ? L("Your Discovery results", "Tus resultados de Discovery")
+            : L("See what's inside your past-client database", "Descubre lo que hay en tu base de clientes anteriores")}
         </h1>
         <Link to="/lender/billing" search={{ checkout: undefined, plan: undefined }} className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-primary underline">
           {tr("disc.skip")} <ArrowRight className="h-4 w-4" />
@@ -178,16 +184,16 @@ function DiscoveryPage() {
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <div>
-              <p className="text-sm font-semibold text-foreground">Reading property records</p>
+              <p className="text-sm font-semibold text-foreground">{L("Reading property records", "Leyendo registros de propiedad")}</p>
               <p className="text-xs text-muted-foreground">
                 {progress
-                  ? `${progress.done} of ${progress.total} properties reviewed`
-                  : "Getting started"}
+                  ? L(`${progress.done} of ${progress.total} properties reviewed`, `${progress.done} de ${progress.total} propiedades revisadas`)
+                  : L("Getting started", "Comenzando")}
               </p>
             </div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            You can leave this page open. Nothing is sent to any homeowner.
+            {L("You can leave this page open. Nothing is sent to any homeowner.", "Puedes dejar esta página abierta. No se envía nada a ningún propietario.")}
           </p>
         </section>
       ) : null}
@@ -195,26 +201,23 @@ function DiscoveryPage() {
       {!busy && status !== "complete" ? (
         <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
           <h2 className="text-base font-semibold text-foreground">
-            Upload up to {DISCOVERY_ALLOWANCE} past clients
+            {L(`Upload up to ${DISCOVERY_ALLOWANCE} past clients`, `Sube hasta ${DISCOVERY_ALLOWANCE} clientes anteriores`)}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            A CSV or Excel export from your CRM. Name and property address are what matter —
-            everything else is optional. Rows without a usable address, and repeats of the same
-            property, don't count against your {DISCOVERY_ALLOWANCE}.
+            {L(`A CSV or Excel export from your CRM. Name and property address are what matter — everything else is optional. Rows without a usable address, and repeats of the same property, don't count against your ${DISCOVERY_ALLOWANCE}.`, `Una exportación CSV o Excel de tu CRM. Lo importante es el nombre y la dirección de la propiedad — todo lo demás es opcional. Las filas sin una dirección válida y las propiedades repetidas no cuentan para tus ${DISCOVERY_ALLOWANCE}.`)}
           </p>
           <div className="mt-4">
             <BulkClientUpload
               onCsv={(csv) => upload.mutate(csv)}
               busy={upload.isPending}
-              title="Upload your past-client list"
-              hint="CSV or Excel, up to 2 MB"
+              title={L("Upload your past-client list", "Sube tu lista de clientes anteriores")}
+              hint={L("CSV or Excel, up to 2 MB", "CSV o Excel, hasta 2 MB")}
             />
           </div>
           <div className="mt-5 flex gap-3 rounded-lg border border-surface-intelligence-border bg-surface-intelligence p-4 text-xs text-surface-intelligence-foreground">
             <ShieldCheck className="h-4 w-4 shrink-0 text-intelligence-accent" />
             <span>
-              Your list stays inside your own workspace. Uploading creates no relationship, no
-              permission and no access to any homeowner.
+              {L("Your list stays inside your own workspace. Uploading creates no relationship, no permission and no access to any homeowner.", "Tu lista se queda dentro de tu propio espacio de trabajo. Subirla no crea ninguna relación, permiso ni acceso a ningún propietario.")}
             </span>
           </div>
         </section>
@@ -224,12 +227,11 @@ function DiscoveryPage() {
         <>
           {data.excluded?.submitted ? (
             <p className="text-xs text-muted-foreground">
-              {data.excluded.submitted} rows submitted · {data.summary?.analyzed ?? 0} unique
-              properties analyzed
-              {data.excluded.invalid ? ` · ${data.excluded.invalid} without a usable address` : ""}
-              {data.excluded.duplicate ? ` · ${data.excluded.duplicate} repeat properties` : ""}
+              {L(`${data.excluded.submitted} rows submitted · ${data.summary?.analyzed ?? 0} unique properties analyzed`, `${data.excluded.submitted} filas enviadas · ${data.summary?.analyzed ?? 0} propiedades únicas analizadas`)}
+              {data.excluded.invalid ? L(` · ${data.excluded.invalid} without a usable address`, ` · ${data.excluded.invalid} sin dirección válida`) : ""}
+              {data.excluded.duplicate ? L(` · ${data.excluded.duplicate} repeat properties`, ` · ${data.excluded.duplicate} propiedades repetidas`) : ""}
               {data.excluded.overAllowance
-                ? ` · ${data.excluded.overAllowance} beyond your ${data.allowance}`
+                ? L(` · ${data.excluded.overAllowance} beyond your ${data.allowance}`, ` · ${data.excluded.overAllowance} por encima de tus ${data.allowance}`)
                 : ""}
             </p>
           ) : null}
@@ -239,21 +241,19 @@ function DiscoveryPage() {
             const analyzed = data.summary?.analyzed ?? 0;
             return (
               <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                <p className="text-sm text-muted-foreground">We analyzed {analyzed} homeowners.</p>
+                <p className="text-sm text-muted-foreground">{L(`We analyzed ${analyzed} homeowners.`, `Analizamos ${analyzed} propietarios.`)}</p>
                 <p className="mt-1 text-xl font-semibold text-foreground">
                   {found === 0
-                    ? "None has a reason worth reviewing today."
-                    : `${found} ${found === 1 ? "has a reason" : "have a reason"} worth reviewing.`}
+                    ? L("None has a reason worth reviewing today.", "Ninguno tiene hoy un motivo que valga la pena revisar.")
+                    : L(`${found} ${found === 1 ? "has a reason" : "have a reason"} worth reviewing.`, `${found} ${found === 1 ? "tiene un motivo" : "tienen un motivo"} que vale la pena revisar.`)}
                 </p>
                 {data.revealed.length ? (
                   <p className="mt-1 text-sm text-foreground">
-                    You can explore {data.revealed.length} below.
+                    {L(`You can explore ${data.revealed.length} below.`, `Puedes explorar ${data.revealed.length} abajo.`)}
                   </p>
                 ) : null}
                 <p className="mt-3 text-xs text-muted-foreground">
-                  SuCasa looks for changes in mortgage, equity and property signals that may give
-                  you a reason to reconnect. These are signals worth reviewing — not a statement
-                  that anyone qualifies for or needs a loan.
+                  {L("SuCasa looks for changes in mortgage, equity and property signals that may give you a reason to reconnect. These are signals worth reviewing — not a statement that anyone qualifies for or needs a loan.", "SuCasa busca cambios en la hipoteca, el capital y las señales de la propiedad que puedan darte un motivo para reconectar. Son señales que vale la pena revisar — no una afirmación de que alguien califica para un préstamo o lo necesita.")}
                 </p>
               </section>
             );
@@ -275,14 +275,12 @@ function DiscoveryPage() {
           <section className="space-y-3">
             <h2 className="text-base font-semibold text-foreground">
               {data.revealed.length
-                ? `Your top ${data.revealed.length} unlocked now`
-                : "Nothing meets the bar yet"}
+                ? L(`Your top ${data.revealed.length} unlocked now`, `Tus ${data.revealed.length} principales, desbloqueados ahora`)
+                : L("Nothing meets the bar yet", "Todavía nada alcanza el nivel")}
             </h2>
             {data.revealed.length === 0 ? (
               <p className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-                We won't lower the bar to fill five slots. Nothing in this list has enough
-                confirmed record detail to justify a call today. Add more of your past clients, or
-                come back as records update.
+                {L("We won't lower the bar to fill five slots. Nothing in this list has enough confirmed record detail to justify a call today. Add more of your past clients, or come back as records update.", "No bajaremos el nivel para llenar cinco lugares. Nada en esta lista tiene suficiente detalle confirmado en los registros para justificar una llamada hoy. Agrega más clientes anteriores o vuelve cuando se actualicen los registros.")}
               </p>
             ) : null}
             {data.revealed.map((c: any) => (
@@ -300,18 +298,16 @@ function DiscoveryPage() {
 
           {data.activated || checkoutOk ? (
             <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-              <p className="text-sm font-semibold text-status-positive">SuCasa is active</p>
+              <p className="text-sm font-semibold text-status-positive">{L("SuCasa is active", "SuCasa está activo")}</p>
               <h2 className="mt-1 text-xl font-semibold text-foreground">
-                Now let SuCasa analyze the rest of your book.
+                {L("Now let SuCasa analyze the rest of your book.", "Ahora deja que SuCasa analice el resto de tu cartera.")}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                You found opportunities in your Discovery sample. Upload your complete database and
-                SuCasa will analyze it with the same intelligence. The {data.summary?.analyzed ?? 0}{" "}
-                homes already here stay in place — repeats aren't counted twice.
+                {L(`You found opportunities in your Discovery sample. Upload your complete database and SuCasa will analyze it with the same intelligence. The ${data.summary?.analyzed ?? 0} homes already here stay in place — repeats aren't counted twice.`, `Encontraste oportunidades en tu muestra de Discovery. Sube tu base de datos completa y SuCasa la analizará con la misma inteligencia. Las ${data.summary?.analyzed ?? 0} casas que ya están aquí se quedan — las repetidas no se cuentan dos veces.`)}
               </p>
               <Button asChild className="mt-5">
                 <Link to="/lender/portfolio/$id/import" params={{ id: data.portfolioId }}>
-                  <ArrowRight className="mr-2 h-4 w-4" /> Upload My Full Database
+                  <ArrowRight className="mr-2 h-4 w-4" /> {L("Upload My Full Database", "Subir mi base de datos completa")}
                 </Link>
               </Button>
             </section>
@@ -319,17 +315,15 @@ function DiscoveryPage() {
             <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
               <Lock className="h-5 w-5 text-muted-foreground" />
               <h2 className="mt-3 text-lg font-semibold text-foreground">
-                {data.revealed.length ? `You've seen ${data.revealed.length}.` : "There's more to find."}
+                {data.revealed.length ? L(`You've seen ${data.revealed.length}.`, `Has visto ${data.revealed.length}.`) : L("There's more to find.", "Hay más por descubrir.")}
               </h2>
               {data.summary?.previewOnly > 0 ? (
                 <p className="mt-1 text-base font-semibold text-foreground">
-                  SuCasa found {data.summary.previewOnly} additional{" "}
-                  {data.summary.previewOnly === 1 ? "homeowner" : "homeowners"} worth reviewing.
+                  {L(`SuCasa found ${data.summary.previewOnly} additional ${data.summary.previewOnly === 1 ? "homeowner" : "homeowners"} worth reviewing.`, `SuCasa encontró ${data.summary.previewOnly} ${data.summary.previewOnly === 1 ? "propietario adicional que vale" : "propietarios adicionales que valen"} la pena revisar.`)}
                 </p>
               ) : null}
               <p className="mt-2 text-sm text-muted-foreground">
-                Activate SuCasa to unlock the rest of this Discovery and begin monitoring your
-                database for new opportunities.
+                {L("Activate SuCasa to unlock the rest of this Discovery and begin monitoring your database for new opportunities.", "Activa SuCasa para desbloquear el resto de este Discovery y empezar a monitorear tu base de datos en busca de nuevas oportunidades.")}
               </p>
               {lockedMix.length ? (
                 <ul className="mt-4 space-y-1 text-sm text-foreground">
@@ -354,26 +348,24 @@ function DiscoveryPage() {
                 ) : (
                   <ArrowRight className="mr-2 h-4 w-4" />
                 )}
-                Unlock My Database
+                {L("Unlock My Database", "Desbloquear mi base de datos")}
               </Button>
               <p className="mt-2 text-sm text-muted-foreground">
-                Unlock the remaining Discovery opportunities and let SuCasa continuously analyze your
-                database for meaningful reasons to reconnect.
+                {L("Unlock the remaining Discovery opportunities and let SuCasa continuously analyze your database for meaningful reasons to reconnect.", "Desbloquea las oportunidades restantes de Discovery y deja que SuCasa analice tu base de datos continuamente en busca de motivos reales para reconectar.")}
               </p>
               {money(data.pricing?.pilotCents) && money(data.pricing?.growthCents) ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  90-day pilot: {money(data.pricing.pilotCents)} today, then{" "}
-                  {money(data.pricing.growthCents)}/month. Cancel any time during the pilot.
+                  {L(`90-day pilot: ${money(data.pricing.pilotCents)} today, then ${money(data.pricing.growthCents)}/month. Cancel any time during the pilot.`, `Piloto de 90 días: ${money(data.pricing.pilotCents)} hoy, luego ${money(data.pricing.growthCents)}/mes. Cancela cuando quieras durante el piloto.`)}
                 </p>
               ) : null}
               <div className="mt-6 border-t border-border pt-5">
-                <h3 className="text-sm font-semibold text-foreground">After activation</h3>
+                <h3 className="text-sm font-semibold text-foreground">{L("After activation", "Después de activar")}</h3>
                 <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
-                  <li>Unlock the remaining opportunities from this Discovery</li>
-                  <li>Upload your complete past-client database</li>
-                  <li>SuCasa creates and watches a Home Profile for each home</li>
-                  <li>Your daily list shows the people who deserve attention</li>
-                  <li>SuCasa explains why they matter and helps prepare the conversation</li>
+                  <li>{L("Unlock the remaining opportunities from this Discovery", "Desbloquea las oportunidades restantes de este Discovery")}</li>
+                  <li>{L("Upload your complete past-client database", "Sube tu base completa de clientes anteriores")}</li>
+                  <li>{L("SuCasa creates and watches a Home Profile for each home", "SuCasa crea y vigila un Perfil de casa para cada casa")}</li>
+                  <li>{L("Your daily list shows the people who deserve attention", "Tu lista diaria muestra a las personas que merecen atención")}</li>
+                  <li>{L("SuCasa explains why they matter and helps prepare the conversation", "SuCasa explica por qué importan y te ayuda a preparar la conversación")}</li>
                 </ol>
               </div>
             </section>
@@ -394,21 +386,22 @@ function DiscoveryPage() {
 
 
 function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; onView: () => void }) {
+  const L = useL();
   const reasons: string[] = (c.reasons ?? [])
     .filter((r: string) => r.trim() !== (c.whyToday ?? "").trim())
     .slice(0, 3);
   const metrics = [
-    { label: "Estimated value", value: money(c.estimatedValueCents) },
+    { label: L("Estimated value", "Valor estimado"), value: money(c.estimatedValueCents) },
     {
-      label: c.equityInferredNoLien ? "Estimated equity (no active loan found)" : "Estimated equity",
+      label: c.equityInferredNoLien ? L("Estimated equity (no active loan found)", "Capital estimado (sin préstamo activo)") : L("Estimated equity", "Capital estimado"),
       value: money(c.estimatedEquityCents),
     },
-    { label: "Estimated balance", value: c.equityInferredNoLien ? null : money(c.estimatedBalanceCents) },
-    { label: "Estimated LTV", value: c.equityInferredNoLien ? null : formatLtvPct(c.estimatedLtvPct) },
-    { label: "Recorded rate", value: formatRatePct(c.recordedRatePct) },
+    { label: L("Estimated balance", "Saldo estimado"), value: c.equityInferredNoLien ? null : money(c.estimatedBalanceCents) },
+    { label: L("Estimated LTV", "LTV estimado"), value: c.equityInferredNoLien ? null : formatLtvPct(c.estimatedLtvPct) },
+    { label: L("Recorded rate", "Tasa registrada"), value: formatRatePct(c.recordedRatePct) },
     {
-      label: "Mortgage age",
-      value: typeof c.loanAgeYears === "number" ? `${c.loanAgeYears} yrs` : null,
+      label: L("Mortgage age", "Antigüedad de la hipoteca"),
+      value: typeof c.loanAgeYears === "number" ? L(`${c.loanAgeYears} yrs`, `${c.loanAgeYears} años`) : null,
     },
   ].filter((m) => m.value);
   return (
@@ -424,7 +417,7 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
       </div>
       {c.whyToday ? (
         <div className="mt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Why now</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{L("Why now", "Por qué ahora")}</p>
           <p className="mt-1 text-sm text-foreground">{c.whyToday}</p>
         </div>
       ) : null}
@@ -441,7 +434,7 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
       {(c.alsoReasons ?? []).length ? (
         <div className="mt-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Also worth knowing
+            {L("Also worth knowing", "También vale la pena saber")}
           </p>
           <ul className="mt-1 space-y-1 text-sm text-foreground">
             {c.alsoReasons.map((r: any) => (
@@ -468,7 +461,7 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
       {c.objective ? (
         <div className="mt-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            What to accomplish
+            {L("What to accomplish", "Qué lograr")}
           </p>
           <p className="mt-1 text-sm text-foreground">{c.objective}</p>
         </div>
@@ -476,9 +469,9 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap gap-2 text-xs">
           {[
-            { key: "call", label: "Call", Icon: Phone },
-            { key: "text", label: "Text", Icon: MessageSquare },
-            { key: "email", label: "Email", Icon: Mail },
+            { key: "call", label: L("Call", "Llamar"), Icon: Phone },
+            { key: "text", label: L("Text", "Mensaje"), Icon: MessageSquare },
+            { key: "email", label: L("Email", "Correo"), Icon: Mail },
           ].map(({ key, label, Icon }) => {
             const allowed = Boolean(c.channels?.[key]);
             return (
@@ -497,7 +490,7 @@ function DiscoveryCard({ c, onBrief, onView }: { c: any; onBrief: () => void; on
           })}
         </div>
         <Button size="sm" variant="outline" onClick={onBrief}>
-          30-Second Brief <ArrowRight className="ml-1 h-4 w-4" />
+          {L("30-Second Brief", "Resumen de 30 segundos")} <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
       </div>
     </article>
