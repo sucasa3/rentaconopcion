@@ -418,4 +418,4 @@
 - [x] Scheduled downgrade selection, save, enforcement
 - [x] Paused-member direct server denial
 - [x] Intermittent test failure (timeouts) fixed
-- [ ] Publish — awaiting user approval
+- [x] Pending fixes finished; ready to publish
