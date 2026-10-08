@@ -127,7 +127,9 @@ function BillingPage() {
   const known = ["active", "trialing", "past_due", "canceled", "comped", "none"];
   const statusLabel = known.includes(status) ? t(`bill.st.${status}` as any) : status;
   const planKey = (state as any)?.plan_key as string | undefined;
-  const planName = planKey ? ((plans ?? []).find((p: any) => p.key === planKey)?.name ?? planKey) : null;
+  const planName = planKey
+    ? ((state as any)?.plan_name ?? (plans ?? []).find((p: any) => p.key === planKey)?.name ?? planKey)
+    : null;
 
   return (
     <BusinessShell kind="lender" bookId={null} isManager>
