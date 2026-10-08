@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Funnel, FunnelChart, LabelList, ResponsiveContainer, Tooltip, Cell } from "recharts";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
@@ -114,26 +113,21 @@ export function FunnelView({
 
       <div className="rounded-3xl border border-border/70 bg-card p-4 shadow-soft">
         <p className="mb-2 text-sm font-medium">{t("biz.funnel.pipeline_title", { days })}</p>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <FunnelChart>
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 16,
-                  border: "1px solid hsl(var(--border))",
-                  background: "hsl(var(--card))",
-                }}
-              />
-              <Funnel dataKey="value" data={chartData} isAnimationActive={false}>
-                <LabelList position="inside" fill="#fff" stroke="none" dataKey="name" />
-                <LabelList position="right" fill="currentColor" stroke="none" dataKey="value" />
-                {chartData.map((d, i) => (
-                  <Cell key={i} fill={d.fill} />
-                ))}
-              </Funnel>
-            </FunnelChart>
-          </ResponsiveContainer>
-        </div>
+        <ul className="space-y-2">
+          {chartData.map((d) => {
+            const max = chartData[0].value || 1;
+            const pct = d.value > 0 ? Math.max(2, Math.round((d.value / max) * 100)) : 0;
+            return (
+              <li key={d.name} className="grid grid-cols-[minmax(0,7.5rem)_1fr_auto] items-center gap-2 text-sm sm:grid-cols-[10rem_1fr_auto]">
+                <span className="truncate text-muted-foreground">{d.name}</span>
+                <span className="h-3 overflow-hidden rounded-full bg-muted">
+                  <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: d.fill }} />
+                </span>
+                <span className="w-12 text-right font-semibold tabular-nums">{d.value.toLocaleString()}</span>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
