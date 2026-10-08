@@ -9,171 +9,92 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AgentInviteRouteImport } from './routes/agent-invite'
-import { Route as AgentStartRouteImport } from './routes/agent-start'
-import { Route as AgentsRouteImport } from './routes/agents'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as IntroductionRouteImport } from './routes/introduction'
-import { Route as LenderStartRouteImport } from './routes/lender-start'
-import { Route as LendersRouteImport } from './routes/lenders'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
-import { Route as PartnerRouteImport } from './routes/partner'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as ProRouteImport } from './routes/pro'
-import { Route as ProfessionalInviteRouteImport } from './routes/professional-invite'
-import { Route as ReportRouteImport } from './routes/report'
-import { Route as RequestRouteImport } from './routes/request'
-import { Route as ServicesRouteImport } from './routes/services'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TeamInviteRouteImport } from './routes/team-invite'
-import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authenticated/agent/route'
-import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
-import { Route as AuthenticatedBatchdataTestRouteImport } from './routes/_authenticated/batchdata-test'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
-import { Route as AuthenticatedHomeCareRouteImport } from './routes/_authenticated/home-care'
-import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticated/home-plan'
-import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
-import { Route as AuthenticatedMoneyRouteImport } from './routes/_authenticated/money'
-import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
-import { Route as AgentsIndexRouteImport } from './routes/agents.index'
-import { Route as AgentsDeckRouteImport } from './routes/agents.deck'
-import { Route as AgentsPricingRouteImport } from './routes/agents.pricing'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ServicesRouteImport } from './routes/services'
+import { Route as RequestRouteImport } from './routes/request'
+import { Route as ReportRouteImport } from './routes/report'
+import { Route as ProfessionalInviteRouteImport } from './routes/professional-invite'
+import { Route as ProRouteImport } from './routes/pro'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PartnerRouteImport } from './routes/partner'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LendersRouteImport } from './routes/lenders'
+import { Route as LenderStartRouteImport } from './routes/lender-start'
+import { Route as IntroductionRouteImport } from './routes/introduction'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as AgentStartRouteImport } from './routes/agent-start'
+import { Route as AgentInviteRouteImport } from './routes/agent-invite'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as LendersIndexRouteImport } from './routes/lenders.index'
-import { Route as LendersDeckRouteImport } from './routes/lenders.deck'
+import { Route as AgentsIndexRouteImport } from './routes/agents.index'
 import { Route as LendersPricingRouteImport } from './routes/lenders.pricing'
-import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
-import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
-import { Route as AuthenticatedAgentFunnelRouteImport } from './routes/_authenticated/agent/funnel'
-import { Route as AuthenticatedAgentHomeTeamsRouteImport } from './routes/_authenticated/agent/home-teams'
-import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
-import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
-import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authenticated/agent/tasks'
+import { Route as LendersDeckRouteImport } from './routes/lenders.deck'
+import { Route as AgentsPricingRouteImport } from './routes/agents.pricing'
+import { Route as AgentsDeckRouteImport } from './routes/agents.deck'
+import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
+import { Route as AuthenticatedMoneyRouteImport } from './routes/_authenticated/money'
+import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticated/home-plan'
+import { Route as AuthenticatedHomeCareRouteImport } from './routes/_authenticated/home-care'
+import { Route as AuthenticatedDocumentsRouteImport } from './routes/_authenticated/documents'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedBatchdataTestRouteImport } from './routes/_authenticated/batchdata-test'
+import { Route as AuthenticatedAssistantRouteImport } from './routes/_authenticated/assistant'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
+import { Route as AuthenticatedAgentRouteRouteImport } from './routes/_authenticated/agent/route'
 import { Route as AuthenticatedLenderIndexRouteImport } from './routes/_authenticated/lender/index'
-import { Route as AuthenticatedLenderBillingRouteImport } from './routes/_authenticated/lender/billing'
-import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
-import { Route as AuthenticatedLenderCapacityRouteImport } from './routes/_authenticated/lender/capacity'
-import { Route as AuthenticatedLenderDiscoveryRouteImport } from './routes/_authenticated/lender/discovery'
-import { Route as AuthenticatedLenderFunnelRouteImport } from './routes/_authenticated/lender/funnel'
-import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
-import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
-import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenticated/lender/tasks'
-import { Route as AuthenticatedLenderTeamRouteImport } from './routes/_authenticated/lender/team'
-import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
-import { Route as ApiPostCallTranscribeRouteImport } from './routes/api/post-call/transcribe'
+import { Route as AuthenticatedAgentIndexRouteImport } from './routes/_authenticated/agent/index'
 import { Route as ApiPublicUnsubscribeRouteImport } from './routes/api/public/unsubscribe'
-import { Route as AuthenticatedAgentAddClientIdRouteImport } from './routes/_authenticated/agent/add-client.$id'
-import { Route as AuthenticatedAgentDiscoveryIdRouteImport } from './routes/_authenticated/agent/discovery.$id'
-import { Route as AuthenticatedAgentInspectionsIdRouteImport } from './routes/_authenticated/agent/inspections.$id'
-import { Route as AuthenticatedAgentPortfolioIdRouteImport } from './routes/_authenticated/agent/portfolio.$id'
-import { Route as AuthenticatedAgentRevealIdRouteImport } from './routes/_authenticated/agent/reveal.$id'
-import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
-import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
-import { Route as ApiPublicDailyReadTickRouteImport } from './routes/api/public/daily-read.tick'
-import { Route as ApiPublicEnrichTickRouteImport } from './routes/api/public/enrich.tick'
-import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
-import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
-import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
-import { Route as ApiPublicLendersPilotRouteImport } from './routes/api/public/lenders.pilot'
-import { Route as ApiPublicRatesTickRouteImport } from './routes/api/public/rates.tick'
-import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
-import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
-import { Route as ApiPublicWebhooksGhlMessagesRouteImport } from './routes/api/public/webhooks/ghl-messages'
-import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as ApiPostCallTranscribeRouteImport } from './routes/api/post-call/transcribe'
+import { Route as AuthenticatedRequestsIdRouteImport } from './routes/_authenticated/requests.$id'
+import { Route as AuthenticatedLenderTeamRouteImport } from './routes/_authenticated/lender/team'
+import { Route as AuthenticatedLenderTasksRouteImport } from './routes/_authenticated/lender/tasks'
+import { Route as AuthenticatedLenderOpportunitiesRouteImport } from './routes/_authenticated/lender/opportunities'
+import { Route as AuthenticatedLenderNetworkRouteImport } from './routes/_authenticated/lender/network'
+import { Route as AuthenticatedLenderFunnelRouteImport } from './routes/_authenticated/lender/funnel'
+import { Route as AuthenticatedLenderDiscoveryRouteImport } from './routes/_authenticated/lender/discovery'
+import { Route as AuthenticatedLenderCapacityRouteImport } from './routes/_authenticated/lender/capacity'
+import { Route as AuthenticatedLenderCampaignsRouteImport } from './routes/_authenticated/lender/campaigns'
+import { Route as AuthenticatedLenderBillingRouteImport } from './routes/_authenticated/lender/billing'
+import { Route as AuthenticatedAgentTasksRouteImport } from './routes/_authenticated/agent/tasks'
+import { Route as AuthenticatedAgentOpportunitiesRouteImport } from './routes/_authenticated/agent/opportunities'
+import { Route as AuthenticatedAgentNetworkRouteImport } from './routes/_authenticated/agent/network'
+import { Route as AuthenticatedAgentHomeTeamsRouteImport } from './routes/_authenticated/agent/home-teams'
+import { Route as AuthenticatedAgentFunnelRouteImport } from './routes/_authenticated/agent/funnel'
+import { Route as AuthenticatedAgentCampaignsRouteImport } from './routes/_authenticated/agent/campaigns'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicWebhooksStripeRouteImport } from './routes/api/public/webhooks/stripe'
+import { Route as ApiPublicWebhooksGhlMessagesRouteImport } from './routes/api/public/webhooks/ghl-messages'
+import { Route as ApiPublicTOpenRouteImport } from './routes/api/public/t/open'
+import { Route as ApiPublicTClickRouteImport } from './routes/api/public/t/click'
+import { Route as ApiPublicRatesTickRouteImport } from './routes/api/public/rates.tick'
+import { Route as ApiPublicLendersPilotRouteImport } from './routes/api/public/lenders.pilot'
+import { Route as ApiPublicLeadsTickRouteImport } from './routes/api/public/leads.tick'
+import { Route as ApiPublicGhlDrainRouteImport } from './routes/api/public/ghl.drain'
+import { Route as ApiPublicGhlBillingRouteImport } from './routes/api/public/ghl.billing'
+import { Route as ApiPublicEnrichTickRouteImport } from './routes/api/public/enrich.tick'
+import { Route as ApiPublicDailyReadTickRouteImport } from './routes/api/public/daily-read.tick'
+import { Route as ApiPublicCampaignsTickRouteImport } from './routes/api/public/campaigns.tick'
+import { Route as AuthenticatedLenderPortfolioIdRouteImport } from './routes/_authenticated/lender/portfolio.$id'
+import { Route as AuthenticatedAgentRevealIdRouteImport } from './routes/_authenticated/agent/reveal.$id'
+import { Route as AuthenticatedAgentPortfolioIdRouteImport } from './routes/_authenticated/agent/portfolio.$id'
+import { Route as AuthenticatedAgentInspectionsIdRouteImport } from './routes/_authenticated/agent/inspections.$id'
+import { Route as AuthenticatedAgentDiscoveryIdRouteImport } from './routes/_authenticated/agent/discovery.$id'
+import { Route as AuthenticatedAgentAddClientIdRouteImport } from './routes/_authenticated/agent/add-client.$id'
 import { Route as AuthenticatedLenderPortfolioIdIndexRouteImport } from './routes/_authenticated/lender/portfolio.$id.index'
-import { Route as AuthenticatedLenderPortfolioIdCampaignsRouteImport } from './routes/_authenticated/lender/portfolio.$id.campaigns'
-import { Route as AuthenticatedLenderPortfolioIdImportRouteImport } from './routes/_authenticated/lender/portfolio.$id.import'
 import { Route as AuthenticatedLenderPortfolioIdNetworkRouteImport } from './routes/_authenticated/lender/portfolio.$id.network'
+import { Route as AuthenticatedLenderPortfolioIdImportRouteImport } from './routes/_authenticated/lender/portfolio.$id.import'
+import { Route as AuthenticatedLenderPortfolioIdCampaignsRouteImport } from './routes/_authenticated/lender/portfolio.$id.campaigns'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentInviteRoute = AgentInviteRouteImport.update({
-  id: '/agent-invite',
-  path: '/agent-invite',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentStartRoute = AgentStartRouteImport.update({
-  id: '/agent-start',
-  path: '/agent-start',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentsRoute = AgentsRouteImport.update({
-  id: '/agents',
-  path: '/agents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IntroductionRoute = IntroductionRouteImport.update({
-  id: '/introduction',
-  path: '/introduction',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LenderStartRoute = LenderStartRouteImport.update({
-  id: '/lender-start',
-  path: '/lender-start',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LendersRoute = LendersRouteImport.update({
-  id: '/lenders',
-  path: '/lenders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartnerRoute = PartnerRouteImport.update({
-  id: '/partner',
-  path: '/partner',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProRoute = ProRouteImport.update({
-  id: '/pro',
-  path: '/pro',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfessionalInviteRoute = ProfessionalInviteRouteImport.update({
-  id: '/professional-invite',
-  path: '/professional-invite',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportRoute = ReportRouteImport.update({
-  id: '/report',
-  path: '/report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RequestRoute = RequestRouteImport.update({
-  id: '/request',
-  path: '/request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ServicesRoute = ServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
+const TeamInviteRoute = TeamInviteRouteImport.update({
+  id: '/team-invite',
+  path: '/team-invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -181,29 +102,148 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TeamInviteRoute = TeamInviteRouteImport.update({
-  id: '/team-invite',
-  path: '/team-invite',
+const ServicesRoute = ServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const RequestRoute = RequestRouteImport.update({
+  id: '/request',
+  path: '/request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportRoute = ReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfessionalInviteRoute = ProfessionalInviteRouteImport.update({
+  id: '/professional-invite',
+  path: '/professional-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProRoute = ProRouteImport.update({
+  id: '/pro',
+  path: '/pro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LendersRoute = LendersRouteImport.update({
+  id: '/lenders',
+  path: '/lenders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LenderStartRoute = LenderStartRouteImport.update({
+  id: '/lender-start',
+  path: '/lender-start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntroductionRoute = IntroductionRouteImport.update({
+  id: '/introduction',
+  path: '/introduction',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentStartRoute = AgentStartRouteImport.update({
+  id: '/agent-start',
+  path: '/agent-start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentInviteRoute = AgentInviteRouteImport.update({
+  id: '/agent-invite',
+  path: '/agent-invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LendersIndexRoute = LendersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LendersRoute,
+} as any)
+const AgentsIndexRoute = AgentsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AgentsRoute,
+} as any)
+const LendersPricingRoute = LendersPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => LendersRoute,
+} as any)
+const LendersDeckRoute = LendersDeckRouteImport.update({
+  id: '/deck',
+  path: '/deck',
+  getParentRoute: () => LendersRoute,
+} as any)
+const AgentsPricingRoute = AgentsPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => AgentsRoute,
+} as any)
+const AgentsDeckRoute = AgentsDeckRouteImport.update({
+  id: '/deck',
+  path: '/deck',
+  getParentRoute: () => AgentsRoute,
+} as any)
+const AuthenticatedTimelineRoute = AuthenticatedTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AuthenticatedMoneyRoute = AuthenticatedMoneyRouteImport.update({
+  id: '/money',
+  path: '/money',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAgentRouteRoute = AuthenticatedAgentRouteRouteImport.update({
-  id: '/agent',
-  path: '/agent',
+const AuthenticatedHomePlanRoute = AuthenticatedHomePlanRouteImport.update({
+  id: '/home-plan',
+  path: '/home-plan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
-  id: '/assistant',
-  path: '/assistant',
+const AuthenticatedHomeCareRoute = AuthenticatedHomeCareRouteImport.update({
+  id: '/home-care',
+  path: '/home-care',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBatchdataTestRoute =
@@ -212,24 +252,19 @@ const AuthenticatedBatchdataTestRoute =
     path: '/batchdata-test',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedAssistantRoute = AuthenticatedAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedDocumentsRoute = AuthenticatedDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedHomeCareRoute = AuthenticatedHomeCareRouteImport.update({
-  id: '/home-care',
-  path: '/home-care',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedHomePlanRoute = AuthenticatedHomePlanRouteImport.update({
-  id: '/home-plan',
-  path: '/home-plan',
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLenderRouteRoute =
@@ -238,85 +273,10 @@ const AuthenticatedLenderRouteRoute =
     path: '/lender',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedMoneyRoute = AuthenticatedMoneyRouteImport.update({
-  id: '/money',
-  path: '/money',
+const AuthenticatedAgentRouteRoute = AuthenticatedAgentRouteRouteImport.update({
+  id: '/agent',
+  path: '/agent',
   getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedTimelineRoute = AuthenticatedTimelineRouteImport.update({
-  id: '/timeline',
-  path: '/timeline',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AgentsIndexRoute = AgentsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AgentsRoute,
-} as any)
-const AgentsDeckRoute = AgentsDeckRouteImport.update({
-  id: '/deck',
-  path: '/deck',
-  getParentRoute: () => AgentsRoute,
-} as any)
-const AgentsPricingRoute = AgentsPricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => AgentsRoute,
-} as any)
-const LendersIndexRoute = LendersIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => LendersRoute,
-} as any)
-const LendersDeckRoute = LendersDeckRouteImport.update({
-  id: '/deck',
-  path: '/deck',
-  getParentRoute: () => LendersRoute,
-} as any)
-const LendersPricingRoute = LendersPricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => LendersRoute,
-} as any)
-const AuthenticatedAgentIndexRoute = AuthenticatedAgentIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedAgentRouteRoute,
-} as any)
-const AuthenticatedAgentCampaignsRoute =
-  AuthenticatedAgentCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentFunnelRoute =
-  AuthenticatedAgentFunnelRouteImport.update({
-    id: '/funnel',
-    path: '/funnel',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentHomeTeamsRoute =
-  AuthenticatedAgentHomeTeamsRouteImport.update({
-    id: '/home-teams',
-    path: '/home-teams',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentNetworkRoute =
-  AuthenticatedAgentNetworkRouteImport.update({
-    id: '/network',
-    path: '/network',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentOpportunitiesRoute =
-  AuthenticatedAgentOpportunitiesRouteImport.update({
-    id: '/opportunities',
-    path: '/opportunities',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentTasksRoute = AuthenticatedAgentTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => AuthenticatedAgentRouteRoute,
 } as any)
 const AuthenticatedLenderIndexRoute =
   AuthenticatedLenderIndexRouteImport.update({
@@ -324,40 +284,35 @@ const AuthenticatedLenderIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
-const AuthenticatedLenderBillingRoute =
-  AuthenticatedLenderBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
-    getParentRoute: () => AuthenticatedLenderRouteRoute,
-  } as any)
-const AuthenticatedLenderCampaignsRoute =
-  AuthenticatedLenderCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
-    getParentRoute: () => AuthenticatedLenderRouteRoute,
-  } as any)
-const AuthenticatedLenderCapacityRoute =
-  AuthenticatedLenderCapacityRouteImport.update({
-    id: '/capacity',
-    path: '/capacity',
-    getParentRoute: () => AuthenticatedLenderRouteRoute,
-  } as any)
-const AuthenticatedLenderDiscoveryRoute =
-  AuthenticatedLenderDiscoveryRouteImport.update({
-    id: '/discovery',
-    path: '/discovery',
-    getParentRoute: () => AuthenticatedLenderRouteRoute,
-  } as any)
-const AuthenticatedLenderFunnelRoute =
-  AuthenticatedLenderFunnelRouteImport.update({
-    id: '/funnel',
-    path: '/funnel',
-    getParentRoute: () => AuthenticatedLenderRouteRoute,
-  } as any)
-const AuthenticatedLenderNetworkRoute =
-  AuthenticatedLenderNetworkRouteImport.update({
-    id: '/network',
-    path: '/network',
+const AuthenticatedAgentIndexRoute = AuthenticatedAgentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAgentRouteRoute,
+} as any)
+const ApiPublicUnsubscribeRoute = ApiPublicUnsubscribeRouteImport.update({
+  id: '/api/public/unsubscribe',
+  path: '/api/public/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPostCallTranscribeRoute = ApiPostCallTranscribeRouteImport.update({
+  id: '/api/post-call/transcribe',
+  path: '/api/post-call/transcribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
+  id: '/requests/$id',
+  path: '/requests/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLenderTeamRoute = AuthenticatedLenderTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedLenderRouteRoute,
+} as any)
+const AuthenticatedLenderTasksRoute =
+  AuthenticatedLenderTasksRouteImport.update({
+    id: '/tasks',
+    path: '/tasks',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
 const AuthenticatedLenderOpportunitiesRoute =
@@ -366,116 +321,96 @@ const AuthenticatedLenderOpportunitiesRoute =
     path: '/opportunities',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
-const AuthenticatedLenderTasksRoute =
-  AuthenticatedLenderTasksRouteImport.update({
-    id: '/tasks',
-    path: '/tasks',
+const AuthenticatedLenderNetworkRoute =
+  AuthenticatedLenderNetworkRouteImport.update({
+    id: '/network',
+    path: '/network',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
-const AuthenticatedLenderTeamRoute = AuthenticatedLenderTeamRouteImport.update({
-  id: '/team',
-  path: '/team',
-  getParentRoute: () => AuthenticatedLenderRouteRoute,
-} as any)
-const AuthenticatedRequestsIdRoute = AuthenticatedRequestsIdRouteImport.update({
-  id: '/requests/$id',
-  path: '/requests/$id',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const ApiPostCallTranscribeRoute = ApiPostCallTranscribeRouteImport.update({
-  id: '/api/post-call/transcribe',
-  path: '/api/post-call/transcribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicUnsubscribeRoute = ApiPublicUnsubscribeRouteImport.update({
-  id: '/api/public/unsubscribe',
-  path: '/api/public/unsubscribe',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedAgentAddClientIdRoute =
-  AuthenticatedAgentAddClientIdRouteImport.update({
-    id: '/add-client/$id',
-    path: '/add-client/$id',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentDiscoveryIdRoute =
-  AuthenticatedAgentDiscoveryIdRouteImport.update({
-    id: '/discovery/$id',
-    path: '/discovery/$id',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentInspectionsIdRoute =
-  AuthenticatedAgentInspectionsIdRouteImport.update({
-    id: '/inspections/$id',
-    path: '/inspections/$id',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentPortfolioIdRoute =
-  AuthenticatedAgentPortfolioIdRouteImport.update({
-    id: '/portfolio/$id',
-    path: '/portfolio/$id',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedAgentRevealIdRoute =
-  AuthenticatedAgentRevealIdRouteImport.update({
-    id: '/reveal/$id',
-    path: '/reveal/$id',
-    getParentRoute: () => AuthenticatedAgentRouteRoute,
-  } as any)
-const AuthenticatedLenderPortfolioIdRoute =
-  AuthenticatedLenderPortfolioIdRouteImport.update({
-    id: '/portfolio/$id',
-    path: '/portfolio/$id',
+const AuthenticatedLenderFunnelRoute =
+  AuthenticatedLenderFunnelRouteImport.update({
+    id: '/funnel',
+    path: '/funnel',
     getParentRoute: () => AuthenticatedLenderRouteRoute,
   } as any)
-const ApiPublicCampaignsTickRoute = ApiPublicCampaignsTickRouteImport.update({
-  id: '/api/public/campaigns/tick',
-  path: '/api/public/campaigns/tick',
+const AuthenticatedLenderDiscoveryRoute =
+  AuthenticatedLenderDiscoveryRouteImport.update({
+    id: '/discovery',
+    path: '/discovery',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
+const AuthenticatedLenderCapacityRoute =
+  AuthenticatedLenderCapacityRouteImport.update({
+    id: '/capacity',
+    path: '/capacity',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
+const AuthenticatedLenderCampaignsRoute =
+  AuthenticatedLenderCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
+const AuthenticatedLenderBillingRoute =
+  AuthenticatedLenderBillingRouteImport.update({
+    id: '/billing',
+    path: '/billing',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
+const AuthenticatedAgentTasksRoute = AuthenticatedAgentTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AuthenticatedAgentRouteRoute,
+} as any)
+const AuthenticatedAgentOpportunitiesRoute =
+  AuthenticatedAgentOpportunitiesRouteImport.update({
+    id: '/opportunities',
+    path: '/opportunities',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentNetworkRoute =
+  AuthenticatedAgentNetworkRouteImport.update({
+    id: '/network',
+    path: '/network',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentHomeTeamsRoute =
+  AuthenticatedAgentHomeTeamsRouteImport.update({
+    id: '/home-teams',
+    path: '/home-teams',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentFunnelRoute =
+  AuthenticatedAgentFunnelRouteImport.update({
+    id: '/funnel',
+    path: '/funnel',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentCampaignsRoute =
+  AuthenticatedAgentCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicDailyReadTickRoute = ApiPublicDailyReadTickRouteImport.update({
-  id: '/api/public/daily-read/tick',
-  path: '/api/public/daily-read/tick',
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicEnrichTickRoute = ApiPublicEnrichTickRouteImport.update({
-  id: '/api/public/enrich/tick',
-  path: '/api/public/enrich/tick',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicGhlBillingRoute = ApiPublicGhlBillingRouteImport.update({
-  id: '/api/public/ghl/billing',
-  path: '/api/public/ghl/billing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicGhlDrainRoute = ApiPublicGhlDrainRouteImport.update({
-  id: '/api/public/ghl/drain',
-  path: '/api/public/ghl/drain',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
-  id: '/api/public/leads/tick',
-  path: '/api/public/leads/tick',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicLendersPilotRoute = ApiPublicLendersPilotRouteImport.update({
-  id: '/api/public/lenders/pilot',
-  path: '/api/public/lenders/pilot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicRatesTickRoute = ApiPublicRatesTickRouteImport.update({
-  id: '/api/public/rates/tick',
-  path: '/api/public/rates/tick',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTClickRoute = ApiPublicTClickRouteImport.update({
-  id: '/api/public/t/click',
-  path: '/api/public/t/click',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicTOpenRoute = ApiPublicTOpenRouteImport.update({
-  id: '/api/public/t/open',
-  path: '/api/public/t/open',
+const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
+  id: '/api/public/webhooks/stripe',
+  path: '/api/public/webhooks/stripe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicWebhooksGhlMessagesRoute =
@@ -484,26 +419,91 @@ const ApiPublicWebhooksGhlMessagesRoute =
     path: '/api/public/webhooks/ghl-messages',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicWebhooksStripeRoute = ApiPublicWebhooksStripeRouteImport.update({
-  id: '/api/public/webhooks/stripe',
-  path: '/api/public/webhooks/stripe',
+const ApiPublicTOpenRoute = ApiPublicTOpenRouteImport.update({
+  id: '/api/public/t/open',
+  path: '/api/public/t/open',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
+const ApiPublicTClickRoute = ApiPublicTClickRouteImport.update({
+  id: '/api/public/t/click',
+  path: '/api/public/t/click',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
+const ApiPublicRatesTickRoute = ApiPublicRatesTickRouteImport.update({
+  id: '/api/public/rates/tick',
+  path: '/api/public/rates/tick',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
-    getParentRoute: () => rootRouteImport,
+const ApiPublicLendersPilotRoute = ApiPublicLendersPilotRouteImport.update({
+  id: '/api/public/lenders/pilot',
+  path: '/api/public/lenders/pilot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicLeadsTickRoute = ApiPublicLeadsTickRouteImport.update({
+  id: '/api/public/leads/tick',
+  path: '/api/public/leads/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGhlDrainRoute = ApiPublicGhlDrainRouteImport.update({
+  id: '/api/public/ghl/drain',
+  path: '/api/public/ghl/drain',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicGhlBillingRoute = ApiPublicGhlBillingRouteImport.update({
+  id: '/api/public/ghl/billing',
+  path: '/api/public/ghl/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicEnrichTickRoute = ApiPublicEnrichTickRouteImport.update({
+  id: '/api/public/enrich/tick',
+  path: '/api/public/enrich/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicDailyReadTickRoute = ApiPublicDailyReadTickRouteImport.update({
+  id: '/api/public/daily-read/tick',
+  path: '/api/public/daily-read/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCampaignsTickRoute = ApiPublicCampaignsTickRouteImport.update({
+  id: '/api/public/campaigns/tick',
+  path: '/api/public/campaigns/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedLenderPortfolioIdRoute =
+  AuthenticatedLenderPortfolioIdRouteImport.update({
+    id: '/portfolio/$id',
+    path: '/portfolio/$id',
+    getParentRoute: () => AuthenticatedLenderRouteRoute,
+  } as any)
+const AuthenticatedAgentRevealIdRoute =
+  AuthenticatedAgentRevealIdRouteImport.update({
+    id: '/reveal/$id',
+    path: '/reveal/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentPortfolioIdRoute =
+  AuthenticatedAgentPortfolioIdRouteImport.update({
+    id: '/portfolio/$id',
+    path: '/portfolio/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentInspectionsIdRoute =
+  AuthenticatedAgentInspectionsIdRouteImport.update({
+    id: '/inspections/$id',
+    path: '/inspections/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentDiscoveryIdRoute =
+  AuthenticatedAgentDiscoveryIdRouteImport.update({
+    id: '/discovery/$id',
+    path: '/discovery/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
+  } as any)
+const AuthenticatedAgentAddClientIdRoute =
+  AuthenticatedAgentAddClientIdRouteImport.update({
+    id: '/add-client/$id',
+    path: '/add-client/$id',
+    getParentRoute: () => AuthenticatedAgentRouteRoute,
   } as any)
 const AuthenticatedLenderPortfolioIdIndexRoute =
   AuthenticatedLenderPortfolioIdIndexRouteImport.update({
@@ -511,10 +511,10 @@ const AuthenticatedLenderPortfolioIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedLenderPortfolioIdRoute,
   } as any)
-const AuthenticatedLenderPortfolioIdCampaignsRoute =
-  AuthenticatedLenderPortfolioIdCampaignsRouteImport.update({
-    id: '/campaigns',
-    path: '/campaigns',
+const AuthenticatedLenderPortfolioIdNetworkRoute =
+  AuthenticatedLenderPortfolioIdNetworkRouteImport.update({
+    id: '/network',
+    path: '/network',
     getParentRoute: () => AuthenticatedLenderPortfolioIdRoute,
   } as any)
 const AuthenticatedLenderPortfolioIdImportRoute =
@@ -523,10 +523,10 @@ const AuthenticatedLenderPortfolioIdImportRoute =
     path: '/import',
     getParentRoute: () => AuthenticatedLenderPortfolioIdRoute,
   } as any)
-const AuthenticatedLenderPortfolioIdNetworkRoute =
-  AuthenticatedLenderPortfolioIdNetworkRouteImport.update({
-    id: '/network',
-    path: '/network',
+const AuthenticatedLenderPortfolioIdCampaignsRoute =
+  AuthenticatedLenderPortfolioIdCampaignsRouteImport.update({
+    id: '/campaigns',
+    path: '/campaigns',
     getParentRoute: () => AuthenticatedLenderPortfolioIdRoute,
   } as any)
 
@@ -1065,123 +1065,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agent-invite': {
-      id: '/agent-invite'
-      path: '/agent-invite'
-      fullPath: '/agent-invite'
-      preLoaderRoute: typeof AgentInviteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agent-start': {
-      id: '/agent-start'
-      path: '/agent-start'
-      fullPath: '/agent-start'
-      preLoaderRoute: typeof AgentStartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agents': {
-      id: '/agents'
-      path: '/agents'
-      fullPath: '/agents'
-      preLoaderRoute: typeof AgentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/introduction': {
-      id: '/introduction'
-      path: '/introduction'
-      fullPath: '/introduction'
-      preLoaderRoute: typeof IntroductionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lender-start': {
-      id: '/lender-start'
-      path: '/lender-start'
-      fullPath: '/lender-start'
-      preLoaderRoute: typeof LenderStartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lenders': {
-      id: '/lenders'
-      path: '/lenders'
-      fullPath: '/lenders'
-      preLoaderRoute: typeof LendersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/partner': {
-      id: '/partner'
-      path: '/partner'
-      fullPath: '/partner'
-      preLoaderRoute: typeof PartnerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pro': {
-      id: '/pro'
-      path: '/pro'
-      fullPath: '/pro'
-      preLoaderRoute: typeof ProRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/professional-invite': {
-      id: '/professional-invite'
-      path: '/professional-invite'
-      fullPath: '/professional-invite'
-      preLoaderRoute: typeof ProfessionalInviteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/report': {
-      id: '/report'
-      path: '/report'
-      fullPath: '/report'
-      preLoaderRoute: typeof ReportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/request': {
-      id: '/request'
-      path: '/request'
-      fullPath: '/request'
-      preLoaderRoute: typeof RequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/services': {
-      id: '/services'
-      path: '/services'
-      fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
+    '/team-invite': {
+      id: '/team-invite'
+      path: '/team-invite'
+      fullPath: '/team-invite'
+      preLoaderRoute: typeof TeamInviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -1191,96 +1079,131 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/team-invite': {
-      id: '/team-invite'
-      path: '/team-invite'
-      fullPath: '/team-invite'
-      preLoaderRoute: typeof TeamInviteRouteImport
+    '/services': {
+      id: '/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/account': {
-      id: '/_authenticated/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AuthenticatedAccountRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/request': {
+      id: '/request'
+      path: '/request'
+      fullPath: '/request'
+      preLoaderRoute: typeof RequestRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/admin': {
-      id: '/_authenticated/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AuthenticatedAdminRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/report': {
+      id: '/report'
+      path: '/report'
+      fullPath: '/report'
+      preLoaderRoute: typeof ReportRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/agent': {
-      id: '/_authenticated/agent'
-      path: '/agent'
-      fullPath: '/agent'
-      preLoaderRoute: typeof AuthenticatedAgentRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/professional-invite': {
+      id: '/professional-invite'
+      path: '/professional-invite'
+      fullPath: '/professional-invite'
+      preLoaderRoute: typeof ProfessionalInviteRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/assistant': {
-      id: '/_authenticated/assistant'
-      path: '/assistant'
-      fullPath: '/assistant'
-      preLoaderRoute: typeof AuthenticatedAssistantRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/pro': {
+      id: '/pro'
+      path: '/pro'
+      fullPath: '/pro'
+      preLoaderRoute: typeof ProRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/batchdata-test': {
-      id: '/_authenticated/batchdata-test'
-      path: '/batchdata-test'
-      fullPath: '/batchdata-test'
-      preLoaderRoute: typeof AuthenticatedBatchdataTestRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/documents': {
-      id: '/_authenticated/documents'
-      path: '/documents'
-      fullPath: '/documents'
-      preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/home-care': {
-      id: '/_authenticated/home-care'
-      path: '/home-care'
-      fullPath: '/home-care'
-      preLoaderRoute: typeof AuthenticatedHomeCareRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/lenders': {
+      id: '/lenders'
+      path: '/lenders'
+      fullPath: '/lenders'
+      preLoaderRoute: typeof LendersRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/home-plan': {
-      id: '/_authenticated/home-plan'
-      path: '/home-plan'
-      fullPath: '/home-plan'
-      preLoaderRoute: typeof AuthenticatedHomePlanRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/lender-start': {
+      id: '/lender-start'
+      path: '/lender-start'
+      fullPath: '/lender-start'
+      preLoaderRoute: typeof LenderStartRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/lender': {
-      id: '/_authenticated/lender'
-      path: '/lender'
-      fullPath: '/lender'
-      preLoaderRoute: typeof AuthenticatedLenderRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/introduction': {
+      id: '/introduction'
+      path: '/introduction'
+      fullPath: '/introduction'
+      preLoaderRoute: typeof IntroductionRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/money': {
-      id: '/_authenticated/money'
-      path: '/money'
-      fullPath: '/money'
-      preLoaderRoute: typeof AuthenticatedMoneyRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/timeline': {
-      id: '/_authenticated/timeline'
-      path: '/timeline'
-      fullPath: '/timeline'
-      preLoaderRoute: typeof AuthenticatedTimelineRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent-start': {
+      id: '/agent-start'
+      path: '/agent-start'
+      fullPath: '/agent-start'
+      preLoaderRoute: typeof AgentStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agent-invite': {
+      id: '/agent-invite'
+      path: '/agent-invite'
+      fullPath: '/agent-invite'
+      preLoaderRoute: typeof AgentInviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lenders/': {
+      id: '/lenders/'
+      path: '/'
+      fullPath: '/lenders/'
+      preLoaderRoute: typeof LendersIndexRouteImport
+      parentRoute: typeof LendersRoute
     }
     '/agents/': {
       id: '/agents/'
@@ -1289,25 +1212,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsIndexRouteImport
       parentRoute: typeof AgentsRoute
     }
-    '/agents/deck': {
-      id: '/agents/deck'
-      path: '/deck'
-      fullPath: '/agents/deck'
-      preLoaderRoute: typeof AgentsDeckRouteImport
-      parentRoute: typeof AgentsRoute
-    }
-    '/agents/pricing': {
-      id: '/agents/pricing'
+    '/lenders/pricing': {
+      id: '/lenders/pricing'
       path: '/pricing'
-      fullPath: '/agents/pricing'
-      preLoaderRoute: typeof AgentsPricingRouteImport
-      parentRoute: typeof AgentsRoute
-    }
-    '/lenders/': {
-      id: '/lenders/'
-      path: '/'
-      fullPath: '/lenders/'
-      preLoaderRoute: typeof LendersIndexRouteImport
+      fullPath: '/lenders/pricing'
+      preLoaderRoute: typeof LendersPricingRouteImport
       parentRoute: typeof LendersRoute
     }
     '/lenders/deck': {
@@ -1317,61 +1226,103 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LendersDeckRouteImport
       parentRoute: typeof LendersRoute
     }
-    '/lenders/pricing': {
-      id: '/lenders/pricing'
+    '/agents/pricing': {
+      id: '/agents/pricing'
       path: '/pricing'
-      fullPath: '/lenders/pricing'
-      preLoaderRoute: typeof LendersPricingRouteImport
-      parentRoute: typeof LendersRoute
+      fullPath: '/agents/pricing'
+      preLoaderRoute: typeof AgentsPricingRouteImport
+      parentRoute: typeof AgentsRoute
     }
-    '/_authenticated/agent/': {
-      id: '/_authenticated/agent/'
-      path: '/'
-      fullPath: '/agent/'
-      preLoaderRoute: typeof AuthenticatedAgentIndexRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/agents/deck': {
+      id: '/agents/deck'
+      path: '/deck'
+      fullPath: '/agents/deck'
+      preLoaderRoute: typeof AgentsDeckRouteImport
+      parentRoute: typeof AgentsRoute
     }
-    '/_authenticated/agent/campaigns': {
-      id: '/_authenticated/agent/campaigns'
-      path: '/campaigns'
-      fullPath: '/agent/campaigns'
-      preLoaderRoute: typeof AuthenticatedAgentCampaignsRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/_authenticated/timeline': {
+      id: '/_authenticated/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof AuthenticatedTimelineRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/agent/funnel': {
-      id: '/_authenticated/agent/funnel'
-      path: '/funnel'
-      fullPath: '/agent/funnel'
-      preLoaderRoute: typeof AuthenticatedAgentFunnelRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/_authenticated/money': {
+      id: '/_authenticated/money'
+      path: '/money'
+      fullPath: '/money'
+      preLoaderRoute: typeof AuthenticatedMoneyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/agent/home-teams': {
-      id: '/_authenticated/agent/home-teams'
-      path: '/home-teams'
-      fullPath: '/agent/home-teams'
-      preLoaderRoute: typeof AuthenticatedAgentHomeTeamsRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/_authenticated/home-plan': {
+      id: '/_authenticated/home-plan'
+      path: '/home-plan'
+      fullPath: '/home-plan'
+      preLoaderRoute: typeof AuthenticatedHomePlanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/agent/network': {
-      id: '/_authenticated/agent/network'
-      path: '/network'
-      fullPath: '/agent/network'
-      preLoaderRoute: typeof AuthenticatedAgentNetworkRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/_authenticated/home-care': {
+      id: '/_authenticated/home-care'
+      path: '/home-care'
+      fullPath: '/home-care'
+      preLoaderRoute: typeof AuthenticatedHomeCareRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/agent/opportunities': {
-      id: '/_authenticated/agent/opportunities'
-      path: '/opportunities'
-      fullPath: '/agent/opportunities'
-      preLoaderRoute: typeof AuthenticatedAgentOpportunitiesRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/_authenticated/documents': {
+      id: '/_authenticated/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof AuthenticatedDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/agent/tasks': {
-      id: '/_authenticated/agent/tasks'
-      path: '/tasks'
-      fullPath: '/agent/tasks'
-      preLoaderRoute: typeof AuthenticatedAgentTasksRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/batchdata-test': {
+      id: '/_authenticated/batchdata-test'
+      path: '/batchdata-test'
+      fullPath: '/batchdata-test'
+      preLoaderRoute: typeof AuthenticatedBatchdataTestRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/assistant': {
+      id: '/_authenticated/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AuthenticatedAssistantRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/lender': {
+      id: '/_authenticated/lender'
+      path: '/lender'
+      fullPath: '/lender'
+      preLoaderRoute: typeof AuthenticatedLenderRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agent': {
+      id: '/_authenticated/agent'
+      path: '/agent'
+      fullPath: '/agent'
+      preLoaderRoute: typeof AuthenticatedAgentRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/lender/': {
       id: '/_authenticated/lender/'
@@ -1380,53 +1331,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderIndexRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/_authenticated/lender/billing': {
-      id: '/_authenticated/lender/billing'
-      path: '/billing'
-      fullPath: '/lender/billing'
-      preLoaderRoute: typeof AuthenticatedLenderBillingRouteImport
-      parentRoute: typeof AuthenticatedLenderRouteRoute
+    '/_authenticated/agent/': {
+      id: '/_authenticated/agent/'
+      path: '/'
+      fullPath: '/agent/'
+      preLoaderRoute: typeof AuthenticatedAgentIndexRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/_authenticated/lender/campaigns': {
-      id: '/_authenticated/lender/campaigns'
-      path: '/campaigns'
-      fullPath: '/lender/campaigns'
-      preLoaderRoute: typeof AuthenticatedLenderCampaignsRouteImport
-      parentRoute: typeof AuthenticatedLenderRouteRoute
+    '/api/public/unsubscribe': {
+      id: '/api/public/unsubscribe'
+      path: '/api/public/unsubscribe'
+      fullPath: '/api/public/unsubscribe'
+      preLoaderRoute: typeof ApiPublicUnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/lender/capacity': {
-      id: '/_authenticated/lender/capacity'
-      path: '/capacity'
-      fullPath: '/lender/capacity'
-      preLoaderRoute: typeof AuthenticatedLenderCapacityRouteImport
-      parentRoute: typeof AuthenticatedLenderRouteRoute
+    '/api/post-call/transcribe': {
+      id: '/api/post-call/transcribe'
+      path: '/api/post-call/transcribe'
+      fullPath: '/api/post-call/transcribe'
+      preLoaderRoute: typeof ApiPostCallTranscribeRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/lender/discovery': {
-      id: '/_authenticated/lender/discovery'
-      path: '/discovery'
-      fullPath: '/lender/discovery'
-      preLoaderRoute: typeof AuthenticatedLenderDiscoveryRouteImport
-      parentRoute: typeof AuthenticatedLenderRouteRoute
+    '/_authenticated/requests/$id': {
+      id: '/_authenticated/requests/$id'
+      path: '/requests/$id'
+      fullPath: '/requests/$id'
+      preLoaderRoute: typeof AuthenticatedRequestsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/lender/funnel': {
-      id: '/_authenticated/lender/funnel'
-      path: '/funnel'
-      fullPath: '/lender/funnel'
-      preLoaderRoute: typeof AuthenticatedLenderFunnelRouteImport
-      parentRoute: typeof AuthenticatedLenderRouteRoute
-    }
-    '/_authenticated/lender/network': {
-      id: '/_authenticated/lender/network'
-      path: '/network'
-      fullPath: '/lender/network'
-      preLoaderRoute: typeof AuthenticatedLenderNetworkRouteImport
-      parentRoute: typeof AuthenticatedLenderRouteRoute
-    }
-    '/_authenticated/lender/opportunities': {
-      id: '/_authenticated/lender/opportunities'
-      path: '/opportunities'
-      fullPath: '/lender/opportunities'
-      preLoaderRoute: typeof AuthenticatedLenderOpportunitiesRouteImport
+    '/_authenticated/lender/team': {
+      id: '/_authenticated/lender/team'
+      path: '/team'
+      fullPath: '/lender/team'
+      preLoaderRoute: typeof AuthenticatedLenderTeamRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
     '/_authenticated/lender/tasks': {
@@ -1436,165 +1373,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderTasksRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/_authenticated/lender/team': {
-      id: '/_authenticated/lender/team'
-      path: '/team'
-      fullPath: '/lender/team'
-      preLoaderRoute: typeof AuthenticatedLenderTeamRouteImport
+    '/_authenticated/lender/opportunities': {
+      id: '/_authenticated/lender/opportunities'
+      path: '/opportunities'
+      fullPath: '/lender/opportunities'
+      preLoaderRoute: typeof AuthenticatedLenderOpportunitiesRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/_authenticated/requests/$id': {
-      id: '/_authenticated/requests/$id'
-      path: '/requests/$id'
-      fullPath: '/requests/$id'
-      preLoaderRoute: typeof AuthenticatedRequestsIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/post-call/transcribe': {
-      id: '/api/post-call/transcribe'
-      path: '/api/post-call/transcribe'
-      fullPath: '/api/post-call/transcribe'
-      preLoaderRoute: typeof ApiPostCallTranscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/unsubscribe': {
-      id: '/api/public/unsubscribe'
-      path: '/api/public/unsubscribe'
-      fullPath: '/api/public/unsubscribe'
-      preLoaderRoute: typeof ApiPublicUnsubscribeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/agent/add-client/$id': {
-      id: '/_authenticated/agent/add-client/$id'
-      path: '/add-client/$id'
-      fullPath: '/agent/add-client/$id'
-      preLoaderRoute: typeof AuthenticatedAgentAddClientIdRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/_authenticated/agent/discovery/$id': {
-      id: '/_authenticated/agent/discovery/$id'
-      path: '/discovery/$id'
-      fullPath: '/agent/discovery/$id'
-      preLoaderRoute: typeof AuthenticatedAgentDiscoveryIdRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/_authenticated/agent/inspections/$id': {
-      id: '/_authenticated/agent/inspections/$id'
-      path: '/inspections/$id'
-      fullPath: '/agent/inspections/$id'
-      preLoaderRoute: typeof AuthenticatedAgentInspectionsIdRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/_authenticated/agent/portfolio/$id': {
-      id: '/_authenticated/agent/portfolio/$id'
-      path: '/portfolio/$id'
-      fullPath: '/agent/portfolio/$id'
-      preLoaderRoute: typeof AuthenticatedAgentPortfolioIdRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/_authenticated/agent/reveal/$id': {
-      id: '/_authenticated/agent/reveal/$id'
-      path: '/reveal/$id'
-      fullPath: '/agent/reveal/$id'
-      preLoaderRoute: typeof AuthenticatedAgentRevealIdRouteImport
-      parentRoute: typeof AuthenticatedAgentRouteRoute
-    }
-    '/_authenticated/lender/portfolio/$id': {
-      id: '/_authenticated/lender/portfolio/$id'
-      path: '/portfolio/$id'
-      fullPath: '/lender/portfolio/$id'
-      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdRouteImport
+    '/_authenticated/lender/network': {
+      id: '/_authenticated/lender/network'
+      path: '/network'
+      fullPath: '/lender/network'
+      preLoaderRoute: typeof AuthenticatedLenderNetworkRouteImport
       parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/api/public/campaigns/tick': {
-      id: '/api/public/campaigns/tick'
-      path: '/api/public/campaigns/tick'
-      fullPath: '/api/public/campaigns/tick'
-      preLoaderRoute: typeof ApiPublicCampaignsTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/lender/funnel': {
+      id: '/_authenticated/lender/funnel'
+      path: '/funnel'
+      fullPath: '/lender/funnel'
+      preLoaderRoute: typeof AuthenticatedLenderFunnelRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/api/public/daily-read/tick': {
-      id: '/api/public/daily-read/tick'
-      path: '/api/public/daily-read/tick'
-      fullPath: '/api/public/daily-read/tick'
-      preLoaderRoute: typeof ApiPublicDailyReadTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/lender/discovery': {
+      id: '/_authenticated/lender/discovery'
+      path: '/discovery'
+      fullPath: '/lender/discovery'
+      preLoaderRoute: typeof AuthenticatedLenderDiscoveryRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/api/public/enrich/tick': {
-      id: '/api/public/enrich/tick'
-      path: '/api/public/enrich/tick'
-      fullPath: '/api/public/enrich/tick'
-      preLoaderRoute: typeof ApiPublicEnrichTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/lender/capacity': {
+      id: '/_authenticated/lender/capacity'
+      path: '/capacity'
+      fullPath: '/lender/capacity'
+      preLoaderRoute: typeof AuthenticatedLenderCapacityRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/api/public/ghl/billing': {
-      id: '/api/public/ghl/billing'
-      path: '/api/public/ghl/billing'
-      fullPath: '/api/public/ghl/billing'
-      preLoaderRoute: typeof ApiPublicGhlBillingRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/lender/campaigns': {
+      id: '/_authenticated/lender/campaigns'
+      path: '/campaigns'
+      fullPath: '/lender/campaigns'
+      preLoaderRoute: typeof AuthenticatedLenderCampaignsRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/api/public/ghl/drain': {
-      id: '/api/public/ghl/drain'
-      path: '/api/public/ghl/drain'
-      fullPath: '/api/public/ghl/drain'
-      preLoaderRoute: typeof ApiPublicGhlDrainRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/lender/billing': {
+      id: '/_authenticated/lender/billing'
+      path: '/billing'
+      fullPath: '/lender/billing'
+      preLoaderRoute: typeof AuthenticatedLenderBillingRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
     }
-    '/api/public/leads/tick': {
-      id: '/api/public/leads/tick'
-      path: '/api/public/leads/tick'
-      fullPath: '/api/public/leads/tick'
-      preLoaderRoute: typeof ApiPublicLeadsTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/agent/tasks': {
+      id: '/_authenticated/agent/tasks'
+      path: '/tasks'
+      fullPath: '/agent/tasks'
+      preLoaderRoute: typeof AuthenticatedAgentTasksRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/api/public/lenders/pilot': {
-      id: '/api/public/lenders/pilot'
-      path: '/api/public/lenders/pilot'
-      fullPath: '/api/public/lenders/pilot'
-      preLoaderRoute: typeof ApiPublicLendersPilotRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/agent/opportunities': {
+      id: '/_authenticated/agent/opportunities'
+      path: '/opportunities'
+      fullPath: '/agent/opportunities'
+      preLoaderRoute: typeof AuthenticatedAgentOpportunitiesRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/api/public/rates/tick': {
-      id: '/api/public/rates/tick'
-      path: '/api/public/rates/tick'
-      fullPath: '/api/public/rates/tick'
-      preLoaderRoute: typeof ApiPublicRatesTickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/agent/network': {
+      id: '/_authenticated/agent/network'
+      path: '/network'
+      fullPath: '/agent/network'
+      preLoaderRoute: typeof AuthenticatedAgentNetworkRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/api/public/t/click': {
-      id: '/api/public/t/click'
-      path: '/api/public/t/click'
-      fullPath: '/api/public/t/click'
-      preLoaderRoute: typeof ApiPublicTClickRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/agent/home-teams': {
+      id: '/_authenticated/agent/home-teams'
+      path: '/home-teams'
+      fullPath: '/agent/home-teams'
+      preLoaderRoute: typeof AuthenticatedAgentHomeTeamsRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/api/public/t/open': {
-      id: '/api/public/t/open'
-      path: '/api/public/t/open'
-      fullPath: '/api/public/t/open'
-      preLoaderRoute: typeof ApiPublicTOpenRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/agent/funnel': {
+      id: '/_authenticated/agent/funnel'
+      path: '/funnel'
+      fullPath: '/agent/funnel'
+      preLoaderRoute: typeof AuthenticatedAgentFunnelRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/api/public/webhooks/ghl-messages': {
-      id: '/api/public/webhooks/ghl-messages'
-      path: '/api/public/webhooks/ghl-messages'
-      fullPath: '/api/public/webhooks/ghl-messages'
-      preLoaderRoute: typeof ApiPublicWebhooksGhlMessagesRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/agent/campaigns': {
+      id: '/_authenticated/agent/campaigns'
+      path: '/campaigns'
+      fullPath: '/agent/campaigns'
+      preLoaderRoute: typeof AuthenticatedAgentCampaignsRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
-    '/api/public/webhooks/stripe': {
-      id: '/api/public/webhooks/stripe'
-      path: '/api/public/webhooks/stripe'
-      fullPath: '/api/public/webhooks/stripe'
-      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/webhook': {
@@ -1604,12 +1478,138 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/stripe': {
+      id: '/api/public/webhooks/stripe'
+      path: '/api/public/webhooks/stripe'
+      fullPath: '/api/public/webhooks/stripe'
+      preLoaderRoute: typeof ApiPublicWebhooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/ghl-messages': {
+      id: '/api/public/webhooks/ghl-messages'
+      path: '/api/public/webhooks/ghl-messages'
+      fullPath: '/api/public/webhooks/ghl-messages'
+      preLoaderRoute: typeof ApiPublicWebhooksGhlMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/t/open': {
+      id: '/api/public/t/open'
+      path: '/api/public/t/open'
+      fullPath: '/api/public/t/open'
+      preLoaderRoute: typeof ApiPublicTOpenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/t/click': {
+      id: '/api/public/t/click'
+      path: '/api/public/t/click'
+      fullPath: '/api/public/t/click'
+      preLoaderRoute: typeof ApiPublicTClickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/rates/tick': {
+      id: '/api/public/rates/tick'
+      path: '/api/public/rates/tick'
+      fullPath: '/api/public/rates/tick'
+      preLoaderRoute: typeof ApiPublicRatesTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/lenders/pilot': {
+      id: '/api/public/lenders/pilot'
+      path: '/api/public/lenders/pilot'
+      fullPath: '/api/public/lenders/pilot'
+      preLoaderRoute: typeof ApiPublicLendersPilotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/leads/tick': {
+      id: '/api/public/leads/tick'
+      path: '/api/public/leads/tick'
+      fullPath: '/api/public/leads/tick'
+      preLoaderRoute: typeof ApiPublicLeadsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ghl/drain': {
+      id: '/api/public/ghl/drain'
+      path: '/api/public/ghl/drain'
+      fullPath: '/api/public/ghl/drain'
+      preLoaderRoute: typeof ApiPublicGhlDrainRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/ghl/billing': {
+      id: '/api/public/ghl/billing'
+      path: '/api/public/ghl/billing'
+      fullPath: '/api/public/ghl/billing'
+      preLoaderRoute: typeof ApiPublicGhlBillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/enrich/tick': {
+      id: '/api/public/enrich/tick'
+      path: '/api/public/enrich/tick'
+      fullPath: '/api/public/enrich/tick'
+      preLoaderRoute: typeof ApiPublicEnrichTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/daily-read/tick': {
+      id: '/api/public/daily-read/tick'
+      path: '/api/public/daily-read/tick'
+      fullPath: '/api/public/daily-read/tick'
+      preLoaderRoute: typeof ApiPublicDailyReadTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/campaigns/tick': {
+      id: '/api/public/campaigns/tick'
+      path: '/api/public/campaigns/tick'
+      fullPath: '/api/public/campaigns/tick'
+      preLoaderRoute: typeof ApiPublicCampaignsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/lender/portfolio/$id': {
+      id: '/_authenticated/lender/portfolio/$id'
+      path: '/portfolio/$id'
+      fullPath: '/lender/portfolio/$id'
+      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdRouteImport
+      parentRoute: typeof AuthenticatedLenderRouteRoute
+    }
+    '/_authenticated/agent/reveal/$id': {
+      id: '/_authenticated/agent/reveal/$id'
+      path: '/reveal/$id'
+      fullPath: '/agent/reveal/$id'
+      preLoaderRoute: typeof AuthenticatedAgentRevealIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
+    '/_authenticated/agent/portfolio/$id': {
+      id: '/_authenticated/agent/portfolio/$id'
+      path: '/portfolio/$id'
+      fullPath: '/agent/portfolio/$id'
+      preLoaderRoute: typeof AuthenticatedAgentPortfolioIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
+    '/_authenticated/agent/inspections/$id': {
+      id: '/_authenticated/agent/inspections/$id'
+      path: '/inspections/$id'
+      fullPath: '/agent/inspections/$id'
+      preLoaderRoute: typeof AuthenticatedAgentInspectionsIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
+    '/_authenticated/agent/discovery/$id': {
+      id: '/_authenticated/agent/discovery/$id'
+      path: '/discovery/$id'
+      fullPath: '/agent/discovery/$id'
+      preLoaderRoute: typeof AuthenticatedAgentDiscoveryIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
+    }
+    '/_authenticated/agent/add-client/$id': {
+      id: '/_authenticated/agent/add-client/$id'
+      path: '/add-client/$id'
+      fullPath: '/agent/add-client/$id'
+      preLoaderRoute: typeof AuthenticatedAgentAddClientIdRouteImport
+      parentRoute: typeof AuthenticatedAgentRouteRoute
     }
     '/_authenticated/lender/portfolio/$id/': {
       id: '/_authenticated/lender/portfolio/$id/'
@@ -1618,11 +1618,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderPortfolioIdIndexRouteImport
       parentRoute: typeof AuthenticatedLenderPortfolioIdRoute
     }
-    '/_authenticated/lender/portfolio/$id/campaigns': {
-      id: '/_authenticated/lender/portfolio/$id/campaigns'
-      path: '/campaigns'
-      fullPath: '/lender/portfolio/$id/campaigns'
-      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdCampaignsRouteImport
+    '/_authenticated/lender/portfolio/$id/network': {
+      id: '/_authenticated/lender/portfolio/$id/network'
+      path: '/network'
+      fullPath: '/lender/portfolio/$id/network'
+      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdNetworkRouteImport
       parentRoute: typeof AuthenticatedLenderPortfolioIdRoute
     }
     '/_authenticated/lender/portfolio/$id/import': {
@@ -1632,11 +1632,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLenderPortfolioIdImportRouteImport
       parentRoute: typeof AuthenticatedLenderPortfolioIdRoute
     }
-    '/_authenticated/lender/portfolio/$id/network': {
-      id: '/_authenticated/lender/portfolio/$id/network'
-      path: '/network'
-      fullPath: '/lender/portfolio/$id/network'
-      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdNetworkRouteImport
+    '/_authenticated/lender/portfolio/$id/campaigns': {
+      id: '/_authenticated/lender/portfolio/$id/campaigns'
+      path: '/campaigns'
+      fullPath: '/lender/portfolio/$id/campaigns'
+      preLoaderRoute: typeof AuthenticatedLenderPortfolioIdCampaignsRouteImport
       parentRoute: typeof AuthenticatedLenderPortfolioIdRoute
     }
   }
