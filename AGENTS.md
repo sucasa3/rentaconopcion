@@ -16,5 +16,5 @@
 - Branch/team features require `plan_tiers.team_enabled` AND a manager role (`lender_is_team_manager`); never infer from seat_limit — keeps entitlement explicit.
 - Suspended lender members move to `lender_suspended_members` (books/assignments untouched) and return only via manual, capacity-checked reactivation — downgrades never delete data.
 - Agent collaborations are owned per officer (`agent_lender_connections.owner_user_id`, trigger-guarded); only branch managers reassign.
-- Vitest testTimeout is 30s (vite.config.ts `vite.test`) — cold dynamic imports time out at the 5s default under full-suite load.
+- Vitest testTimeout is 30s (vitest.config.ts) — cold dynamic imports time out at the 5s default under full-suite load.
 - Team invitation links use the request origin on preview hosts (`isPreviewHost` in src/lib/stripe-mode.ts) and SITE_URL otherwise — preview testing never hands out live-site links.
