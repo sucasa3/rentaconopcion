@@ -43,7 +43,17 @@ export const getBillingState = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!org) throw new Error("Organization not found");
-    return org;
+    // Legacy plans are hidden from the plan list, so resolve the current plan's name here.
+    let plan_name: string | null = null;
+    if ((org as any).plan_key) {
+      const { data: tier } = await context.supabase
+        .from("plan_tiers")
+        .select("name")
+        .eq("key", (org as any).plan_key)
+        .maybeSingle();
+      plan_name = (tier as any)?.name ?? null;
+    }
+    return { ...org, plan_name };
   });
 
 /** Start Stripe Checkout for a plan and return the URL to send the lender to. */
