@@ -7,6 +7,7 @@ import { addPortfolioClient, ingestPortfolioCsv } from "@/lib/lender.functions";
 import { UserPlus } from "lucide-react";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { recordAuthenticatedAgentEvent } from "@/lib/agent-funnel.functions";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   component: PortfolioImport,
@@ -33,6 +34,8 @@ function PortfolioImport() {
   const addFn = useServerFn(addPortfolioClient);
   const [form, setForm] = useState({ ...EMPTY });
   const track = useServerFn(recordAuthenticatedAgentEvent);
+  const { language } = useLanguage();
+  const L = (en: string, es: string) => (language === "es" ? es : en);
 
   const ingest = useMutation({
     mutationFn: (csv: string) => {
@@ -43,8 +46,8 @@ function PortfolioImport() {
       void track({ data: { action: "lender_full_upload_completed" } }).catch(() => undefined);
       toast.success(
         r.existing
-          ? `Imported ${r.inserted} clients · ${r.existing} already in this book were skipped`
-          : `Imported ${r.inserted} clients`,
+          ? L(`Imported ${r.inserted} clients · ${r.existing} already in this book were skipped`, `Se importaron ${r.inserted} clientes · se omitieron ${r.existing} que ya estaban en esta cartera`)
+          : L(`Imported ${r.inserted} clients`, `Se importaron ${r.inserted} clientes`),
       );
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
       navigate({ to: "/lender/portfolio/$id", params: { id } });
@@ -71,7 +74,7 @@ function PortfolioImport() {
         },
       }),
     onSuccess: () => {
-      toast.success("Client added");
+      toast.success(L("Client added", "Cliente agregado"));
       setForm({ ...EMPTY });
       qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
     },
@@ -86,29 +89,29 @@ function PortfolioImport() {
       <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
         <div className="flex items-center gap-2">
           <UserPlus className="h-4 w-4 text-primary" />
-          <h2 id="one" className="scroll-mt-20 text-base font-semibold">Add one client</h2>
+          <h2 id="one" className="scroll-mt-20 text-base font-semibold">{L("Add one client", "Agregar un cliente")}</h2>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          Name and address are required — everything else fills in from property records.
+          {L("Name and address are required — everything else fills in from property records.", "El nombre y la dirección son obligatorios — lo demás se completa con los registros de la propiedad.")}
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <Field label="Full name" value={form.fullName} onChange={set("fullName")} />
-          <Field label="Address" value={form.address} onChange={set("address")} />
-          <Field label="City" value={form.city} onChange={set("city")} />
-          <Field label="State" value={form.state} onChange={set("state")} />
-          <Field label="ZIP" value={form.zip} onChange={set("zip")} />
-          <Field label="Email" value={form.email} onChange={set("email")} />
-          <Field label="Phone" value={form.phone} onChange={set("phone")} />
-          <Field label="Loan at close ($)" value={form.loanAmount} onChange={set("loanAmount")} />
-          <Field label="Rate (%)" value={form.rate} onChange={set("rate")} />
-          <Field label="Close date" value={form.closeDate} onChange={set("closeDate")} placeholder="YYYY-MM-DD" />
+          <Field label={L("Full name", "Nombre completo")} value={form.fullName} onChange={set("fullName")} />
+          <Field label={L("Address", "Dirección")} value={form.address} onChange={set("address")} />
+          <Field label={L("City", "Ciudad")} value={form.city} onChange={set("city")} />
+          <Field label={L("State", "Estado")} value={form.state} onChange={set("state")} />
+          <Field label={L("ZIP", "Código postal")} value={form.zip} onChange={set("zip")} />
+          <Field label={L("Email", "Correo")} value={form.email} onChange={set("email")} />
+          <Field label={L("Phone", "Teléfono")} value={form.phone} onChange={set("phone")} />
+          <Field label={L("Loan at close ($)", "Préstamo al cierre ($)")} value={form.loanAmount} onChange={set("loanAmount")} />
+          <Field label={L("Rate (%)", "Tasa (%)")} value={form.rate} onChange={set("rate")} />
+          <Field label={L("Close date", "Fecha de cierre")} value={form.closeDate} onChange={set("closeDate")} placeholder={L("YYYY-MM-DD", "AAAA-MM-DD")} />
         </div>
         <button
           disabled={!form.fullName || !form.address || add.isPending}
           onClick={() => add.mutate()}
           className="mt-4 inline-flex items-center gap-1 rounded-full gradient-brand px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
-          <UserPlus className="h-3 w-3" /> {add.isPending ? "Adding…" : "Add client"}
+          <UserPlus className="h-3 w-3" /> {add.isPending ? L("Adding…", "Agregando…") : L("Add client", "Agregar cliente")}
         </button>
       </div>
 
