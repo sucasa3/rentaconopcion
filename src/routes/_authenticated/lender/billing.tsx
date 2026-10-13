@@ -234,7 +234,7 @@ function BillingPage() {
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {(plans ?? [])
-            .filter((p: any) => p.audience !== "agent")
+            .filter((p: any) => p.audience !== "agent" && p.key !== "pilot_90")
             .map((p: any) => (
             <Card key={p.key} className={`flex flex-col ${p.key === selected?.key ? "border-2 border-primary" : ""}`}>
               <CardHeader className="pb-2">
