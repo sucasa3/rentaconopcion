@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/lender/billing")({
   validateSearch: (s: Record<string, unknown>) => ({
     checkout: typeof s['checkout'] === "string" ? (s['checkout'] as string) : undefined,
     plan: typeof s['plan'] === "string" ? (s['plan'] as string).slice(0, 40) : undefined,
+    session_id: typeof s['session_id'] === "string" ? (s['session_id'] as string).slice(0, 200) : undefined,
   }),
   component: BillingPage,
 });
