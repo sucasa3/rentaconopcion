@@ -24,3 +24,5 @@
 - The `/lender` area redirects accounts without a lender workspace (or paused membership) to their own home — no empty professional shells.
 - The $397 MLO Growth launch offer is a one-time Checkout payment; `finalizeLaunchPayment` (webhook + return sync, idempotent per session) then creates the $149 subscription with billing deferred 90 days — customers never see "free trial" wording.
 - Sign-in emails link to /auth/continue (button press required) instead of the one-time verify URL, so corporate link scanners cannot consume the token; only Supabase verify URLs are accepted.
+- New self-serve agents are routed to their own Discovery (resolved server-side from membership via getMyAgentOnboarding) until the free 100 is claimed; Agent Today shows an unlock banner instead of paid-plan prompts — keeps first value ahead of upsell and never trusts a client-supplied workspace id.
+- Signup and magic-link emails both link through /auth/continue; preview-origin redirects keep the preview host — scanner-safe everywhere and testable before publishing.
