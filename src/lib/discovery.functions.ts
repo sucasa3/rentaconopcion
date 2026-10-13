@@ -263,7 +263,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
 
     // Pricing and activation state come from configuration, never hard-coded.
     const [{ data: tiers }, { data: org }] = await Promise.all([
-      supabaseAdmin.from("plan_tiers").select("key, price_cents").in("key", ["pilot_90", "mlo_growth_v2"]),
+      supabaseAdmin.from("plan_tiers").select("key, price_cents").in("key", ["mlo_growth_launch", "mlo_growth_v2"]),
       supabaseAdmin
         .from("lender_orgs")
         .select("subscription_status")
@@ -278,7 +278,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
       discoveryId: (run as any).id,
       portfolioId: (run as any).portfolio_id,
       activated,
-      pricing: { pilotCents: priceOf("pilot_90"), growthCents: priceOf("mlo_growth_v2") },
+      pricing: { pilotCents: priceOf("mlo_growth_launch"), growthCents: priceOf("mlo_growth_v2") },
       orgId: (run as any).org_id,
       status: (run as any).status as string,
       allowance: (run as any).allowance ?? DISCOVERY_ALLOWANCE,
