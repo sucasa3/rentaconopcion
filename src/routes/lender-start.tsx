@@ -124,7 +124,7 @@ function LenderStartPage() {
   // Provision only after an explicit onboarding action — never just because a
   // signed-in visitor (e.g. a homeowner) opened this page.
   useEffect(() => {
-    const intended = () => search.intent === "1" || hasProIntent("lender");
+    const intended = () => hasProIntent("lender");
     supabase.auth.getUser().then(({ data }) => {
       if (data.user && intended()) void finish();
       else {

@@ -11,6 +11,7 @@ import { activateAgentWorkspace } from "@/lib/agent-onboarding.functions";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordAuthenticatedAgentEvent, recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 import { useLanguage } from "@/lib/i18n";
+import { clearProIntent, hasProIntent, markProIntent } from "@/lib/pro-intent";
 
 const searchSchema = z.object({ source: z.string().max(80).optional() });
 
@@ -47,6 +48,7 @@ function AgentStartPage() {
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const activationStarted = useRef(false);
 
   async function finishActivation() {
@@ -60,6 +62,7 @@ function AgentStartPage() {
       await recordAuthenticated({ data: { action: "agent_signup_completed", ...attribution } });
       await activate({ data: { agencyName: storedAgency, language } });
       window.sessionStorage.removeItem(AGENCY_KEY);
+      clearProIntent();
       await router.invalidate();
       navigate({ to: "/agent", replace: true });
     } catch (reason) {
@@ -72,12 +75,17 @@ function AgentStartPage() {
   useEffect(() => {
     const storedAgency = window.sessionStorage.getItem(AGENCY_KEY);
     if (storedAgency) setAgencyName(storedAgency);
+    // Provision only after an explicit onboarding action on this page — a
+    // signed-in homeowner who merely opens it is asked first.
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) void finishActivation();
-      else setBusy(false);
+      if (data.user && hasProIntent("agent")) void finishActivation();
+      else {
+        setSignedInEmail(data.user?.email ?? null);
+        setBusy(false);
+      }
     });
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) void finishActivation();
+      if (session && event === "SIGNED_IN" && hasProIntent("agent")) void finishActivation();
     });
     return () => subscription.subscription.unsubscribe();
   }, []);
@@ -91,6 +99,7 @@ function AgentStartPage() {
     void recordPublic({ data: { action: "agent_signup_started", ...attribution } });
     try {
       window.sessionStorage.setItem(AGENCY_KEY, agencyName.trim());
+      markProIntent("agent");
       if (mode === "signup") {
         const { data, error: signupError } = await supabase.auth.signUp({
           email,
@@ -128,6 +137,7 @@ function AgentStartPage() {
     const attribution = getAgentAttribution();
     void recordPublic({ data: { action: "agent_signup_started", ...attribution } });
     window.sessionStorage.setItem(AGENCY_KEY, agencyName.trim());
+    markProIntent("agent");
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: `${window.location.origin}/agent-start`,
     });
@@ -170,6 +180,19 @@ function AgentStartPage() {
               <CheckCircle2 className="h-6 w-6 text-status-positive" />
               <p className="mt-3 font-semibold">{t("pub.astart.confirm_title")}</p>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{message}</p>
+            </div>
+          ) : signedInEmail ? (
+            <div className="mt-6 space-y-4">
+              <p className="text-sm text-muted-foreground">{t("pro.signed_in_as", { email: signedInEmail })}</p>
+              <label className="block text-sm font-medium" htmlFor="agency-continue">{t("pub.astart.agency_label")}</label>
+              <input id="agency-continue" required value={agencyName} onChange={(e) => setAgencyName(e.target.value)} placeholder={t("pub.astart.agency_placeholder")} className="min-h-12 w-full rounded-md border border-input px-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+              <Button type="button" className="min-h-12 w-full bg-sucasa-orange text-sucasa-orange-foreground hover:bg-sucasa-orange/90" disabled={busy || !agencyName.trim()} onClick={() => { window.sessionStorage.setItem(AGENCY_KEY, agencyName.trim()); markProIntent("agent"); void finishActivation(); }}>
+                {busy ? <Loader2 className="animate-spin" /> : t("pro.agent_continue")}
+              </Button>
+              {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+              <button type="button" className="min-h-11 w-full text-sm font-semibold text-primary" onClick={async () => { await supabase.auth.signOut(); setSignedInEmail(null); }}>
+                {t("pro.other_account")}
+              </button>
             </div>
           ) : (
             <>
