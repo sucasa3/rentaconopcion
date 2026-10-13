@@ -6,6 +6,8 @@ import { z } from "zod";
 import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { clearProIntent, hasProIntent, markProIntent } from "@/lib/pro-intent";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import {
   recordAuthenticatedAgentEvent,
@@ -15,7 +17,20 @@ import { startDiscovery } from "@/lib/discovery.functions";
 import { useLanguage } from "@/lib/i18n";
 import { LENDER_PUBLIC_PLANS } from "@/lib/public-plans";
 
-const searchSchema = z.object({ source: z.string().max(80).optional(), plan: z.string().max(40).optional() });
+const searchSchema = z.object({
+  source: z.string().max(80).optional(),
+  plan: z.string().max(40).optional(),
+  intent: z.string().max(4).optional(),
+});
+
+const COMPANY_KEY = "sucasa.lender_company";
+
+/** Public return URL that carries the explicit onboarding intent and the chosen plan. */
+function returnUrl(planKey?: string) {
+  const q = new URLSearchParams({ intent: "1" });
+  if (planKey) q.set("plan", planKey);
+  return `${window.location.origin}/lender-start?${q.toString()}`;
+}
 
 export const Route = createFileRoute("/lender-start")({
   validateSearch: searchSchema,
@@ -25,7 +40,7 @@ export const Route = createFileRoute("/lender-start")({
       {
         name: "description",
         content:
-          "Sign in with your email and let SuCasa analyze up to 100 past clients. No card, no contract, no cost.",
+          "Create your account and let SuCasa analyze up to 100 past clients. No card, no contract, no cost.",
       },
       { property: "og:title", content: "Discover the opportunities already in your database" },
       {
@@ -52,7 +67,8 @@ function LenderStartPage() {
   const navigate = useNavigate();
   const router = useRouter();
   const search = Route.useSearch();
-  // A plan picked on the pricing page skips Discovery and survives the email round-trip.
+  // A plan picked on the pricing page skips Discovery and survives sign-in,
+  // refreshes and the Google round-trip (sessionStorage).
   const [planKey, setPlanKey] = useState<string | undefined>(search.plan);
   const plan = LENDER_PUBLIC_PLANS.find((p) => p.key === planKey);
   useEffect(() => {
@@ -60,13 +76,20 @@ function LenderStartPage() {
     // Choosing Free Discovery explicitly drops any earlier plan choice.
     else if (search.source) sessionStorage.removeItem("sucasa.lender_plan");
     else setPlanKey(sessionStorage.getItem("sucasa.lender_plan") ?? undefined);
+    const storedCompany = sessionStorage.getItem(COMPANY_KEY);
+    if (storedCompany) setCompany(storedCompany);
   }, [search.plan]);
   const begin = useServerFn(startDiscovery);
   const recordPublic = useServerFn(recordPublicAgentEvent);
   const recordAuthenticated = useServerFn(recordAuthenticatedAgentEvent);
+  const [mode, setMode] = useState<"signup" | "signin">("signup");
+  const [fullName, setFullName] = useState("");
+  const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(true);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<"magic" | "confirm" | null>(null);
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function finish() {
@@ -79,10 +102,13 @@ function LenderStartPage() {
           void recordAuthenticated({
             data: { action: "lender_discovery_signup_completed", ...attribution },
           });
-          await begin({ data: { language } });
+          const companyName = sessionStorage.getItem(COMPANY_KEY)?.trim() || undefined;
+          await begin({ data: { language, companyName } });
         })();
       }
       await workspaceSetup;
+      clearProIntent();
+      sessionStorage.removeItem(COMPANY_KEY);
       await router.invalidate();
       const picked = search.plan ?? sessionStorage.getItem("sucasa.lender_plan");
       if (picked && LENDER_PUBLIC_PLANS.some((p) => p.key === picked)) {
@@ -95,36 +121,103 @@ function LenderStartPage() {
     }
   }
 
-
+  // Provision only after an explicit onboarding action — never just because a
+  // signed-in visitor (e.g. a homeowner) opened this page.
   useEffect(() => {
+    const intended = () => search.intent === "1" || hasProIntent("lender");
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) void finish();
-      else setBusy(false);
+      if (data.user && intended()) void finish();
+      else {
+        setSignedInEmail(data.user?.email ?? null);
+        setBusy(false);
+      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) void finish();
+      if (session && event === "SIGNED_IN" && intended()) void finish();
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  function rememberIntent() {
+    markProIntent("lender");
+    sessionStorage.setItem(COMPANY_KEY, company.trim());
+    const attribution = getAgentAttribution();
+    void recordPublic({ data: { action: "lender_discovery_signup_started", ...attribution } });
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const attribution = getAgentAttribution();
-    void recordPublic({ data: { action: "lender_discovery_signup_started", ...attribution } });
+    rememberIntent();
+    try {
+      if (mode === "signup") {
+        const { data, error: signupError } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            emailRedirectTo: returnUrl(plan?.key),
+            data: { full_name: fullName.trim() },
+          },
+        });
+        if (signupError) throw signupError;
+        if (!data.session) {
+          setSent("confirm");
+          setBusy(false);
+          return;
+        }
+      } else {
+        const { error: signinError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        if (signinError) throw signinError;
+      }
+      await finish();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : t("pub.astart.error_generic"));
+      setBusy(false);
+    }
+  }
+
+  async function handleMagic() {
+    if (!email.trim()) {
+      setError(t("auth.reset_need_email"));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    rememberIntent();
     try {
       const { error: otpError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/lender-start${plan ? `?plan=${plan.key}` : ""}` },
+        options: { emailRedirectTo: returnUrl(plan?.key) },
       });
       if (otpError) throw otpError;
-      setSent(true);
+      setSent("magic");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : t("pub.lstart.error_send"));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleGoogle() {
+    setError(null);
+    setBusy(true);
+    rememberIntent();
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: returnUrl(plan?.key),
+    });
+    if (result.error) {
+      setError(result.error.message ?? t("pub.astart.error_google"));
+      setBusy(false);
+      return;
+    }
+    if (result.redirected) return;
+    await finish();
+  }
+
+  async function useOtherAccount() {
+    await supabase.auth.signOut();
+    setSignedInEmail(null);
   }
 
   return (
@@ -154,52 +247,85 @@ function LenderStartPage() {
         </section>
 
         <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+          <h2 className="text-lg font-semibold text-foreground">
+            {plan ? t("pub.lstart.plan_title", { name: plan.name }) : mode === "signup" ? t("pro.create") : t("pro.signin_title")}
+          </h2>
+          {plan ? (
+            <p className="mt-1 text-sm text-muted-foreground">{t("pub.lstart.plan_sub", { price: plan.price.replace("/month", "") })}</p>
+          ) : null}
           {sent ? (
-            <div className="space-y-4 text-center">
+            <div className="mt-5 space-y-4 text-center">
               <Mail className="mx-auto h-10 w-10 text-primary" />
-              <h2 className="text-lg font-semibold text-foreground">{t("pub.lstart.sent_title")}</h2>
-              <p className="text-sm text-muted-foreground">{t("pub.lstart.sent_body", { email })}</p>
-              <button
-                type="button"
-                className="text-sm font-medium text-primary underline"
-                onClick={() => setSent(false)}
-              >
+              <h3 className="font-semibold text-foreground">{sent === "magic" ? t("pub.lstart.sent_title") : t("pro.confirm_title")}</h3>
+              <p className="text-sm text-muted-foreground">
+                {sent === "magic" ? t("pub.lstart.sent_body", { email }) : t("pro.confirm_body", { email })}
+              </p>
+              <button type="button" className="text-sm font-medium text-primary underline" onClick={() => setSent(null)}>
                 {t("pub.lstart.sent_different")}
               </button>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">{plan ? t("pub.lstart.plan_title", { name: plan.name }) : t("pub.lstart.form_title")}</h2>
-                <p className="mt-1 text-sm text-muted-foreground">{plan ? t("pub.lstart.plan_sub", { price: plan.price.replace("/month", "") }) : t("pub.lstart.form_sub")}</p>
-              </div>
+          ) : signedInEmail ? (
+            <div className="mt-5 space-y-3">
+              <p className="text-sm text-muted-foreground">{t("pro.signed_in_as", { email: signedInEmail })}</p>
               <label className="block text-sm font-medium text-foreground">
-                {t("pub.lstart.email_label")}
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@lender.com"
-                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
-                />
+                {t("pro.company_label")}
+                <input value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t("pro.company_placeholder")} className="mt-1 min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" />
               </label>
-              <Button type="submit" className="w-full" disabled={busy || !email.trim()}>
-                {busy ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                )}
-                {t("pub.lstart.submit")}
+              <Button type="button" className="min-h-12 w-full" disabled={busy} onClick={() => { rememberIntent(); void finish(); }}>
+                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                {t("pro.lender_continue")}
               </Button>
-              {error ? <p className="text-sm text-status-attention">{error}</p> : null}
-              <p className="text-xs text-muted-foreground">
-                {t("pub.lstart.signin_prompt")}{" "}
-                <Link to="/auth" className="font-medium text-primary underline">
-                  {t("pub.lstart.signin")}
-                </Link>
-              </p>
-            </form>
+              {error ? <p role="alert" className="text-sm text-status-attention">{error}</p> : null}
+              <button type="button" className="min-h-11 w-full text-sm font-medium text-primary" onClick={useOtherAccount}>
+                {t("pro.other_account")}
+              </button>
+            </div>
+          ) : (
+            <>
+              <Button type="button" variant="outline" className="mt-5 min-h-12 w-full" onClick={handleGoogle} disabled={busy}>
+                {t("pub.astart.google")}
+              </Button>
+              <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />{t("pub.astart.or_email")}<span className="h-px flex-1 bg-border" /></div>
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {mode === "signup" && (
+                  <>
+                    <label className="block text-sm font-medium text-foreground">
+                      {t("pub.astart.full_name")}
+                      <input required value={fullName} onChange={(e) => setFullName(e.target.value)} autoComplete="name" className="mt-1 min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" />
+                    </label>
+                    <label className="block text-sm font-medium text-foreground">
+                      {t("pro.company_label")}
+                      <input value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t("pro.company_placeholder")} autoComplete="organization" className="mt-1 min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" />
+                    </label>
+                  </>
+                )}
+                <label className="block text-sm font-medium text-foreground">
+                  {t("pub.lstart.email_label")}
+                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@lender.com" className="mt-1 min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" />
+                </label>
+                <label className="block text-sm font-medium text-foreground">
+                  {t("pub.astart.password")}
+                  <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} className="mt-1 min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground" />
+                </label>
+                {error ? <p role="alert" className="text-sm text-status-attention">{error}</p> : null}
+                <Button type="submit" className="min-h-12 w-full" disabled={busy}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
+                  {mode === "signup" ? t("pro.submit_signup") : t("pro.submit_signin")}
+                </Button>
+              </form>
+              <button type="button" className="mt-4 min-h-11 w-full text-sm font-semibold text-primary" onClick={() => { setMode(mode === "signup" ? "signin" : "signup"); setError(null); }}>
+                {mode === "signup" ? t("pro.toggle_to_signin") : t("pro.toggle_to_signup")}
+              </button>
+              <div className="mt-2 flex flex-col items-center gap-1 text-xs text-muted-foreground">
+                <span>
+                  {t("pro.magic_instead")}{" "}
+                  <button type="button" onClick={handleMagic} disabled={busy} className="font-medium text-primary underline">{t("pro.magic_send")}</button>
+                </span>
+                {mode === "signin" && (
+                  <Link to="/auth" search={{ forgot: "1" }} className="font-medium text-primary underline">{t("pro.forgot")}</Link>
+                )}
+              </div>
+            </>
           )}
         </section>
       </main>
