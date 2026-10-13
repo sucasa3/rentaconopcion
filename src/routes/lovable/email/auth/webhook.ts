@@ -15,6 +15,19 @@ const ROOT_DOMAIN = "sucasa.com"
 const FROM_DOMAIN = "notify.sucasa.com"
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
+// Scanner-safe sign-in: the emailed link opens /auth/continue, which uses the
+// one-time token only when a person taps the button. Preview signups land on the
+// preview host (where they started) so the page exists before publishing.
+function continueUrl(url: string, language: AuthLang): string {
+  let base = SITE_URL
+  try {
+    const back = new URL(new URL(url).searchParams.get('redirect_to') ?? '')
+    const h = back.hostname.toLowerCase()
+    if (back.protocol === 'https:' && (h.startsWith('id-preview--') || /^project--[^.]+-dev\.lovable\.app$/.test(h))) base = back.origin
+  } catch { /* fall back to the live site */ }
+  return `${base}/auth/continue?lang=${language}&to=${encodeURIComponent(url)}`
+}
+
 // The visitor's language choice made before signup is stored on their profile;
 // auth emails render in that language. English is the fallback with no signal.
 type AuthLang = 'en' | 'es'
@@ -53,7 +66,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
                   siteName: SITE_NAME,
                   siteUrl: SITE_URL,
                   recipient: data.email,
-                  confirmationUrl: data.url,
+                  confirmationUrl: continueUrl(data.url, language),
                   language,
                 })
               },
@@ -74,7 +87,7 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
                 return React.createElement(MagicLinkEmail, {
                   siteName: SITE_NAME,
                   // Scanner-safe: the link opens a page that needs a tap before the one-time token is used.
-                  confirmationUrl: `${SITE_URL}/auth/continue?lang=${language === 'es' ? 'es' : 'en'}&to=${encodeURIComponent(data.url)}`,
+                  confirmationUrl: continueUrl(data.url, language),
                   token: data.token ?? undefined,
                   language,
                 })

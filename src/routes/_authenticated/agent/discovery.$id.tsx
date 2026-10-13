@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/agent/discovery/$id")({
   validateSearch: z.object({
     checkout: z.enum(["success", "cancelled"]).optional(),
     session_id: z.string().optional(),
+    welcome: z.coerce.number().optional(),
   }),
   head: () => ({
     meta: [
@@ -108,7 +109,21 @@ function AgentDiscovery() {
             <p className="mt-1 text-xs text-muted-foreground">{t("adisc.v2.signals")}</p>
           </header>
 
-          {d && (
+          {d && needsClaim && (
+            <section className="rounded-3xl border border-primary/30 bg-surface-intelligence p-4 shadow-soft sm:p-5" aria-labelledby="free100-welcome">
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-status-positive">
+                <Sparkles className="h-3.5 w-3.5" /> {t("adisc.welcome.eyebrow")}
+              </p>
+              <h2 id="free100-welcome" className="mt-1 text-xl font-semibold">{t("adisc.welcome.title")}</h2>
+              <ol className="mt-3 space-y-1 text-sm text-muted-foreground">
+                <li>1. {t("adisc.welcome.s1")}</li>
+                <li>2. {t("adisc.welcome.s2")}</li>
+                <li>3. {t("adisc.welcome.s3")}</li>
+              </ol>
+            </section>
+          )}
+
+          {d && !needsClaim && (
             <div className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-5">
               <p className="text-sm font-semibold">
                 {needsClaim
@@ -132,6 +147,16 @@ function AgentDiscovery() {
                 scrollToUpload();
               }}
             />
+          )}
+          {d && needsClaim && (
+            <p className="text-center text-sm">
+              <Link to="/agent" className="inline-flex min-h-11 items-center font-medium text-muted-foreground underline-offset-4 hover:underline">
+                {t("adisc.welcome.later")}
+              </Link>
+            </p>
+          )}
+          {d && d.capacity.hasFree && d.capacity.active === 0 && (
+            <p className="text-sm text-muted-foreground">{t("adisc.welcome.next")}</p>
           )}
           {d && d.capacity.hasFree && (
             <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-status-positive">
@@ -220,7 +245,7 @@ function AgentDiscovery() {
             </section>
           )}
 
-          {d && d.pendingCount > 0 && (
+          {d && !needsClaim && d.pendingCount > 0 && (
             <section className="rounded-3xl border border-border bg-surface-warm p-4 shadow-soft sm:p-5">
               <h2 className="text-base font-semibold">{t("adisc.over_title", { count: d.pendingCount })}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{t("adisc.over_body")}</p>
