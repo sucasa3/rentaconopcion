@@ -11,7 +11,7 @@ import { useLanguage } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { startPilotCheckout } from "@/lib/discovery.functions";
-import { listPlans, startCheckout, syncSubscription, getBillingState, activateComped } from "@/lib/billing.functions";
+import { listPlans, startCheckout, syncSubscription, getBillingState, activateComped, openBillingPortal } from "@/lib/billing.functions";
 
 export const Route = createFileRoute("/_authenticated/lender/billing")({
   head: () => ({
