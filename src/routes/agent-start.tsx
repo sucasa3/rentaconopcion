@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { activateAgentWorkspace } from "@/lib/agent-onboarding.functions";
+import { getMyAgentOnboarding } from "@/lib/agent-discovery.functions";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordAuthenticatedAgentEvent, recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 import { useLanguage } from "@/lib/i18n";
@@ -39,6 +40,7 @@ function AgentStartPage() {
   const navigate = useNavigate();
   const router = useRouter();
   const activate = useServerFn(activateAgentWorkspace);
+  const onboardingFn = useServerFn(getMyAgentOnboarding);
   const recordPublic = useServerFn(recordPublicAgentEvent);
   const recordAuthenticated = useServerFn(recordAuthenticatedAgentEvent);
   const [mode, setMode] = useState<"signup" | "signin">("signup");
@@ -62,11 +64,16 @@ function AgentStartPage() {
       const attribution = getAgentAttribution();
       const storedAgency = agencyName.trim() || window.sessionStorage.getItem(AGENCY_KEY)?.trim() || undefined;
       await recordAuthenticated({ data: { action: "agent_signup_completed", ...attribution } });
-      await activate({ data: { agencyName: storedAgency, language } });
+      const ws = await activate({ data: { agencyName: storedAgency, language } });
       window.sessionStorage.removeItem(AGENCY_KEY);
       clearProIntent();
       await router.invalidate();
-      navigate({ to: "/agent", replace: true });
+      // New agents go straight to their own Discovery to verify their phone
+      // and unlock the free 100; agents who already claimed go to Today.
+      const status = await onboardingFn().catch(() => null);
+      if (status?.needsClaim && status.portfolioId === ws.portfolioId) {
+        navigate({ to: "/agent/discovery/$id", params: { id: ws.portfolioId }, search: { welcome: 1 }, replace: true });
+      } else navigate({ to: "/agent", replace: true });
     } catch (reason) {
       activationStarted.current = false;
       if (reason instanceof Error && reason.message.includes("EMAIL_UNVERIFIED")) {
