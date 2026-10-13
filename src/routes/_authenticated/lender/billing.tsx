@@ -91,7 +91,7 @@ function BillingPage() {
   // right away so the account activates without waiting for a callback.
   useEffect(() => {
     if (search.checkout !== "success" || !orgId) return;
-    syncFn({ data: { orgId } })
+    syncFn({ data: { orgId, sessionId: (search as any).session_id } })
       .then((r: any) => {
         qc.invalidateQueries({ queryKey: ["billing-state", orgId] });
         if (r.activated) {

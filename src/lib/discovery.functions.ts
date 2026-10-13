@@ -371,7 +371,6 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
         setup_future_usage: "off_session",
         metadata: { sucasa_org_id: orgId, plan_key: "mlo_growth_launch" },
       },
-      consent_collection: { terms_of_service: "none" },
       custom_text: {
         submit: {
           message: data.language === "es"
