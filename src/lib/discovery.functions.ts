@@ -36,6 +36,8 @@ export const startDiscovery = createServerFn({ method: "POST" })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
+    const { assertProEmailVerified } = await import("./pro-email-verification.server");
+    await assertProEmailVerified(context.userId, context.claims);
     const { ensureDiscoveryWorkspace } = await import("./discovery.server");
     const email = (context.claims as any)?.email ?? null;
     const ws = await ensureDiscoveryWorkspace(context.userId, {
@@ -303,7 +305,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
     };
   });
 
-const PilotSchema = z.object({ returnUrl: z.string().url() });
+const PilotSchema = z.object({ returnUrl: z.string().url(), language: z.enum(["en", "es"]).optional() });
 
 /**
  * The 90-day pilot: $447 charged now, then MLO Growth at $149/month once the
@@ -321,6 +323,8 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     const owner = (memberships ?? []).find((m: any) => m.role === "owner");
     if (!owner) throw new Error("Forbidden: only an owner can start the pilot");
+    const { assertProEmailVerified } = await import("./pro-email-verification.server");
+    await assertProEmailVerified(context.userId, context.claims);
     const orgId = (owner as any).lender_org_id as string;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -359,14 +363,16 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
       ],
       allow_promotion_codes: true,
       payment_method_collection: "always",
+      locale: data.language === "es" ? "es" : "auto",
       subscription_data: {
         trial_period_days: 90,
         metadata: { sucasa_org_id: orgId, plan_key: "pilot_90" },
       },
       custom_text: {
         submit: {
-          message:
-            "You are paying $447 today for the 90-day pilot. On day 91 your plan continues as MLO Growth at $149/month unless you cancel before then. Cancel any time from your billing settings.",
+          message: data.language === "es"
+            ? "Hoy pagas $447 por el piloto de 90 días. El día 91 tu plan continúa como MLO Growth a $149/mes, a menos que canceles antes. Cancela cuando quieras desde tu configuración de facturación."
+            : "You are paying $447 today for the 90-day pilot. On day 91 your plan continues as MLO Growth at $149/month unless you cancel before then. Cancel any time from your billing settings.",
         },
       },
       metadata: { sucasa_org_id: orgId, plan_key: "pilot_90" },

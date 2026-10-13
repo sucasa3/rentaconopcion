@@ -5416,6 +5416,24 @@ export type Database = {
           },
         ]
       }
+      pro_email_verifications: {
+        Row: {
+          method: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          method: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          method?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
       professional_conversations: {
         Row: {
           created_at: string
