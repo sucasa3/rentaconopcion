@@ -2325,6 +2325,7 @@ export const en = {
   "bill.plan": "Plan: {name}",
   "bill.profiles": "Home Profiles: {count}",
   "bill.sponsored": "Agent collaborations: {count}",
+  "bill.manage": "Manage billing or cancel",
   "bill.renews": "Renews {date}",
   "bill.capacity": "Manage capacity",
   "bill.selected": "Your selected plan",

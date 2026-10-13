@@ -231,3 +231,26 @@ export const syncSubscription = createServerFn({ method: "POST" })
     const applied = await applySubscription(supabaseAdmin, sub);
     return { status: applied.status, planKey: applied.planKey, activated: ["active", "trialing", "past_due"].includes(applied.status) };
   });
+
+/**
+ * Owner-only Stripe billing portal: update card, see invoices, or cancel.
+ * Cancellation takes effect at the end of the paid/prepaid period.
+ */
+export const openBillingPortal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { orgId: string; returnUrl: string }) =>
+    z.object({ orgId: z.string().uuid(), returnUrl: z.string().url() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: m } = await context.supabase
+      .from("lender_members").select("role").eq("user_id", context.userId).eq("lender_org_id", data.orgId).maybeSingle();
+    if ((m as any)?.role !== "owner") throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { stripeRequest, currentStripeMode, customerIdColumn } = await import("./billing.server");
+    const mode = await currentStripeMode();
+    const { data: org } = await supabaseAdmin
+      .from("lender_orgs").select("stripe_customer_id, stripe_test_customer_id").eq("id", data.orgId).maybeSingle();
+    const customer = (org as any)?.[customerIdColumn(mode)];
+    if (!customer) throw new Error("NO_CUSTOMER");
+    const s = await stripeRequest<{ url: string }>("/billing_portal/sessions", "POST", { customer, return_url: data.returnUrl }, mode);
+    return { url: s.url };
+  });

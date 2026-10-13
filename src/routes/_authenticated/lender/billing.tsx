@@ -49,6 +49,7 @@ function BillingPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const { t, language } = useLanguage();
   const pilotFn = useServerFn(startPilotCheckout);
+  const portalFn = useServerFn(openBillingPortal);
   // Plan names/positioning are stored in English; translate by plan key when a translation exists.
   const planName = (p: any) => { const k = `plan.name.${p.key}`; const v = t(k as any); return v === k ? p.name : v; };
   const planPos = (p: any) => { const k = `plan.pos.${p.key}`; const v = t(k as any); return v === k ? p.positioning : v; };
@@ -227,7 +228,14 @@ function BillingPage() {
                 {t(status === "trialing" ? "bill.prepaid_until" : "bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString(language === "es" ? "es-US" : "en-US") })}
               </span>
             )}
-            <Button asChild size="sm" variant="outline" className="ml-auto">
+            {hasPlan && (state as any)?.stripe_subscription_id && (
+              <Button size="sm" variant="outline" className="ml-auto" disabled={busy === "portal"} onClick={async () => {
+                setBusy("portal");
+                try { const { url } = await portalFn({ data: { orgId, returnUrl: `${window.location.origin}/lender/billing` } }); window.location.href = url; }
+                catch (e) { toast.error(billErr(e, "bill.toast.checkout_failed")); setBusy(null); }
+              }}>{t("bill.manage")}</Button>
+            )}
+            <Button asChild size="sm" variant="outline" className={hasPlan && (state as any)?.stripe_subscription_id ? "" : "ml-auto"}>
               <a href="/lender/capacity">{t("bill.capacity")}</a>
             </Button>
           </CardContent>
