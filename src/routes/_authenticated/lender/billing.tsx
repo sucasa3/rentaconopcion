@@ -224,7 +224,7 @@ function BillingPage() {
             <span>{t("bill.sponsored", { count: (state as any)?.sponsored_allocation ?? 0 })}</span>
             {(state as any)?.current_period_end && (
               <span className="text-muted-foreground">
-                {t("bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString() })}
+                {t(status === "trialing" ? "bill.prepaid_until" : "bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString(language === "es" ? "es-US" : "en-US") })}
               </span>
             )}
             <Button asChild size="sm" variant="outline" className="ml-auto">
