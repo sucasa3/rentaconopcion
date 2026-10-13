@@ -52,6 +52,8 @@ function BillingPage() {
   const planName = (p: any) => { const k = `plan.name.${p.key}`; const v = t(k as any); return v === k ? p.name : v; };
   const planPos = (p: any) => { const k = `plan.pos.${p.key}`; const v = t(k as any); return v === k ? p.positioning : v; };
   const isPilot = (p: any) => p?.key === "pilot_90";
+  // MLO Growth has two ways to pay: monthly, or the $397 prepaid 90-day launch offer.
+  const [payOpt, setPayOpt] = useState<"monthly" | "launch">("monthly");
   const navigate = useNavigate();
   // The plan chosen on the pricing page survives sign-in, reloads and a canceled checkout.
   const [chosen, setChosen] = useState<string | undefined>(search.plan);
@@ -117,7 +119,7 @@ function BillingPage() {
     setBusy(planKey);
     try {
       // The pilot is a dedicated checkout: $447 today, then MLO Growth after 90 days.
-      const { url } = planKey === "pilot_90"
+      const { url } = planKey === "pilot_90" || (planKey === "mlo_growth_v2" && payOpt === "launch")
         ? await pilotFn({ data: { returnUrl: `${window.location.origin}/lender/billing`, language } })
         : await checkoutFn({
             data: { orgId, planKey, returnUrl: `${window.location.origin}/lender/billing?plan=${encodeURIComponent(planKey)}` },
@@ -185,6 +187,20 @@ function BillingPage() {
                 <p className="text-sm font-semibold text-muted-foreground">{t("bill.selected")}</p>
                 <p className="mt-1 text-2xl font-semibold">{planName(selected)} · {money(selected.price_cents, t("bill.custom"))}<span className="text-sm font-normal text-muted-foreground">{isPilot(selected) ? ` ${t("plan.pilot_total")}` : t("pub.lp2.month")}</span></p>
                 <p className="mt-1 text-sm text-muted-foreground">{isPilot(selected) ? t("plan.pilot_terms") : t("bill.selected_sub", { name: planName(selected), price: money(selected.price_cents, "") })}</p>
+                {selected.key === "mlo_growth_v2" && (
+                  <fieldset className="mt-3 space-y-2">
+                    <legend className="text-sm font-semibold">{t("bill.opt.title")}</legend>
+                    {(["monthly", "launch"] as const).map((o) => (
+                      <label key={o} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${payOpt === o ? "border-primary bg-muted" : "border-border"}`}>
+                        <input type="radio" name="payopt" className="mt-1" checked={payOpt === o} onChange={() => setPayOpt(o)} />
+                        <span>
+                          <span className="block text-sm font-medium">{t(`bill.opt.${o}` as any)}</span>
+                          <span className="block text-xs text-muted-foreground">{t(`bill.opt.${o}_sub` as any)}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
                 <p className="mt-1 text-xs text-muted-foreground">{t("bill.change_plan")}</p>
               </div>
               <Button size="lg" className="w-full sm:w-auto" disabled={busy === selected.key || !orgId} onClick={() => buy(selected.key)}>

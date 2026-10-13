@@ -355,7 +355,7 @@ function DiscoveryPage() {
               </p>
               {money(data.pricing?.pilotCents) && money(data.pricing?.growthCents) ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  {L(`90-day pilot: ${money(data.pricing.pilotCents)} today, then ${money(data.pricing.growthCents)}/month. Cancel any time during the pilot.`, `Piloto de 90 días: ${money(data.pricing.pilotCents)} hoy, luego ${money(data.pricing.growthCents)}/mes. Cancela cuando quieras durante el piloto.`)}
+                  {L(`MLO Growth 90-day launch offer: ${money(data.pricing.pilotCents)} today (save $50), then ${money(data.pricing.growthCents)}/month after exactly 90 days. Cancel any time before then.`, `Oferta de lanzamiento de MLO Growth por 90 días: ${money(data.pricing.pilotCents)} hoy (ahorras $50), luego ${money(data.pricing.growthCents)}/mes tras exactamente 90 días. Cancela cuando quieras antes de esa fecha.`)}
                 </p>
               ) : null}
               <div className="mt-6 border-t border-border pt-5">
