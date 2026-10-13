@@ -98,6 +98,11 @@ export const Route = createFileRoute("/api/public/webhooks/stripe")({
         switch (event.type) {
           case "checkout.session.completed": {
             const subId = event.data.object?.subscription;
+            if (!subId && event.data.object?.mode === "payment") {
+              const { finalizeLaunchPayment } = await import("@/lib/billing.server");
+              await finalizeLaunchPayment(supabaseAdmin, event.data.object, mode);
+              break;
+            }
             if (subId) await route(await stripeRequest(`/subscriptions/${subId}`, "GET", undefined, mode));
             break;
           }

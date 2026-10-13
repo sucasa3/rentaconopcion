@@ -356,30 +356,26 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
       throw new Error("ALREADY_SUBSCRIBED");
     }
 
+    const renew = new Date(Date.now() + 90 * 86400_000).toLocaleDateString(data.language === "es" ? "es-US" : "en-US", { month: "long", day: "numeric", year: "numeric" });
+    // One-time $397 payment: the checkout shows "$397 due today". The monthly
+    // subscription is created after payment and first bills 90 days later.
     const session = await stripeRequest<{ id: string; url: string }>("/checkout/sessions", "POST", {
-      mode: "subscription",
+      mode: "payment",
       customer: await ensureCustomer(supabaseAdmin, org as any, stripeMode),
       client_reference_id: orgId,
       success_url: `${data.returnUrl}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${data.returnUrl}?checkout=cancelled`,
-      line_items: [
-        // Charged today.
-        { price: pilotPrice, quantity: 1 },
-        // Starts after the 90 free days; cancellable any time before then.
-        { price: growthPrice, quantity: 1 },
-      ],
-      allow_promotion_codes: true,
-      payment_method_collection: "always",
+      line_items: [{ price: pilotPrice, quantity: 1 }],
       locale: data.language === "es" ? "es" : "auto",
-      subscription_data: {
-        trial_period_days: 90,
+      payment_intent_data: {
+        setup_future_usage: "off_session",
         metadata: { sucasa_org_id: orgId, plan_key: "mlo_growth_launch" },
       },
       custom_text: {
         submit: {
           message: data.language === "es"
-            ? "Hoy pagas $397 por 90 días de MLO Growth (ahorras $50). Tras exactamente 90 días tu plan continúa como MLO Growth a $149/mes, a menos que canceles antes. Cancela cuando quieras desde tu configuración de facturación."
-            : "You are paying $397 today for 90 days of MLO Growth (save $50). After exactly 90 days your plan continues as MLO Growth at $149/month unless you cancel before then. Cancel any time from your billing settings.",
+            ? `Hoy pagas $397 por los primeros 90 días de MLO Growth. Tu primer cargo mensual de $149 será alrededor del ${renew}, y luego $149 cada mes hasta que canceles. Puedes cancelar antes de esa fecha desde Facturación.`
+            : `Due today: $397 for your first 90 days of MLO Growth. Your first $149 monthly charge is on about ${renew}, then $149 every month until you cancel. Cancel before that date from Billing.`,
         },
       },
       metadata: { sucasa_org_id: orgId, plan_key: "mlo_growth_launch" },

@@ -189,7 +189,7 @@ export const activateComped = createServerFn({ method: "POST" })
  */
 export const syncSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { orgId: string }) => z.object({ orgId: z.string().uuid() }).parse(d))
+  .inputValidator((d: { orgId: string; sessionId?: string }) => z.object({ orgId: z.string().uuid(), sessionId: z.string().regex(/^cs_[A-Za-z0-9_]+$/).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: allowed } = await context.supabase.rpc("is_lender_member", {
       _user_id: context.userId,
@@ -209,6 +209,15 @@ export const syncSubscription = createServerFn({ method: "POST" })
       .maybeSingle();
     const customerId = (org as any)?.[custCol] as string | null | undefined;
     if (!customerId) return { status: "none", activated: false };
+
+    // $397 launch payment: create the deferred monthly subscription right away.
+    if (data.sessionId) {
+      const session = await stripeRequest(`/checkout/sessions/${data.sessionId}`, "GET", undefined, stripeMode);
+      if (session?.customer === customerId) {
+        const { finalizeLaunchPayment } = await import("./billing.server");
+        await finalizeLaunchPayment(supabaseAdmin, session, stripeMode);
+      }
+    }
 
     const subs = await stripeRequest<{ data: any[] }>(
       `/subscriptions?customer=${customerId}&status=all&limit=5`,
