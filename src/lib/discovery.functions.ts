@@ -30,13 +30,18 @@ export const startDiscovery = createServerFn({ method: "POST" })
       .object({
         // Anonymous language selection carried through signup → profile.
         language: z.enum(["en", "es"]).optional(),
+        // Used only when a new organization is created; existing orgs keep their name.
+        companyName: z.string().trim().max(120).optional(),
       })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { ensureDiscoveryWorkspace } = await import("./discovery.server");
     const email = (context.claims as any)?.email ?? null;
-    const ws = await ensureDiscoveryWorkspace(context.userId, { email });
+    const ws = await ensureDiscoveryWorkspace(context.userId, {
+      email,
+      companyName: data.companyName || null,
+    });
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (data.language) {

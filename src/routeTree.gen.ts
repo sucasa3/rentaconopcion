@@ -25,6 +25,7 @@ import { Route as ProRouteImport } from './routes/pro'
 import { Route as ProfessionalInviteRouteImport } from './routes/professional-invite'
 import { Route as ReportRouteImport } from './routes/report'
 import { Route as RequestRouteImport } from './routes/request'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TeamInviteRouteImport } from './routes/team-invite'
@@ -170,6 +171,11 @@ const ReportRoute = ReportRouteImport.update({
 const RequestRoute = RequestRouteImport.update({
   id: '/request',
   path: '/request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServicesRoute = ServicesRouteImport.update({
@@ -553,6 +559,7 @@ export interface FileRoutesByFullPath {
   '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team-invite': typeof TeamInviteRoute
@@ -635,6 +642,7 @@ export interface FileRoutesByTo {
   '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team-invite': typeof TeamInviteRoute
@@ -718,6 +726,7 @@ export interface FileRoutesById {
   '/professional-invite': typeof ProfessionalInviteRoute
   '/report': typeof ReportRoute
   '/request': typeof RequestRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/services': typeof ServicesRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/team-invite': typeof TeamInviteRoute
@@ -804,6 +813,7 @@ export interface FileRouteTypes {
     | '/professional-invite'
     | '/report'
     | '/request'
+    | '/reset-password'
     | '/services'
     | '/sitemap.xml'
     | '/team-invite'
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/professional-invite'
     | '/report'
     | '/request'
+    | '/reset-password'
     | '/services'
     | '/sitemap.xml'
     | '/team-invite'
@@ -968,6 +979,7 @@ export interface FileRouteTypes {
     | '/professional-invite'
     | '/report'
     | '/request'
+    | '/reset-password'
     | '/services'
     | '/sitemap.xml'
     | '/team-invite'
@@ -1054,6 +1066,7 @@ export interface RootRouteChildren {
   ProfessionalInviteRoute: typeof ProfessionalInviteRoute
   ReportRoute: typeof ReportRoute
   RequestRoute: typeof RequestRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TeamInviteRoute: typeof TeamInviteRoute
@@ -1188,6 +1201,13 @@ declare module '@tanstack/react-router' {
       path: '/request'
       fullPath: '/request'
       preLoaderRoute: typeof RequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/services': {
@@ -1842,6 +1862,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfessionalInviteRoute: ProfessionalInviteRoute,
   ReportRoute: ReportRoute,
   RequestRoute: RequestRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TeamInviteRoute: TeamInviteRoute,
