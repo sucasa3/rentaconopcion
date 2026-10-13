@@ -308,7 +308,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
 const PilotSchema = z.object({ returnUrl: z.string().url(), language: z.enum(["en", "es"]).optional() });
 
 /**
- * The 90-day pilot: $447 charged now, then MLO Growth at $149/month once the
+ * The MLO Growth 90-day launch offer: $397 charged now, then MLO Growth at $149/month once the
  * ninety days end. Both line items are in the same Stripe Checkout session so
  * the lender explicitly authorizes the future subscription, sees both amounts
  * before paying, and can cancel during the pilot.
@@ -322,7 +322,7 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
       .select("lender_org_id, role")
       .eq("user_id", context.userId);
     const owner = (memberships ?? []).find((m: any) => m.role === "owner");
-    if (!owner) throw new Error("Forbidden: only an owner can start the pilot");
+    if (!owner) throw new Error("Forbidden: only an owner can start the launch offer");
     const { assertProEmailVerified } = await import("./pro-email-verification.server");
     await assertProEmailVerified(context.userId, context.claims);
     const orgId = (owner as any).lender_org_id as string;
@@ -342,11 +342,18 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
     const { data: plans } = await supabaseAdmin
       .from("plan_tiers")
       .select("key, stripe_price_id, stripe_test_price_id")
-      .in("key", ["pilot_90", "mlo_growth_v2"]);
-    const pilotPrice = (plans ?? []).find((p: any) => p.key === "pilot_90")?.[col] ?? null;
+      .in("key", ["mlo_growth_launch", "mlo_growth_v2"]);
+    const pilotPrice = (plans ?? []).find((p: any) => p.key === "mlo_growth_launch")?.[col] ?? null;
     const growthPrice = (plans ?? []).find((p: any) => p.key === "mlo_growth_v2")?.[col] ?? null;
     if (!pilotPrice || !growthPrice) {
       throw new Error("Pilot pricing is not configured yet.");
+    }
+
+    // One subscription per organization, same rule as the monthly checkout.
+    const { data: subState } = await supabaseAdmin
+      .from("lender_orgs").select("subscription_status").eq("id", orgId).maybeSingle();
+    if (["active", "trialing", "past_due"].includes((subState as any)?.subscription_status ?? "")) {
+      throw new Error("ALREADY_SUBSCRIBED");
     }
 
     const session = await stripeRequest<{ id: string; url: string }>("/checkout/sessions", "POST", {
@@ -366,16 +373,16 @@ export const startPilotCheckout = createServerFn({ method: "POST" })
       locale: data.language === "es" ? "es" : "auto",
       subscription_data: {
         trial_period_days: 90,
-        metadata: { sucasa_org_id: orgId, plan_key: "pilot_90" },
+        metadata: { sucasa_org_id: orgId, plan_key: "mlo_growth_launch" },
       },
       custom_text: {
         submit: {
           message: data.language === "es"
-            ? "Hoy pagas $447 por el piloto de 90 días. El día 91 tu plan continúa como MLO Growth a $149/mes, a menos que canceles antes. Cancela cuando quieras desde tu configuración de facturación."
-            : "You are paying $447 today for the 90-day pilot. On day 91 your plan continues as MLO Growth at $149/month unless you cancel before then. Cancel any time from your billing settings.",
+            ? "Hoy pagas $397 por 90 días de MLO Growth (ahorras $50). Tras exactamente 90 días tu plan continúa como MLO Growth a $149/mes, a menos que canceles antes. Cancela cuando quieras desde tu configuración de facturación."
+            : "You are paying $397 today for 90 days of MLO Growth (save $50). After exactly 90 days your plan continues as MLO Growth at $149/month unless you cancel before then. Cancel any time from your billing settings.",
         },
       },
-      metadata: { sucasa_org_id: orgId, plan_key: "pilot_90" },
+      metadata: { sucasa_org_id: orgId, plan_key: "mlo_growth_launch" },
     }, stripeMode);
 
     const { logNetworkEvent } = await import("./network-events.server");
