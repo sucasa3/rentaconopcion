@@ -44,6 +44,7 @@ import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticat
 import { Route as AgentsIndexRouteImport } from './routes/agents.index'
 import { Route as AgentsDeckRouteImport } from './routes/agents.deck'
 import { Route as AgentsPricingRouteImport } from './routes/agents.pricing'
+import { Route as AuthContinueRouteImport } from './routes/auth_.continue'
 import { Route as LendersIndexRouteImport } from './routes/lenders.index'
 import { Route as LendersDeckRouteImport } from './routes/lenders.deck'
 import { Route as LendersPricingRouteImport } from './routes/lenders.pricing'
@@ -269,6 +270,11 @@ const AgentsPricingRoute = AgentsPricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
   getParentRoute: () => AgentsRoute,
+} as any)
+const AuthContinueRoute = AuthContinueRouteImport.update({
+  id: '/auth_/continue',
+  path: '/auth/continue',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const LendersIndexRoute = LendersIndexRouteImport.update({
   id: '/',
@@ -577,6 +583,7 @@ export interface FileRoutesByFullPath {
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
   '/agents/pricing': typeof AgentsPricingRoute
+  '/auth/continue': typeof AuthContinueRoute
   '/lenders/deck': typeof LendersDeckRoute
   '/lenders/pricing': typeof LendersPricingRoute
   '/agents/': typeof AgentsIndexRoute
@@ -658,6 +665,7 @@ export interface FileRoutesByTo {
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
   '/agents/pricing': typeof AgentsPricingRoute
+  '/auth/continue': typeof AuthContinueRoute
   '/lenders/deck': typeof LendersDeckRoute
   '/lenders/pricing': typeof LendersPricingRoute
   '/agents': typeof AgentsIndexRoute
@@ -744,6 +752,7 @@ export interface FileRoutesById {
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
   '/agents/pricing': typeof AgentsPricingRoute
+  '/auth_/continue': typeof AuthContinueRoute
   '/lenders/deck': typeof LendersDeckRoute
   '/lenders/pricing': typeof LendersPricingRoute
   '/agents/': typeof AgentsIndexRoute
@@ -831,6 +840,7 @@ export interface FileRouteTypes {
     | '/timeline'
     | '/agents/deck'
     | '/agents/pricing'
+    | '/auth/continue'
     | '/lenders/deck'
     | '/lenders/pricing'
     | '/agents/'
@@ -912,6 +922,7 @@ export interface FileRouteTypes {
     | '/timeline'
     | '/agents/deck'
     | '/agents/pricing'
+    | '/auth/continue'
     | '/lenders/deck'
     | '/lenders/pricing'
     | '/agents'
@@ -997,6 +1008,7 @@ export interface FileRouteTypes {
     | '/_authenticated/timeline'
     | '/agents/deck'
     | '/agents/pricing'
+    | '/auth_/continue'
     | '/lenders/deck'
     | '/lenders/pricing'
     | '/agents/'
@@ -1070,6 +1082,7 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TeamInviteRoute: typeof TeamInviteRoute
+  AuthContinueRoute: typeof AuthContinueRoute
   ApiPostCallTranscribeRoute: typeof ApiPostCallTranscribeRoute
   ApiPublicUnsubscribeRoute: typeof ApiPublicUnsubscribeRoute
   ApiPublicCampaignsTickRoute: typeof ApiPublicCampaignsTickRoute
@@ -1335,6 +1348,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/agents/pricing'
       preLoaderRoute: typeof AgentsPricingRouteImport
       parentRoute: typeof AgentsRoute
+    }
+    '/auth_/continue': {
+      id: '/auth_/continue'
+      path: '/auth/continue'
+      fullPath: '/auth/continue'
+      preLoaderRoute: typeof AuthContinueRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lenders/': {
       id: '/lenders/'
@@ -1866,6 +1886,7 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TeamInviteRoute: TeamInviteRoute,
+  AuthContinueRoute: AuthContinueRoute,
   ApiPostCallTranscribeRoute: ApiPostCallTranscribeRoute,
   ApiPublicUnsubscribeRoute: ApiPublicUnsubscribeRoute,
   ApiPublicCampaignsTickRoute: ApiPublicCampaignsTickRoute,

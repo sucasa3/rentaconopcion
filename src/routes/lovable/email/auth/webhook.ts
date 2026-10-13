@@ -73,7 +73,8 @@ export const Route = createFileRoute("/lovable/email/auth/webhook")({
                 const language = await lookupLanguage(data.email)
                 return React.createElement(MagicLinkEmail, {
                   siteName: SITE_NAME,
-                  confirmationUrl: data.url,
+                  // Scanner-safe: the link opens a page that needs a tap before the one-time token is used.
+                  confirmationUrl: `${SITE_URL}/auth/continue?lang=${language === 'es' ? 'es' : 'en'}&to=${encodeURIComponent(data.url)}`,
                   token: data.token ?? undefined,
                   language,
                 })

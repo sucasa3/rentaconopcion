@@ -2366,6 +2366,7 @@ export const es: Dictionary = {
   "bill.plan": "Plan: {name}",
   "bill.profiles": "Perfiles de casa: {count}",
   "bill.sponsored": "Colaboraciones con agentes: {count}",
+  "bill.manage": "Administrar pago o cancelar",
   "bill.renews": "Se renueva el {date}",
   "bill.capacity": "Administrar capacidad",
   "bill.selected": "Tu plan elegido",
