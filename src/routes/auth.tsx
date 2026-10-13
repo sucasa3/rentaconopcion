@@ -1,4 +1,6 @@
-import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { z } from "zod";
+import { useLanguage } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -6,6 +8,7 @@ import { getMyWorkspace } from "@/lib/business.functions";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: z.object({ forgot: z.string().max(4).optional() }),
   head: () => ({
     meta: [
       { title: "Sign in — SuCasa" },
@@ -25,6 +28,23 @@ function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const { t } = useLanguage();
+  const search = Route.useSearch();
+  const [forgot, setForgot] = useState(search.forgot === "1");
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!email.trim()) return setError(t("auth.reset_need_email"));
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+    else setNotice(t("auth.reset_sent", { email: email.trim() }));
+  }
 
   // Agents and lenders go straight to their business dashboard; homeowners home.
   async function landing() {
@@ -55,7 +75,7 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data: signed, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -64,6 +84,11 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // Email confirmation pending: not signed in yet, so don't navigate.
+        if (!signed.session) {
+          setNotice(t("auth.check_email"));
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -112,6 +137,17 @@ function AuthPage() {
               <div className="h-px flex-1 bg-border" /> or <div className="h-px flex-1 bg-border" />
             </div>
 
+            {notice && <p role="status" className="mb-3 rounded-2xl bg-secondary p-3 text-sm text-foreground">{notice}</p>}
+            {forgot ? (
+              <form onSubmit={handleForgot} className="space-y-3">
+                <input type="email" required placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-2xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary" />
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <button disabled={loading} type="submit" className="w-full rounded-full gradient-brand px-4 py-2.5 text-sm font-semibold text-white shadow-soft disabled:opacity-60">
+                  {loading ? "…" : t("auth.forgot")}
+                </button>
+                <button type="button" onClick={() => { setForgot(false); setNotice(null); }} className="w-full text-sm font-medium text-primary">{t("pro.submit_signin")}</button>
+              </form>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-3">
               {mode === "signup" && (
                 <input
@@ -148,7 +184,11 @@ function AuthPage() {
               >
                 {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
               </button>
+              {mode === "signin" && (
+                <button type="button" onClick={() => { setForgot(true); setError(null); }} className="w-full text-xs font-medium text-primary">{t("auth.forgot")}</button>
+              )}
             </form>
+            )}
 
             <p className="mt-5 text-center text-sm text-muted-foreground">
               {mode === "signin" ? (
@@ -167,6 +207,12 @@ function AuthPage() {
                 </>
               )}
             </p>
+            <div className="mt-5 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+              {t("auth.pro_prompt")}{" "}
+              <Link to="/lender-start" className="font-medium text-primary">{t("auth.pro_lender")}</Link>
+              {" · "}
+              <Link to="/agent-start" className="font-medium text-primary">{t("auth.pro_agent")}</Link>
+            </div>
           </div>
         </div>
       </main>
