@@ -2335,7 +2335,7 @@ export const en = {
   "bill.selected_badge": "Selected",
   "bill.confirming": "Confirming your payment…",
   "pub.lstart.plan_title": "Create your account for {name}",
-  "pub.lstart.plan_sub": "{price}/month. Sign in with your email, then go straight to checkout — no Discovery or file upload required.",
+  "pub.lstart.plan_sub": "{price}/month. Create your account or sign in, then go straight to checkout — no Discovery or file upload required.",
   "disc.skip": "Skip Discovery & choose a plan",
   "welcome.title": "Add your clients",
   "welcome.sub": "Your plan is active and your client book is ready. How do you want to start?",

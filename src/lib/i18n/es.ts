@@ -2376,7 +2376,7 @@ export const es: Dictionary = {
   "bill.selected_badge": "Elegido",
   "bill.confirming": "Confirmando tu pago…",
   "pub.lstart.plan_title": "Crea tu cuenta para {name}",
-  "pub.lstart.plan_sub": "{price}/mes. Inicia sesión con tu correo y pasa directo al pago — sin Discovery ni subir archivos.",
+  "pub.lstart.plan_sub": "{price}/mes. Crea tu cuenta o inicia sesión y pasa directo al pago, sin Discovery ni subir archivos.",
   "disc.skip": "Omitir Discovery y elegir un plan",
   "welcome.title": "Agrega tus clientes",
   "welcome.sub": "Tu plan está activo y tu cartera de clientes está lista. ¿Cómo quieres empezar?",

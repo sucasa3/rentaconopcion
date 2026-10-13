@@ -19,3 +19,4 @@
 - Vitest testTimeout is 30s (vitest.config.ts) — cold dynamic imports time out at the 5s default under full-suite load.
 - Team invitation links use the request origin on preview hosts (`isPreviewHost` in src/lib/stripe-mode.ts) and SITE_URL otherwise — preview testing never hands out live-site links.
 - Lender plan intent is carried as `?plan=` (plus sessionStorage `sucasa.lender_plan`) from /lenders/pricing → /lender-start → /lender/billing, and checkout success lands on /lender/welcome; startCheckout refuses a second checkout while the org has an active/trialing/past_due subscription — prevents duplicate subscriptions on retry.
+- Professional workspaces (lender/agent) are provisioned only after an explicit action on /lender-start or /agent-start (sessionStorage intent in src/lib/pro-intent.ts); signed-in visitors without intent get a confirm button — prevents silently converting homeowners.
