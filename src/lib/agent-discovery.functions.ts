@@ -412,3 +412,30 @@ export const decideAgentIdentityReview = createServerFn({ method: "POST" })
     });
     return { ok: true, grant };
   });
+
+/**
+ * The caller's own agent workspace and whether the free 100 is still unclaimed.
+ * Resolved from the caller's membership only — never from a client-supplied id —
+ * so onboarding can only ever route an agent to their own Discovery page.
+ */
+export const getMyAgentOnboarding = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as any;
+    const { data: memberships } = await db
+      .from("lender_members")
+      .select("lender_org_id, lender_orgs!lender_members_lender_org_id_fkey(id, org_type)")
+      .eq("user_id", context.userId);
+    const orgId = ((memberships ?? []) as any[]).find((m) => m.lender_orgs?.org_type === "agent")?.lender_org_id as string | undefined;
+    if (!orgId) return { orgId: null, portfolioId: null, needsClaim: false };
+    const [{ data: book }, { data: ledger }, { data: base }] = await Promise.all([
+      db.from("lender_portfolios").select("id").eq("lender_org_id", orgId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
+      db.from("agent_credit_ledger").select("kind, delta").eq("org_id", orgId),
+      db.from("agent_base_entitlements").select("profile_limit").eq("org_id", orgId).maybeSingle(),
+    ]);
+    const rows = (ledger ?? []) as { kind: string; delta: number }[];
+    const granted = rows.filter((r) => r.kind !== "spend" && r.kind !== "refund").reduce((s, r) => s + r.delta, 0);
+    const hasFree = rows.some((r) => r.kind === "base" || r.kind === "sponsor") || Boolean(base);
+    return { orgId, portfolioId: (book?.id as string) ?? null, needsClaim: !hasFree && granted <= 0 };
+  });
