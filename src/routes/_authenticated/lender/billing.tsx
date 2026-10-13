@@ -228,14 +228,14 @@ function BillingPage() {
                 {t(status === "trialing" ? "bill.prepaid_until" : "bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString(language === "es" ? "es-US" : "en-US") })}
               </span>
             )}
-            {hasPlan && (state as any)?.stripe_subscription_id && (
+            {hasPlan && (
               <Button size="sm" variant="outline" className="ml-auto" disabled={busy === "portal"} onClick={async () => {
                 setBusy("portal");
                 try { const { url } = await portalFn({ data: { orgId, returnUrl: `${window.location.origin}/lender/billing` } }); window.location.href = url; }
                 catch (e) { toast.error(billErr(e, "bill.toast.checkout_failed")); setBusy(null); }
               }}>{t("bill.manage")}</Button>
             )}
-            <Button asChild size="sm" variant="outline" className={hasPlan && (state as any)?.stripe_subscription_id ? "" : "ml-auto"}>
+            <Button asChild size="sm" variant="outline" className={hasPlan ? "" : "ml-auto"}>
               <a href="/lender/capacity">{t("bill.capacity")}</a>
             </Button>
           </CardContent>
