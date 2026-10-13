@@ -155,7 +155,7 @@ function AgentDiscovery() {
               </Link>
             </p>
           )}
-          {d && d.capacity.hasFree && search.welcome === 1 && (
+          {d && d.capacity.hasFree && d.capacity.active === 0 && (
             <p className="text-sm text-muted-foreground">{t("adisc.welcome.next")}</p>
           )}
           {d && d.capacity.hasFree && (
