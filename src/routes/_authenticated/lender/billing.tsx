@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/lender/billing")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { checkout?: string; plan?: string; session_id?: string } => ({
     checkout: typeof s['checkout'] === "string" ? (s['checkout'] as string) : undefined,
     plan: typeof s['plan'] === "string" ? (s['plan'] as string).slice(0, 40) : undefined,
     session_id: typeof s['session_id'] === "string" ? (s['session_id'] as string).slice(0, 200) : undefined,
@@ -224,7 +224,7 @@ function BillingPage() {
             <span>{t("bill.sponsored", { count: (state as any)?.sponsored_allocation ?? 0 })}</span>
             {(state as any)?.current_period_end && (
               <span className="text-muted-foreground">
-                {t("bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString() })}
+                {t(status === "trialing" ? "bill.prepaid_until" : "bill.renews", { date: new Date((state as any).current_period_end).toLocaleDateString(language === "es" ? "es-US" : "en-US") })}
               </span>
             )}
             <Button asChild size="sm" variant="outline" className="ml-auto">

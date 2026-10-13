@@ -419,3 +419,7 @@
 - [x] Paused-member direct server denial
 - [x] Intermittent test failure (timeouts) fixed
 - [x] Pending fixes finished; ready to publish
+
+## Launch readiness — final pass (preview, not published)
+- [x] $397 one-time checkout + deferred $149, ES/EN, live price mapped, $447 unsellable
+- [ ] Human: Google OAuth, inbox code, agent SMS/free-100, live webhook endpoint check after publish

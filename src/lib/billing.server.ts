@@ -187,9 +187,14 @@ export async function applySubscription(
   const patch: Record<string, unknown> = {
     stripe_subscription_id: subscription.id,
     subscription_status: subscription.status,
-    current_period_end: subscription.current_period_end
-      ? new Date(subscription.current_period_end * 1000).toISOString()
-      : null,
+    // Newer Stripe API versions report the period end per item; a prepaid
+    // (trialing) subscription's next charge is its trial end.
+    current_period_end: (() => {
+      const s: any = subscription;
+      const ts = s.status === "trialing" && s.trial_end ? s.trial_end
+        : (s.current_period_end ?? s.items?.data?.[0]?.current_period_end);
+      return ts ? new Date(ts * 1000).toISOString() : null;
+    })(),
     active,
   };
   if (plan) {
