@@ -8,7 +8,7 @@ import { getMyWorkspace } from "@/lib/business.functions";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: z.object({ forgot: z.string().max(4).optional() }),
+  validateSearch: z.object({ forgot: z.coerce.string().max(4).optional() }),
   head: () => ({
     meta: [
       { title: "Sign in — SuCasa" },

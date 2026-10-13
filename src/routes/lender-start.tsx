@@ -20,7 +20,7 @@ import { LENDER_PUBLIC_PLANS } from "@/lib/public-plans";
 const searchSchema = z.object({
   source: z.string().max(80).optional(),
   plan: z.string().max(40).optional(),
-  intent: z.string().max(4).optional(),
+  intent: z.coerce.string().max(4).optional(),
 });
 
 const COMPANY_KEY = "sucasa.lender_company";
