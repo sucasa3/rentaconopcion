@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyWorkspace } from "@/lib/business.functions";
@@ -30,11 +30,15 @@ function ResetPasswordPage() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const isRecovery = window.location.hash.includes("type=recovery");
+    const hash = window.location.hash + window.location.search;
+    const isRecovery = hash.includes("type=recovery");
+    // Expired or already-used links arrive with an error in the URL.
+    const linkFailed = /error(_code)?=/.test(hash);
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setReady(true);
     });
     supabase.auth.getSession().then(({ data }) => {
+      if (linkFailed) return setReady(false);
       setReady(Boolean(data.session) || isRecovery ? true : false);
     });
     return () => sub.subscription.unsubscribe();
@@ -65,7 +69,7 @@ function ResetPasswordPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{t("reset.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("reset.sub")}</p>
           {ready === false ? (
-            <p className="mt-6 text-sm text-destructive">{t("reset.invalid")}</p>
+            <div className="mt-6 space-y-3"><p className="text-sm text-destructive">{t("reset.invalid")}</p><Link to="/auth" search={{ forgot: "1" }} className="text-sm font-medium text-primary underline">{t("auth.forgot")}</Link></div>
           ) : done ? (
             <p className="mt-6 text-sm text-foreground">{t("reset.done")}</p>
           ) : (
