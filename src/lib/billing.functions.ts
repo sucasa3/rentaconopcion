@@ -75,6 +75,8 @@ export const startCheckout = createServerFn({ method: "POST" })
       _org_id: data.orgId,
     });
     if (!allowed) throw new Error("Forbidden: only an owner or admin can manage billing");
+    const { assertProEmailVerified } = await import("./pro-email-verification.server");
+    await assertProEmailVerified(context.userId, context.claims);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { ensureCustomer, stripeRequest, priceIdColumn, currentStripeMode } = await import("./billing.server");

@@ -71,6 +71,12 @@ export const activateAgentWorkspace = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const email = ((context.claims as any)?.email as string | undefined) ?? null;
+    // Self-serve agent workspaces need a verified email; invitation tokens were
+    // delivered to the invited address and are checked against it below.
+    if (!data.token) {
+      const { assertProEmailVerified } = await import("./pro-email-verification.server");
+      await assertProEmailVerified(context.userId, context.claims);
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Preserve the visitor's language choice on their profile.

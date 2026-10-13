@@ -7,6 +7,7 @@ import { SiteFooter, SiteHeader } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
+import { ProEmailVerify } from "@/components/pro-email-verify";
 import { clearProIntent, hasProIntent, markProIntent } from "@/lib/pro-intent";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import {
@@ -91,6 +92,7 @@ function LenderStartPage() {
   const [sent, setSent] = useState<"magic" | "confirm" | null>(null);
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
 
   async function finish() {
     setBusy(true);
@@ -116,6 +118,12 @@ function LenderStartPage() {
       } else navigate({ to: "/lender/discovery", replace: true });
     } catch (reason) {
       workspaceSetup = null;
+      if (reason instanceof Error && reason.message.includes("EMAIL_UNVERIFIED")) {
+        const { data: u } = await supabase.auth.getUser();
+        setVerifyEmail(u.user?.email ?? null);
+        setBusy(false);
+        return;
+      }
       setError(reason instanceof Error ? reason.message : t("pub.lstart.error_workspace"));
       setBusy(false);
     }
@@ -253,7 +261,9 @@ function LenderStartPage() {
           {plan ? (
             <p className="mt-1 text-sm text-muted-foreground">{t("pub.lstart.plan_sub", { price: plan.price.replace("/month", "") })}</p>
           ) : null}
-          {sent ? (
+          {verifyEmail ? (
+            <ProEmailVerify email={verifyEmail} redirectTo={returnUrl(plan?.key)} onVerified={() => { setVerifyEmail(null); markProIntent("lender"); void finish(); }} />
+          ) : sent ? (
             <div className="mt-5 space-y-4 text-center">
               <Mail className="mx-auto h-10 w-10 text-primary" />
               <h3 className="font-semibold text-foreground">{sent === "magic" ? t("pub.lstart.sent_title") : t("pro.confirm_title")}</h3>

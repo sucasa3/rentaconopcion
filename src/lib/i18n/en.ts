@@ -2392,6 +2392,20 @@ export const en = {
   "reset.submit": "Save password",
   "reset.done": "Password saved. Taking you to your account…",
   "reset.invalid": "This reset link is invalid or expired. Request a new one from the sign-in page.",
+  "plan.name.pilot_90": "90-Day SuCasa Pilot",
+  "plan.pos.pilot_90": "Ninety days of continuous monitoring for up to 1,000 Home Profiles. Continues as MLO Growth at $149/month unless cancelled.",
+  "plan.pilot_total": "total for 90 days",
+  "plan.pilot_terms": "You pay $447 today for 90 days. On day 91 your plan continues as MLO Growth at $149/month unless you cancel before then.",
+  "pro.verify_needed": "Please verify your email to continue.",
+  "pro.verify_title": "Verify your email",
+  "pro.verify_body": "Professional workspaces need a verified email. We'll email a code to {email}.",
+  "pro.verify_send": "Email me a code",
+  "pro.verify_sent": "We sent a code to {email}. Enter it below, or open the link in that email.",
+  "pro.verify_code": "Verification code",
+  "pro.verify_submit": "Verify and continue",
+  "pro.verify_resend": "Send a new code",
+  "pro.verify_google": "Or verify instantly by continuing with Google.",
+  "pro.verify_bad": "That code didn't work. Check it or send a new one.",
 } as const;
 
 export type TranslationKey = keyof typeof en;

@@ -5,11 +5,13 @@ import { EmailBrand, bodyText, heading, mutedText, primaryButton } from './brand
 interface MagicLinkEmailProps {
   siteName: string
   confirmationUrl: string
+  token?: string
   language?: 'en' | 'es'
 }
 
 export const MagicLinkEmail = ({
   confirmationUrl,
+  token,
   language = 'en',
 }: MagicLinkEmailProps) => {
   if (language === 'es') {
@@ -23,6 +25,7 @@ export const MagicLinkEmail = ({
         <Button style={primaryButton} href={confirmationUrl}>
           Iniciar sesión
         </Button>
+        {token ? <Text style={bodyText}>O escribe este código: <strong>{token}</strong></Text> : null}
         <Text style={mutedText}>
           Si no solicitaste este enlace, puedes ignorar este correo.
         </Text>
@@ -39,6 +42,7 @@ export const MagicLinkEmail = ({
       <Button style={primaryButton} href={confirmationUrl}>
         Log In
       </Button>
+      {token ? <Text style={bodyText}>Or enter this code: <strong>{token}</strong></Text> : null}
       <Text style={mutedText}>
         If you didn’t request this link, you can safely ignore this email.
       </Text>

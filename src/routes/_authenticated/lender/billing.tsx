@@ -7,9 +7,10 @@ import { BusinessShell } from "@/components/business-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useT } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { getBusinessOverview } from "@/lib/business.functions";
+import { startPilotCheckout } from "@/lib/discovery.functions";
 import { listPlans, startCheckout, syncSubscription, getBillingState, activateComped } from "@/lib/billing.functions";
 
 export const Route = createFileRoute("/_authenticated/lender/billing")({
@@ -45,7 +46,12 @@ function BillingPage() {
   const syncFn = useServerFn(syncSubscription);
   const compFn = useServerFn(activateComped);
   const [busy, setBusy] = useState<string | null>(null);
-  const t = useT();
+  const { t, language } = useLanguage();
+  const pilotFn = useServerFn(startPilotCheckout);
+  // Plan names/positioning are stored in English; translate by plan key when a translation exists.
+  const planName = (p: any) => { const k = `plan.name.${p.key}`; const v = t(k as any); return v === k ? p.name : v; };
+  const planPos = (p: any) => { const k = `plan.pos.${p.key}`; const v = t(k as any); return v === k ? p.positioning : v; };
+  const isPilot = (p: any) => p?.key === "pilot_90";
   const navigate = useNavigate();
   // The plan chosen on the pricing page survives sign-in, reloads and a canceled checkout.
   const [chosen, setChosen] = useState<string | undefined>(search.plan);
@@ -102,6 +108,7 @@ function BillingPage() {
     if (m.includes("PLAN_NOT_AVAILABLE")) return t("bill.toast.plan_unavailable");
     if (m.startsWith("Forbidden")) return t("bill.toast.forbidden");
     if (m.includes("no payment price")) return t("bill.toast.no_price");
+    if (m.includes("EMAIL_UNVERIFIED")) return t("pro.verify_needed");
     return t(fallback as any);
   };
 
@@ -109,9 +116,12 @@ function BillingPage() {
     if (!orgId) return;
     setBusy(planKey);
     try {
-      const { url } = await checkoutFn({
-        data: { orgId, planKey, returnUrl: `${window.location.origin}/lender/billing?plan=${encodeURIComponent(planKey)}` },
-      });
+      // The pilot is a dedicated checkout: $447 today, then MLO Growth after 90 days.
+      const { url } = planKey === "pilot_90"
+        ? await pilotFn({ data: { returnUrl: `${window.location.origin}/lender/billing`, language } })
+        : await checkoutFn({
+            data: { orgId, planKey, returnUrl: `${window.location.origin}/lender/billing?plan=${encodeURIComponent(planKey)}` },
+          });
       if (url) window.location.href = url;
     } catch (e) {
       toast.error(billErr(e, "bill.toast.checkout_failed"));
@@ -140,8 +150,9 @@ function BillingPage() {
   const known = ["active", "trialing", "past_due", "canceled", "comped", "none"];
   const statusLabel = known.includes(status) ? t(`bill.st.${status}` as any) : status;
   const planKey = (state as any)?.plan_key as string | undefined;
-  const planName = planKey
-    ? ((state as any)?.plan_name ?? (plans ?? []).find((p: any) => p.key === planKey)?.name ?? planKey)
+  const currentPlan = (plans ?? []).find((p: any) => p.key === planKey);
+  const planLabel = planKey
+    ? (currentPlan ? planName(currentPlan) : ((state as any)?.plan_name ?? planKey))
     : null;
 
   const selected = (plans ?? []).find((p: any) => p.key === chosen && p.purchasable && p.audience !== "agent") as any;
@@ -172,8 +183,8 @@ function BillingPage() {
             <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-muted-foreground">{t("bill.selected")}</p>
-                <p className="mt-1 text-2xl font-semibold">{selected.name} · {money(selected.price_cents, t("bill.custom"))}<span className="text-sm font-normal text-muted-foreground">{t("pub.lp2.month")}</span></p>
-                <p className="mt-1 text-sm text-muted-foreground">{t("bill.selected_sub", { name: selected.name, price: money(selected.price_cents, "") })}</p>
+                <p className="mt-1 text-2xl font-semibold">{planName(selected)} · {money(selected.price_cents, t("bill.custom"))}<span className="text-sm font-normal text-muted-foreground">{isPilot(selected) ? ` ${t("plan.pilot_total")}` : t("pub.lp2.month")}</span></p>
+                <p className="mt-1 text-sm text-muted-foreground">{isPilot(selected) ? t("plan.pilot_terms") : t("bill.selected_sub", { name: planName(selected), price: money(selected.price_cents, "") })}</p>
                 <p className="mt-1 text-xs text-muted-foreground">{t("bill.change_plan")}</p>
               </div>
               <Button size="lg" className="w-full sm:w-auto" disabled={busy === selected.key || !orgId} onClick={() => buy(selected.key)}>
@@ -191,7 +202,7 @@ function BillingPage() {
             <Badge variant={status === "active" ? "default" : "secondary"}>
               {statusLabel}
             </Badge>
-            {planName && <span>{t("bill.plan", { name: planName })}</span>}
+            {planLabel && <span>{t("bill.plan", { name: planLabel })}</span>}
             <span>{t("bill.profiles", { count: ((state as any)?.profile_allowance ?? 0).toLocaleString() })}</span>
             <span>{t("bill.sponsored", { count: (state as any)?.sponsored_allocation ?? 0 })}</span>
             {(state as any)?.current_period_end && (
@@ -211,10 +222,10 @@ function BillingPage() {
             .map((p: any) => (
             <Card key={p.key} className={`flex flex-col ${p.key === selected?.key ? "border-2 border-primary" : ""}`}>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">{p.name}{p.key === selected?.key && <Badge>{t("bill.selected_badge")}</Badge>}</CardTitle>
-                <p className="text-2xl font-semibold">{money(p.price_cents, t("bill.custom"))}</p>
-                {p.positioning && (
-                  <p className="text-muted-foreground text-sm">{p.positioning}</p>
+                <CardTitle className="flex items-center gap-2 text-base">{planName(p)}{p.key === selected?.key && <Badge>{t("bill.selected_badge")}</Badge>}</CardTitle>
+                <p className="text-2xl font-semibold">{money(p.price_cents, t("bill.custom"))}{isPilot(p) && <span className="text-sm font-normal text-muted-foreground"> {t("plan.pilot_total")}</span>}</p>
+                {planPos(p) && (
+                  <p className="text-muted-foreground text-sm">{planPos(p)}</p>
                 )}
               </CardHeader>
               <CardContent className="mt-auto space-y-3 text-sm">

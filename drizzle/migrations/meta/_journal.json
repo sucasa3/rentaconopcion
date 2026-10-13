@@ -267,6 +267,13 @@
       "when": 1791485531044,
       "tag": "0037_fix_enqueue_ghl_sync_duplicate",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791923009787,
+      "tag": "0038_migration",
+      "breakpoints": true
     }
   ]
 }

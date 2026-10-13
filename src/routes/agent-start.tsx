@@ -11,6 +11,7 @@ import { activateAgentWorkspace } from "@/lib/agent-onboarding.functions";
 import { getAgentAttribution } from "@/lib/agent-funnel";
 import { recordAuthenticatedAgentEvent, recordPublicAgentEvent } from "@/lib/agent-funnel.functions";
 import { useLanguage } from "@/lib/i18n";
+import { ProEmailVerify } from "@/components/pro-email-verify";
 import { clearProIntent, hasProIntent, markProIntent } from "@/lib/pro-intent";
 
 const searchSchema = z.object({ source: z.string().max(80).optional() });
@@ -51,6 +52,7 @@ function AgentStartPage() {
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null);
   const activationStarted = useRef(false);
 
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
   async function finishActivation() {
     if (activationStarted.current) return;
     activationStarted.current = true;
@@ -67,6 +69,12 @@ function AgentStartPage() {
       navigate({ to: "/agent", replace: true });
     } catch (reason) {
       activationStarted.current = false;
+      if (reason instanceof Error && reason.message.includes("EMAIL_UNVERIFIED")) {
+        const { data: u } = await supabase.auth.getUser();
+        setVerifyEmail(u.user?.email ?? null);
+        setBusy(false);
+        return;
+      }
       setError(reason instanceof Error ? reason.message : t("pub.astart.error_workspace"));
       setBusy(false);
     }
@@ -175,7 +183,9 @@ function AgentStartPage() {
         <section className="rounded-lg border border-border bg-card p-5 shadow-elevated sm:p-7" aria-labelledby="account-heading">
           <h2 id="account-heading" className="text-2xl font-semibold">{mode === "signup" ? t("pub.astart.create") : t("pub.astart.signin_title")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{t("pub.astart.workspace_note")}</p>
-          {message ? (
+          {verifyEmail ? (
+            <ProEmailVerify email={verifyEmail} redirectTo={`${window.location.origin}/agent-start`} onVerified={() => { setVerifyEmail(null); markProIntent("agent"); void finishActivation(); }} />
+          ) : message ? (
             <div className="mt-6 rounded-lg border border-surface-intelligence-border bg-surface-intelligence p-5">
               <CheckCircle2 className="h-6 w-6 text-status-positive" />
               <p className="mt-3 font-semibold">{t("pub.astart.confirm_title")}</p>
