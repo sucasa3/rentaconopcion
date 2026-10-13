@@ -73,6 +73,7 @@ export async function stripeRequest<T = any>(
   method: "GET" | "POST" = "GET",
   body?: Record<string, unknown>,
   mode?: StripeMode,
+  idempotencyKey?: string,
 ): Promise<T> {
   const m = mode ?? (await currentStripeMode());
   const res = await fetch(`${STRIPE_API}${path}`, {
@@ -80,6 +81,7 @@ export async function stripeRequest<T = any>(
     headers: {
       Authorization: `Bearer ${stripeKey(m)}`,
       "Content-Type": "application/x-www-form-urlencoded",
+      ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}),
     },
     body: body ? encode(body).join("&") : undefined,
   });
@@ -234,4 +236,55 @@ export async function applySubscription(
     });
   }
   return { orgId, planKey: plan?.key ?? null, status: subscription.status };
+}
+
+export const LAUNCH_PREPAID_DAYS = 90;
+
+/**
+ * The $397 launch offer is a one-time payment (Checkout mode "payment") so the
+ * customer sees "$397 due today", never "90 days free". Once it is paid, the
+ * monthly MLO Growth subscription is created to start billing exactly 90 days
+ * after payment. Safe to call repeatedly (webhook retries + return sync): the
+ * Stripe idempotency key and the session-id lookup create at most one subscription.
+ */
+export async function finalizeLaunchPayment(
+  supabaseAdmin: any,
+  session: any,
+  mode: StripeMode,
+): Promise<any | null> {
+  if (session?.mode !== "payment" || session?.metadata?.plan_key !== "mlo_growth_launch") return null;
+  if (session.payment_status !== "paid") return null;
+  const orgId = session.metadata?.sucasa_org_id ?? session.client_reference_id;
+  const customer = session.customer;
+  if (!orgId || !customer) return null;
+
+  const existing = await stripeRequest<{ data: any[] }>(
+    `/subscriptions?customer=${customer}&status=all&limit=20`, "GET", undefined, mode,
+  );
+  const already = existing.data?.find((s) => s.metadata?.sucasa_launch_session === session.id);
+  if (already) { await applySubscription(supabaseAdmin, already); return already; }
+
+  const { data: plan } = await supabaseAdmin
+    .from("plan_tiers").select("stripe_price_id, stripe_test_price_id").eq("key", "mlo_growth_v2").maybeSingle();
+  const growthPrice = plan?.[priceIdColumn(mode)];
+  if (!growthPrice) throw new Error("MLO Growth price not configured");
+
+  const pi = typeof session.payment_intent === "string"
+    ? await stripeRequest(`/payment_intents/${session.payment_intent}`, "GET", undefined, mode)
+    : session.payment_intent;
+  const paymentMethod = typeof pi?.payment_method === "string" ? pi.payment_method : pi?.payment_method?.id;
+  const paidAt = Number(pi?.created ?? session.created ?? Math.floor(Date.now() / 1000));
+  const startsAt = paidAt + LAUNCH_PREPAID_DAYS * 86400;
+
+  const sub = await stripeRequest("/subscriptions", "POST", {
+    customer,
+    items: [{ price: growthPrice, quantity: 1 }],
+    // Prepaid period: nothing is charged until the 90 paid days end.
+    trial_end: startsAt,
+    ...(paymentMethod ? { default_payment_method: paymentMethod } : {}),
+    trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
+    metadata: { sucasa_org_id: orgId, plan_key: "mlo_growth_v2", sucasa_launch_session: session.id, sucasa_prepaid_until: String(startsAt) },
+  }, mode, `launch-sub-${session.id}`);
+  await applySubscription(supabaseAdmin, sub);
+  return sub;
 }
