@@ -18,7 +18,7 @@ function safeTarget(to: unknown): string | null {
   } catch { return null; }
 }
 
-export const Route = createFileRoute("/auth/continue")({
+export const Route = createFileRoute("/auth_/continue")({
   validateSearch: (s: Record<string, unknown>): { to?: string; lang?: string } => ({
     to: typeof s["to"] === "string" ? (s["to"] as string) : undefined,
     lang: s["lang"] === "es" ? "es" : "en",
