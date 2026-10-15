@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useT } from "@/lib/i18n";
+import { useLanguage, useT } from "@/lib/i18n";
 import { getBusinessOverview } from "@/lib/business.functions";
 import {
   cancelLoanOfficerInvite,
@@ -34,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/lender/team")({
 
 function TeamPage() {
   const t = useT();
+  const { language } = useLanguage();
+  const lang = language === "es" ? "es" : "en";
   const qc = useQueryClient();
   const overviewFn = useServerFn(getBusinessOverview);
   const teamFn = useServerFn(getLenderTeam);
@@ -60,6 +62,8 @@ function TeamPage() {
   const [role, setRole] = useState<"member" | "manager">("member");
   const [link, setLink] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
+  const [emailed, setEmailed] = useState(false);
+  const [sentTo, setSentTo] = useState("");
   const [keep, setKeep] = useState<string[]>([]);
   useEffect(() => {
     if (team) setKeep(team.retainedMemberIds);
@@ -69,9 +73,11 @@ function TeamPage() {
   const onErr = (e: Error) => toast.error(e.message);
 
   const invite = useMutation({
-    mutationFn: () => inviteFn({ data: { orgId: orgId!, email, role } }),
+    mutationFn: () => inviteFn({ data: { orgId: orgId!, email, role, lang } }),
     onSuccess: (r) => {
       setLink(r.url);
+      setEmailed(r.emailed);
+      setSentTo(email);
       setResent(false);
       setEmail("");
       refresh();
@@ -79,9 +85,10 @@ function TeamPage() {
     onError: onErr,
   });
   const resend = useMutation({
-    mutationFn: (inviteId: string) => resendFn({ data: { inviteId } }),
+    mutationFn: (inviteId: string) => resendFn({ data: { inviteId, lang } }),
     onSuccess: (r) => {
       setLink(r.url);
+      setEmailed(r.emailed);
       setResent(true);
       refresh();
     },
@@ -239,7 +246,9 @@ function TeamPage() {
               )}
               {link && (
                 <div className="rounded-md border border-border bg-surface p-3 text-sm">
-                  <p className="text-muted-foreground" role="status">{t(resent ? "team.resend_note" : "team.invite_link")}</p>
+                  <p className="text-muted-foreground" role="status">{emailed
+                      ? t(resent ? "team.resend_emailed" : "team.invite_emailed", { email: sentTo })
+                      : t(resent ? "team.resend_note" : "team.invite_link")}</p>
                   <div className="mt-2 flex items-center gap-2">
                     <code className="min-w-0 flex-1 truncate text-xs" data-testid="invite-link">{link}</code>
                     <Button
