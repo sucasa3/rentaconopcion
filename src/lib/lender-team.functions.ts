@@ -127,10 +127,55 @@ export const getLenderTeam = createServerFn({ method: "POST" })
   });
 
 /** Invite a loan officer. Reserves a seat atomically; returns a one-time link. */
+/** Emails the invitation on behalf of the inviting manager. Never throws. */
+async function emailInvite(opts: {
+  inviteId: string;
+  inviterId: string;
+  url: string;
+  lang?: "en" | "es";
+}): Promise<boolean> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: inv } = await supabaseAdmin
+      .from("lender_team_invitations")
+      .select("email, role, lender_org_id")
+      .eq("id", opts.inviteId)
+      .maybeSingle();
+    if (!inv?.email) return false;
+    const [{ data: org }, { data: me }] = await Promise.all([
+      supabaseAdmin.from("lender_orgs").select("name").eq("id", inv.lender_org_id).maybeSingle(),
+      supabaseAdmin.from("profiles").select("full_name, email, language").eq("id", opts.inviterId).maybeSingle(),
+    ]);
+    const inviterName = me?.full_name || me?.email || "Your branch manager";
+    const lang = opts.lang ?? ((me as any)?.language === "es" ? "es" : "en");
+    const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+    const r = await sendTemplateEmail("team-invite", inv.email, {
+      purpose: "transactional",
+      fromName: `${inviterName} via SuCasa`,
+      replyTo: me?.email ?? undefined,
+      idempotencyKey: `team-invite-${opts.inviteId}-${opts.url.slice(-16)}`,
+      templateData: { inviterName, orgName: org?.name ?? undefined, role: inv.role, acceptUrl: opts.url, lang },
+    });
+    return r.sent;
+  } catch (e) {
+    console.error("team invite email failed", e);
+    return false;
+  }
+}
+
+const langSchema = z.enum(["en", "es"]).optional();
+
 export const inviteLoanOfficer = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z.object({ orgId: uuid, email: z.string().trim().email().max(254), role: z.enum(["member", "manager"]).default("member") }).parse(i),
+    z
+      .object({
+        orgId: uuid,
+        email: z.string().trim().email().max(254),
+        role: z.enum(["member", "manager"]).default("member"),
+        lang: langSchema,
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const token = await newToken();
@@ -141,13 +186,14 @@ export const inviteLoanOfficer = createServerFn({ method: "POST" })
       _token_hash: await hashToken(token),
     });
     rpcError(error);
-    // Release 1: the manager shares the link; no email is sent automatically.
-    return { id: id as string, url: await inviteUrl(token) };
+    const url = await inviteUrl(token);
+    const emailed = await emailInvite({ inviteId: id as string, inviterId: context.userId, url, lang: data.lang });
+    return { id: id as string, url, emailed };
   });
 
 export const resendLoanOfficerInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => z.object({ inviteId: uuid }).parse(i))
+  .inputValidator((i: unknown) => z.object({ inviteId: uuid, lang: langSchema }).parse(i))
   .handler(async ({ data, context }) => {
     const token = await newToken();
     const { error } = await context.supabase.rpc("resend_lender_team_invite", {
@@ -155,7 +201,9 @@ export const resendLoanOfficerInvite = createServerFn({ method: "POST" })
       _token_hash: await hashToken(token),
     });
     rpcError(error);
-    return { url: await inviteUrl(token) };
+    const url = await inviteUrl(token);
+    const emailed = await emailInvite({ inviteId: data.inviteId, inviterId: context.userId, url, lang: data.lang });
+    return { url, emailed };
   });
 
 export const cancelLoanOfficerInvite = createServerFn({ method: "POST" })

@@ -7,6 +7,7 @@ import { template as dailyReadAgentTemplate } from './daily-read-agent'
 import { template as dailyReadLenderTemplate } from './daily-read-lender'
 import { template as introductionInviteTemplate } from './introduction-invite'
 import { template as securityAlertTemplate } from './security-alert'
+import { template as teamInviteTemplate } from './team-invite'
 
 
 
@@ -37,6 +38,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'daily-read-lender': dailyReadLenderTemplate,
   'introduction-invite': introductionInviteTemplate,
   'security-alert': securityAlertTemplate,
+  'team-invite': teamInviteTemplate,
 }
 
 
