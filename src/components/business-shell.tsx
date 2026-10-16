@@ -16,6 +16,9 @@ import { AccountMenu, MobileTopBar } from "@/components/account-menu";
 import { PostCallReturnPrompt } from "@/components/post-call-return-prompt";
 import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getBusinessOverview } from "@/lib/business.functions";
 
 
 export type BusinessKind = "agent" | "lender";
@@ -94,7 +97,17 @@ export function BusinessShell({
   children: ReactNode;
 }) {
   const t = useT();
-  const items = navItems(kind, bookId, isManager, t);
+  // The shell resolves the member's own book and manager status itself, so
+  // every page shows the same menu (pages never need to pass these flags).
+  const overviewFn = useServerFn(getBusinessOverview);
+  const { data: overview } = useQuery({
+    queryKey: ["business-overview", kind],
+    queryFn: () => overviewFn({ data: { orgType: kind } }),
+    staleTime: 60_000,
+  });
+  const resolvedBook = bookId ?? (overview as any)?.books?.[0]?.id ?? null;
+  const resolvedManager = isManager || Boolean((overview as any)?.isManager);
+  const items = navItems(kind, resolvedBook, resolvedManager, t);
 
 
 

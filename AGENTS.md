@@ -27,3 +27,5 @@
 - New self-serve agents are routed to their own Discovery (resolved server-side from membership via getMyAgentOnboarding) until the free 100 is claimed; Agent Today shows an unlock banner instead of paid-plan prompts — keeps first value ahead of upsell and never trusts a client-supplied workspace id.
 - Signup and magic-link emails both link through /auth/continue; preview-origin redirects keep the preview host — scanner-safe everywhere and testable before publishing.
 - Every new lender/agent member gets a personal client book via the lender_members insert trigger (tg_provision_member_book) — joining a team always gives a place to add leads.
+
+- BusinessShell resolves the member's own book and manager status itself (getBusinessOverview); page props only override — keeps the side menu identical on every page.
