@@ -146,13 +146,14 @@ export const activateAgentWorkspace = createServerFn({ method: "POST" })
       .from("lender_portfolios")
       .select("id")
       .eq("lender_org_id", orgId)
+      .eq("assigned_user_id", context.userId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
     if (!portfolio) {
       const { data: madeBook, error } = await supabaseAdmin
         .from("lender_portfolios")
-        .insert({ lender_org_id: orgId, name: "Sphere & past clients" })
+        .insert({ lender_org_id: orgId, name: "Sphere & past clients", assigned_user_id: context.userId })
         .select("id")
         .single();
       if (error) throw new Error(error.message);

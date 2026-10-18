@@ -288,6 +288,13 @@
       "when": 1792339429747,
       "tag": "0040_explicit_homeowner_team_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792339841114,
+      "tag": "0041_officer_client_book_visibility",
+      "breakpoints": true
     }
   ]
 }

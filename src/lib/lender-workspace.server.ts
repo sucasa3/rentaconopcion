@@ -175,6 +175,7 @@ export async function lenderScope(supabase: any, userId: string, orgId?: string 
       b.assigned_user_id === userId ||
       (!b.assigned_user_id && !teamOrgs.has(b.lender_org_id)),
   );
+  visible.sort((a: any, b: any) => Number(b.assigned_user_id === userId) - Number(a.assigned_user_id === userId) || a.id.localeCompare(b.id));
   const { data: org } = await admin()
     .from("lender_orgs")
     .select("id, name")
