@@ -12,6 +12,10 @@ export const Route = createFileRoute("/_authenticated/lender/welcome")({
     meta: [
       { title: "Add your clients — SuCasa" },
       { name: "description", content: "Upload a CSV or add one client to start your SuCasa client book." },
+      { property: "og:title", content: "Add your clients — SuCasa" },
+      { property: "og:description", content: "Add clients to your own SuCasa book." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -27,14 +31,14 @@ function Welcome() {
     queryKey: ["lender-welcome-book"],
     queryFn: async () => {
       let o: any = await overviewFn({ data: { orgType: "lender" } });
-      if (!o?.books?.length) {
+      if (!o?.personalBookId) {
         await ensureFn({ data: {} });
         o = await overviewFn({ data: { orgType: "lender" } });
       }
       return o;
     },
   });
-  const bookId: string | null = data?.books?.[0]?.id ?? null;
+  const bookId: string | null = data?.personalBookId ?? null;
 
   const card = "flex min-h-40 flex-col items-start gap-2 rounded-2xl border-2 border-border bg-card p-5 text-left shadow-soft transition-colors hover:border-primary focus-visible:border-primary";
   return (

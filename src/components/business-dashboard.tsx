@@ -71,7 +71,7 @@ export function BusinessDashboard({
   const tasksDue = tasks?.openCount ?? 0;
 
   const base = kind === "agent" ? "/agent" : "/lender";
-  const book = data?.books?.[0] ?? null;
+  const book = data?.books?.find((b: any) => b.id === data.personalBookId) ?? null;
   const orgName = data?.orgs?.[0]?.name ?? (kind === "agent" ? "Your agency" : "Your team");
 
   if (isLoading) {

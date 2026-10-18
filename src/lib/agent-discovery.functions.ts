@@ -430,7 +430,7 @@ export const getMyAgentOnboarding = createServerFn({ method: "POST" })
     const orgId = ((memberships ?? []) as any[]).find((m) => m.lender_orgs?.org_type === "agent")?.lender_org_id as string | undefined;
     if (!orgId) return { orgId: null, portfolioId: null, needsClaim: false };
     const [{ data: book }, { data: ledger }, { data: base }] = await Promise.all([
-      db.from("lender_portfolios").select("id").eq("lender_org_id", orgId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
+      db.from("lender_portfolios").select("id").eq("lender_org_id", orgId).eq("assigned_user_id", context.userId).order("created_at", { ascending: true }).limit(1).maybeSingle(),
       db.from("agent_credit_ledger").select("kind, delta").eq("org_id", orgId),
       db.from("agent_base_entitlements").select("profile_limit").eq("org_id", orgId).maybeSingle(),
     ]);

@@ -29,3 +29,4 @@
 - Every new lender/agent member gets a personal client book via the lender_members insert trigger (tg_provision_member_book) — joining a team always gives a place to add leads.
 
 - BusinessShell resolves the member's own book and manager status itself (getBusinessOverview); page props only override — keeps the side menu identical on every page.
+- Personal intake uses the server-designated personalBookId and validates active assigned ownership before writes; branch redistribution uses an atomic manager-only RPC that moves existing rows, preserves consent and record IDs, updates queue references, and logs assignments — prevents implicit team ownership and duplicate enrichment.

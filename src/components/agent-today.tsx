@@ -92,7 +92,7 @@ export function AgentToday() {
   };
 
   const items = useMemo(() => queue?.items ?? [], [queue]);
-  const book = overview?.books?.[0] ?? null;
+  const book = overview?.books?.find((b: any) => b.id === overview.personalBookId) ?? null;
   const clientCount = overview?.counts?.people ?? 0;
   const tasksDue = tasks?.openCount ?? 0;
 
