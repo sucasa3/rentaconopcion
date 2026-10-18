@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { addPortfolioClient, ingestPortfolioCsv } from "@/lib/lender.functions";
@@ -8,8 +8,19 @@ import { UserPlus } from "lucide-react";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { recordAuthenticatedAgentEvent } from "@/lib/agent-funnel.functions";
 import { useLanguage } from "@/lib/i18n";
+import { getBusinessOverview } from "@/lib/business.functions";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
+  head: () => ({ meta: [
+    { title: "Add homeowners to your book — SuCasa Lender" },
+    { name: "description", content: "Upload or add homeowners to your personal SuCasa client book." },
+    { property: "og:title", content: "Add homeowners to your book — SuCasa Lender" },
+    { property: "og:description", content: "Add your own clients before explicitly assigning them to your branch team." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
   component: PortfolioImport,
 });
 
@@ -32,6 +43,8 @@ function PortfolioImport() {
   const navigate = useNavigate();
   const ingestFn = useServerFn(ingestPortfolioCsv);
   const addFn = useServerFn(addPortfolioClient);
+  const overviewFn = useServerFn(getBusinessOverview);
+  const { data: overview } = useQuery({ queryKey: ["business-overview", "lender"], queryFn: () => overviewFn({ data: { orgType: "lender" } }) });
   const [form, setForm] = useState({ ...EMPTY });
   const track = useServerFn(recordAuthenticatedAgentEvent);
   const { language } = useLanguage();
@@ -83,6 +96,12 @@ function PortfolioImport() {
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  if (!overview) return <p className="text-sm text-muted-foreground">{L("Loading your book…", "Cargando tu cartera…")}</p>;
+  if (overview.personalBookId !== id) return <div className="space-y-3">
+    <p className="text-sm">{L("New homeowners belong to your own book. You can assign them to your team afterward.", "Los nuevos propietarios pertenecen a tu propia cartera. Después puedes asignarlos a tu equipo.")}</p>
+    {overview.personalBookId && <Button asChild><Link to="/lender/portfolio/$id/import" params={{ id: overview.personalBookId }}>{L("Add to my book", "Agregar a mi cartera")}</Link></Button>}
+  </div>;
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">

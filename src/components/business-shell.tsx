@@ -105,7 +105,7 @@ export function BusinessShell({
     queryFn: () => overviewFn({ data: { orgType: kind } }),
     staleTime: 60_000,
   });
-  const resolvedBook = overview?.personalBookId ?? bookId ?? null;
+  const resolvedBook = overview ? overview.personalBookId : bookId;
   const resolvedManager = isManager || Boolean((overview as any)?.isManager);
   const items = navItems(kind, resolvedBook, resolvedManager, t);
 
