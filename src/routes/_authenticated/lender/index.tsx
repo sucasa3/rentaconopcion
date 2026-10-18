@@ -19,6 +19,10 @@ export const Route = createFileRoute("/_authenticated/lender/")({
           "Who to contact today, why now, and what to say — for the homeowners you have a relationship with.",
       },
       { name: "robots", content: "noindex" },
+      { property: "og:title", content: "Lender Today — SuCasa" },
+      { property: "og:description", content: "Your homeowner relationships, next conversations, and branch activity." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: LenderHome,
@@ -35,7 +39,7 @@ function LenderHome() {
   const orgId = (data as any)?.org?.id ?? (data as any)?.orgs?.[0]?.id ?? null;
 
   return (
-    <BusinessShell kind="lender" bookId={data?.books?.[0]?.id ?? null} isManager={data?.isManager}>
+    <BusinessShell kind="lender" bookId={data?.personalBookId ?? null} isManager={data?.isManager}>
       <LenderToday />
       <LenderBook />
       <LenderCommandCenter />
