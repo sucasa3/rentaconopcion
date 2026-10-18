@@ -423,3 +423,9 @@
 ## Launch readiness — final pass (preview, not published)
 - [x] $397 one-time checkout + deferred $149, ES/EN, live price mapped, $447 unsellable
 - [ ] Human: Google OAuth, inbox code, agent SMS/free-100, live webhook endpoint check after publish
+
+## Upload ownership and explicit lead assignment
+- [ ] Restore Neil's 48 uploaded leads to his branch-manager book without duplicating records
+- [ ] Resolve all personal intake destinations server-side and preserve uploader ownership
+- [ ] Add manager-only selected-lead assignment to active team members, EN/ES
+- [ ] Verify ownership, assignment permissions, preserved data, desktop and phone flows; do not publish
