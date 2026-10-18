@@ -13,6 +13,7 @@ import { ComparisonRate } from "@/components/comparison-rate";
 import { useT } from "@/lib/i18n";
 import type { TranslationKey } from "@/lib/i18n/en";
 import { cn } from "@/lib/utils";
+import { HomeownerAssignment } from "@/components/homeowner-assignment";
 
 
 import {
@@ -31,6 +32,15 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/")({
+  head: () => ({ meta: [
+    { title: "Homeowners and team assignment — SuCasa Lender" },
+    { name: "description", content: "Review your homeowner relationships and explicitly assign selected leads to your branch team." },
+    { property: "og:title", content: "Homeowners and team assignment — SuCasa Lender" },
+    { property: "og:description", content: "Manage your client book and branch assignments with existing permissions preserved." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): { status?: "activated"; client?: string } => ({
     ...(s.status === "activated" ? { status: "activated" as const } : {}),
     ...(typeof s.client === "string" ? { client: s.client } : {}),
@@ -417,6 +427,7 @@ function PortfolioDetail() {
                     >
                       <Upload className="h-3 w-3" /> {t("biz.lpd.add_clients")}
                     </Link>
+                    <HomeownerAssignment portfolioId={id} orgId={data.portfolio.orgId} clients={data.clients} />
 
                     {missingCount > 0 && (
                       <button

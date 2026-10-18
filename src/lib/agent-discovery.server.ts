@@ -105,6 +105,8 @@ export async function runAgentDiscovery(input: {
   csv: string;
 }): Promise<DiscoveryReport> {
   const db = await admin();
+  const { assertPersonalBook } = await import("./personal-book");
+  await assertPersonalBook(db, input.userId, input.portfolioId);
   const { parseClientCsv } = await import("./lender.server");
   const sink = { addressless: [] as any[], invalid: 0 };
   const parsed = parseClientCsv(input.csv, sink);
