@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { personalBook } from "./personal-book";
 
 /**
  * Business-side reads for the agent and lender command centers.
@@ -64,6 +65,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       orgs: [] as any[],
       isManager,
       myUserId: userId,
+      personalBookId: null as string | null,
       books: [] as any[],
       counts: { people: 0, activated: 0, prospects: 0, opportunities: 0, campaigns: 0 },
       opportunities: [] as any[],
@@ -102,6 +104,8 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
         p.assigned_user_id === userId ||
         (!p.assigned_user_id && !teamOrgs.has(p.lender_org_id)),
     );
+    const owned = personalBook(visible, userId);
+    visible.sort((a: any, b: any) => Number(b.id === owned?.id) - Number(a.id === owned?.id) || a.id.localeCompare(b.id));
     const bookIds = visible.map((p: any) => p.id);
     if (!bookIds.length) return { ...empty, orgs };
 
@@ -202,10 +206,12 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       orgs,
       isManager,
       myUserId: userId,
+      personalBookId: owned?.id ?? null,
       books: visible.map((p: any) => ({
         id: p.id,
         name: p.name,
         orgId: p.lender_org_id,
+        assigned_user_id: p.assigned_user_id,
         clientCount: rows.filter((c: any) => c.portfolio_id === p.id).length,
       })),
       counts: {
