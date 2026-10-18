@@ -281,6 +281,13 @@
       "when": 1792105331666,
       "tag": "0039_auto_provision_member_book",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792339429747,
+      "tag": "0040_explicit_homeowner_team_assignment",
+      "breakpoints": true
     }
   ]
 }

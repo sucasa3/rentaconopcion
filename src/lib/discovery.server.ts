@@ -124,6 +124,7 @@ export async function ensureDiscoveryWorkspace(
     .from("lender_portfolios")
     .select("id, name")
     .eq("lender_org_id", orgId)
+    .eq("assigned_user_id", userId)
     .order("created_at", { ascending: true });
   let portfolioId: string | null =
     (books ?? []).find((b: any) => b.name === DISCOVERY_BOOK_NAME)?.id ??
@@ -134,6 +135,7 @@ export async function ensureDiscoveryWorkspace(
       .from("lender_portfolios")
       .select("id")
       .eq("assigned_user_id", userId)
+      .eq("lender_org_id", orgId)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -156,6 +158,7 @@ export async function ensureDiscoveryWorkspace(
         .from("lender_portfolios")
         .select("id")
         .eq("assigned_user_id", userId)
+        .eq("lender_org_id", orgId)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();

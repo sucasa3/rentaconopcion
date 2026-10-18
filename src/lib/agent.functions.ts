@@ -1428,6 +1428,8 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await agentOrgIds(context.supabase, context.userId);
+    const { assertPersonalBook } = await import("./personal-book");
+    await assertPersonalBook(context.supabase, context.userId, data.portfolioId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
     const orgId = access.ids[0] ?? null;
@@ -1494,6 +1496,8 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await agentOrgIds(context.supabase, context.userId);
+    const { assertPersonalBook } = await import("./personal-book");
+    await assertPersonalBook(context.supabase, context.userId, data.portfolioId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
     const orgId = access.ids[0] ?? null;

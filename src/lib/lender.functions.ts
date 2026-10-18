@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseClientCsv } from "./lender.server";
+import { assertPersonalBook } from "./personal-book";
 
 async function assertLenderAccess(supabase: any, userId: string) {
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -167,7 +168,7 @@ export const createPortfolio = createServerFn({ method: "POST" })
     await assertLenderAccess(context.supabase, context.userId);
     const { data: row, error } = await context.supabase
       .from("lender_portfolios")
-      .insert({ lender_org_id: data.orgId, name: data.name })
+      .insert({ lender_org_id: data.orgId, name: data.name, assigned_user_id: context.userId })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -422,6 +423,7 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => IngestSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
+    await assertPersonalBook(context.supabase, context.userId, data.portfolioId);
     const parsedRows = parseClientCsv(data.csv);
     if (parsedRows.length === 0) return { inserted: 0, suppressed: 0, existing: 0 };
 
@@ -508,6 +510,7 @@ export const addPortfolioClient = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => AddClientSchema.parse(i))
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
+    await assertPersonalBook(context.supabase, context.userId, data.portfolioId);
     {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { isSuppressed } = await import("./suppression.server");
