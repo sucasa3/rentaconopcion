@@ -6796,6 +6796,14 @@ export type Database = {
         Args: { _org_id: string }
         Returns: number
       }
+      assign_homeowners_to_member: {
+        Args: {
+          p_client_ids: string[]
+          p_source: string
+          p_target_user: string
+        }
+        Returns: Json
+      }
       award_agent_credit: {
         Args: {
           _client_id: string
