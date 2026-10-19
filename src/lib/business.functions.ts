@@ -129,7 +129,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
           .limit(200)
       : { data: [] as any[] };
 
-    const opportunities = (opps ?? []).map((o: any) => {
+    let opportunities = (opps ?? []).map((o: any) => {
       const c: any = clientById.get(o.portfolio_client_id);
       return {
         id: o.id,
@@ -147,6 +147,14 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
         portfolioId: c?.portfolio_id ?? null,
       };
     });
+    if (data.orgType === "lender") {
+      const { readLenderWorkspace } = await import("./lender-workspace.server");
+      const ws = await readLenderWorkspace(supabase, userId);
+      opportunities = (ws?.book ?? []).filter(c => bookIds.includes(c.portfolioId)).flatMap(c =>
+        c.reviews.map(r => ({ id:r.id, category:r.type, strength:"review", score:r.priority,
+          reason:r.why[0] ?? null, detail:r.why[1] ?? null, network:null, confidence:null,
+          signalKey:null, clientId:c.id, clientName:c.name, activated:Boolean(c.homeownerId), portfolioId:c.portfolioId })));
+    }
 
 
     // Campaigns: what is switched on for these orgs, plus delivery counts.
