@@ -20,7 +20,7 @@ const lines = [
   '',
   '| Field | Actual response path | Before | After | % populated | Evidence | Source-date range | Use / limitation |',
   '|---|---|---:|---:|---:|---|---|---|',
-  ...report.inventory.map(f => `| ${f.key} | \`${f.path}\` | ${f.before ? f.before + ': ' + f.before && '' : ''}${f.before === null ? 'not retained' : report.inventory.find(i => i.key === f.key)?.before} | ${f.after} | ${f.percent}% | ${f.kind} | ${f.oldestSourceDate ?? 'undated'} → ${f.newestSourceDate ?? 'undated'} | ${f.use} |`),
+  ...report.inventory.map(f => `| ${f.key} | \`${f.path}\` | ${f.before} | ${f.after} | ${f.percent}% | ${f.kind} | ${f.oldestSourceDate ?? 'undated'} → ${f.newestSourceDate ?? 'undated'} | ${f.use} |`),
   '',
   '## Verification and phase gate',
   '',
@@ -60,7 +60,5 @@ const lines = [
   '- Offline evidence output is temporary and private; this report contains aggregate counts only.',
   '- Household/card/reporting/permission/UI acceptance tests are not claimed passed: those phases remain gated.',
 ];
-// Render numeric before counts; `before` on inventory is always the measured count.
-lines.splice(10, report.inventory.length, ...report.inventory.map(f => `| ${f.key} | \`${f.path}\` | ${f.before} | ${f.after} | ${f.percent}% | ${f.kind} | ${f.oldestSourceDate ?? 'undated'} → ${f.newestSourceDate ?? 'undated'} | ${f.use} |`));
 writeFileSync(markdown, lines.join('\n') + '\n');
 console.log(JSON.stringify({ stored: report.storedRows, matched: report.matchedResponses, fields: report.inventory.length }));
