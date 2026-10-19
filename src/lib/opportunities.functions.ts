@@ -37,6 +37,21 @@ export const listPortfolioOpportunities = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const org = await assertPortfolioOrg(context.supabase, data.portfolioId);
+    // Lender callers receive the same consent-projected reviews as Today, not raw stored signals.
+    if (org.orgType === "lender") {
+      const { readLenderWorkspace } = await import("./lender-workspace.server");
+      const ws = await readLenderWorkspace(context.supabase, context.userId);
+      const people = ws?.book.filter(c => c.portfolioId === data.portfolioId) ?? [];
+      const opportunities = people.flatMap(c => c.reviews.map(r => ({
+        id: r.id, category: r.type, strength: "review", score: r.priority,
+        reasons: r.why, signals: {}, state: "open", client_id: c.id,
+        client_name: c.name, client_email: c.email, client_phone: c.phone,
+        address: c.address, homeowner_id: c.homeownerId,
+      })));
+      const counts: Record<string, number> = {};
+      for (const o of opportunities) counts[o.category] = (counts[o.category] ?? 0) + 1;
+      return { opportunities, counts, orgId: org.orgId, orgName: org.orgName, orgType: org.orgType };
+    }
     const rows = await listPortfolioOpportunityRows(context.supabase, data.portfolioId);
     return { ...rows, orgId: org.orgId, orgName: org.orgName, orgType: org.orgType };
   });
