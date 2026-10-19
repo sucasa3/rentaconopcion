@@ -425,7 +425,8 @@
 - [ ] Human: Google OAuth, inbox code, agent SMS/free-100, live webhook endpoint check after publish
 
 ## Upload ownership and explicit lead assignment
-- [ ] Restore Neil's 48 uploaded leads to his branch-manager book without duplicating records
-- [ ] Resolve all personal intake destinations server-side and preserve uploader ownership
-- [ ] Add manager-only selected-lead assignment to active team members, EN/ES
-- [ ] Verify ownership, assignment permissions, preserved data, desktop and phone flows; do not publish
+- [x] Restore Neil's 48 uploaded leads to his branch-manager book without duplicating records
+- [x] Resolve personal intake destinations server-side and validate active uploader ownership across lender/agent manual, CSV, and Discovery intake
+- [x] Add manager-only selected-lead assignment to active team members, EN/ES, with atomic movement, duplicate refusal, and existing permissions preserved
+- [x] Verify manager assignment and return through UI, officer denial and other-book read protection, invalid/stale selection refusal, EN/ES phone and desktop; 488 tests passed
+- [x] No publication; ownership correction and database protections apply to the shared database, assignment UI remains in preview
