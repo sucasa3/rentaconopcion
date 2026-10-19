@@ -1951,7 +1951,7 @@ export const en = {
   "sig.type.property_record": "Property record",
   "sig.type.conversation": "Your team's conversations",
   "sig.type.request": "Homeowner request",
-  "sig.src.batchdata": "BatchData",
+  "sig.src.batchdata": "Property records",
   "sig.src.historical_unknown": "Historical · source unknown",
   "sig.src.sucasa_snapshot": "SuCasa value history",
   "sig.src.your_team": "Your team",

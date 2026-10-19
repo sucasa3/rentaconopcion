@@ -7,6 +7,7 @@
  * that map before it leaves the server.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { lenderLegacyAllowed, lenderSafeReasons } from "@/lib/lender-privacy";
 import {
   classifyLenderAccess,
   channelDecision,
@@ -447,7 +448,7 @@ export async function readLenderWorkspace(
     const equity = hasScope(access, "equity")
       ? (canonicalEquity ?? subtractCents(value, balance))
       : null;
-    const ltv =
+    const ltv = !hasScope(access, "mortgage") || !hasScope(access, "valuation") ? null :
       canonical?.ltvPct != null && recordValue != null
         ? canonical.ltvPct
         : value && balance
@@ -891,9 +892,10 @@ function buildReviews(input: {
 
   // Preserve detections the existing engine already made, in lender wording.
   for (const o of input.legacy) {
+    if (!lenderLegacyAllowed(o, input.facts)) continue;
     let type = CATEGORY_TO_REVIEW[o.category];
     if (!type) continue;
-    let why: string[] = (o.reasons ?? []).slice(0, 2);
+    let why: string[] = lenderSafeReasons(o.reasons ?? []).slice(0, 2);
     if (type === "refinance_review" && !hasRecordedRate) {
       // No recorded rate: never carry "rate looks refinanceable" style copy.
       if (input.loanAgeYears == null) continue;

@@ -18,6 +18,7 @@
  */
 
 import { money, pct, roughMoney, type ClientFacts } from "@/lib/client-facts";
+import { lenderNarrativeFacts, PHYSICAL_HOME } from "@/lib/lender-privacy";
 
 export type NarrativeRole = "agent" | "lender";
 
@@ -377,6 +378,7 @@ function lenderNarrative(play: string, input: NarrativeInput): Narrative {
 
 /** Decide the one story this surface should tell. Pure and deterministic. */
 export function buildNarrative(input: NarrativeInput): Narrative {
+  if (input.role === "lender") input = { ...input, facts: lenderNarrativeFacts(input.facts), categories: input.categories.filter(c => !PHYSICAL_HOME.test(c)) };
   const play = input.role === "agent" ? agentPlay(input) : lenderPlay(input);
   const n = input.role === "agent" ? agentNarrative(play, input) : lenderNarrative(play, input);
   if (input.engagementLine) {
@@ -468,6 +470,7 @@ export function copyAgreesWithFacts(
     for (const rule of AGENT_FORBIDDEN)
       if (rule.re.test(t) && !violations.includes(rule.code)) violations.push(rule.code);
   }
+  if (role === "lender" && PHYSICAL_HOME.test(t)) violations.push("unshared_home_care");
 
   const allowed = allowedNumbers(facts, role);
   // Street numbers and ZIPs from the property address are not claims.

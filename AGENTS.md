@@ -30,4 +30,5 @@
 
 - BusinessShell resolves the member's own book and manager status itself (getBusinessOverview); page props only override — keeps the side menu identical on every page.
 - Personal intake uses the server-designated personalBookId and validates active assigned ownership before writes; branch redistribution uses an atomic manager-only RPC that moves existing rows, preserves consent and record IDs, updates queue references, and logs assignments — prevents implicit team ownership and duplicate enrichment.
-- BatchData recovery lives in the offline/Test-Lab-only `batchdata-recovery` module, never production enrichment imports; source-row evidence keeps estimated rates/balances separate from historical and aggregate values — prevents audit corrections silently changing live loan qualification.
+- Recovery and household/import-review modules stay pure/offline or preview-host-only Test Lab until durable storage is authorized; confirmed edges never widen caller access or activate financial signals.
+- Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.

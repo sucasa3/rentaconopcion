@@ -1992,7 +1992,7 @@ export const es: Dictionary = {
   "sig.type.property_record": "Registro de la propiedad",
   "sig.type.conversation": "Conversaciones de su equipo",
   "sig.type.request": "Solicitud del propietario",
-  "sig.src.batchdata": "BatchData",
+  "sig.src.batchdata": "Registros de la propiedad",
   "sig.src.historical_unknown": "Histórico · fuente desconocida",
   "sig.src.sucasa_snapshot": "Historial de valor de SuCasa",
   "sig.src.your_team": "Su equipo",
