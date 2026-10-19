@@ -1,5 +1,11 @@
 # Roadmap
 
+## Household storage/import approval preparation (2026-10-19)
+- [ ] Read-only database and actual intake/access audit
+- [ ] Minimal additive storage and lossless staging design; no migrations or live importer edits
+- [ ] Aggregate dry-run reconciliation evidence and ambiguity/RLS/rollback report
+- [ ] Critical scenario dry-run tests and approval plan; implementation waits for approval
+
 ## Field recovery → household intelligence → verified lender signals (2026-10-19)
 - [x] Phase 1 offline recovery: audited/replayed all 206 stored attempts (174 property responses); isolated exact-path evidence and aggregate before/after coverage report
 - [ ] Phase 1 verification gate: provider confirmation of aggregate balance semantics where components are missing, estimated-loan freshness and same-loan recorded-rate identity is unavailable
