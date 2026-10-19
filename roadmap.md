@@ -6,8 +6,8 @@
 - [x] Aggregate dry-run reconciliation evidence and ambiguity/RLS/rollback report in docs/household-storage-plan.md
 - [x] Critical scenario dry-run tests: 68 checks in 7 files passed; detailed limits documented
 - [x] Design approved for isolated implementation/testing only (2026-10-19 23:25 UTC)
-- [ ] Confirm genuinely separate database, migrations, credentials and data before implementation; stop if isolation unavailable
-- [ ] Isolated schema/transaction/parser/retention implementation and real-session RLS/concurrency validation; blocked until isolation proven; no production changes
+- [x] Isolation preflight: current surface is Main; backend health provides no independent Test resource/credential/data proof; shared production connection remains configured
+- [ ] Isolated schema/transaction/parser/retention implementation and real-session RLS/concurrency validation BLOCKED: a genuinely separate test backend must be supplied and verified; stopped before implementation
 
 ## Field recovery → household intelligence → verified lender signals (2026-10-19)
 - [x] Phase 1 offline recovery: audited/replayed all 206 stored attempts (174 property responses); isolated exact-path evidence and aggregate before/after coverage report
