@@ -31,4 +31,5 @@
 - BusinessShell resolves the member's own book and manager status itself (getBusinessOverview); page props only override — keeps the side menu identical on every page.
 - Personal intake uses the server-designated personalBookId and validates active assigned ownership before writes; branch redistribution uses an atomic manager-only RPC that moves existing rows, preserves consent and record IDs, updates queue references, and logs assignments — prevents implicit team ownership and duplicate enrichment.
 - Recovery and household/import-review modules stay pure/offline or preview-host-only Test Lab until durable storage is authorized; confirmed edges never widen caller access or activate financial signals.
+- Read scripts/AGENTS.md before changing offline audit tools; their simulations are not production transactions.
 - Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.
