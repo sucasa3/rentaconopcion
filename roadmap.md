@@ -1,5 +1,11 @@
 # Roadmap
 
+## Field recovery → household intelligence → verified lender signals (2026-10-19)
+- [ ] Phase 1: audit actual stored Test Lab fields; isolate corrections from production; reprocess stored responses and produce before/after coverage, provenance and freshness
+- [ ] Phase 2, gated on Phase 1: verified, unit-aware multi-contact/property relationships; personal ownership, permission-safe cards/counts and neutral source labels; suppress lender physical-home facts without sharing
+- [ ] Phase 3, gated on Phase 2: enable only evidence-qualified lender signals; document unavailable reset/insurance/change evidence
+- [ ] Focused regression, EN/ES phone checks, final acceptance report; no provider calls, production record migration, billing changes, outreach or publication
+
 ## Agent + Lender homeowner detail redesign (published 2026-09-19)
 - [x] Reorder both detail views to Home → Opportunity → Why now → Intelligence → Conversation → Actions → Details
 - [x] Anchor compact professional property identity in the SuCasa Home Profile system; avoid generic lead-detail labels and unsupported shared claims
