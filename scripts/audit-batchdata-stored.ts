@@ -30,7 +30,7 @@ const lines = [
   '- Permit samples contain only permitCount, allTags, tags, earliestDate, latestDate and totalJobValue. No nested event dates/descriptions exist in these samples. Tags do not establish diagnosis, completion, system age or an individual event.',
   '- False flags and zero counts are populated evidence, not positive signals. A missing permitCount is not proof of zero permits.',
   '- Recording/source-event dates are not evidence of current freshness. Undated loan estimates need a verified provider update timestamp and freshness policy before activation. Valuation source dates are retained; retrieval timestamps do not refresh stale values.',
-  '- Aggregate totalOpenLienBalance is not a verified payoff: stored multi-lien aggregates disagree with individual estimated balances and/or recorded principal. No aggregate-plus-component summation is performed.',
+  '- There are 32 multi-lien responses. Only 6 contain estimated balances for every component, and all 6 aggregates match their estimated component sum. The other 26 cannot validate aggregate balance semantics. This is supporting evidence, not proof of a verified payoff or a guarantee for incomplete records. No aggregate-plus-component summation is performed.',
   '- Open-lien interestRate, actual origination date, verified ARM initial fixed period/adjustment date and mortgage-insurance evidence are absent from the inspected active-lien schema. Historical interestRate and sale-associated rates cannot be promoted to current loans without reliable same-loan identity.',
   '',
   '**Phase 1 result: isolated recovery and replay complete; production activation gate remains blocked by unresolved balance/freshness semantics. Phase 2 and Phase 3 have not begun.**',
@@ -58,6 +58,7 @@ const lines = [
   '- No migrations or production record writes; property_intel, ATTOM, enrichment worker, billing and entitlements untouched.',
   '- No provider calls, outreach, notification campaigns, or publication.',
   '- Offline evidence output is temporary and private; this report contains aggregate counts only.',
+  '- Focused automated tests: 27 passed (8 new recovery safeguards, 17 existing mortgage-implied-value tests, 2 existing lender-mortgage facts tests); preview build OK. Offline replay covered all 206 stored attempts without provider or database writes.',
   '- Household/card/reporting/permission/UI acceptance tests are not claimed passed: those phases remain gated.',
 ];
 writeFileSync(markdown, lines.join('\n') + '\n');

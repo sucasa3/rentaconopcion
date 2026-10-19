@@ -1,10 +1,12 @@
 # Roadmap
 
 ## Field recovery → household intelligence → verified lender signals (2026-10-19)
-- [ ] Phase 1: audit actual stored Test Lab fields; isolate corrections from production; reprocess stored responses and produce before/after coverage, provenance and freshness
-- [ ] Phase 2, gated on Phase 1: verified, unit-aware multi-contact/property relationships; personal ownership, permission-safe cards/counts and neutral source labels; suppress lender physical-home facts without sharing
-- [ ] Phase 3, gated on Phase 2: enable only evidence-qualified lender signals; document unavailable reset/insurance/change evidence
-- [ ] Focused regression, EN/ES phone checks, final acceptance report; no provider calls, production record migration, billing changes, outreach or publication
+- [x] Phase 1 offline recovery: audited/replayed all 206 stored attempts (174 property responses); isolated exact-path evidence and aggregate before/after coverage report
+- [ ] Phase 1 verification gate: provider confirmation of aggregate balance semantics where components are missing, estimated-loan freshness and same-loan recorded-rate identity is unavailable
+- [ ] Phase 2, blocked by Phase 1 verification gate: verified, unit-aware multi-contact/property relationships; personal ownership, permission-safe cards/counts and neutral source labels; suppress lender physical-home facts without sharing
+- [ ] Phase 3, blocked by Phase 1/2 verification gates: enable only evidence-qualified lender signals; unavailable reset/insurance/change evidence documented
+- [x] Focused recovery/mortgage regression: 27 tests passed; report in docs/batchdata-field-recovery-report.md; no provider calls, production writes, billing changes, outreach or publication
+- [ ] EN/ES phone and household/permission/reporting acceptance checks await gated Phase 2 implementation; original CSV and explicit approval needed to recover skipped production imports
 
 ## Agent + Lender homeowner detail redesign (published 2026-09-19)
 - [x] Reorder both detail views to Home → Opportunity → Why now → Intelligence → Conversation → Actions → Details
