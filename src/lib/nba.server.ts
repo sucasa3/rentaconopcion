@@ -20,6 +20,7 @@ import { evaluateAgentChannels, type ChannelOption } from "@/lib/contact-channel
 import { MODEL_LIGHT } from "@/lib/documents-ai.server";
 import { clientFactsFor } from "@/lib/client-facts.server";
 import { emptyClientFacts, type ClientFacts } from "@/lib/client-facts";
+import { lenderNarrativeFacts, lenderSafeReasons, PHYSICAL_HOME } from "@/lib/lender-privacy";
 import {
   buildNarrative,
   copyAgreesWithFacts,
@@ -361,7 +362,9 @@ export async function buildActionQueue(
     };
     const recipe = recipeFor(o.category, orgType);
     const draft = draftByOpp.get(o.id);
-    const facts = factsByClient.get(c.id) ?? emptyClientFacts(c.id);
+    if (orgType === "lender" && PHYSICAL_HOME.test(o.category)) continue;
+    const rawFacts = factsByClient.get(c.id) ?? emptyClientFacts(c.id);
+    const facts = orgType === "lender" ? lenderNarrativeFacts(rawFacts) : rawFacts;
     const narrative = buildNarrative({
       role: orgType === "agent" ? "agent" : "lender",
       facts,
@@ -395,7 +398,7 @@ export async function buildActionQueue(
       categoryLabel: narrative.headline,
       score: o.score ?? 0,
       strength: o.strength ?? "emerging",
-      reasons: o.reasons ?? [],
+      reasons: orgType === "lender" ? lenderSafeReasons(o.reasons ?? []) : o.reasons ?? [],
       temperature: temperatureFor(rankInput),
       rank: rankScore(rankInput),
       channel: recipe.channel,

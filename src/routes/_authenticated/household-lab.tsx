@@ -14,5 +14,5 @@ export const Route = createFileRoute('/_authenticated/household-lab')({
     { name: 'twitter:card', content: 'summary' },
     { name: 'robots', content: 'noindex, nofollow' },
   ] }),
-  component: () => <><SiteHeader /><main className="mx-auto min-h-[60vh] w-full max-w-4xl px-4 py-6"><ClientOnly>{typeof window !== 'undefined' && isPreviewHost(window.location.host) ? <HouseholdLab /> : <p className="text-sm text-text-secondary">Not available.</p>}</ClientOnly></main><SiteFooter /></>,
+  component: () => <><SiteHeader /><main className="mx-auto min-h-[60vh] w-full max-w-4xl px-4 pb-6 pt-24"><ClientOnly>{typeof window !== 'undefined' && isPreviewHost(window.location.host) ? <HouseholdLab /> : <p className="text-sm text-text-secondary">Not available.</p>}</ClientOnly></main><SiteFooter /></>,
 });

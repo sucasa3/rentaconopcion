@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { emptyClientFacts } from '../client-facts';
 import { lenderLegacyAllowed, lenderNarrativeFacts, lenderSafeReasons } from '../lender-privacy';
+import { buildNarrative, copyAgreesWithFacts } from '../opportunity-narrative';
 describe('lender privacy projection', () => {
+  it('lender narrative and cached draft validation reject unshared physical-home information', () => {
+    const f = { ...emptyClientFacts('c1'), permitCount: 3, lastPermitDate: '2026-10-01' };
+    expect(buildNarrative({ role:'lender', facts:f, categories:['permits'] }).supportingSignals).toEqual([]);
+    expect(copyAgreesWithFacts('Your roof needs repair.', f, 'lender').ok).toBe(false);
+  });
   it('snapshot access cannot expose physical-home rationale or provenance', () => {
     expect(lenderLegacyAllowed({ category:'permit_activity', source_fields:['permit_activity'], reasons:['3 permits'] }, { permit_activity:3 })).toBe(false);
     expect(lenderLegacyAllowed({ category:'equity', source_fields:['estimated_equity'], reasons:['Roof repairs suggest a loan'] }, { estimated_equity:500 })).toBe(false);

@@ -9,6 +9,18 @@ describe('preview household foundation', () => {
     expect(h?.propertyCount).toBe(2);
   });
   it('never merges unrelated matching owner names', () => { expect(householdViews(householdFixture, access)).toHaveLength(2); });
+  it('shared ownership can appear in separate confirmed households without being summed', () => {
+    const f = structuredClone(householdFixture); const edge = f.relationships[0]; if (!edge) throw new Error('Fixture missing');
+    f.relationships.push({ ...edge, propertyId:'p3' });
+    expect(householdViews(f,access)).toHaveLength(2);
+    expect(householdViews(f,access)[0]?.propertyCount).toBe(3);
+    expect(householdViews(f,access)[0]?.equityCents).toBeNull();
+  });
+  it('unresolved units and addressless contacts remain reviewable, never auto-linked', () => {
+    const p = previewHouseholdImport([{full_name:'Alex',address:'1 Main St'}, {full_name:'Alex',address:'1 Main St Apt 1'}, {full_name:'Sam',address:''}]);
+    expect(p.properties).toHaveLength(2); expect(p.needsAddress).toHaveLength(1);
+    expect(p.confirmedRelationships).toEqual([]);
+  });
   it('household links cannot expand workspace or officer property access', () => {
     const h = householdViews(householdFixture, { ...access, propertyIds: new Set(['p1','private']) });
     expect(h[0]?.properties.map(p => p.id)).toEqual(['p1']);
