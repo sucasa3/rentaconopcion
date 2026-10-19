@@ -6,7 +6,6 @@ import {
   safeOpener,
 } from "./opportunity-narrative";
 import { assertFactsConsistent, emptyClientFacts, type ClientFacts } from "./client-facts";
-// Physical-home disclosure rules are covered in __tests__/lender-privacy.test.ts.
 
 /** Kevin-shaped facts: long tenure, small home, meaningful equity. */
 const kevin: ClientFacts = {

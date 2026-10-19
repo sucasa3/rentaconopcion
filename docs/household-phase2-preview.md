@@ -19,11 +19,12 @@
 
 ## Validation
 
-- Complete regression suite: 515 tests passed across 41 files before the final branch-overview projection edit; rerun results recorded below.
+- Final complete regression suite after all projection edits: 515 tests passed across 41 files; latest preview compilation reports build OK.
 - New household tests: co-borrowers, multi-property contacts, unrelated same-name owners, duplex units, unresolved units/addressless rows, shared ownership, completed tasks, duplicate outreach suppression, pending/revoked edges, cross-workspace/officer visibility and equity duplication/incompleteness.
 - New privacy tests: permit scope denial, unsafe rationale/source-field filtering, canonical-field authorization, shared-record preservation and lender narrative/cached-copy rejection.
 - Authenticated browser flow: own session → synthetic household page → property expansion → import review with three contact rows/two units. English desktop and phone checked; Spanish phone verified with a browser-only simulated profile-language response (no profile write). No horizontal overflow. This validates the isolated experience, not real household persistence.
 - The requesting account cannot access administrator Test Lab. Its denial was respected; no role changed. Synthetic-only signed-in preview route allows review without privileged data.
+- Real populated lender/officer API flows were not exercised end-to-end in this task; projection safeguards are covered by pure tests and existing access regressions, not a fresh live-account acceptance check.
 
 ## Unchanged / precise blockers
 
