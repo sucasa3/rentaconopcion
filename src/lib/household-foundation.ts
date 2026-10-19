@@ -51,8 +51,10 @@ export function householdViews(input: HouseholdFixture, access: HouseholdVisibil
   for (const householdId of [...new Set(edges.map(e => e.householdId))].sort()) {
     const mine = edges.filter(e => e.householdId === householdId);
     const propertyIds = new Set(mine.map(e => e.propertyId));
-    const contacts = input.contacts.filter(c => mine.some(e => e.contactId === c.id));
     const properties = input.properties.filter(p => propertyIds.has(p.id) && p.workspaceId === access.workspaceId);
+    const actualIds = new Set(properties.map(p => p.id));
+    const contacts = input.contacts.filter(c => mine.some(e => e.contactId === c.id && actualIds.has(e.propertyId)));
+    if (!properties.length || !contacts.length) continue;
     // Canonical identity duplicates are collapsed only for counting; conflicts disable totals.
     const keyed = new Map<string, HouseholdProperty>();
     let duplicate = false;
@@ -62,7 +64,7 @@ export function householdViews(input: HouseholdFixture, access: HouseholdVisibil
       else keyed.set(key, p);
     }
     const unique = [...keyed.values()];
-    const visibleTasks = input.tasks.filter(t => propertyIds.has(t.propertyId) &&
+    const visibleTasks = input.tasks.filter(t => actualIds.has(t.propertyId) &&
       mine.some(e => e.propertyId === t.propertyId && e.contactId === t.contactId) &&
       t.status === 'open' && (t.kind !== 'maintenance' || access.maintenancePropertyIds.has(t.propertyId)));
     const queue: HouseholdTask[] = [];
