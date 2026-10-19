@@ -58,6 +58,19 @@ export interface SimulationState {
   committedRows: string[]; propertyKeys: string[]; contactKeys: string[]; edges: string[];
   capacityUsed: number;
 }
+/** One proposed conversation per explicit household, never an inferred contact group. */
+export function conversationDryRun(input: {
+  householdId: string; confirmed: boolean; authorizedClientIds: ReadonlySet<string>;
+  opportunities: { id: string; clientId: string; recipientId: string; contactAllowed: boolean; priority: number }[];
+}) {
+  const visible = input.opportunities.filter(o => input.authorizedClientIds.has(o.clientId));
+  const eligible = visible.filter(o => o.contactAllowed).sort((a,b) => b.priority-a.priority || a.id.localeCompare(b.id));
+  return { propertyOpportunityIds:visible.map(o=>o.id),
+    conversation:input.confirmed && eligible[0] ? {
+      key:`household:${input.householdId}:conversation`, recipientId:eligible[0].recipientId,
+      opportunityIds:eligible.map(o=>o.id),
+    } : null };
+}
 /** Models a future transactional promotion contract; this is NOT a database/RPC implementation. */
 export function simulatePromotion(input: {
   rows: StagedRow[]; snapshot: Snapshot; state: SimulationState;

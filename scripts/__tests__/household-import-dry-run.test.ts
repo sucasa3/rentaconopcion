@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { reconcileRows, simulatePromotion, type Snapshot, type StagedRow, type SimulationState } from '../household-import-dry-run';
+import { conversationDryRun, reconcileRows, simulatePromotion, type Snapshot, type StagedRow, type SimulationState } from '../household-import-dry-run';
 import { householdViews } from '../../src/lib/household-foundation';
 import { householdFixture } from '../../src/lib/household-fixtures';
 
@@ -64,5 +64,17 @@ describe('offline household storage/import contract', () => {
   it('household conversation dedupe preserves both property-level opportunities', () => {
     const view=householdViews(householdFixture,{workspaceId:'lab',propertyIds:new Set(['p1','p2']),contactIds:new Set(['c1','c2']),maintenancePropertyIds:new Set()})[0];
     expect(view?.opportunityCount).toBe(2); expect(view?.queue.filter(t=>t.kind==='conversation')).toHaveLength(1);
+  });
+  it('two contacts in a confirmed household select one permitted recipient without losing either property opportunity', () => {
+    const input={householdId:'h',confirmed:true,authorizedClientIds:new Set(['p1','p2']),opportunities:[
+      {id:'o1',clientId:'p1',recipientId:'alex',contactAllowed:true,priority:90},
+      {id:'o2',clientId:'p2',recipientId:'sam',contactAllowed:true,priority:80},
+      {id:'private',clientId:'p3',recipientId:'private-contact',contactAllowed:true,priority:100},
+    ]};
+    const result=conversationDryRun(input);
+    expect(result.propertyOpportunityIds).toEqual(['o1','o2']);
+    expect(result.conversation).toEqual({key:'household:h:conversation',recipientId:'alex',opportunityIds:['o1','o2']});
+    expect(conversationDryRun({...input,confirmed:false}).conversation).toBeNull();
+    expect(conversationDryRun({...input,opportunities:input.opportunities.map(o=>({...o,contactAllowed:false}))}).conversation).toBeNull();
   });
 });
