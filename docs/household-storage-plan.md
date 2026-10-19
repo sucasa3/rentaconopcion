@@ -138,9 +138,9 @@ Do schema-only deployment first with consumers disabled → verify grants/RLS in
 
 ## 8. Actual tests executed, not a headline total
 
-`scripts/__tests__/household-import-dry-run.test.ts`: **10 passing contract tests**: reviewed contact→two properties; two co-borrowers→one capacity allocation; two units + missing-unit review; raw multiline/unmapped cells and exact-repeat retention; same-batch repeat receipts; new batch with reviewed identity; interruption before commit/resume; cross-workspace/officer/foreign-contact refusal; stale review/capacity; deduplicated conversation with two property opportunities.
+`scripts/__tests__/household-import-dry-run.test.ts`: **11 passing contract tests**: reviewed contact→two properties; two co-borrowers→one capacity allocation; two units + missing-unit review; raw multiline/unmapped cells and exact-repeat retention; same-batch repeat receipts; new batch with reviewed identity; interruption before commit/resume; cross-workspace/officer/foreign-contact refusal; stale review/capacity; deduplicated conversation with two property opportunities; two-contact confirmed-household selection of exactly one permitted recipient with private properties excluded.
 
-Reused focused existing foundation: **57 passing tests** across household, unit-aware agent intake, personal-book ownership, raw-property authorization, lender scopes and spreadsheet conversion. **67 tests / 7 files passed**, no unrelated full-suite rerun.
+Reused focused existing foundation: **57 passing tests** across household, unit-aware agent intake, personal-book ownership, raw-property authorization, lender scopes and spreadsheet conversion. **68 tests / 7 files passed**, no unrelated full-suite rerun. Final read-only counts remained 1,392 clients, 2,840 opportunities, 1,383 enrichment jobs, 518 cached properties and 3 existing relationship edges; latest preview reports build OK.
 
 Limits: dry-run simulator takes already-parsed synthetic rows; it does **not** prove a future full-record CSV parser, SQL row locks, live RLS, concurrent real commits, paid-trigger behavior under migration or household-level recipient scheduling. Those are explicitly required acceptance checks in the approved implementation stage. No completed Test Lab replay/inventory was repeated.
 
