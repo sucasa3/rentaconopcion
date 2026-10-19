@@ -5,7 +5,9 @@
 - [x] Minimal additive storage and lossless staging design; no migrations or live importer edits
 - [x] Aggregate dry-run reconciliation evidence and ambiguity/RLS/rollback report in docs/household-storage-plan.md
 - [x] Critical scenario dry-run tests: 68 checks in 7 files passed; detailed limits documented
-- [ ] Implementation blocked pending approval and isolated-backend validation; production storage/imports/publication not authorized
+- [x] Design approved for isolated implementation/testing only (2026-10-19 23:25 UTC)
+- [x] Isolation preflight: current surface is Main; backend health provides no independent Test resource/credential/data proof; shared production connection remains configured
+- [ ] Isolated schema/transaction/parser/retention implementation and real-session RLS/concurrency validation BLOCKED: a genuinely separate test backend must be supplied and verified; stopped before implementation
 
 ## Field recovery → household intelligence → verified lender signals (2026-10-19)
 - [x] Phase 1 offline recovery: audited/replayed all 206 stored attempts (174 property responses); isolated exact-path evidence and aggregate before/after coverage report
