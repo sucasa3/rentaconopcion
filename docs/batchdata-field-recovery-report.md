@@ -21,7 +21,7 @@ Before = existing persisted normalized payload; after = exact-path evidence pres
 | assessedValue | `assessment.totalAssessedValue` | 94 | 173 | 99.4% | reported | undated → undated | Tax assessment context |
 | marketValue | `assessment.totalMarketValue` | 94 | 172 | 98.9% | reported | undated → undated | Assessment context, not AVM |
 | openLienCount | `openLien.totalOpenLienCount` | 94 | 174 | 100% | reported | undated → undated | Current lien count only |
-| aggregateLienBalance | `openLien.totalOpenLienBalance` | 51 | 108 | 62.1% | unverified | undated → undated | Blocked: aggregate semantics disagree with components |
+| aggregateLienBalance | `openLien.totalOpenLienBalance` | 51 | 108 | 62.1% | unverified | undated → undated | Aggregate semantics need confirmation for incomplete components |
 | lender | `openLien.mortgages[].lenderName` | 57 | 110 | 63.2% | reported | 1993-10-29T00:00:00.000Z → 2026-05-28T00:00:00.000Z | Active-loan review |
 | originalPrincipal | `openLien.mortgages[].loanAmount` | 55 | 108 | 62.1% | recorded | 1993-10-29T00:00:00.000Z → 2026-05-28T00:00:00.000Z | Original principal, never payoff |
 | estimatedBalance | `openLien.mortgages[].currentEstimatedBalance` | 0 | 91 | 52.3% | estimated | undated → undated | Estimated component balance; no aggregate addition |
@@ -38,6 +38,10 @@ Before = existing persisted normalized payload; after = exact-path evidence pres
 | historicalPrincipal | `mortgageHistory[].loanAmount` | 0 | 111 | 63.8% | recorded | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | History only; not currently open |
 | historicalRate | `mortgageHistory[].interestRate` | 0 | 111 | 63.8% | reported | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | History only; not current-loan rate |
 | historicalRateType | `mortgageHistory[].interestRateType` | 0 | 38 | 21.8% | reported | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | Historical classification only |
+| historicalLender | `mortgageHistory[].lenderName` | 0 | 111 | 63.8% | reported | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | Historical lender, never current without proof |
+| historicalRecordingDate | `mortgageHistory[].recordingDate` | 0 | 111 | 63.8% | recorded | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | Historical source date |
+| historicalTermMonths | `mortgageHistory[].loanTermMonths` | 0 | 111 | 63.8% | reported | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | Historical term only |
+| historicalLoanType | `mortgageHistory[].loanType` | 0 | 110 | 63.2% | reported | 1998-09-25T00:00:00.000Z → 2026-05-27T00:00:00.000Z | Historical product only |
 | lastSaleDate | `sale.lastSale.saleDate` | 90 | 160 | 92% | recorded | 1993-10-28T00:00:00.000Z → 2026-06-29T00:00:00.000Z | Sale date, separate from loan age |
 | lastSalePrice | `sale.lastSale.price` | 89 | 142 | 81.6% | reported | 1993-10-28T00:00:00.000Z → 2026-06-29T00:00:00.000Z | Respect salePriceIsEstimated flag |
 | salePriceEstimated | `sale.lastSale.salePriceIsEstimated` | 0 | 174 | 100% | reported | 1993-10-28T00:00:00.000Z → 2026-06-29T00:00:00.000Z | Price evidence classification |
@@ -59,7 +63,7 @@ Before = existing persisted normalized payload; after = exact-path evidence pres
 - Permit samples contain only permitCount, allTags, tags, earliestDate, latestDate and totalJobValue. No nested event dates/descriptions exist in these samples. Tags do not establish diagnosis, completion, system age or an individual event.
 - False flags and zero counts are populated evidence, not positive signals. A missing permitCount is not proof of zero permits.
 - Recording/source-event dates are not evidence of current freshness. Undated loan estimates need a verified provider update timestamp and freshness policy before activation. Valuation source dates are retained; retrieval timestamps do not refresh stale values.
-- Aggregate totalOpenLienBalance is not a verified payoff: stored multi-lien aggregates disagree with individual estimated balances and/or recorded principal. No aggregate-plus-component summation is performed.
+- There are 32 multi-lien responses. Only 6 contain estimated balances for every component, and all 6 aggregates match their estimated component sum. The other 26 cannot validate aggregate balance semantics. This is supporting evidence, not proof of a verified payoff or a guarantee for incomplete records. No aggregate-plus-component summation is performed.
 - Open-lien interestRate, actual origination date, verified ARM initial fixed period/adjustment date and mortgage-insurance evidence are absent from the inspected active-lien schema. Historical interestRate and sale-associated rates cannot be promoted to current loans without reliable same-loan identity.
 
 **Phase 1 result: isolated recovery and replay complete; production activation gate remains blocked by unresolved balance/freshness semantics. Phase 2 and Phase 3 have not begun.**
@@ -87,4 +91,5 @@ Before = existing persisted normalized payload; after = exact-path evidence pres
 - No migrations or production record writes; property_intel, ATTOM, enrichment worker, billing and entitlements untouched.
 - No provider calls, outreach, notification campaigns, or publication.
 - Offline evidence output is temporary and private; this report contains aggregate counts only.
+- Focused automated tests: 27 passed (8 new recovery safeguards, 17 existing mortgage-implied-value tests, 2 existing lender-mortgage facts tests); preview build OK. Offline replay covered all 206 stored attempts without provider or database writes.
 - Household/card/reporting/permission/UI acceptance tests are not claimed passed: those phases remain gated.
