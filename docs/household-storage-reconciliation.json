@@ -1,0 +1,71 @@
+{
+  "capturedAt": "2026-10-19T23:15:48.135954Z",
+  "mode": "read-only aggregate catalog and reconciliation queries",
+  "databaseWrites": 0,
+  "providerCalls": 0,
+  "published": false,
+  "current": {
+    "clientRows": 1392,
+    "books": 65,
+    "cachedPropertyRecords": 518,
+    "homeProfiles": 0,
+    "professionalRelationshipEdges": 3,
+    "propertyOpportunities": 2840,
+    "enrichmentJobs": 1383,
+    "completedBusinessTaskStates": 0,
+    "nullClientAddressKeys": 1392,
+    "missingStreetRows": 4,
+    "addressPresentMissingZipRows": 50,
+    "orphanClientBooks": 0,
+    "orphanOpportunityClients": 0,
+    "opportunityOrganizationMismatch": 0,
+    "enrichmentBookMismatch": 0,
+    "clientsWithoutEnrichmentJob": 9,
+    "exactRetainedClientRowRepeatCandidates": 0
+  },
+  "segments": [
+    {"orgType":"agent","testOrg":false,"rows":205,"books":4,"missingZip":25,"linkedHomeowners":0},
+    {"orgType":"agent","testOrg":true,"rows":9,"books":6,"missingStreet":4,"missingZip":4,"linkedHomeowners":6},
+    {"orgType":"lender","testOrg":false,"rows":170,"books":6,"missingZip":0,"linkedHomeowners":0},
+    {"orgType":"lender","testOrg":true,"rows":1008,"books":4,"missingZip":25,"linkedHomeowners":0}
+  ],
+  "reviewCandidatesNotVerifiedIdentities": {
+    "normalizedAddressLocationKeys":1065,
+    "nonTestOrgAddressKeys":280,
+    "testOrgAddressKeys":950,
+    "addressKeysSharedAcrossBooks":206,
+    "bookScopedNameEmailPhoneContactKeys":1109,
+    "nonTestContactKeys":362,
+    "testContactKeys":747,
+    "multiPropertyEmailGroups":176,
+    "rowsInMultiPropertyEmailGroups":459,
+    "nonTestMultiPropertyEmailGroups":11,
+    "nonTestRowsInMultiPropertyEmailGroups":24,
+    "sameAddressDifferentNameGroupsWithinNonTestSegment":8,
+    "sameAddressDifferentNameGroupsWithinTestSegment":27,
+    "explicitUnitRegexRows":29,
+    "normalizedUnitMarkerRows":16,
+    "simpleBaseAddressMissingUnitOverlapGroups":0
+  },
+  "safeShadowBackfillIfLaterApproved": {
+    "existingClientRowsRetained":1392,
+    "provisionalBookContactsWithoutMerges":1392,
+    "legacyClientContactLinks":1392,
+    "provisionalPropertyReferencesForAddressedRows":1388,
+    "addresslessPropertyReferencesHeld":4,
+    "automaticConfirmedHouseholds":0,
+    "automaticConfirmedHouseholdMembers":0,
+    "newHomeownerAccounts":0,
+    "newPropertyLookups":0,
+    "newCreditSpends":0,
+    "existingOpportunitiesRetained":2840,
+    "existingEnrichmentJobsRetained":1383
+  },
+  "limitations": [
+    "SQL normalized keys reproduce common existing addressKey substitutions, not postal validation or every possible unit syntax; counts are candidates only.",
+    "Mixed test and non-test address identities overlap; segment property counts must not be added as distinct global homes.",
+    "Original previously skipped CSV rows were unavailable; no missing co-borrower count can be established.",
+    "No proposed DDL was applied, transaction failure injected into a database, or new RLS exercised against actual accounts.",
+    "Catalog grants were read through pg_class ACLs; information_schema grant views returned empty and were not treated as absent privileges."
+  ]
+}
