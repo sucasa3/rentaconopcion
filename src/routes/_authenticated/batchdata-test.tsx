@@ -14,6 +14,9 @@ import { FlaskConical, CheckCircle2, XCircle, Download } from "lucide-react";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { BatchdataReportView } from "@/components/batchdata-report-view";
 import { BenchmarkPanel } from "@/components/benchmark-panel";
+import { HouseholdLab } from "@/components/household-lab";
+import { isPreviewHost } from "@/lib/stripe-mode";
+import { ClientOnly } from "@tanstack/react-router";
 
 import { buildReport, type CallRow } from "@/lib/batchdata-report";
 import {
@@ -242,8 +245,7 @@ function BatchdataTestLab() {
         </header>
 
         <BenchmarkPanel />
-
-
+        <ClientOnly>{typeof window !== 'undefined' && isPreviewHost(window.location.host) && <HouseholdLab />}</ClientOnly>
 
         <Card>
           <CardHeader className="pb-3">

@@ -122,7 +122,7 @@ export function permittedKinds(ctx: RelationshipContext): Set<EvidenceKind> {
   }
   if (has("equity")) out.add("equity");
   if (has("property_snapshot")) {
-    out.add("permit");
+    // Property snapshot is not a home-care sharing grant. Fail closed for lenders.
     out.add("sale");
     out.add("listing");
     out.add("tax_change");

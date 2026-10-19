@@ -28,6 +28,11 @@ const fact = (p: Partial<EvidenceFact> & Pick<EvidenceFact, "id" | "kind">): Evi
 const lender = (a: any) => ({ role: "lender" as const, access: a });
 
 describe("permission by evidence type", () => {
+  it("property snapshot and intelligence scopes never grant lender permit access", () => {
+    const k = permittedKinds(lender({ named: true, scopes: ["property_snapshot", "valuation", "equity", "engagement"], category: "asked_to_connect" }));
+    expect(k.has("permit")).toBe(false);
+    expect(k.has("sale")).toBe(true);
+  });
   it("never permits excluded kinds for any relationship", () => {
     const ctxs = [
       { role: "agent" as const, ownRelationship: true },
