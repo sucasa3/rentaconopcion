@@ -33,4 +33,4 @@
 - Recovery and household/import-review modules stay pure/offline or preview-host-only Test Lab until durable storage is authorized; confirmed edges never widen caller access or activate financial signals.
 - Read scripts/AGENTS.md for offline audits; simulations are not transactions.
 - Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.
-- Suppression errors fail closed; queue writes verify affected IDs, preserving history. Claim ownership and stale-worker fencing remain unproven.
+- Enrichment uses atomic claims and token-fenced writes; review SQL stays unapplied. Expired in-flight calls may overlap; never claim exactly-once spend.
