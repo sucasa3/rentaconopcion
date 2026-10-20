@@ -1,5 +1,15 @@
 # Worker concurrency candidate — rollback and isolated acceptance
 
+## v2 uncertain dispatch handling — supersedes v1 in-flight steps below
+
+Preserve `enrichment_dispatches` across rollback, resets and job deletion: it is private durable evidence, not accounting. Never activate v1/legacy worker code with unresolved dispatches. Stop all ticks and drain requests; leave enrichment paused if there is no reliable request outcome. Dropping the ledger or resetting a queue status does not cancel an external request.
+
+Controlled operator path (SQL RPC only; no new public UI): inspect the private dispatch by ID and its job/address/response; independently establish the old invocation is stopped/drained. `reconcile_enrichment_dispatch(id, 'accept_response', actor, evidence)` accepts only a recorded successful response for the unchanged address, invalidates the old claim, and queues replay under a new owner. Late response recording never itself unblocks an uncertain request. `confirmed_not_sent` requires positive not-sent evidence and no saved response; timeout/missing logs are inadequate. Both actions record actor, evidence and time atomically and reject repeated decisions. Unknown outcomes stay held indefinitely. The service credential is a privileged operator boundary; it cannot independently verify the truth of the supplied evidence. No force retry or automatic timeout release is implemented.
+
+Isolated acceptance delta, only after separate authorization: with synthetic data and stubs, pause A after durable dispatch, expire the lease, tick B repeatedly and read **one stub call**, no new claim, preserved history. Return A late: saved evidence, rejected queue/cache/client writes, still held. Accept the saved response explicitly and verify B replays with **zero additional calls**. Simulate crashes before sending, after sending, and after response commit, plus lost acknowledgements. Only positive not-sent reconciliation may permit a fresh stub dispatch. Verify wrong-address/missing-response/wrong-role/duplicate reconciliation rejection, and ledger survival through resets/deletion. v1 steps 3 and 6 below apply only to pre-dispatch claims; dispatched work is held, not reclaimed for another request.
+
+No hosted operations, real provider calls or retention configuration occurred. Per-job automatic resend prevention is tested locally; global/property-level exactly-once spend and non-worker paths remain outside this change.
+
 ## Deployment prerequisite
 
 Nothing is deployed or authorized for hosted execution. The SQL file is deliberately outside `supabase/migrations` and `drizzle/migrations`: it is a review artifact, not a queued automatic migration. Do not deploy the new worker without the matching SQL; it fails closed if the claim RPC is absent. Do not run old and new worker versions together: an old service-role worker can still issue unconditional queue writes. Stop schedules/manual ticks and drain existing invocations before any separately authorized deployment.

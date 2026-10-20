@@ -1,5 +1,15 @@
 # Consolidated worker release candidate
 
+## v2 — uncertain-request gap (2026-10-20)
+
+Durable dispatch intent is committed before either worker provider path invokes IO. An unacknowledged begin never sends. Dispatched/uncertain evidence blocks automatic recovery and manual queue resets from redispatching that job. Crashes before send are conservatively uncertain; crashes after saved successful responses replay the response without spending again. Late responses are evidence only and cannot authorize expired-worker cache/client/terminal writes. Provider exceptions and returned errors are conservatively held, not automatically retried.
+
+New focused file: **11 passed / 0 failed** using actual review SQL, real guard, both actual provider wrappers and local stubs. Prior **44 passing tests** remain historical evidence; no broad suite rerun. The old two-call reproduction is replaced by a guarded one-call acceptance in the retained concurrency suite. Updated gap output and exact incremental diff are in the v2 package. Preview compilation: **build OK**.
+
+Operator reconciliation is service-role-only, row-locked and audited with actor/evidence: `accept_response` permits a new owner to replay a saved successful response for the same address; `confirmed_not_sent` permits a fresh dispatch only with positive evidence and no saved response. A timeout, elapsed lease or missing logs is never proof of not-sent. Stop/drain the old request before confirming not-sent. Unknown, failed and address-mismatched responses stay held. No force-retry path or automatic uncertain timeout exists. No dashboard or hosted operations were added.
+
+Limits: this blocks automatic redispatch for the same queue job, **not** global per-property duplicate calls, unguarded on-demand callers, internal transport retries or exactly-once external spend. Durable response evidence is private and requires separately approved hosted compatibility/access/retention checks. Matching SQL and code still require authorized isolated acceptance and stop/drain of old workers; accounting and ancillary effects remain uncertified. Historical notes below describe v1 and are superseded wherever they discuss missing uncertain-request handling.
+
 **2026-10-20 — local acceptance PASS; hosted release NOT YET VERIFIED.**
 
 ## Implementation

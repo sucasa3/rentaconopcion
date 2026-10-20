@@ -55,11 +55,14 @@ BEGIN
     RAISE EXCEPTION 'Invalid enrichment batch size';
   END IF;
   -- Observation only; never retry a sent/possibly-sent request on lease expiry.
+  WITH expired AS MATERIALIZED (
+    SELECT q.id FROM public.property_enrichment_queue q
+      WHERE EXISTS (SELECT 1 FROM public.enrichment_dispatches d WHERE d.job_id=q.id AND d.state='dispatched')
+        AND (q.status <> 'running' OR q.lease_expires_at IS NULL OR q.lease_expires_at <= clock_timestamp())
+      ORDER BY q.id LIMIT p_limit FOR UPDATE SKIP LOCKED
+  )
   UPDATE public.enrichment_dispatches d SET state = 'uncertain'
-    WHERE d.state = 'dispatched' AND NOT EXISTS (
-      SELECT 1 FROM public.property_enrichment_queue q WHERE q.id = d.job_id
-        AND q.claim_token = d.claim_token AND q.status = 'running'
-        AND q.lease_expires_at > clock_timestamp());
+    FROM expired e WHERE d.job_id=e.id AND d.state='dispatched';
   RETURN QUERY
     WITH ready AS (
       SELECT q.id FROM public.property_enrichment_queue q
