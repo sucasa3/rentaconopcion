@@ -21,6 +21,7 @@ import {
   parseTestAddress,
 } from "./batchdata-normalize";
 import { normalizeAddress } from "./attom.server";
+import { persistEnrichmentCache, type EnrichmentClaim } from "./enrichment-claims.server";
 
 /** ON only when the operator has explicitly flipped the switch. */
 export function batchdataPrimaryEnabled(): boolean {
@@ -59,6 +60,7 @@ export type PrimaryEnrichResult =
 export async function enrichViaBatchdata(
   supabaseAdmin: any,
   address: string,
+  claim?: EnrichmentClaim,
 ): Promise<PrimaryEnrichResult> {
   const started = Date.now();
   const res = await batchdataLookup(address);
@@ -96,7 +98,8 @@ export async function enrichViaBatchdata(
     };
   }
 
-  const n = normalized!;
+  if (!normalized) return { status: "error", costCents: 0, latencyMs, error: "Invalid property response" };
+  const n = normalized;
   const now = new Date().toISOString();
   const key = normalizeAddress(address);
 
@@ -126,7 +129,8 @@ export async function enrichViaBatchdata(
     batchdata_enriched_at: now,
   };
 
-  await supabaseAdmin.from("property_intel").upsert(patch, { onConflict: "address_normalized" });
+  if (claim) await persistEnrichmentCache(supabaseAdmin, claim, "property_intel", patch);
+  else await supabaseAdmin.from("property_intel").upsert(patch, { onConflict: "address_normalized" });
 
   const classes = ["detail", "tax", "owner", "sales", "mortgage", "permits"];
   // Institution evidence from the mortgage record, noise already removed.

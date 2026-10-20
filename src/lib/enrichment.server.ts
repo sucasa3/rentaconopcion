@@ -133,7 +133,9 @@ async function reprioritize(supabaseAdmin: any): Promise<void> {
   const ids = (clients ?? []).map((c: any) => c.id);
   if (!ids.length) return;
 
-  await writeEnrichmentClaim(supabaseAdmin, item, { priority: 5 })
+  await checkedQueueWrite(supabaseAdmin
+    .from("property_enrichment_queue")
+    .update({ priority: 5 })
     .in("portfolio_client_id", ids)
     .eq("status", "pending")
     .gt("priority", 5));
@@ -266,9 +268,7 @@ export async function runEnrichmentTick(opts?: {
 
     if (!client || !client.address_line1?.trim()) {
       out.needsReview += 1;
-      await checkedQueueWrite(supabaseAdmin
-        .from("property_enrichment_queue")
-        .update({
+      await writeEnrichmentClaim(supabaseAdmin, item, {
           status: "needs_review",
           last_error: "No street address on file",
           completed_at: now,

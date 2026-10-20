@@ -16,11 +16,13 @@ import type { LienStatus } from "@/lib/mortgage-position";
 
 
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
+import { persistEnrichmentCache, type EnrichmentClaim } from "./enrichment-claims.server";
 
 export type IntelClass = AttomEndpoint;
 export type DataProvider = "attom" | "batchdata";
 
 export interface GetPropertyIntelOptions {
+  enrichmentClaim?: EnrichmentClaim;
   classes: IntelClass[];
   revenueSource: string; // 'signup_enrichment' | 'refresh' | 'report' | 'lead_claim' | ...
   requestedBy?: string | null;
@@ -179,17 +181,16 @@ export async function getPropertyIntel(
         const noResult = res.ok && !matched;
         const unauthorized = !res.ok && (res.status === 401 || res.status === 403);
         const days = noResult ? 30 : unauthorized ? 7 : 1;
-        await supabaseAdmin.from("property_intel_misses").upsert(
-          {
+        const missPatch = {
             address_normalized: normalized,
             endpoint: "batchdata",
             reason: noResult ? "no_result" : unauthorized ? "unauthorized" : "error",
             status: res.status,
             last_seen_at: new Date().toISOString(),
             suppressed_until: new Date(Date.now() + days * 86400_000).toISOString(),
-          },
-          { onConflict: "address_normalized,endpoint" },
-        );
+          };
+        if (opts.enrichmentClaim) await persistEnrichmentCache(supabaseAdmin, opts.enrichmentClaim, "property_intel_misses", missPatch);
+        else await supabaseAdmin.from("property_intel_misses").upsert(missPatch, { onConflict: "address_normalized,endpoint" });
         serveStale(needLive, noResult ? "No record on file for this address." : res.ok ? "" : res.error);
       } else {
         const now = new Date().toISOString();
@@ -228,7 +229,9 @@ export async function getPropertyIntel(
 
   // 3. Persist the new BatchData enrichment onto the shared property record.
   if (touched) {
-    await supabaseAdmin
+    if (opts.enrichmentClaim) await persistEnrichmentCache(supabaseAdmin, opts.enrichmentClaim, "property_intel",
+      { address_normalized: normalized, address_line1: address, ...updates });
+    else await supabaseAdmin
       .from("property_intel")
       .upsert(
         { address_normalized: normalized, address_line1: address, ...updates } as any,

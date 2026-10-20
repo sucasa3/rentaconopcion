@@ -51,3 +51,14 @@ export async function writeEnrichmentClaim(
   });
   if (!Array.isArray(ids) || ids.length !== 1 || ids[0]?.id !== claim.id) throw new QueueWriteError();
 }
+
+/** Shared cache writes are fenced in the same transaction as token validation. */
+export async function persistEnrichmentCache(
+  admin: any, claim: EnrichmentClaim, table: "property_intel" | "property_intel_misses",
+  patch: Record<string, unknown>,
+): Promise<void> {
+  const ok = await rpc(admin, "persist_enrichment_cache", {
+    p_id: claim.id, p_token: claim.claim_token, p_table: table, p_patch: patch,
+  });
+  if (ok !== true) throw new QueueWriteError();
+}

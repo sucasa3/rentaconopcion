@@ -124,3 +124,42 @@ GRANT EXECUTE ON FUNCTION public.claim_enrichment_jobs(integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.renew_enrichment_claim(uuid, uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.write_enrichment_claim(uuid, uuid, jsonb, jsonb) TO service_role;
 REVOKE ALL ON FUNCTION public.tg_enrichment_invalidate_claim() FROM PUBLIC, anon, authenticated;
+
+-- Narrow shared-cache upserts; no accounting or arbitrary-table mutations.
+CREATE OR REPLACE FUNCTION public.persist_enrichment_cache(
+  p_id uuid, p_token uuid, p_table text, p_patch jsonb)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+DECLARE
+  job public.property_enrichment_queue%ROWTYPE;
+  cols text;
+  values_sql text;
+  assignments text;
+  conflict_cols text;
+BEGIN
+  IF p_table NOT IN ('property_intel', 'property_intel_misses') OR
+     p_patch IS NULL OR jsonb_typeof(p_patch) <> 'object' OR
+     NOT (p_patch ? 'address_normalized') OR
+     EXISTS (SELECT 1 FROM jsonb_object_keys(p_patch) k WHERE k IN ('id','created_at','updated_at') OR
+       NOT EXISTS (SELECT 1 FROM pg_attribute a
+         WHERE a.attrelid = to_regclass('public.' || p_table) AND a.attname = k AND a.attnum > 0 AND NOT a.attisdropped)) THEN
+    RAISE EXCEPTION 'Invalid enrichment cache mutation';
+  END IF;
+  SELECT q.* INTO job FROM public.property_enrichment_queue q WHERE q.id = p_id FOR UPDATE;
+  IF NOT FOUND OR job.claim_token IS DISTINCT FROM p_token OR job.status <> 'running'
+     OR job.lease_expires_at IS NULL OR job.lease_expires_at <= clock_timestamp() OR
+     job.address_normalized IS DISTINCT FROM p_patch->>'address_normalized' THEN RETURN false; END IF;
+  IF p_table = 'property_intel_misses' AND NOT (p_patch ? 'endpoint') THEN
+    RAISE EXCEPTION 'Invalid enrichment cache mutation';
+  END IF;
+  SELECT string_agg(format('%I', k), ', ' ORDER BY k),
+         string_agg(format('r.%I', k), ', ' ORDER BY k),
+         string_agg(format('%I = EXCLUDED.%I', k, k), ', ' ORDER BY k)
+    INTO cols, values_sql, assignments FROM jsonb_object_keys(p_patch) k;
+  conflict_cols := CASE WHEN p_table = 'property_intel' THEN 'address_normalized' ELSE 'address_normalized, endpoint' END;
+  EXECUTE format('INSERT INTO public.%I (%s) SELECT %s FROM jsonb_populate_record(NULL::public.%I, $1) r ON CONFLICT (%s) DO UPDATE SET %s',
+    p_table, cols, values_sql, p_table, conflict_cols, assignments) USING p_patch;
+  RETURN true;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.persist_enrichment_cache(uuid, uuid, text, jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.persist_enrichment_cache(uuid, uuid, text, jsonb) TO service_role;
