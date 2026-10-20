@@ -100,12 +100,12 @@ BEGIN
       close_date = CASE WHEN p_client_patch ? 'close_date' THEN coalesce(c.close_date, next_client.close_date) ELSE c.close_date END,
       term_months = CASE WHEN p_client_patch ? 'term_months' THEN coalesce(c.term_months, next_client.term_months) ELSE c.term_months END
       WHERE c.id = job.portfolio_client_id;
-    -- Address-trigger requeue is an intentional invalidation. Do not overwrite it
-    -- with a terminal state from the old address; rollback both writes on conflict.
-    IF NOT EXISTS (SELECT 1 FROM public.property_enrichment_queue q
-      WHERE q.id = p_id AND q.claim_token = p_token AND q.status = 'running') THEN
-      RAISE EXCEPTION 'Enrichment address changed; claim invalidated';
-    END IF;
+    -- Our own verified-address update fires the existing requeue trigger. Both
+    -- rows are locked; restore only our claim/history within this transaction.
+    -- An outside address edit cannot interleave and still invalidates the token.
+    UPDATE public.property_enrichment_queue q SET status = 'running',
+      claim_token = job.claim_token, lease_expires_at = job.lease_expires_at,
+      started_at = job.started_at WHERE q.id = p_id;
   END IF;
   UPDATE public.property_enrichment_queue q SET
     status = next_job.status, attempts = next_job.attempts,
