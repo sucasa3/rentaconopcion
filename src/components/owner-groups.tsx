@@ -2,12 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getBookOwnerGroups } from "@/lib/enrichment.functions";
 import { HOUSEHOLD_IMPORT_ENABLED } from "@/lib/household-import";
-import { useT } from "@/lib/i18n";
+import { useLanguage } from "@/lib/i18n";
 
 /** Each owner once, with every linked home. Hidden while the feature flag is off. */
 export function OwnerGroups({ portfolioId }: { portfolioId: string }) {
-  const { lang } = useT() as any;
-  const es = lang === "es";
+  const { language } = useLanguage();
+  const es = language === "es";
   const fetchGroups = useServerFn(getBookOwnerGroups);
   const { data } = useQuery({
     queryKey: ["owner-groups", portfolioId],
