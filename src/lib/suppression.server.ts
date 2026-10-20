@@ -80,11 +80,13 @@ export async function isSuppressed(admin: any, input: SuppressionInput): Promise
   if (candidate.emailHmac) ors.push(`email_hmac.eq.${candidate.emailHmac}`);
   if (candidate.phoneHmac) ors.push(`phone_hmac.eq.${candidate.phoneHmac}`);
 
-  const { data } = await admin
+  const { data, error } = await admin
     .from("deletion_suppressions")
     .select("email_hmac, phone_hmac, address_hmac")
     .or(ors.join(","))
     .limit(10);
+
+  if (error) throw new Error("Suppression lookup failed");
 
   return suppressionMatches((data ?? []) as any[], candidate);
 }
