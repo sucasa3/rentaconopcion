@@ -67,3 +67,25 @@ export const runEnrichmentBatch = createServerFn({ method: "POST" })
     const { runEnrichmentTick } = await import("./enrichment.server");
     return runEnrichmentTick({ batchSize: data.batchSize ?? 10 });
   });
+
+/** Owners linked to 2+ homes in a book (multi-property import). RLS-scoped reads. */
+export const getBookOwnerGroups = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ portfolioId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { HOUSEHOLD_IMPORT_ENABLED } = await import("./household-import");
+    if (!HOUSEHOLD_IMPORT_ENABLED) return { owners: [] as { contactId: string; name: string; homes: { id: string; address: string; role: string }[] }[] };
+    const { data: links, error } = await (context.supabase as any)
+      .from("client_contact_links")
+      .select("contact_id, client_id, role, book_contacts(full_name), lender_portfolio_clients(address_line1, city, state, zip)")
+      .eq("book_id", data.portfolioId);
+    if (error) throw new Error("Could not load owners.");
+    const map = new Map<string, { contactId: string; name: string; homes: { id: string; address: string; role: string }[] }>();
+    for (const l of links ?? []) {
+      const g = map.get(l.contact_id) ?? { contactId: l.contact_id, name: l.book_contacts?.full_name ?? "", homes: [] };
+      const c = l.lender_portfolio_clients ?? {};
+      g.homes.push({ id: l.client_id, role: l.role, address: [c.address_line1, c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") });
+      map.set(l.contact_id, g);
+    }
+    return { owners: [...map.values()].filter((g) => g.homes.length > 1).sort((a, b) => a.name.localeCompare(b.name)) };
+  });
