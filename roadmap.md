@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Integrity Step A (2026-10-20; local only)
+- [ ] Local uncertain-request gap: durable dispatch, no automatic redispatch, controlled crash/late-response reconciliation; gap-only tests and updated candidate
 - [x] Consolidated local concurrency candidate: atomic claims, token-fenced queue/client/cache writes, recovery; 44 focused tests pass; review-only SQL, exact diff/rollback/isolated acceptance packaged
 - [x] Follow-up: fail-closed real suppression helper, checked queue writes/affected rows; 26 focused mocked acceptance tests passed; exact diff delivered
 - [x] Proposed only claim-token/lease atomic claim/recovery and fenced completion; broader implementation requires separate authorization
