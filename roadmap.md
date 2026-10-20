@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Integrity Step A (2026-10-20; local only)
+- [ ] Follow-up: fail-closed real suppression helper, checked queue writes/affected rows, focused mocked acceptance tests and exact diff
+- [ ] Propose only the smallest claim-ownership/recovery correction; broader implementation requires separate authorization
 - [x] Apply exactly the reviewed worker terminal-state patch; preserve attempts/history
 - [x] Targeted local-only file: 4/4 passed (2 acceptance checks, 2 known-blocker reproductions); exact worker/test diff and revised sequence delivered
 - [ ] Worker release BLOCKED: fail-open returned suppression errors, ignored queue writes, concurrent claims, and separately authorized deployed-baseline/hosted validation
