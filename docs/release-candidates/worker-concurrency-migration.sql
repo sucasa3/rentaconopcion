@@ -12,6 +12,10 @@ CREATE INDEX IF NOT EXISTS idx_peq_expired_claim
 CREATE OR REPLACE FUNCTION public.tg_enrichment_invalidate_claim()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public, pg_temp AS $$
 BEGIN
+  IF NEW.portfolio_id IS DISTINCT FROM OLD.portfolio_id OR
+     NEW.portfolio_client_id IS DISTINCT FROM OLD.portfolio_client_id THEN
+    IF NEW.status = 'running' THEN NEW.status := 'pending'; END IF;
+  END IF;
   IF NEW.status <> 'running' THEN
     NEW.claim_token := NULL;
     NEW.lease_expires_at := NULL;
@@ -37,7 +41,7 @@ BEGIN
       WHERE (q.status = 'pending' AND q.next_attempt_at <= clock_timestamp())
          OR (q.status = 'running' AND
            (q.lease_expires_at <= clock_timestamp() OR
-            (q.claim_token IS NULL AND q.started_at < clock_timestamp() - interval '15 minutes')))
+            (q.claim_token IS NULL AND coalesce(q.started_at, q.updated_at, q.created_at) < clock_timestamp() - interval '15 minutes')))
       ORDER BY q.priority, q.next_attempt_at, q.id
       LIMIT p_limit FOR UPDATE SKIP LOCKED
     )

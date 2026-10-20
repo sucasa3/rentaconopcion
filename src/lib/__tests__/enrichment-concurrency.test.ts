@@ -120,6 +120,13 @@ describe('actual review migration on disposable local PostgreSQL', () => {
     seed(); sql("UPDATE property_enrichment_queue SET status='running', started_at=now()-interval '16 minutes'");
     const current=claim(); expect(current.claim_token).toBeTruthy(); expect(current.attempts).toBe(3);
   });
+  it('book reassignment invalidates active ownership', () => {
+    seed(); const old=claim();
+    const second='00000000-0000-4000-8000-000000000003';
+    sql(`INSERT INTO lender_portfolios VALUES ('${second}') ON CONFLICT DO NOTHING;
+      UPDATE property_enrichment_queue SET portfolio_id='${second}'`);
+    expect(write(old.claim_token)).toBe('0'); expect(sql('SELECT status FROM property_enrichment_queue')).toBe('pending');
+  });
   it('valid renewal prevents recovery and expiry during lock wait rejects writes', async () => {
     seed(); const current=claim();
     expect(sql(`SELECT renew_enrichment_claim('${id}','${current.claim_token}')`)).toBe('t');
