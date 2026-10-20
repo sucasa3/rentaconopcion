@@ -24,7 +24,7 @@ function write(token: string, patch = { status: 'done' }, clientPatch = {}) {
   return sql(`SELECT count(*) FROM write_enrichment_claim('${id}','${token}','${JSON.stringify(patch)}','${JSON.stringify(clientPatch)}')`);
 }
 beforeAll(() => {
-  sql(`DROP TABLE IF EXISTS property_enrichment_queue, lender_portfolio_clients, lender_portfolios, property_intel, property_intel_misses CASCADE;
+   sql(`DROP TABLE IF EXISTS enrichment_dispatches, property_enrichment_queue, lender_portfolio_clients, lender_portfolios, property_intel, property_intel_misses CASCADE;
     DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
       IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
       IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role; END IF; END $$;
