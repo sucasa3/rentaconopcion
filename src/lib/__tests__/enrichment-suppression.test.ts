@@ -9,7 +9,7 @@ type Options = {
   suppressionError?: boolean;
   suppressed?: boolean;
   fault?: 'claim' | 'skipped' | 'recovery' | 'address' | 'done';
-  failure?: 'error' | 'zero' | 'wrong-id' | 'partial';
+  failure?: 'error' | 'zero' | 'wrong-id' | 'partial' | 'rejected';
   stale?: boolean;
   secondJob?: boolean;
   paid?: boolean;
@@ -53,7 +53,8 @@ async function tick(opts: Options = {}) {
               : 'address_normalized' in payload ? 'address' : payload.status;
             writes.push({ payload: { ...payload }, ids: rows.map(r => r.id) });
             if (opts.fault === kind) {
-              if (opts.failure === 'zero') data = [];
+              if (opts.failure === 'rejected') return Promise.reject(new Error('private rejection detail')).then(resolve, reject);
+              else if (opts.failure === 'zero') data = [];
               else if (opts.failure === 'wrong-id') data = [{ id: 'not-requested' }];
               else if (opts.failure === 'partial') {
                 const first = rows[0];
@@ -125,7 +126,7 @@ describe('actual worker + real suppression helper (local IO only)', () => {
     expect(out.writes.some(w => ['skipped', 'done', 'needs_review'].includes(w.payload.status))).toBe(false);
   });
   for (const fault of ['claim', 'skipped'] as const) {
-    for (const failure of ['error', 'zero', 'wrong-id', 'partial'] as const) {
+    for (const failure of ['error', 'zero', 'wrong-id', 'partial', 'rejected'] as const) {
       it(`rejects ${fault} ${failure} without providers or false persisted success`, async () => {
         const out = await tick({ fault, failure, secondJob: failure === 'partial' });
         expectFailure(out); expect(out.providerCalls).toBe(0);
@@ -160,6 +161,11 @@ describe('actual worker + real suppression helper (local IO only)', () => {
   });
   it('ATTOM terminal write failure is not caught as a new provider attempt or retry', async () => {
     const out = await tick({ suppressed: false, paid: true, fault: 'done' });
+    expectFailure(out); expect(out.providerCalls).toBe(1); expectHistory(out.job);
+    expect(out.writes.some(w => ['failed', 'needs_review'].includes(w.payload.status))).toBe(false);
+  });
+  it('rejected terminal queue IO is sanitized and never rewritten as a provider retry', async () => {
+    const out = await tick({ suppressed: false, paid: true, fault: 'done', failure: 'rejected' });
     expectFailure(out); expect(out.providerCalls).toBe(1); expectHistory(out.job);
     expect(out.writes.some(w => ['failed', 'needs_review'].includes(w.payload.status))).toBe(false);
   });

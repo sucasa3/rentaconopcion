@@ -52,7 +52,13 @@ class QueueWriteError extends Error {
 }
 
 async function checkedQueueWrite(query: any, expectedIds?: string[]): Promise<void> {
-  const { data, error } = await query.select("id");
+  let response;
+  try {
+    response = await query.select("id");
+  } catch {
+    throw new QueueWriteError();
+  }
+  const { data, error } = response;
   if (error || !Array.isArray(data)) throw new QueueWriteError();
   if (expectedIds) {
     const returnedIds = new Set(data.map((row: any) => row.id));
