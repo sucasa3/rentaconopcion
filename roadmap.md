@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Integrity Step A (2026-10-20; local only)
+- [ ] Consolidated concurrency candidate: exclusive claims, fenced writes/recovery, review-only SQL, focused tests, exact diff/rollback/isolated hosted acceptance package
 - [x] Follow-up: fail-closed real suppression helper, checked queue writes/affected rows; 26 focused mocked acceptance tests passed; exact diff delivered
 - [x] Proposed only claim-token/lease atomic claim/recovery and fenced completion; broader implementation requires separate authorization
 - [x] Apply exactly the reviewed worker terminal-state patch; preserve attempts/history
