@@ -1,6 +1,7 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { guardedProviderRequest } from '../enrichment-claims.server';
 
 // Explicit loopback-only PostgreSQL fixture; never uses project connection env.
 const args = ['-h', '/tmp/worker-local-pg/socket', '-p', '55439', '-U', 'local_worker', '-d', 'postgres', '-X', '-A', '-t', '-v', 'ON_ERROR_STOP=1'];
@@ -16,7 +17,7 @@ const client = '00000000-0000-4000-8000-000000000001';
 const book = '00000000-0000-4000-8000-000000000002';
 let id: string;
 function seed() {
-  sql('TRUNCATE property_enrichment_queue; TRUNCATE property_intel;');
+  sql('TRUNCATE enrichment_dispatches; TRUNCATE property_enrichment_queue; TRUNCATE property_intel;');
   id = sql(`INSERT INTO property_enrichment_queue (portfolio_client_id,portfolio_id,attempts,last_result) VALUES ('${client}','${book}',3,'historical') RETURNING id`).split('\n')[0];
 }
 function claim() { return JSON.parse(sql('SELECT row_to_json(q) FROM claim_enrichment_jobs(1) q')); }
@@ -24,7 +25,7 @@ function write(token: string, patch = { status: 'done' }, clientPatch = {}) {
   return sql(`SELECT count(*) FROM write_enrichment_claim('${id}','${token}','${JSON.stringify(patch)}','${JSON.stringify(clientPatch)}')`);
 }
 beforeAll(() => {
-  sql(`DROP TABLE IF EXISTS property_enrichment_queue, lender_portfolio_clients, lender_portfolios, property_intel, property_intel_misses CASCADE;
+   sql(`DROP TABLE IF EXISTS enrichment_dispatches, property_enrichment_queue, lender_portfolio_clients, lender_portfolios, property_intel, property_intel_misses CASCADE;
     DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
       IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
       IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role; END IF; END $$;
@@ -98,13 +99,22 @@ describe('actual review migration on disposable local PostgreSQL', () => {
     expect(cache(current.claim_token,'new')).toBe('t'); expect(cache(old.claim_token,'old')).toBe('f');
     expect(sql("SELECT detail->>'value' FROM property_intel")).toBe('new');
   });
-  it('lease expiry during in-flight provider call permits overlap but fences old durable result', async () => {
-    seed(); const old=claim(); let calls=0; let release: (()=>void)|undefined;
-    const inFlight=new Promise<void>(resolve=>{calls++;release=resolve;});
-    sql(`UPDATE property_enrichment_queue SET lease_expires_at=now()-interval '1 second'`); const current=claim();
-    calls++; expect(calls).toBe(2); // Reproduces, rather than conceals, duplicate-call limitation.
-    release?.(); await inFlight;
-    expect(write(old.claim_token)).toBe('0'); expect(write(current.claim_token)).toBe('1');
+  it('lease expiry holds dispatched work instead of automatically redispatching', async () => {
+    seed(); const old=claim(); let calls=0;
+    write(old.claim_token,{address_normalized:'synthetic-key'} as any);
+    const admin={async rpc(name:string,args:Record<string,any>) {
+      const out=name==='begin_enrichment_dispatch'
+        ? sql(`SELECT begin_enrichment_dispatch('${id}','${old.claim_token}')`)
+        : sql(`SELECT record_enrichment_response('${args.p_dispatch}','${old.claim_token}','{"ok":true}')`);
+      return {data:out==='f'?false:out==='t'?true:JSON.parse(out),error:null};
+    }};
+    await expect(guardedProviderRequest(admin,old,async()=>{
+      calls++; sql(`UPDATE property_enrichment_queue SET lease_expires_at=now()-interval '1 second'`);
+      expect(sql('SELECT count(*) FROM claim_enrichment_jobs(1)')).toBe('0');
+      return {ok:true};
+    })).rejects.toThrow('Enrichment queue write failed');
+    expect(calls).toBe(1); expect(write(old.claim_token)).toBe('0');
+    expect(sql("SELECT state FROM enrichment_dispatches")).toBe('uncertain');
   });
   it('RPC execution is denied to browser roles', () => {
     expect(sql("SELECT has_function_privilege('authenticated','public.claim_enrichment_jobs(integer)','EXECUTE')")).toBe('f');

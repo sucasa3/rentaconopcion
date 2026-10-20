@@ -24,5 +24,11 @@ cleanup() {
   if [ "$started" = 1 ]; then as_local pg_ctl -D "$base/data" stop -m fast; fi
 }
 trap cleanup EXIT
-bunx vitest run src/lib/__tests__/enrichment-suppression.test.ts \
-  src/lib/__tests__/suppression-lookup.test.ts src/lib/__tests__/enrichment-concurrency.test.ts
+if [ "$#" -gt 0 ]; then
+  bunx vitest run "$@"
+else
+  # SQL fixtures share the disposable DB: run sequentially, never in parallel.
+  bunx vitest run src/lib/__tests__/enrichment-suppression.test.ts src/lib/__tests__/suppression-lookup.test.ts
+  bunx vitest run src/lib/__tests__/enrichment-concurrency.test.ts
+  bunx vitest run src/lib/__tests__/enrichment-dispatch.test.ts
+fi

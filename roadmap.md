@@ -1,12 +1,13 @@
 # Roadmap
 
 ## Integrity Step A (2026-10-20; local only)
+- [x] Local uncertain-request gap: durable dispatch, no automatic redispatch, audited crash/late-response reconciliation; 12 gap-only tests passed; v2 diff/results packaged
 - [x] Consolidated local concurrency candidate: atomic claims, token-fenced queue/client/cache writes, recovery; 44 focused tests pass; review-only SQL, exact diff/rollback/isolated acceptance packaged
 - [x] Follow-up: fail-closed real suppression helper, checked queue writes/affected rows; 26 focused mocked acceptance tests passed; exact diff delivered
 - [x] Proposed only claim-token/lease atomic claim/recovery and fenced completion; broader implementation requires separate authorization
 - [x] Apply exactly the reviewed worker terminal-state patch; preserve attempts/history
 - [x] Targeted local-only file: 4/4 passed (2 acceptance checks, 2 known-blocker reproductions); exact worker/test diff and revised sequence delivered
-- [ ] Worker hosted release BLOCKED: separately authorized isolated compatibility/acceptance and old-worker stop/drain required; in-flight expiry still permits duplicate calls; ancillary post-completion effects and accounting are not certified atomic
+- [ ] Worker hosted release BLOCKED: separately authorized isolated compatibility/acceptance and old-worker stop/drain required; uncertain dispatches need operator evidence, no global exactly-once guarantee; ancillary effects/accounting are not certified atomic
 - [ ] Accounting BLOCKED: unapproved policies; all affected entry points and whole-transaction retries must be covered before any accounting phase is considered safe; persistent catalog concurrency protection unresolved
 
 ## Household storage/import approval preparation (2026-10-19)

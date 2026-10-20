@@ -21,7 +21,7 @@ import {
   parseTestAddress,
 } from "./batchdata-normalize";
 import { normalizeAddress } from "./attom.server";
-import { persistEnrichmentCache, renewEnrichmentClaim, type EnrichmentClaim } from "./enrichment-claims.server";
+import { guardedProviderRequest, persistEnrichmentCache, type EnrichmentClaim } from "./enrichment-claims.server";
 
 /** ON only when the operator has explicitly flipped the switch. */
 export function batchdataPrimaryEnabled(): boolean {
@@ -63,8 +63,9 @@ export async function enrichViaBatchdata(
   claim?: EnrichmentClaim,
 ): Promise<PrimaryEnrichResult> {
   const started = Date.now();
-  if (claim) await renewEnrichmentClaim(supabaseAdmin, claim);
-  const res = await batchdataLookup(address);
+  const res = claim
+    ? await guardedProviderRequest(supabaseAdmin, claim, () => batchdataLookup(address))
+    : await batchdataLookup(address);
   const latencyMs = Date.now() - started;
   const matchedNow = res.ok && isMatched(normalizeBatchdataProperty(res.data));
   await supabaseAdmin.from("batchdata_call_log").insert({
