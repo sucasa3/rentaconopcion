@@ -24,12 +24,16 @@ function write(token: string, patch = { status: 'done' }, clientPatch = {}) {
   return sql(`SELECT count(*) FROM write_enrichment_claim('${id}','${token}','${JSON.stringify(patch)}','${JSON.stringify(clientPatch)}')`);
 }
 beforeAll(() => {
-  sql(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
+  sql(`DROP TABLE IF EXISTS property_enrichment_queue, lender_portfolio_clients, lender_portfolios, property_intel, property_intel_misses CASCADE;
+    DO $$ BEGIN IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
+      IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
+      IF NOT EXISTS(SELECT FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role; END IF; END $$;
     CREATE TABLE lender_portfolio_clients (id uuid PRIMARY KEY, address_line1 text, city text, state text, zip text,
+      portfolio_id uuid,
       archived_at timestamptz, homeowner_id uuid, last_intel_refreshed_at timestamptz,
       loan_amount_at_close_cents bigint, close_date date, term_months integer);
     CREATE TABLE lender_portfolios (id uuid PRIMARY KEY);
-    INSERT INTO lender_portfolio_clients(id,address_line1,zip) VALUES ('${client}','1 Synthetic St','30075');
+    INSERT INTO lender_portfolio_clients(id,address_line1,zip,portfolio_id) VALUES ('${client}','1 Synthetic St','30075','${book}');
     INSERT INTO lender_portfolios VALUES ('${book}');
     CREATE TABLE property_intel (id uuid DEFAULT gen_random_uuid(),address_normalized text UNIQUE,detail jsonb,source text);
     CREATE TABLE property_intel_misses(address_normalized text,endpoint text,reason text,UNIQUE(address_normalized,endpoint));`);

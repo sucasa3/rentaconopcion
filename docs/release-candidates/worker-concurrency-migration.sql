@@ -88,7 +88,7 @@ BEGIN
 
   next_job := jsonb_populate_record(job, p_patch);
   IF p_client_patch <> '{}'::jsonb THEN
-    SELECT jsonb_populate_record(c, p_client_patch) INTO next_client
+    SELECT (jsonb_populate_record(c, p_client_patch)).* INTO next_client
       FROM public.lender_portfolio_clients c WHERE c.id = job.portfolio_client_id AND c.archived_at IS NULL;
     IF NOT FOUND THEN RETURN; END IF;
     UPDATE public.lender_portfolio_clients c SET
