@@ -460,3 +460,8 @@
 - [x] Add manager-only selected-lead assignment to active team members, EN/ES, with atomic movement, duplicate refusal, and existing permissions preserved
 - [x] Verify manager assignment and return through UI, officer denial and other-book read protection, invalid/stale selection refusal, EN/ES phone and desktop; 488 tests passed
 - [x] No publication; ownership correction and database protections apply to the shared database, assignment UI remains in preview
+
+## 130-row multi-property import
+- [x] Planner, review SQL, flag-gated importer/UI, server-side enrichment hold; 16 focused tests passed locally
+- [ ] Apply reviewed migration + enable flag (blocked: Neil approval)
+- [ ] Re-upload original CSV and reconcile 130 rows (blocked: CSV + approval)
