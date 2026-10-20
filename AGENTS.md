@@ -16,7 +16,7 @@
 - Branch/team features require `plan_tiers.team_enabled` AND a manager role (`lender_is_team_manager`); never infer from seat_limit — keeps entitlement explicit.
 - Suspended lender members move to `lender_suspended_members` (books/assignments untouched) and return only via manual, capacity-checked reactivation — downgrades never delete data.
 - Agent collaborations are owned per officer (`agent_lender_connections.owner_user_id`, trigger-guarded); only branch managers reassign.
-- Vitest testTimeout is 30s (vitest.config.ts) — cold dynamic imports time out at the 5s default under full-suite load.
+- Vitest timeout is 30s for cold imports.
 - Team invitation links use the request origin on preview hosts (`isPreviewHost` in src/lib/stripe-mode.ts) and SITE_URL otherwise — preview testing never hands out live-site links.
 - Lender plan intent is carried as `?plan=` (plus sessionStorage `sucasa.lender_plan`) from /lenders/pricing → /lender-start → /lender/billing, and checkout success lands on /lender/welcome; startCheckout refuses a second checkout while the org has an active/trialing/past_due subscription — prevents duplicate subscriptions on retry.
 - Professional workspaces (lender/agent) are provisioned only after an explicit action on /lender-start or /agent-start (sessionStorage intent in src/lib/pro-intent.ts); signed-in visitors without intent get a confirm button — prevents silently converting homeowners.
@@ -31,5 +31,6 @@
 - BusinessShell resolves the member's own book and manager status itself (getBusinessOverview); page props only override — keeps the side menu identical on every page.
 - Personal intake uses the server-designated personalBookId and validates active assigned ownership before writes; branch redistribution uses an atomic manager-only RPC that moves existing rows, preserves consent and record IDs, updates queue references, and logs assignments — prevents implicit team ownership and duplicate enrichment.
 - Recovery and household/import-review modules stay pure/offline or preview-host-only Test Lab until durable storage is authorized; confirmed edges never widen caller access or activate financial signals.
-- Read scripts/AGENTS.md before changing offline audit tools; their simulations are not production transactions.
+- Read scripts/AGENTS.md for offline audits; simulations are not transactions.
 - Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.
+- Suppressed enrichment jobs stay skipped without changing attempts/history; this patch does not prove write-error or concurrent-claim safety.
