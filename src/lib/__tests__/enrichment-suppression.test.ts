@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
+import * as claims from '../enrichment-claims.server';
 import { candidateFor, isSuppressed } from '../suppression.server';
 
 // Actual worker + actual shared suppression helper; all database/network IO is local.
@@ -29,7 +30,31 @@ async function tick(opts: Options = {}) {
     client_email: 'synthetic@example.invalid', client_phone: null,
     address_line1: '1 Synthetic St', zip: '30075', archived_at: null };
   const candidate = candidateFor({ email: client.client_email });
-  const fake = { from(table: string) {
+  const fake = {
+    async rpc(name: string, args: Record<string, any>) {
+      if (name === 'renew_enrichment_claim') return { data: true, error: null };
+      const isClaim = name === 'claim_enrichment_jobs';
+      const patch = args.p_patch ?? {};
+      const kind = isClaim ? (opts.stale ? 'recovery' : 'claim') :
+        patch.status === 'skipped' ? 'skipped' : 'address_normalized' in patch ? 'address' : patch.status;
+      if (opts.stale && isClaim) writes.push({ payload: { status: 'pending', started_at: null }, ids: jobs.map(j => j.id) });
+      const rows = isClaim ? jobs : jobs.filter(j => j.id === args.p_id && j.claim_token === args.p_token);
+      writes.push({ payload: isClaim ? { status: 'running' } : patch, ids: rows.map(j => j.id) });
+      if (opts.fault === kind) {
+        if (opts.failure === 'rejected') throw new Error('private rejection detail');
+        if (opts.failure === 'zero') return { data: isClaim ? null : [], error: null };
+        if (opts.failure === 'wrong-id') return { data: [{ id: 'not-requested' }], error: null };
+        if (opts.failure === 'partial') return { data: isClaim ? [{ ...jobs[0], status: 'pending' }] : [], error: null };
+        return { data: null, error: { message: 'private detail' } };
+      }
+      if (isClaim) {
+        for (const j of rows) Object.assign(j, { status: 'running', claim_token: 'local-token', lease_expires_at: new Date(Date.now()+900000).toISOString() });
+        return { data: rows.map(j => ({ ...j })), error: null };
+      }
+      for (const j of rows) Object.assign(j, patch);
+      return { data: rows.map(j => ({ id: j.id })), error: null };
+    },
+    from(table: string) {
     let payload: Record<string, any> | undefined;
     const filters: Array<(row: Record<string, any>) => boolean> = [];
     const builder: any = {
@@ -76,6 +101,7 @@ async function tick(opts: Options = {}) {
   } };
   const blocked = () => { providerCalls++; throw new Error('Unexpected external call'); };
   const modules: Record<string, unknown> = {
+    './enrichment-claims.server': claims,
     './attom.server': { ATTOM_TTL_DAYS: { detail: 30 }, normalizeAddress: (s: string) => s },
     './provider-primary.server': { batchdataPrimaryEnabled: () => false, enrichViaBatchdata: blocked },
     './opportunities.server': { persistPortfolioOpportunities: async () => undefined },
@@ -146,7 +172,7 @@ describe('actual worker + real suppression helper (local IO only)', () => {
   it('failed recovery stops before claims or providers', async () => {
     const out = await tick({ stale: true, fault: 'recovery' });
     expectFailure(out); expect(out.job.status).toBe('running'); expectHistory(out.job);
-    expect(out.providerCalls).toBe(0); expect(out.writes).toHaveLength(1);
+    expect(out.providerCalls).toBe(0); expect(out.writes).toHaveLength(2);
   });
   it('zero recovered rows is valid when nothing is stale', async () => {
     const out = await tick(); expect(out.error).toBeUndefined(); expect(out.job.status).toBe('skipped');
