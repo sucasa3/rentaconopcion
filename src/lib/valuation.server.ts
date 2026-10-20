@@ -16,7 +16,7 @@ import type { LienStatus } from "@/lib/mortgage-position";
 
 
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
-import { persistEnrichmentCache, type EnrichmentClaim } from "./enrichment-claims.server";
+import { persistEnrichmentCache, renewEnrichmentClaim, type EnrichmentClaim } from "./enrichment-claims.server";
 
 export type IntelClass = AttomEndpoint;
 export type DataProvider = "attom" | "batchdata";
@@ -161,6 +161,7 @@ export async function getPropertyIntel(
         await import("./batchdata-normalize");
       const { batchdataToSummaries } = await import("./batchdata-summaries");
 
+      if (opts.enrichmentClaim) await renewEnrichmentClaim(supabaseAdmin, opts.enrichmentClaim);
       const res = await batchdataLookup(address);
       const normalizedProp = res.ok ? normalizeBatchdataProperty(res.data) : null;
       const matched = res.ok && isMatched(normalizedProp);

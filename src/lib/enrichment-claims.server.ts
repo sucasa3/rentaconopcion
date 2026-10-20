@@ -28,7 +28,8 @@ export async function claimEnrichmentJobs(admin: any, limit: number): Promise<an
   if (!Array.isArray(rows) || rows.length > limit ||
       new Set(rows.map(row => row.id)).size !== rows.length ||
       rows.some(row => typeof row.id !== "string" || typeof row.claim_token !== "string" ||
-        typeof row.lease_expires_at !== "string" || row.status !== "running")) {
+        typeof row.lease_expires_at !== "string" || !Number.isFinite(Date.parse(row.lease_expires_at)) ||
+        row.status !== "running")) {
     throw new QueueWriteError();
   }
   return rows;

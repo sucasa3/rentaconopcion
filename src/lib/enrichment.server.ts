@@ -444,9 +444,6 @@ export async function runEnrichmentTick(opts?: {
         patch.close_date = closeDate;
       }
       if (client.term_months == null && m?.termMonths) patch.term_months = m.termMonths;
-      await writeEnrichmentClaim(supabaseAdmin, item, {}, patch);
-      touchedPortfolios.add(client.portfolio_id);
-
       if (resolved.length > 0) {
         out.completed += 1;
         await writeEnrichmentClaim(supabaseAdmin, item, {
@@ -455,7 +452,7 @@ export async function runEnrichmentTick(opts?: {
             last_result: `fetched:${resolved.join(",")}`,
             last_error: null,
             completed_at: now,
-          });
+          }, patch);
       } else {
         const firstError = Object.values(intel.errors)[0] ?? "No records returned";
         const done = attempts >= MAX_ATTEMPTS;
@@ -467,8 +464,9 @@ export async function runEnrichmentTick(opts?: {
             last_error: String(firstError).slice(0, 300),
             next_attempt_at: new Date(Date.now() + attempts * 6 * 3600_000).toISOString(),
             completed_at: done ? now : null,
-          });
+          }, patch);
       }
+      touchedPortfolios.add(client.portfolio_id);
     } catch (err) {
       // Persistence failures are not provider attempts and must not rewrite history.
       if (err instanceof QueueWriteError) throw err;
