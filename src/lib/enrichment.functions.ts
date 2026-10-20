@@ -80,9 +80,10 @@ export const getBookOwnerGroups = createServerFn({ method: "POST" })
       .select("contact_id, client_id, role, book_contacts(full_name), lender_portfolio_clients(address_line1, city, state, zip)")
       .eq("book_id", data.portfolioId);
     if (error) throw new Error("Could not load owners.");
-    const map = new Map<string, { contactId: string; name: string; homes: { id: string; address: string; role: string }[] }>();
+    type Owner = { contactId: string; name: string; homes: { id: string; address: string; role: string }[] };
+    const map = new Map<string, Owner>();
     for (const l of links ?? []) {
-      const g = map.get(l.contact_id) ?? { contactId: l.contact_id, name: l.book_contacts?.full_name ?? "", homes: [] };
+      const g: Owner = map.get(l.contact_id) ?? { contactId: l.contact_id, name: l.book_contacts?.full_name ?? "", homes: [] };
       const c = l.lender_portfolio_clients ?? {};
       g.homes.push({ id: l.client_id, role: l.role, address: [c.address_line1, c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") });
       map.set(l.contact_id, g);
