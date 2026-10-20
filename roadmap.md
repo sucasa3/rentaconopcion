@@ -1,5 +1,11 @@
 # Roadmap
 
+## Integrity Step A (2026-10-20; local only)
+- [x] Apply exactly the reviewed worker terminal-state patch; preserve attempts/history
+- [ ] Run only targeted mocked tests and document error/claim dependencies and exact diff
+- [ ] Worker release BLOCKED: fail-open returned suppression errors, ignored queue writes, concurrent claims, and separately authorized deployed-baseline/hosted validation
+- [ ] Accounting BLOCKED: unapproved policies; all affected entry points and whole-transaction retries must be covered before any accounting phase is considered safe; persistent catalog concurrency protection unresolved
+
 ## Household storage/import approval preparation (2026-10-19)
 - [x] Read-only database and actual intake/access audit
 - [x] Minimal additive storage and lossless staging design; no migrations or live importer edits

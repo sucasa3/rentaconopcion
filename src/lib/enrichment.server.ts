@@ -246,6 +246,7 @@ export async function runEnrichmentTick(opts?: {
   // or re-matched: their queue rows stop here.
   const { isSuppressed } = await import("./suppression.server");
   const enrichable: any[] = [];
+  const suppressedClientIds = new Set<string>();
   for (const c of clients ?? []) {
     // eslint-disable-next-line no-await-in-loop
     const blocked = await isSuppressed(supabaseAdmin, {
@@ -255,10 +256,11 @@ export async function runEnrichmentTick(opts?: {
       zip: c.zip,
     });
     if (blocked) {
+      suppressedClientIds.add(c.id);
       await supabaseAdmin
         .from("property_enrichment_queue")
         .update({
-          status: "canceled",
+          status: "skipped",
           last_error: "suppressed: the person asked not to be contacted",
           completed_at: new Date().toISOString(),
         })
@@ -278,6 +280,8 @@ export async function runEnrichmentTick(opts?: {
 
   for (const item of queue) {
     out.processed += 1;
+    // Suppression is terminal; do not overwrite it as a missing-address review.
+    if (suppressedClientIds.has(item.portfolio_client_id)) continue;
     const client = clientById.get(item.portfolio_client_id);
     const now = new Date().toISOString();
 
