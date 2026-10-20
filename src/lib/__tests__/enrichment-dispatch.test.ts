@@ -68,7 +68,7 @@ describe('durable dispatch gap only, actual review SQL and local stub IO',()=>{
     const a=claim(); await admin.rpc('begin_enrichment_dispatch',{p_id:job,p_token:a.claim_token});
     expire(); expect(sql('SELECT count(*) FROM claim_enrichment_jobs(1)')).toBe('0');
     expect(evidence().state).toBe('uncertain');
-    expect(reconcile(evidence().id,'confirmed_not_sent','')).toBe('');
+    expect(()=>reconcile(evidence().id,'confirmed_not_sent','')).toThrow();
   });
   it('positive not-sent reconciliation releases once; ambiguous retries do not',async()=>{
     const a=claim(); await admin.rpc('begin_enrichment_dispatch',{p_id:job,p_token:a.claim_token});
