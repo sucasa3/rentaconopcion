@@ -17,7 +17,8 @@ export const queuePortfolioEnrichment = createServerFn({ method: "POST" })
       .from("lender_portfolio_clients")
       .select("id")
       .eq("portfolio_id", data.portfolioId);
-    const ids = (clients ?? []).map((c) => c.id);
+    const { withoutHeldClients } = await import("./household-import.server");
+    const ids = (await withoutHeldClients(supabaseAdmin, clients ?? [])).map((c) => c.id);
     if (!ids.length) return { queued: 0 };
 
     const rows = ids.map((id) => ({

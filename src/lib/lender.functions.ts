@@ -435,6 +435,32 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
       street: r.address,
       zip: r.zip ?? null,
     }));
+    {
+      const hh = await import("./household-import.server");
+      if (hh.HOUSEHOLD_IMPORT_ENABLED) {
+        const suppressedSet = new Set(suppressed as unknown[]);
+        const numbered = parsedRows.map((r, i) => ({ ...r, rowNumber: i + 1, full_name: r.full_name ?? "" }));
+        const result = await hh.runHouseholdImport({
+          admin: supabaseAdmin,
+          portfolioId: data.portfolioId,
+          actorId: context.userId,
+          csv: data.csv,
+          rows: numbered as any,
+          suppressedRowNumbers: new Set(parsedRows.flatMap((r, i) => (suppressedSet.has(r) ? [i + 1] : []))),
+        });
+        const c = (result.counts ?? {}) as Record<string, number>;
+        return {
+          inserted: result.inserted ?? 0,
+          suppressed: c.suppressed ?? 0,
+          existing: (c.existing_property ?? 0) + (c.additional_contact ?? 0),
+          review: c.needs_review ?? 0,
+          waitingForCapacity: c.waiting_for_capacity ?? 0,
+          duplicates: c.exact_duplicate ?? 0,
+          invalid: c.invalid_address ?? 0,
+          batchId: result.batch_id as string,
+        };
+      }
+    }
     if (rows.length === 0) return { inserted: 0, suppressed: suppressed.length, existing: 0 };
 
     // Same-book identity: normalized street + 5-digit ZIP (the property match
@@ -839,7 +865,10 @@ export const enrichPortfolioFromAttom = createServerFn({ method: "POST" })
     if (cErr) throw new Error(cErr.message);
     // Cap each pass so automatic background pulls never burn the monthly
     // records allowance in one page load.
-    const rows = data.limit ? (allRows ?? []).slice(0, data.limit) : (allRows ?? []);
+    const { withoutHeldClients } = await import("./household-import.server");
+    const { supabaseAdmin: holdAdmin } = await import("@/integrations/supabase/client.server");
+    const unheld = await withoutHeldClients(holdAdmin, allRows ?? []);
+    const rows = data.limit ? unheld.slice(0, data.limit) : unheld;
     const pendingBefore = (allRows ?? []).length;
 
 
