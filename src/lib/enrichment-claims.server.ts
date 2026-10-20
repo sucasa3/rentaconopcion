@@ -23,6 +23,32 @@ async function rpc(admin: any, name: string, args: Record<string, unknown>): Pro
   }
 }
 
+/** Commit intent before IO. Ambiguous persistence never authorizes sending. */
+export async function guardedProviderRequest<T>(
+  admin: any, claim: EnrichmentClaim, request: () => Promise<T>,
+): Promise<T> {
+  const dispatch = await rpc(admin, "begin_enrichment_dispatch", {
+    p_id: claim.id, p_token: claim.claim_token,
+  });
+  if (!dispatch || typeof dispatch.id !== "string") throw new QueueWriteError();
+  if (dispatch.replay === true && dispatch.response != null) return dispatch.response as T;
+  if (dispatch.replay !== false) throw new QueueWriteError();
+  let response: T;
+  try {
+    response = await request();
+  } catch {
+    await rpc(admin, "record_enrichment_response", {
+      p_dispatch: dispatch.id, p_token: claim.claim_token, p_response: null,
+    });
+    throw new QueueWriteError();
+  }
+  const recorded = await rpc(admin, "record_enrichment_response", {
+    p_dispatch: dispatch.id, p_token: claim.claim_token, p_response: response,
+  });
+  if (recorded !== true) throw new QueueWriteError();
+  return response;
+}
+
 export async function claimEnrichmentJobs(admin: any, limit: number): Promise<any[]> {
   const rows = await rpc(admin, "claim_enrichment_jobs", { p_limit: limit });
   if (!Array.isArray(rows) || rows.length > limit ||

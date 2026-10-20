@@ -16,7 +16,7 @@ import type { LienStatus } from "@/lib/mortgage-position";
 
 
 import { ATTOM_TTL_DAYS, normalizeAddress, type AttomEndpoint } from "./attom.server";
-import { persistEnrichmentCache, renewEnrichmentClaim, type EnrichmentClaim } from "./enrichment-claims.server";
+import { guardedProviderRequest, persistEnrichmentCache, type EnrichmentClaim } from "./enrichment-claims.server";
 
 export type IntelClass = AttomEndpoint;
 export type DataProvider = "attom" | "batchdata";
@@ -161,8 +161,9 @@ export async function getPropertyIntel(
         await import("./batchdata-normalize");
       const { batchdataToSummaries } = await import("./batchdata-summaries");
 
-      if (opts.enrichmentClaim) await renewEnrichmentClaim(supabaseAdmin, opts.enrichmentClaim);
-      const res = await batchdataLookup(address);
+      const res = opts.enrichmentClaim
+        ? await guardedProviderRequest(supabaseAdmin, opts.enrichmentClaim, () => batchdataLookup(address))
+        : await batchdataLookup(address);
       const normalizedProp = res.ok ? normalizeBatchdataProperty(res.data) : null;
       const matched = res.ok && isMatched(normalizedProp);
       if (res.ok) callsUsed += 1;
@@ -195,7 +196,8 @@ export async function getPropertyIntel(
         serveStale(needLive, noResult ? "No record on file for this address." : res.ok ? "" : res.error);
       } else {
         const now = new Date().toISOString();
-        const sums = batchdataToSummaries(normalizedProp!);
+        if (!normalizedProp) throw new Error("Invalid property response");
+        const sums = batchdataToSummaries(normalizedProp);
         const parsed = parseTestAddress(address);
         const byClass: Partial<Record<IntelClass, unknown>> = {
           detail: sums.detail,
