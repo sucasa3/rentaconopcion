@@ -43,14 +43,34 @@ async function enabledClasses(supabaseAdmin: any): Promise<Set<string>> {
 }
 
 
+/** Returned row IDs confirm persistence, not exclusive claim ownership. */
+class QueueWriteError extends Error {
+  constructor() {
+    super("Enrichment queue write failed");
+    this.name = "QueueWriteError";
+  }
+}
+
+async function checkedQueueWrite(query: any, expectedIds?: string[]): Promise<void> {
+  const { data, error } = await query.select("id");
+  if (error || !Array.isArray(data)) throw new QueueWriteError();
+  if (expectedIds) {
+    const returnedIds = new Set(data.map((row: any) => row.id));
+    if (data.length !== expectedIds.length || returnedIds.size !== expectedIds.length ||
+        expectedIds.some((id) => !returnedIds.has(id))) {
+      throw new QueueWriteError();
+    }
+  }
+}
+
 /** Rows stuck mid-flight (worker died / timed out) go back on the queue. */
 async function reapStuck(supabaseAdmin: any): Promise<void> {
   const cutoff = new Date(Date.now() - 15 * 60_000).toISOString();
-  await supabaseAdmin
+  await checkedQueueWrite(supabaseAdmin
     .from("property_enrichment_queue")
     .update({ status: "pending", started_at: null })
     .eq("status", "running")
-    .lt("started_at", cutoff);
+    .lt("started_at", cutoff));
 }
 
 const MAX_ATTEMPTS = 2;
@@ -136,12 +156,12 @@ async function reprioritize(supabaseAdmin: any): Promise<void> {
   const ids = (clients ?? []).map((c: any) => c.id);
   if (!ids.length) return;
 
-  await supabaseAdmin
+  await checkedQueueWrite(supabaseAdmin
     .from("property_enrichment_queue")
     .update({ priority: 5 })
     .in("portfolio_client_id", ids)
     .eq("status", "pending")
-    .gt("priority", 5);
+    .gt("priority", 5));
 }
 
 /** Background share of this month's allowance already consumed. */
@@ -226,10 +246,10 @@ export async function runEnrichmentTick(opts?: {
   }
 
   const ids = queue.map((q: any) => q.id);
-  await supabaseAdmin
+  await checkedQueueWrite(supabaseAdmin
     .from("property_enrichment_queue")
     .update({ status: "running", started_at: new Date().toISOString() })
-    .in("id", ids);
+    .in("id", ids), ids);
 
   const { data: clients } = await supabaseAdmin
     .from("lender_portfolio_clients")
@@ -256,15 +276,18 @@ export async function runEnrichmentTick(opts?: {
       zip: c.zip,
     });
     if (blocked) {
-      suppressedClientIds.add(c.id);
-      await supabaseAdmin
+      const suppressedQueueIds = queue
+        .filter((item: any) => item.portfolio_client_id === c.id)
+        .map((item: any) => item.id);
+      await checkedQueueWrite(supabaseAdmin
         .from("property_enrichment_queue")
         .update({
           status: "skipped",
           last_error: "suppressed: the person asked not to be contacted",
           completed_at: new Date().toISOString(),
         })
-        .eq("portfolio_client_id", c.id);
+        .in("id", suppressedQueueIds), suppressedQueueIds);
+      suppressedClientIds.add(c.id);
       continue;
     }
     enrichable.push(c);
@@ -287,14 +310,14 @@ export async function runEnrichmentTick(opts?: {
 
     if (!client || !client.address_line1?.trim()) {
       out.needsReview += 1;
-      await supabaseAdmin
+      await checkedQueueWrite(supabaseAdmin
         .from("property_enrichment_queue")
         .update({
           status: "needs_review",
           last_error: "No street address on file",
           completed_at: now,
         })
-        .eq("id", item.id);
+        .eq("id", item.id), [item.id]);
       continue;
     }
 
@@ -303,14 +326,14 @@ export async function runEnrichmentTick(opts?: {
       const verified = await verifyAddress(fullAddress(client));
       if (!verified) {
         out.needsReview += 1;
-        await supabaseAdmin
+        await checkedQueueWrite(supabaseAdmin
           .from("property_enrichment_queue")
           .update({
             status: "needs_review",
             last_error: "Address couldn't be verified (missing city/state or ZIP)",
             completed_at: now,
           })
-          .eq("id", item.id);
+          .eq("id", item.id), [item.id]);
         continue;
       }
       await supabaseAdmin
@@ -330,19 +353,19 @@ export async function runEnrichmentTick(opts?: {
 
     const address = fullAddress(client);
     const normalized = normalizeAddress(address);
-    await supabaseAdmin
+    await checkedQueueWrite(supabaseAdmin
       .from("property_enrichment_queue")
       .update({ address_normalized: normalized, address_verified_at: now })
-      .eq("id", item.id);
+      .eq("id", item.id), [item.id]);
 
     // Duplicate of a property already handled in this batch — reuse it.
     if (seenAddresses.has(normalized)) {
       out.completed += 1;
       out.cachedOnly += 1;
-      await supabaseAdmin
+      await checkedQueueWrite(supabaseAdmin
         .from("property_enrichment_queue")
         .update({ status: "done", last_result: "shared_profile", last_error: null, completed_at: now })
-        .eq("id", item.id);
+        .eq("id", item.id), [item.id]);
       await supabaseAdmin
         .from("lender_portfolio_clients")
         .update({ last_intel_refreshed_at: now })
@@ -362,10 +385,10 @@ export async function runEnrichmentTick(opts?: {
     if (!missing.length) {
       out.completed += 1;
       out.cachedOnly += 1;
-      await supabaseAdmin
+      await checkedQueueWrite(supabaseAdmin
         .from("property_enrichment_queue")
         .update({ status: "done", last_result: "cache", last_error: null, completed_at: now })
-        .eq("id", item.id);
+        .eq("id", item.id), [item.id]);
       await supabaseAdmin
         .from("lender_portfolio_clients")
         .update({ last_intel_refreshed_at: now })
@@ -376,10 +399,10 @@ export async function runEnrichmentTick(opts?: {
 
     if (remainingCalls <= 0) {
       // Put the row back without counting an attempt against it.
-      await supabaseAdmin
+      await checkedQueueWrite(supabaseAdmin
         .from("property_enrichment_queue")
         .update({ status: "pending" })
-        .eq("id", item.id);
+        .eq("id", item.id), [item.id]);
       out.paused = "background_cap";
       break;
     }
@@ -393,7 +416,7 @@ export async function runEnrichmentTick(opts?: {
       if (bd.status === "matched") {
         out.completed += 1;
         out.spentCalls += 1;
-        await supabaseAdmin
+        await checkedQueueWrite(supabaseAdmin
           .from("property_enrichment_queue")
           .update({
             status: "done",
@@ -402,7 +425,7 @@ export async function runEnrichmentTick(opts?: {
             last_error: null,
             completed_at: now,
           })
-          .eq("id", item.id);
+          .eq("id", item.id), [item.id]);
         await supabaseAdmin
           .from("lender_portfolio_clients")
           .update({ last_intel_refreshed_at: now })
@@ -425,15 +448,15 @@ export async function runEnrichmentTick(opts?: {
         }
       } else if (bd.status === "error") {
         out.retried += 1;
-        await supabaseAdmin
+        await checkedQueueWrite(supabaseAdmin
           .from("property_enrichment_queue")
           .update({ status: "failed", attempts, last_result: "batchdata_error", last_error: bd.error })
-          .eq("id", item.id);
+          .eq("id", item.id), [item.id]);
       } else {
         // No record: keep the address exactly as entered and ask for review.
         out.needsReview += 1;
         out.spentCalls += 1;
-        await supabaseAdmin
+        await checkedQueueWrite(supabaseAdmin
           .from("property_enrichment_queue")
           .update({
             status: "needs_review",
@@ -441,7 +464,7 @@ export async function runEnrichmentTick(opts?: {
             last_result: bd.status,
             last_error: bd.review,
           })
-          .eq("id", item.id);
+          .eq("id", item.id), [item.id]);
       }
       continue;
     }
@@ -504,7 +527,7 @@ export async function runEnrichmentTick(opts?: {
 
       if (resolved.length > 0) {
         out.completed += 1;
-        await supabaseAdmin
+        await checkedQueueWrite(supabaseAdmin
           .from("property_enrichment_queue")
           .update({
             status: "done",
@@ -513,13 +536,13 @@ export async function runEnrichmentTick(opts?: {
             last_error: null,
             completed_at: now,
           })
-          .eq("id", item.id);
+          .eq("id", item.id), [item.id]);
       } else {
         const firstError = Object.values(intel.errors)[0] ?? "No records returned";
         const done = attempts >= MAX_ATTEMPTS;
         if (done) out.needsReview += 1;
         else out.retried += 1;
-        await supabaseAdmin
+        await checkedQueueWrite(supabaseAdmin
           .from("property_enrichment_queue")
           .update({
             status: done ? "needs_review" : "pending",
@@ -528,14 +551,16 @@ export async function runEnrichmentTick(opts?: {
             next_attempt_at: new Date(Date.now() + attempts * 6 * 3600_000).toISOString(),
             completed_at: done ? now : null,
           })
-          .eq("id", item.id);
+          .eq("id", item.id), [item.id]);
       }
     } catch (err) {
+      // Persistence failures are not provider attempts and must not rewrite history.
+      if (err instanceof QueueWriteError) throw err;
       const attempts = (item.attempts ?? 0) + 1;
       const done = attempts >= MAX_ATTEMPTS;
       if (done) out.needsReview += 1;
       else out.retried += 1;
-      await supabaseAdmin
+      await checkedQueueWrite(supabaseAdmin
         .from("property_enrichment_queue")
         .update({
           status: done ? "failed" : "pending",
@@ -544,7 +569,7 @@ export async function runEnrichmentTick(opts?: {
           next_attempt_at: new Date(Date.now() + attempts * 6 * 3600_000).toISOString(),
           completed_at: done ? now : null,
         })
-        .eq("id", item.id);
+        .eq("id", item.id), [item.id]);
     }
   }
 
