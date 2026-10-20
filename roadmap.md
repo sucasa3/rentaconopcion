@@ -2,7 +2,7 @@
 
 ## Integrity Step A (2026-10-20; local only)
 - [x] Apply exactly the reviewed worker terminal-state patch; preserve attempts/history
-- [ ] Run only targeted mocked tests and document error/claim dependencies and exact diff
+- [x] Targeted local-only file: 4/4 passed (2 acceptance checks, 2 known-blocker reproductions); exact worker/test diff and revised sequence delivered
 - [ ] Worker release BLOCKED: fail-open returned suppression errors, ignored queue writes, concurrent claims, and separately authorized deployed-baseline/hosted validation
 - [ ] Accounting BLOCKED: unapproved policies; all affected entry points and whole-transaction retries must be covered before any accounting phase is considered safe; persistent catalog concurrency protection unresolved
 
