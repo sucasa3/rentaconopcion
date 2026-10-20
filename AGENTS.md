@@ -23,14 +23,12 @@
 - Self-serve professional workspaces and lender checkout require a verified email, proven only by the signed session (emailed code/link or Google) and recorded in `pro_email_verifications`; homeowners are not gated and pre-existing professionals were grandfathered — keeps corporate-firewall-safe codes and avoids breaking existing accounts.
 - The `/lender` area redirects accounts without a lender workspace (or paused membership) to their own home — no empty professional shells.
 - The $397 MLO Growth launch offer is a one-time Checkout payment; `finalizeLaunchPayment` (webhook + return sync, idempotent per session) then creates the $149 subscription with billing deferred 90 days — customers never see "free trial" wording.
-- Sign-in emails link to /auth/continue (button press required) instead of the one-time verify URL, so corporate link scanners cannot consume the token; only Supabase verify URLs are accepted.
 - New self-serve agents are routed to their own Discovery (resolved server-side from membership via getMyAgentOnboarding) until the free 100 is claimed; Agent Today shows an unlock banner instead of paid-plan prompts — keeps first value ahead of upsell and never trusts a client-supplied workspace id.
-- Signup and magic-link emails both link through /auth/continue; preview-origin redirects keep the preview host — scanner-safe everywhere and testable before publishing.
+- Sign-in, signup and magic-link emails link to /auth/continue (button press, only Supabase verify URLs accepted); preview-origin redirects keep the preview host — scanners cannot consume tokens.
 - Every new lender/agent member gets a personal client book via the lender_members insert trigger (tg_provision_member_book) — joining a team always gives a place to add leads.
-
 - BusinessShell resolves the member's own book and manager status itself (getBusinessOverview); page props only override — keeps the side menu identical on every page.
 - Personal intake uses the server-designated personalBookId and validates active assigned ownership before writes; branch redistribution uses an atomic manager-only RPC that moves existing rows, preserves consent and record IDs, updates queue references, and logs assignments — prevents implicit team ownership and duplicate enrichment.
 - Recovery and household/import-review modules stay pure/offline or preview-host-only Test Lab until durable storage is authorized; confirmed edges never widen caller access or activate financial signals.
-- Read scripts/AGENTS.md for offline audits; simulations are not transactions.
+- Read scripts/AGENTS.md and src/lib/AGENTS.md before changing files there.
 - Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.
 - Enrichment fences claims and records dispatch before IO; uncertain outcomes require audited reconciliation, not automatic resend. Review SQL stays unapplied; no exactly-once spend claim.

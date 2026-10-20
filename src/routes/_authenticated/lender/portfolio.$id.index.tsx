@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getPortfolio, enrichPortfolioFromAttom } from "@/lib/lender.functions";
 import { EnrichmentQueueStrip } from "@/components/enrichment-queue-strip";
+import { OwnerGroups } from "@/components/owner-groups";
 import { CopilotSearch } from "@/components/copilot-search";
 import { OpportunityCard, PersonCard, PriorityCard, StatusPill } from "@/components/ui-kit";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -451,6 +452,7 @@ function PortfolioDetail() {
 
                 <div className="mt-4">
                   <EnrichmentQueueStrip portfolioId={id} />
+                  <div className="mt-4"><OwnerGroups portfolioId={id} /></div>
                 </div>
 
                 <div
