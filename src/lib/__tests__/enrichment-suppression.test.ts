@@ -14,6 +14,9 @@ type Options = {
   stale?: boolean;
   secondJob?: boolean;
   paid?: boolean;
+  reclaimedInFlight?: boolean;
+  renewalFailure?: boolean;
+  primary?: boolean;
 };
 async function tick(opts: Options = {}) {
   const job: Record<string, any> = {
@@ -32,7 +35,7 @@ async function tick(opts: Options = {}) {
   const candidate = candidateFor({ email: client.client_email });
   const fake = {
     async rpc(name: string, args: Record<string, any>) {
-      if (name === 'renew_enrichment_claim') return { data: true, error: null };
+      if (name === 'renew_enrichment_claim') return { data: !opts.renewalFailure, error: null };
       const isClaim = name === 'claim_enrichment_jobs';
       const patch = args.p_patch ?? {};
       const kind = isClaim ? (opts.stale ? 'recovery' : 'claim') :
@@ -103,14 +106,20 @@ async function tick(opts: Options = {}) {
   const modules: Record<string, unknown> = {
     './enrichment-claims.server': claims,
     './attom.server': { ATTOM_TTL_DAYS: { detail: 30 }, normalizeAddress: (s: string) => s },
-    './provider-primary.server': { batchdataPrimaryEnabled: () => false, enrichViaBatchdata: blocked },
+    './provider-primary.server': { batchdataPrimaryEnabled: () => opts.primary ?? false, enrichViaBatchdata: async () => {
+      providerCalls++;
+      if (opts.reclaimedInFlight) job.claim_token = 'new-owner-token';
+      return { status: 'matched', classes: ['detail'], homeTeam: { candidates: [], suppressed: [] } };
+    } },
     './opportunities.server': { persistPortfolioOpportunities: async () => undefined },
     './home-team-candidates.server': { persistHomeTeamCandidates: async () => undefined },
     './geocode.server': { verifyAddress: blocked },
     '@/integrations/supabase/client.server': { supabaseAdmin: fake },
     './suppression.server': { isSuppressed },
     './valuation.server': { getPropertyIntel: async () => {
-      providerCalls++; return { classes: { detail: { data: {} } }, errors: {} };
+      providerCalls++;
+      if (opts.reclaimedInFlight) job.claim_token = 'new-owner-token';
+      return { classes: { detail: { data: {} } }, errors: {} };
     }, extractMortgage: () => null, extractSales: () => null },
   };
   const exports: Record<string, any> = {};
@@ -195,4 +204,15 @@ describe('actual worker + real suppression helper (local IO only)', () => {
     expectFailure(out); expect(out.providerCalls).toBe(1); expectHistory(out.job);
     expect(out.writes.some(w => ['failed', 'needs_review'].includes(w.payload.status))).toBe(false);
   });
+  for (const primary of [false, true]) {
+    it(`actual worker rejects old completion after in-flight reclaim (${primary ? 'primary' : 'valuation'})`, async () => {
+      const out = await tick({ suppressed: false, paid: true, reclaimedInFlight: true, primary });
+      expectFailure(out); expect(out.providerCalls).toBe(1);
+      expect(out.job.claim_token).toBe('new-owner-token'); expect(out.job.status).toBe('running'); expectHistory(out.job);
+    });
+    it(`lost lease before request prevents provider call (${primary ? 'primary' : 'valuation'})`, async () => {
+      const out = await tick({ suppressed: false, paid: true, renewalFailure: true, primary });
+      expectFailure(out); expect(out.providerCalls).toBe(0); expectHistory(out.job);
+    });
+  }
 });

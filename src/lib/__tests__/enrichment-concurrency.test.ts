@@ -111,4 +111,27 @@ describe('actual review migration on disposable local PostgreSQL', () => {
     expect(sql("SELECT has_function_privilege('anon','public.write_enrichment_claim(uuid,uuid,jsonb,jsonb)','EXECUTE')")).toBe('f');
     expect(sql("SELECT has_function_privilege('service_role','public.claim_enrichment_jobs(integer)','EXECUTE')")).toBe('t');
   });
+  it('cancel/reset invalidates the token and preserves historical attempts', () => {
+    seed(); const current=claim(); sql("UPDATE property_enrichment_queue SET status='skipped'");
+    expect(write(current.claim_token)).toBe('0');
+    expect(sql("SELECT attempts || '|' || (claim_token IS NULL)::text || '|' || (lease_expires_at IS NULL)::text FROM property_enrichment_queue")).toBe('3|true|true');
+  });
+  it('legacy abandoned running row is recovered with a fresh token', () => {
+    seed(); sql("UPDATE property_enrichment_queue SET status='running', started_at=now()-interval '16 minutes'");
+    const current=claim(); expect(current.claim_token).toBeTruthy(); expect(current.attempts).toBe(3);
+  });
+  it('valid renewal prevents recovery and expiry during lock wait rejects writes', async () => {
+    seed(); const current=claim();
+    expect(sql(`SELECT renew_enrichment_claim('${id}','${current.claim_token}')`)).toBe('t');
+    expect(sql('SELECT count(*) FROM claim_enrichment_jobs(1)')).toBe('0');
+    // Lease check is evaluated after the lock, not at invocation start.
+    sql("UPDATE property_enrichment_queue SET lease_expires_at=clock_timestamp()+interval '300 milliseconds'");
+    const holder=asyncSql(`BEGIN; SELECT id FROM property_enrichment_queue WHERE id='${id}' FOR UPDATE; SELECT pg_sleep(0.6); COMMIT;`);
+    for(let i=0;i<100;i++) {
+      if(sql("SELECT count(*) FROM pg_stat_activity WHERE query LIKE 'BEGIN; SELECT id FROM property_enrichment_queue%' AND wait_event='PgSleep'")==='1') break;
+      await new Promise(resolve=>setTimeout(resolve,5));
+    }
+    expect(await asyncSql(`SELECT count(*) FROM write_enrichment_claim('${id}','${current.claim_token}','{"status":"done"}')`)).toBe('0');
+    await holder;
+  });
 });
