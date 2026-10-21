@@ -90,3 +90,15 @@ export const getBookOwnerGroups = createServerFn({ method: "POST" })
     }
     return { owners: [...map.values()].filter((g) => g.homes.length > 1).sort((a, b) => a.name.localeCompare(b.name)) };
   });
+
+/** Explicitly start lookups for a held import batch. Actor comes from the session only. */
+export const releaseImportHold = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ batchId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { HOUSEHOLD_IMPORT_ENABLED } = await import("./household-import");
+    if (!HOUSEHOLD_IMPORT_ENABLED) throw new Error("Multi-home import is not enabled.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { releaseHeldImport } = await import("./household-import.server");
+    return { released: await releaseHeldImport(supabaseAdmin, data.batchId, context.userId) };
+  });
