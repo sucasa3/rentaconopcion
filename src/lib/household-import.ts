@@ -26,6 +26,7 @@ export interface ExistingClient {
   city?: string | null;
   state?: string | null;
   zip?: string | null;
+  address_key?: string | null;
 }
 export interface ExistingContact {
   id: string;
@@ -74,11 +75,16 @@ export function planHouseholdImport(input: {
 }) {
   const propertyByKey = new Map<string, string>(); // key -> ref
   const contactsByProperty = new Map<string, Set<string>>(); // ref -> contact refs
+  // Keys shared by 2+ existing clients are ambiguous: never auto-matched.
+  const ambiguousKeys = new Set<string>();
   for (const c of input.existingClients) {
     if (!c.address_line1?.trim()) continue;
-    const k = addressKey({ address: c.address_line1, zip: c.zip ?? null, city: c.city ?? null, state: c.state ?? null });
-    if (!propertyByKey.has(k)) propertyByKey.set(k, c.id);
+    const k = c.address_key ?? addressKey({ address: c.address_line1, zip: c.zip ?? null, city: c.city ?? null, state: c.state ?? null });
+    const prior = propertyByKey.get(k);
+    if (prior && prior !== c.id) ambiguousKeys.add(k);
+    else propertyByKey.set(k, c.id);
   }
+  for (const k of ambiguousKeys) propertyByKey.delete(k);
   type Contact = { ref: string; name: string; email: string | null; phone: string | null };
   const contacts: Contact[] = input.existingContacts.map((c) => ({
     ref: c.id, name: norm(c.name), email: normEmail(c.email), phone: normPhone(c.phone),
@@ -110,6 +116,10 @@ export function planHouseholdImport(input: {
     const email = normEmail(row.email);
     const phone = normPhone(row.phone);
     const signature = `${key}|${name}|${email ?? ""}|${phone ?? ""}`;
+    if (ambiguousKeys.has(key)) {
+      out.push({ ...base, outcome: "needs_review", propertyKey: key, reason: "existing_address_collision" });
+      continue;
+    }
     if (seenSignatures.has(signature)) {
       out.push({ ...base, outcome: "exact_duplicate", propertyKey: key, reason: "same_property_and_contact_in_file" });
       continue;
@@ -180,5 +190,9 @@ export function planHouseholdImport(input: {
   };
 }
 
-/** Rollback switch: off until the reviewed migration is applied. Off = legacy importer + flat list. */
+/**
+ * Feature switch: off until the reviewed migration is applied. Off = legacy
+ * importer + flat list (presentation + intake rollback only). Switching it off
+ * never releases held lookups: the hold lives in the database.
+ */
 export const HOUSEHOLD_IMPORT_ENABLED = false;

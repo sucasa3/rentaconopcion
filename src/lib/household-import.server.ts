@@ -38,7 +38,7 @@ export async function runHouseholdImport(opts: {
 }) {
   const { admin, portfolioId } = opts;
   const [{ data: clients, error: cErr }, { data: contacts, error: kErr }, { data: links, error: lErr }] = await Promise.all([
-    admin.from("lender_portfolio_clients").select("id, address_line1, city, state, zip").eq("portfolio_id", portfolioId),
+    admin.from("lender_portfolio_clients").select("id, address_line1, city, state, zip, address_key").eq("portfolio_id", portfolioId),
     admin.from("book_contacts").select("id, full_name, email, phone").eq("book_id", portfolioId),
     admin.from("client_contact_links").select("contact_id, client_id").eq("book_id", portfolioId),
   ]);
@@ -78,24 +78,36 @@ export async function runHouseholdImport(opts: {
   });
   const existingKeys = (clients ?? [])
     .filter((c: any) => c.address_line1?.trim())
-    .map((c: any) => ({ property_key: addressKey({ address: c.address_line1, zip: c.zip, city: c.city, state: c.state }), client_id: c.id }));
+    .map((c: any) => ({ property_key: c.address_key ?? addressKey({ address: c.address_line1, zip: c.zip, city: c.city, state: c.state }), client_id: c.id }));
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(opts.csv));
   const sha = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
   const { data, error } = await (admin as any).rpc("import_household_batch", {
     p_book: portfolioId, p_actor: opts.actorId, p_file_sha256: sha,
     p_rows: payload, p_existing_keys: existingKeys, p_new_capacity: capacity,
   });
-  if (error) throw new Error("Import could not be saved. Nothing was added.");
+  if (error) throw new Error(error.code === "42501" ? "Uploads belong to your own personal book." : "Import could not be saved. Nothing was added.");
   return { ...(data as any), uniqueProperties: plan.uniqueProperties, uniqueContacts: plan.uniqueContacts };
 }
 
-/** Removes clients under an open intake hold from any automatic lookup path. */
+/**
+ * Removes clients under an open intake hold from any automatic lookup path.
+ * Runs regardless of HOUSEHOLD_IMPORT_ENABLED so turning the feature off can
+ * never release held lookups. Before the migration exists there are no holds.
+ */
 export async function withoutHeldClients<T extends { id: string }>(admin: SupabaseClient<any>, rows: T[]): Promise<T[]> {
-  if (!HOUSEHOLD_IMPORT_ENABLED || rows.length === 0) return rows;
+  if (rows.length === 0) return rows;
   const { data, error } = await admin
     .from("enrichment_intake_holds").select("client_id").is("released_at", null)
     .in("client_id", rows.map((r) => r.id));
+  if (error && (error.code === "42P01" || error.code === "PGRST205")) return rows; // table not created yet
   if (error) throw new Error("Could not confirm import hold status.");
   const held = new Set((data ?? []).map((h: any) => h.client_id));
   return rows.filter((r) => !held.has(r.id));
+}
+
+/** Explicit release; the database checks the actor can see the book. */
+export async function releaseHeldImport(admin: SupabaseClient<any>, batchId: string, actorId: string): Promise<number> {
+  const { data, error } = await (admin as any).rpc("release_intake_hold", { p_batch: batchId, p_actor: actorId });
+  if (error) throw new Error(error.code === "42501" ? "You can't release lookups for this import." : "Could not release this import.");
+  return (data as number) ?? 0;
 }
