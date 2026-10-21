@@ -7,7 +7,7 @@ import { addressKey } from "../agent-discovery";
 
 // Disposable loopback-only PostgreSQL (docs/release-candidates/run-focused-worker-tests.sh).
 // Uses its own throwaway database "hh"; never a hosted database.
-const base = ["-h", "/tmp/worker-local-pg/socket", "-p", "55439", "-U", "local_worker", "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1"];
+const base = ["-h", "/tmp/worker-local-pg/socket", "-p", "55439", "-U", "local_worker", "-X", "-q", "-A", "-t", "-v", "ON_ERROR_STOP=1"];
 const args = [...base, "-d", "hh"];
 const sql = (q: string) => execFileSync("psql", [...args, "-c", q], { encoding: "utf8" }).trim();
 const sqlFails = (q: string) => { try { sql(q); return ""; } catch (e: any) { return String(e.stderr ?? e.message); } };
@@ -141,7 +141,8 @@ const snapshot = () => ({
   intel: sql(`SELECT md5(string_agg(row_to_json(i)::text, '|' ORDER BY address_normalized)) || ':' || count(*) FROM property_intel i`),
   queue: sql(`SELECT md5(string_agg(row_to_json(q)::text, '|' ORDER BY portfolio_client_id)) || ':' || count(*) FROM property_enrichment_queue q WHERE portfolio_id='${BOOK_P}' AND portfolio_client_id IN (SELECT id FROM lender_portfolio_clients WHERE id::text LIKE '00000000-0000-4000-8000-0000000010%')`),
 });
-const as = (user: string, query: string) => sql(`SET ROLE authenticated; SELECT set_config('request.jwt.claim.sub','${user}',false); ${query}`);
+const as = (user: string, query: string) =>
+  execFileSync("psql", [...args, "-c", "SET ROLE authenticated", "-c", `SET request.jwt.claim.sub = '${user}'`, "-c", query], { encoding: "utf8" }).trim();
 
 let before: ReturnType<typeof snapshot>;
 let firstBatch = "";
