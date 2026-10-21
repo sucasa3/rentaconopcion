@@ -195,4 +195,4 @@ export function planHouseholdImport(input: {
  * importer + flat list (presentation + intake rollback only). Switching it off
  * never releases held lookups: the hold lives in the database.
  */
-export const HOUSEHOLD_IMPORT_ENABLED = false;
+export const HOUSEHOLD_IMPORT_ENABLED = true;
