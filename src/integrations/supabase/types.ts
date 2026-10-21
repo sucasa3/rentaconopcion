@@ -1135,6 +1135,80 @@ export type Database = {
         }
         Relationships: []
       }
+      book_contacts: {
+        Row: {
+          book_id: string
+          created_at: string
+          created_batch_id: string | null
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          source_client_id: string | null
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          created_batch_id?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          source_client_id?: string | null
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          created_batch_id?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          source_client_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_contacts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_property_keys: {
+        Row: {
+          book_id: string
+          client_id: string
+          property_key: string
+        }
+        Insert: {
+          book_id: string
+          client_id: string
+          property_key: string
+        }
+        Update: {
+          book_id?: string
+          client_id?: string
+          property_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_property_keys_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_property_keys_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_task_state: {
         Row: {
           completed_at: string
@@ -1596,6 +1670,58 @@ export type Database = {
           },
         ]
       }
+      client_contact_links: {
+        Row: {
+          book_id: string
+          client_id: string
+          contact_id: string
+          created_at: string
+          created_batch_id: string | null
+          id: string
+          role: string
+        }
+        Insert: {
+          book_id: string
+          client_id: string
+          contact_id: string
+          created_at?: string
+          created_batch_id?: string | null
+          id?: string
+          role: string
+        }
+        Update: {
+          book_id?: string
+          client_id?: string
+          contact_id?: string
+          created_at?: string
+          created_batch_id?: string | null
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_contact_links_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contact_links_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_contact_links_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "book_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       communication_preference_events: {
         Row: {
           channel: string
@@ -1875,6 +2001,88 @@ export type Database = {
           },
         ]
       }
+      contact_import_batches: {
+        Row: {
+          book_id: string
+          counts: Json
+          created_at: string
+          created_by: string
+          enrichment_hold: boolean
+          file_sha256: string
+          id: string
+          total_rows: number
+        }
+        Insert: {
+          book_id: string
+          counts?: Json
+          created_at?: string
+          created_by: string
+          enrichment_hold?: boolean
+          file_sha256: string
+          id?: string
+          total_rows: number
+        }
+        Update: {
+          book_id?: string
+          counts?: Json
+          created_at?: string
+          created_by?: string
+          enrichment_hold?: boolean
+          file_sha256?: string
+          id?: string
+          total_rows?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_import_batches_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_import_rows: {
+        Row: {
+          batch_id: string
+          client_id: string | null
+          contact_id: string | null
+          id: string
+          outcome: string
+          raw: Json
+          reason: string | null
+          row_number: number
+        }
+        Insert: {
+          batch_id: string
+          client_id?: string | null
+          contact_id?: string | null
+          id?: string
+          outcome: string
+          raw: Json
+          reason?: string | null
+          row_number: number
+        }
+        Update: {
+          batch_id?: string
+          client_id?: string | null
+          contact_id?: string | null
+          id?: string
+          outcome?: string
+          raw?: Json
+          reason?: string | null
+          row_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_import_rows_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "contact_import_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cron_tokens: {
         Row: {
           created_at: string
@@ -2113,6 +2321,45 @@ export type Database = {
           source?: string
         }
         Relationships: []
+      }
+      enrichment_intake_holds: {
+        Row: {
+          batch_id: string
+          client_id: string
+          held_at: string
+          released_at: string | null
+          released_by: string | null
+        }
+        Insert: {
+          batch_id: string
+          client_id: string
+          held_at?: string
+          released_at?: string | null
+          released_by?: string | null
+        }
+        Update: {
+          batch_id?: string
+          client_id?: string
+          held_at?: string
+          released_at?: string | null
+          released_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrichment_intake_holds_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "contact_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrichment_intake_holds_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ghl_sync_queue: {
         Row: {
@@ -6864,6 +7111,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_household_batch: {
+        Args: {
+          p_actor: string
+          p_book: string
+          p_existing_keys: Json
+          p_file_sha256: string
+          p_new_capacity: number
+          p_rows: Json
+        }
+        Returns: Json
+      }
       is_lender_manager: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -6953,6 +7211,10 @@ export type Database = {
       redeem_agent_promotion: {
         Args: { _org_id: string; _phone_hash: string; _user_id: string }
         Returns: string
+      }
+      release_intake_hold: {
+        Args: { p_actor: string; p_batch: string }
+        Returns: number
       }
       remove_lender_member: {
         Args: { _org_id: string; _user_id: string }
