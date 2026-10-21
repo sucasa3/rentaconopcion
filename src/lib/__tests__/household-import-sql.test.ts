@@ -163,7 +163,7 @@ beforeAll(() => {
   sql(`UPDATE property_enrichment_queue SET status = CASE WHEN portfolio_client_id IN ('${U(0x1000 + 10)}','${U(0x1000 + 20)}','${U(0x1000 + 30)}') THEN 'pending' ELSE 'done' END, attempts = 1`);
   sql(`INSERT INTO property_intel (address_normalized, payload, fetched_at)
     SELECT lower(address_line1)||'|30060', jsonb_build_object('avm', 400000 + row_number() over ()), '2026-02-01' FROM lender_portfolio_clients
-    WHERE portfolio_id='${BOOK_P}' AND id NOT IN ('${U(0x1000 + 10)}','${U(0x1000 + 20)}','${U(0x1000 + 30)}') AND address_line1 <> '500  pine rd'`);
+    WHERE portfolio_id='${BOOK_P}' AND id NOT IN ('${U(0x1000 + 10)}','${U(0x1000 + 20)}','${U(0x1000 + 30)}')`);
   // Concurrency org: 2 existing homes per officer book -> 6 of 10 left.
   for (const b of [BOOK_A, BOOK_B]) sql(`INSERT INTO lender_portfolio_clients (portfolio_id, client_name, address_line1, zip) VALUES ('${b}','x','1 ${b.slice(-3)} Rd','30060'),('${b}','y','2 ${b.slice(-3)} Rd','30060')`);
   before = snapshot();

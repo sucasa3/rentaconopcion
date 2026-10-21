@@ -80,4 +80,27 @@ describe("household import planner", () => {
     const p = plan([row(1, {}), row(2, { address: " " })], { suppressedRowNumbers: new Set([1]) });
     expect(p.rows.map((r) => r.outcome)).toEqual(["suppressed", "invalid_address"]);
   });
+
+  it("sends rows at an address shared by two existing clients to review", () => {
+    const p = plan([row(1, { address: "500 Pine Rd" })], {
+      existingClients: [{ id: "a", address_line1: "500 Pine Rd", zip: "30060" }, { id: "b", address_line1: "500  pine rd", zip: "30060" }],
+    });
+    expect(p.rows[0]).toMatchObject({ outcome: "needs_review", reason: "existing_address_collision" });
+    expect(p.newProperties).toBe(0);
+  });
+});
+
+describe("hold filter ignores the feature flag", () => {
+  it("still removes held homes while the multi-home import is switched off", async () => {
+    const { withoutHeldClients, HOUSEHOLD_IMPORT_ENABLED } = await import("../household-import.server");
+    expect(HOUSEHOLD_IMPORT_ENABLED).toBe(false);
+    const q: any = { select: () => q, is: () => q, in: async () => ({ data: [{ client_id: "h" }], error: null }) };
+    const admin: any = { from: () => q };
+    expect((await withoutHeldClients(admin, [{ id: "h" }, { id: "x" }])).map((r) => r.id)).toEqual(["x"]);
+  });
+  it("fails closed on a lookup error", async () => {
+    const { withoutHeldClients } = await import("../household-import.server");
+    const q: any = { select: () => q, is: () => q, in: async () => ({ data: null, error: { code: "57014" } }) };
+    await expect(withoutHeldClients({ from: () => q } as any, [{ id: "h" }])).rejects.toThrow("Could not confirm import hold status.");
+  });
 });

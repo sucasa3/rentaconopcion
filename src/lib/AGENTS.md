@@ -1,2 +1,2 @@
 # src/lib rules
-- Multi-property CSV import (household-import.ts planner + import_household_batch RPC) stays behind HOUSEHOLD_IMPORT_ENABLED until its review SQL is applied; imports hold enrichment server-side via enrichment_intake_holds and rollback = flag off, never purge — keeps evidence and spend explicit.
+- Multi-property CSV import (household-import.ts planner + import_household_batch RPC) stays behind HOUSEHOLD_IMPORT_ENABLED until its review SQL is applied; capacity is checked under one org-level transaction lock, uploads only into the actor's own book, and enrichment holds live in the database (queue guard + enrichment_intake_holds), so flag off never releases lookups — release is explicit and visibility-checked; rollback never purges.
