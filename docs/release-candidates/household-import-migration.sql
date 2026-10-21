@@ -1,7 +1,8 @@
 -- REVIEW ONLY. NOT APPLIED. Multi-property lossless import (additive), v2.
 -- Existing tables: no column, row, index, policy or grant changes.
--- Existing function changed: tg_enqueue_property_enrichment (honors a
---   transaction-local hold that only import_household_batch sets; otherwise identical).
+-- Existing function changed: tg_enqueue_property_enrichment (production body,
+--   including the QA test-account skip, plus a transaction-local hold that only
+--   import_household_batch sets; otherwise identical).
 -- New trigger on an existing table: property_enrichment_queue BEFORE INSERT
 --   guard that drops queue rows for homes under an unreleased intake hold
 --   (covers every enqueue path: triggers, app upserts, retries, discovery).
@@ -120,6 +121,9 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS
 DECLARE _hold text := current_setting('sucasa.intake_hold', true);
 BEGIN
   IF NEW.address_line1 IS NULL OR btrim(NEW.address_line1) = '' THEN RETURN NEW; END IF;
+  -- Labeled QA workspaces never trigger paid property lookups.
+  IF EXISTS (SELECT 1 FROM lender_portfolios p JOIN lender_orgs o ON o.id = p.lender_org_id
+             WHERE p.id = NEW.portfolio_id AND o.is_test_account) THEN RETURN NEW; END IF;
   IF _hold IS NOT NULL AND _hold <> '' THEN
     INSERT INTO public.enrichment_intake_holds (client_id, batch_id)
     VALUES (NEW.id, _hold::uuid) ON CONFLICT (client_id) DO NOTHING;

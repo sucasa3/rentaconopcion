@@ -18,6 +18,9 @@ CREATE OR REPLACE FUNCTION public.tg_enqueue_property_enrichment()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
 BEGIN
   IF NEW.address_line1 IS NULL OR btrim(NEW.address_line1) = '' THEN RETURN NEW; END IF;
+  -- Labeled QA workspaces never trigger paid property lookups.
+  IF EXISTS (SELECT 1 FROM lender_portfolios p JOIN lender_orgs o ON o.id = p.lender_org_id
+             WHERE p.id = NEW.portfolio_id AND o.is_test_account) THEN RETURN NEW; END IF;
   INSERT INTO public.property_enrichment_queue (portfolio_client_id, portfolio_id, priority)
   VALUES (NEW.id, NEW.portfolio_id, CASE WHEN NEW.homeowner_id IS NOT NULL THEN 10 ELSE 50 END)
   ON CONFLICT (portfolio_client_id) DO NOTHING;
