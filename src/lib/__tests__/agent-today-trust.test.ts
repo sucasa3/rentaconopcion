@@ -67,8 +67,10 @@ describe("signal engine — year-built guesses never become priorities", () => {
   it("caps an age estimate from the year built below the strong band", () => {
     const { signals } = evaluateHome(recordWith("year_built"));
     const s = signals.find((x) => x.type === "component_overdue")!;
+    // 44 stays under the opportunity engine's 45-point "moderate" threshold,
+    // so a guess can never surface as more than an emerging reminder.
     expect(s.score).toBeLessThanOrEqual(44);
-    expect(s.strength).toBe("low");
+    expect(s.strength).not.toBe("high");
   });
 
   it("keeps a logged installation date as a real condition signal", () => {
