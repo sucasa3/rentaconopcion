@@ -32,3 +32,4 @@
 - Read scripts/AGENTS.md and src/lib/AGENTS.md before changing files there.
 - Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.
 - Enrichment fences claims and records dispatch before IO; uncertain outcomes require audited reconciliation, not automatic resend. Review SQL stays unapplied; no exactly-once spend claim.
+- The worker claims only jobs listed in an active `enrichment_release_grants` row (book-scoped, dispatch-capped, one dispatch per address); no grant = nothing released — installing the repair can never drain other customers' queues.
