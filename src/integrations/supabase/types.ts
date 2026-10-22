@@ -2322,6 +2322,45 @@ export type Database = {
         }
         Relationships: []
       }
+      enrichment_dispatches: {
+        Row: {
+          address_normalized: string
+          claim_token: string
+          dispatched_at: string
+          grant_id: string | null
+          id: string
+          job_id: string
+          reconciliation: Json
+          responded_at: string | null
+          response: Json | null
+          state: string
+        }
+        Insert: {
+          address_normalized: string
+          claim_token: string
+          dispatched_at?: string
+          grant_id?: string | null
+          id?: string
+          job_id: string
+          reconciliation?: Json
+          responded_at?: string | null
+          response?: Json | null
+          state: string
+        }
+        Update: {
+          address_normalized?: string
+          claim_token?: string
+          dispatched_at?: string
+          grant_id?: string | null
+          id?: string
+          job_id?: string
+          reconciliation?: Json
+          responded_at?: string | null
+          response?: Json | null
+          state?: string
+        }
+        Relationships: []
+      }
       enrichment_intake_holds: {
         Row: {
           batch_id: string
@@ -2360,6 +2399,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      enrichment_release_grants: {
+        Row: {
+          approval_note: string
+          approved_by: string
+          created_at: string
+          expires_at: string
+          id: string
+          job_ids: string[]
+          max_dispatches: number
+          portfolio_id: string
+          revoked_at: string | null
+        }
+        Insert: {
+          approval_note: string
+          approved_by: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          job_ids: string[]
+          max_dispatches: number
+          portfolio_id: string
+          revoked_at?: string | null
+        }
+        Update: {
+          approval_note?: string
+          approved_by?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          job_ids?: string[]
+          max_dispatches?: number
+          portfolio_id?: string
+          revoked_at?: string | null
+        }
+        Relationships: []
       }
       ghl_sync_queue: {
         Row: {
@@ -6027,11 +6102,13 @@ export type Database = {
           address_normalized: string | null
           address_verified_at: string | null
           attempts: number
+          claim_token: string | null
           completed_at: string | null
           created_at: string
           id: string
           last_error: string | null
           last_result: string | null
+          lease_expires_at: string | null
           next_attempt_at: string
           portfolio_client_id: string
           portfolio_id: string
@@ -6045,11 +6122,13 @@ export type Database = {
           address_normalized?: string | null
           address_verified_at?: string | null
           attempts?: number
+          claim_token?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           last_error?: string | null
           last_result?: string | null
+          lease_expires_at?: string | null
           next_attempt_at?: string
           portfolio_client_id: string
           portfolio_id: string
@@ -6063,11 +6142,13 @@ export type Database = {
           address_normalized?: string | null
           address_verified_at?: string | null
           attempts?: number
+          claim_token?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
           last_error?: string | null
           last_result?: string | null
+          lease_expires_at?: string | null
           next_attempt_at?: string
           portfolio_client_id?: string
           portfolio_id?: string
@@ -7061,6 +7142,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      begin_enrichment_dispatch: {
+        Args: { p_id: string; p_token: string }
+        Returns: Json
+      }
       business_funnel: {
         Args: { _org_id: string; _since?: string }
         Returns: {
@@ -7078,6 +7163,35 @@ export type Database = {
       cancel_lender_team_invite: {
         Args: { _invite_id: string }
         Returns: undefined
+      }
+      claim_enrichment_jobs: {
+        Args: { p_limit?: number }
+        Returns: {
+          address_normalized: string | null
+          address_verified_at: string | null
+          attempts: number
+          claim_token: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          last_result: string | null
+          lease_expires_at: string | null
+          next_attempt_at: string
+          portfolio_client_id: string
+          portfolio_id: string
+          priority: number
+          requested_classes: string[]
+          started_at: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "property_enrichment_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       compute_lifecycle_stage: {
         Args: { _user_id: string }
@@ -7100,6 +7214,7 @@ export type Database = {
         Args: { _entity_id: string; _entity_type: string; _op?: string }
         Returns: undefined
       }
+      enrichment_job_grant: { Args: { p_job: string }; Returns: string }
       get_home_systems_for_agent: {
         Args: { p_client_id: string; p_org_id: string }
         Returns: Json
@@ -7167,6 +7282,10 @@ export type Database = {
       }
       org_active_profile_count: { Args: { _org_id: string }; Returns: number }
       org_profile_capacity: { Args: { _org_id: string }; Returns: number }
+      persist_enrichment_cache: {
+        Args: { p_id: string; p_patch: Json; p_table: string; p_token: string }
+        Returns: boolean
+      }
       portfolio_engagement: {
         Args: { _portfolio_id: string }
         Returns: {
@@ -7185,6 +7304,19 @@ export type Database = {
       reactivate_lender_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: undefined
+      }
+      reconcile_enrichment_dispatch: {
+        Args: {
+          p_action: string
+          p_actor: string
+          p_dispatch: string
+          p_evidence: string
+        }
+        Returns: boolean
+      }
+      record_enrichment_response: {
+        Args: { p_dispatch: string; p_response: Json; p_token: string }
+        Returns: boolean
       }
       record_post_call_save: {
         Args: {
@@ -7219,6 +7351,10 @@ export type Database = {
       remove_lender_member: {
         Args: { _org_id: string; _user_id: string }
         Returns: undefined
+      }
+      renew_enrichment_claim: {
+        Args: { p_id: string; p_token: string }
+        Returns: boolean
       }
       resend_lender_team_invite: {
         Args: { _invite_id: string; _token_hash: string }
@@ -7256,6 +7392,17 @@ export type Database = {
       set_lender_retained_members: {
         Args: { _org_id: string; _user_ids: string[] }
         Returns: undefined
+      }
+      write_enrichment_claim: {
+        Args: {
+          p_client_patch?: Json
+          p_id: string
+          p_patch: Json
+          p_token: string
+        }
+        Returns: {
+          id: string
+        }[]
       }
     }
     Enums: {

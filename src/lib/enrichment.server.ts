@@ -21,7 +21,7 @@ import { batchdataPrimaryEnabled, enrichViaBatchdata } from "./provider-primary.
 import { persistPortfolioOpportunities } from "./opportunities.server";
 import { persistHomeTeamCandidates } from "./home-team-candidates.server";
 import { verifyAddress } from "./geocode.server";
-import { claimEnrichmentJobs, renewEnrichmentClaim, writeEnrichmentClaim, QueueWriteError } from "./enrichment-claims.server";
+import { claimEnrichmentJobs, renewEnrichmentClaim, writeEnrichmentClaim, QueueWriteError, DispatchRefusedError } from "./enrichment-claims.server";
 
 /** Share of the monthly allowance background work is allowed to consume. */
 export const BACKGROUND_BUDGET_PCT = 70;
@@ -342,7 +342,21 @@ export async function runEnrichmentTick(opts?: {
     // bundled request and never touches ATTOM. Historical ATTOM data stays.
     if (batchdataPrimaryEnabled()) {
       await renewEnrichmentClaim(supabaseAdmin, item);
-      const bd = await enrichViaBatchdata(supabaseAdmin, address, item);
+      let bd: Awaited<ReturnType<typeof enrichViaBatchdata>>;
+      try {
+        bd = await enrichViaBatchdata(supabaseAdmin, address, item);
+      } catch (err) {
+        if (!(err instanceof DispatchRefusedError)) throw err;
+        // No paid lookup is authorized for this home: keep whatever is cached,
+        // never retry automatically.
+        const { hasRow } = await missingClasses(supabaseAdmin, address, wanted);
+        await writeEnrichmentClaim(supabaseAdmin, item, hasRow
+          ? { status: "done", last_result: "cache_partial", last_error: null, completed_at: now }
+          : { status: "skipped", last_result: "not_authorized", last_error: "Records lookup not authorized", completed_at: now },
+          hasRow ? { last_intel_refreshed_at: now } : {});
+        if (hasRow) { out.completed += 1; out.cachedOnly += 1; touchedPortfolios.add(client.portfolio_id); }
+        continue;
+      }
       const attempts = (item.attempts ?? 0) + 1;
       if (bd.status === "matched") {
         out.completed += 1;

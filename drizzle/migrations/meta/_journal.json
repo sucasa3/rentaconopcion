@@ -302,6 +302,13 @@
       "when": 1792601570594,
       "tag": "0042_household_import_multi_property",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792706363186,
+      "tag": "0043_enrichment_worker_claims_and_release_grants",
+      "breakpoints": true
     }
   ]
 }
