@@ -1480,7 +1480,20 @@ export const addAgentPortfolioClient = createServerFn({ method: "POST" })
       entityId: orgId,
       metadata: { method: "manual" },
     });
-    return { ok: true, id: row.id as string };
+    // Manual single adds enrich automatically (cache-first, one lookup max,
+    // budget-gated). A failure here never blocks the add itself.
+    let enrichment: { status: string; jobId: string | null } = { status: "queued", jobId: null };
+    try {
+      const { autoEnrichNewClient } = await import("./enrichment-auto.server");
+      enrichment = await autoEnrichNewClient(supabaseAdmin, {
+        clientId: row.id,
+        portfolioId: data.portfolioId,
+        actorUserId: context.userId,
+      });
+    } catch {
+      /* the homeowner is added; enrichment stays queued */
+    }
+    return { ok: true, id: row.id as string, enrichment };
   });
 
 // Bulk-add homeowners to an agent's sphere from a CSV/Excel upload.

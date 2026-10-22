@@ -52,8 +52,19 @@ function AddAgentClient() {
           notes: form.notes || null,
         },
       }),
-    onSuccess: () => {
-      toast.success("Homeowner added");
+    onSuccess: (r: any) => {
+      const st = r?.enrichment?.status as string | undefined;
+      const description =
+        st === "enriched"
+          ? "Property records were found and added to their profile."
+          : st === "cached"
+            ? "Property records were already on file for this address."
+            : st === "no_match"
+              ? "No property record matched that address — please double-check it."
+              : st === "failed"
+                ? "The records lookup failed; it will retry automatically."
+                : "Property records are being gathered now.";
+      toast.success("Homeowner added", { description });
       setForm({ ...EMPTY });
       qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
     },
