@@ -94,6 +94,10 @@ export function AgentToday() {
   const items = useMemo(() => queue?.items ?? [], [queue]);
   const book = overview?.books?.find((b: any) => b.id === overview.personalBookId) ?? null;
   const clientCount = overview?.counts?.people ?? 0;
+  const contactCount = (overview?.counts as any)?.contacts ?? 0;
+  // Genuine totals, never the display limit: the server counts every
+  // qualifying person before slicing the visible list.
+  const attentionTotal = queue?.counts?.total ?? items.length;
   const tasksDue = tasks?.openCount ?? 0;
 
   const outcomeFn = useServerFn(logOutcome);
@@ -164,9 +168,13 @@ export function AgentToday() {
           </span>
         </h1>
         <dl className="mt-3 grid max-w-xl grid-cols-3 divide-x divide-border">
-          <DailyMetric value={items.length} label={t("biz.at.need_attention")} />
+          <DailyMetric value={attentionTotal} label={t("biz.at.need_attention")} />
           <DailyMetric value={tasksDue} label={t("biz.at.followups")} />
-          <DailyMetric value={monitored} label={t("biz.at.monitored")} />
+          <DailyMetric
+            value={monitored}
+            label={t("biz.at.monitored")}
+            sub={contactCount > 0 && contactCount !== monitored ? t("biz.at.monitored_owners", { count: contactCount }) : null}
+          />
         </dl>
         {book?.id && <AddHomeownersActions bookId={book.id} />}
         {handled > 0 && (
@@ -527,11 +535,12 @@ function BestMove({
   );
 }
 
-function DailyMetric({ value, label }: { value: number; label: string }) {
+function DailyMetric({ value, label, sub }: { value: number; label: string; sub?: string | null }) {
   return (
     <div className="px-3 first:pl-0 last:pr-0">
       <dd className="text-lg font-semibold leading-none text-primary">{value.toLocaleString()}</dd>
       <dt className="mt-1 text-[11px] leading-tight text-text-secondary">{label}</dt>
+      {sub && <dt className="mt-0.5 text-[10px] leading-tight text-text-secondary/80">{sub}</dt>}
     </div>
   );
 }
