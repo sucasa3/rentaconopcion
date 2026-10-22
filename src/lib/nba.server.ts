@@ -97,6 +97,14 @@ export interface QueueItem {
   activated: boolean;
   category: string;
   categoryLabel: string;
+  /**
+   * Identity key grouping every property row that belongs to the same
+   * person (email, else phone, else normalized name). One person appears
+   * once in the queue no matter how many homes are on the list.
+   */
+  contactKey: string;
+  /** How many property rows on this book belong to the same person. */
+  propertyCount: number;
   score: number;
   strength: string;
   reasons: string[];
@@ -143,6 +151,8 @@ export interface QueueResult {
     nurture: number;
     engaged: number;
     readyToContact: number;
+    /** Genuine total of people worth attention, before any display limit. */
+    total: number;
   };
   yesterday: { sent: number; opened: number; clicked: number; replied: number };
   /**
@@ -163,7 +173,7 @@ export async function buildActionQueue(
 ): Promise<QueueResult> {
   const empty: QueueResult = {
     items: [],
-    counts: { hot: 0, warm: 0, nurture: 0, engaged: 0, readyToContact: 0 },
+    counts: { hot: 0, warm: 0, nurture: 0, engaged: 0, readyToContact: 0, total: 0 },
     yesterday: { sent: 0, opened: 0, clicked: 0, replied: 0 },
     recentOutcomes: [],
   };
