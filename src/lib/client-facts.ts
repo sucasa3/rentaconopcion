@@ -71,6 +71,14 @@ export interface ClientFacts {
   rateFromRecord?: boolean;
   /** True when there is no cached property record for this address yet. */
   hasRecord: boolean;
+  /**
+   * The recorded owner name clearly does not match this client (e.g. the
+   * home was sold to someone else). Equity/value claims are suppressed and
+   * the association should be verified before acting.
+   */
+  ownerMismatch?: boolean;
+  /** Owner name on the property record, when one is stored. */
+  ownerNameOnRecord?: string | null;
 }
 
 export function emptyClientFacts(clientId: string): ClientFacts {

@@ -67,7 +67,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       myUserId: userId,
       personalBookId: null as string | null,
       books: [] as any[],
-      counts: { people: 0, activated: 0, prospects: 0, opportunities: 0, campaigns: 0 },
+      counts: { people: 0, contacts: 0, activated: 0, prospects: 0, opportunities: 0, campaigns: 0 },
       opportunities: [] as any[],
       today: [] as any[],
       campaigns: [] as any[],
