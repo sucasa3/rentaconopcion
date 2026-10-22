@@ -21,6 +21,7 @@ import { emptyClientFacts, type ClientFacts } from "@/lib/client-facts";
 
 export type FactClientRow = {
   id: string;
+  client_name?: string | null;
   address_line1?: string | null;
   city?: string | null;
   state?: string | null;
@@ -73,6 +74,38 @@ function ownerOccupied(row: any): boolean | null {
     return normalizeAddress(mailing) === normalizeAddress(site);
   }
   return null;
+}
+
+/** Owner name stored on the property record, whatever provider shape it came in. */
+function ownerNameOnRecord(row: any): string | null {
+  const direct = row?.owner?.ownerName;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const p = row?.owner?.property?.[0];
+  const n = p?.owner?.owner1?.fullName ?? p?.owner?.names?.[0]?.full ?? null;
+  return typeof n === "string" && n.trim() ? n.trim() : null;
+}
+
+function nameTokens(name: string): Set<string> {
+  return new Set(
+    name
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 3),
+  );
+}
+
+/**
+ * True only on a CLEAR mismatch: the record names an owner and shares no
+ * name token with the client. Missing or partial data never flags.
+ */
+export function ownerNameMismatch(clientName: string | null | undefined, ownerName: string | null): boolean {
+  if (!clientName || !ownerName) return false;
+  const client = nameTokens(clientName);
+  const owner = nameTokens(ownerName);
+  if (!client.size || !owner.size) return false;
+  for (const t of client) if (owner.has(t)) return false;
+  return true;
 }
 
 /** Build the canonical snapshot for one cached property record. */
