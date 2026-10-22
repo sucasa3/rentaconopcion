@@ -19,6 +19,20 @@ describe("value engine", () => {
   });
 
   it("reconstructs value from a single lien and reported loan-to-value", () => {
+    // Assessor grossed up by PA's 0.8 ratio (275,000 / 0.8 = 343,750) agrees
+    // with the lien-implied 344,239, so the estimate stays offer-grade.
+    const r = estimateHomeValue({
+      state: "PA",
+      tax: { marketTotal: 275_000, taxYear: 2025 },
+      mortgage: { openLienCount: 1, totalOpenLienBalance: 241_656, ltv: 70.2 },
+      now: NOW,
+    });
+    expect(r.kind).toBe("mortgage_implied");
+    expect(r.value).toBe(344_097);
+    expect(isOfferGrade(r)).toBe(true);
+  });
+
+  it("drops to review-only when the assessor sharply contradicts the lien-implied value", () => {
     const r = estimateHomeValue({
       state: "PA",
       tax: { marketTotal: 375_500, taxYear: 2025 },
@@ -26,8 +40,8 @@ describe("value engine", () => {
       now: NOW,
     });
     expect(r.kind).toBe("mortgage_implied");
-    expect(r.value).toBe(344_239);
-    expect(isOfferGrade(r)).toBe(true);
+    expect(r.confidence).toBe("low");
+    expect(isOfferGrade(r)).toBe(false);
   });
 
   it("will not derive value from multiple liens", () => {
