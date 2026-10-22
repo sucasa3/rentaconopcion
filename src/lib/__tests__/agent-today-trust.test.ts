@@ -79,6 +79,35 @@ describe("signal engine — year-built guesses never become priorities", () => {
     expect(s.score).toBeGreaterThan(70);
     expect(s.strength).toBe("high");
   });
+
+  it("never turns a nominal transfer into an appreciation claim", () => {
+    // 139 N Woodland Dr: "sold" 2013 for $19,950; current estimate ~$250k.
+    const rec = {
+      asOf: new Date().toISOString(),
+      staleClasses: [],
+      property: { address: "139 N Woodland Dr", lastSalePrice: 19_950, lastSaleDate: "2013-05-26" },
+      financial: { value: { value: 250_000 }, refiSignal: null },
+      physical: { overdue: [], dueSoon: [], findings: [], openFindings: 0, timeline: [], documentCount: 0, serviceLogCount: 0 },
+      behavior: { valueChecks30d: 0, equityChecks30d: 0, openRequests: 0, sellingIntent: null },
+      completeness: { sections: [] },
+    } as unknown as HomeRecord;
+    const { signals } = evaluateHome(rec);
+    expect(signals.find((x) => x.type === "value_movement")).toBeUndefined();
+  });
+
+  it("still flags genuine appreciation since a real purchase", () => {
+    const rec = {
+      asOf: new Date().toISOString(),
+      staleClasses: [],
+      property: { address: "1 Main St", lastSalePrice: 200_000, lastSaleDate: "2021-05-26" },
+      financial: { value: { value: 280_000 }, refiSignal: null },
+      physical: { overdue: [], dueSoon: [], findings: [], openFindings: 0, timeline: [], documentCount: 0, serviceLogCount: 0 },
+      behavior: { valueChecks30d: 0, equityChecks30d: 0, openRequests: 0, sellingIntent: null },
+      completeness: { sections: [] },
+    } as unknown as HomeRecord;
+    const { signals } = evaluateHome(rec);
+    expect(signals.find((x) => x.type === "value_movement")).toBeDefined();
+  });
 });
 
 describe("ranking — no never-contacted bonus", () => {
