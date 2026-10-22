@@ -13,6 +13,15 @@ export class QueueWriteError extends Error {
   }
 }
 
+/** The database refused a provider dispatch (no active release grant, cap reached,
+ *  or address already bought under the grant). Nothing was sent. */
+export class DispatchRefusedError extends QueueWriteError {
+  constructor() {
+    super();
+    this.name = "DispatchRefusedError";
+  }
+}
+
 async function rpc(admin: any, name: string, args: Record<string, unknown>): Promise<any> {
   try {
     const { data, error } = await admin.rpc(name, args);
@@ -30,7 +39,8 @@ export async function guardedProviderRequest<T>(
   const dispatch = await rpc(admin, "begin_enrichment_dispatch", {
     p_id: claim.id, p_token: claim.claim_token,
   });
-  if (!dispatch || typeof dispatch.id !== "string") throw new QueueWriteError();
+  if (dispatch === null) throw new DispatchRefusedError();
+  if (typeof dispatch !== "object" || typeof dispatch.id !== "string") throw new QueueWriteError();
   if (dispatch.replay === true && dispatch.response != null) return dispatch.response as T;
   if (dispatch.replay !== false) throw new QueueWriteError();
   let response: T;
