@@ -272,6 +272,15 @@ export async function buildBusinessTasks(
     (a, b) => Number(b.key.startsWith("branding:")) - Number(a.key.startsWith("branding:")),
   );
 
-  return { tasks: withState, openCount: withState.filter((t) => !t.done).length };
+  // "Follow-ups due" counts only genuine to-dos (introductions to decide,
+  // campaign approvals, setup, missing addresses, enrichment backlog).
+  // Opportunity-derived "reach out" rows are suggestions — they already live
+  // in the action queue and must not inflate the due count.
+  const isSuggestion = (t: BusinessTask) => t.key.startsWith("opp:");
+  return {
+    tasks: withState,
+    openCount: withState.filter((t) => !t.done && !isSuggestion(t)).length,
+    suggestedCount: withState.filter((t) => !t.done && isSuggestion(t)).length,
+  };
 
 }
