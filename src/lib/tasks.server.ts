@@ -54,7 +54,7 @@ export async function buildBusinessTasks(
     orgIds = mine.map((m: any) => m.lender_org_id);
     isManager = mine.some((m: any) => m.role === "owner" || m.role === "admin" || m.role === "manager");
   }
-  if (!orgIds.length) return { tasks: [], openCount: 0 };
+  if (!orgIds.length) return { tasks: [], openCount: 0, suggestedCount: 0 };
 
   const { data: portfolios } = await supabase
     .from("lender_portfolios")
