@@ -206,6 +206,14 @@ export async function buildActionQueue(
   const clientById = new Map<string, any>(rows.map((c: any) => [c.id, c]));
   const clientIds = rows.map((c: any) => c.id);
 
+  // One person can own several homes on the list: count property rows per
+  // contact so the queue can show one card per person with the real count.
+  const propertyCountByContact = new Map<string, number>();
+  for (const c of rows) {
+    const k = contactKeyFor(c);
+    propertyCountByContact.set(k, (propertyCountByContact.get(k) ?? 0) + 1);
+  }
+
 
   // Channel permission + suppression records. Consent metadata stays on the
   // server; only the resulting decision is sent to the client.
@@ -407,6 +415,8 @@ export async function buildActionQueue(
       // changes, so an agent never reads "HELOC opportunity".
       category: o.category,
       categoryLabel: narrative.headline,
+      contactKey: contactKeyFor(c),
+      propertyCount: propertyCountByContact.get(contactKeyFor(c)) ?? 1,
       score: o.score ?? 0,
       strength: o.strength ?? "emerging",
       reasons: orgType === "lender" ? lenderSafeReasons(o.reasons ?? []) : o.reasons ?? [],
@@ -456,7 +466,15 @@ export async function buildActionQueue(
     const cur = bestByClient.get(it.clientId);
     if (!cur || it.rank > cur.rank) bestByClient.set(it.clientId, it);
   }
-  const deduped = [...bestByClient.values()]
+  // Then one card per PERSON: several property rows for the same contact
+  // collapse into their single best opportunity (the card still shows how
+  // many homes they have on the list).
+  const bestByContact = new Map<string, QueueItem>();
+  for (const it of bestByClient.values()) {
+    const cur = bestByContact.get(it.contactKey);
+    if (!cur || it.rank > cur.rank) bestByContact.set(it.contactKey, it);
+  }
+  const deduped = [...bestByContact.values()]
     .filter((i) => i.lastOutcome !== "closed" && i.lastOutcome !== "not_interested")
     .sort((a, b) => b.rank - a.rank);
 
@@ -479,6 +497,7 @@ export async function buildActionQueue(
       nurture: deduped.filter((i) => i.temperature === "nurture").length,
       engaged: deduped.filter((i) => i.engagedRecently).length,
       readyToContact: deduped.filter((i) => i.temperature === "hot" && !i.lastOutcome).length,
+      total: deduped.length,
     },
     yesterday: y,
     recentOutcomes: (outcomes ?? [])
