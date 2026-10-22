@@ -85,7 +85,11 @@ export function evaluateHome(record: HomeRecord): SignalReport {
   // ---- Condition -----------------------------------------------------------
   for (const item of physical.overdue) {
     const yearsOver = Math.abs(Math.round(item.yearsLeft));
-    const score = Math.min(96, 72 + yearsOver * 3);
+    // Age guessed from the year the home was built is a maintenance reminder,
+    // never a priority signal — cap it below the "strong" band so it can
+    // never outrank evidence-backed opportunities.
+    const estimated = item.source === "year_built";
+    const score = estimated ? Math.min(44, 36 + yearsOver * 2) : Math.min(96, 72 + yearsOver * 3);
     out.push({
       key: `component_overdue:${item.key}`,
       type: "component_overdue",
@@ -110,7 +114,8 @@ export function evaluateHome(record: HomeRecord): SignalReport {
   }
 
   for (const item of physical.dueSoon) {
-    const score = 52;
+    // Same guard as overdue: a year-built guess stays a gentle reminder.
+    const score = item.source === "year_built" ? 38 : 52;
     out.push({
       key: `component_due_soon:${item.key}`,
       type: "component_due_soon",
@@ -194,7 +199,11 @@ export function evaluateHome(record: HomeRecord): SignalReport {
   if (financial.value.value != null && property.lastSalePrice && property.lastSalePrice > 0) {
     const delta = financial.value.value - property.lastSalePrice;
     const pct = delta / property.lastSalePrice;
-    if (pct >= 0.1) {
+    // A "sale" far below today's value is usually a nominal or family
+    // transfer ($10k deed), not a market price — never turn it into an
+    // appreciation claim.
+    const plausibleSale = property.lastSalePrice >= 0.4 * financial.value.value;
+    if (pct >= 0.1 && plausibleSale) {
       const score = Math.min(70, 40 + Math.round(pct * 100));
       out.push({
         key: "value_movement",

@@ -1485,6 +1485,8 @@ export const en = {
   "biz.at.need_attention": "Need attention",
   "biz.at.followups": "Follow-ups due",
   "biz.at.monitored": "Monitored",
+  "biz.at.monitored_owners": "{count} owners",
+  "biz.at.homes_on_list": "{count} homes on your list",
   "biz.at.handled_one": "{count} relationship handled today",
   "biz.at.handled_many": "{count} relationships handled today",
   "biz.at.found": "SuCasa found the relationship most worth your attention.",

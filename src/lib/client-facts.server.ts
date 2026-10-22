@@ -21,6 +21,7 @@ import { emptyClientFacts, type ClientFacts } from "@/lib/client-facts";
 
 export type FactClientRow = {
   id: string;
+  client_name?: string | null;
   address_line1?: string | null;
   city?: string | null;
   state?: string | null;
@@ -75,6 +76,38 @@ function ownerOccupied(row: any): boolean | null {
   return null;
 }
 
+/** Owner name stored on the property record, whatever provider shape it came in. */
+function ownerNameOnRecord(row: any): string | null {
+  const direct = row?.owner?.ownerName;
+  if (typeof direct === "string" && direct.trim()) return direct.trim();
+  const p = row?.owner?.property?.[0];
+  const n = p?.owner?.owner1?.fullName ?? p?.owner?.names?.[0]?.full ?? null;
+  return typeof n === "string" && n.trim() ? n.trim() : null;
+}
+
+function nameTokens(name: string): Set<string> {
+  return new Set(
+    name
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 3),
+  );
+}
+
+/**
+ * True only on a CLEAR mismatch: the record names an owner and shares no
+ * name token with the client. Missing or partial data never flags.
+ */
+export function ownerNameMismatch(clientName: string | null | undefined, ownerName: string | null): boolean {
+  if (!clientName || !ownerName) return false;
+  const client = nameTokens(clientName);
+  const owner = nameTokens(ownerName);
+  if (!client.size || !owner.size) return false;
+  for (const t of client) if (owner.has(t)) return false;
+  return true;
+}
+
 /** Build the canonical snapshot for one cached property record. */
 export function factsFromRecord(
   client: FactClientRow,
@@ -108,6 +141,12 @@ export function factsFromRecord(
   );
 
   const lastSaleDate = sales?.lastSale?.date ?? client.close_date ?? null;
+
+  // If the record clearly names a different owner, the home may have been
+  // sold since this person was added to the list. Keep the raw facts visible
+  // but suppress equity claims until the association is verified.
+  const recordOwner = ownerNameOnRecord(row);
+  const mismatch = ownerNameMismatch(client.client_name, recordOwner);
 
   // Mortgage facts are only trusted when the same lien is the one the equity
   // read treats as current: not paid off, not "no active loan found".
@@ -152,9 +191,13 @@ export function factsFromRecord(
     lastPermitDate: permits?.lastPermitDate ?? null,
     permitTotalValue: permits?.totalValue ?? null,
     ownerOccupied: ownerOccupied(row),
-    equityActionable: ribbon.equityActionable,
+    equityActionable: mismatch ? false : ribbon.equityActionable,
     equityInferredNoLien: ribbon.equityInferredNoLien,
-    suppressionReason: ribbon.equitySuppressionReason,
+    suppressionReason: mismatch
+      ? `Property records list a different owner (${recordOwner}) — verify this home still belongs to them before acting on value or equity.`
+      : ribbon.equitySuppressionReason,
+    ownerMismatch: mismatch,
+    ownerNameOnRecord: recordOwner,
     freeAndClear: ribbon.noMortgageOnRecord,
     lienStatus: ribbon.lienStatus,
     multiLien: ribbon.multiLien,

@@ -67,7 +67,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       myUserId: userId,
       personalBookId: null as string | null,
       books: [] as any[],
-      counts: { people: 0, activated: 0, prospects: 0, opportunities: 0, campaigns: 0 },
+      counts: { people: 0, contacts: 0, activated: 0, prospects: 0, opportunities: 0, campaigns: 0 },
       opportunities: [] as any[],
       today: [] as any[],
       campaigns: [] as any[],
@@ -111,10 +111,21 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
 
     const { data: clients } = await supabase
       .from("lender_portfolio_clients")
-      .select("id, portfolio_id, client_name, client_email, homeowner_id, created_at, updated_at")
+      .select("id, portfolio_id, client_name, client_email, client_phone, homeowner_id, created_at, updated_at")
       .in("portfolio_id", bookIds);
     const rows = clients ?? [];
     const clientById = new Map(rows.map((c: any) => [c.id, c]));
+    // Unique people behind the property rows (one person can own several
+    // homes): email first, then phone, then normalized name.
+    const contactKeys = new Set(
+      rows.map((c: any) => {
+        const email = c.client_email?.trim().toLowerCase();
+        if (email) return `e:${email}`;
+        const phone = c.client_phone?.replace(/\D/g, "");
+        if (phone && phone.length >= 7) return `p:${phone}`;
+        return `n:${String(c.client_name ?? "").trim().toLowerCase().replace(/\s+/g, " ")}`;
+      }),
+    );
 
     const { data: opps } = rows.length
       ? await supabase
@@ -224,6 +235,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       })),
       counts: {
         people: rows.length,
+        contacts: contactKeys.size,
         activated: rows.filter((c: any) => c.homeowner_id).length,
         prospects: rows.filter((c: any) => !c.homeowner_id).length,
         opportunities: opportunities.length,

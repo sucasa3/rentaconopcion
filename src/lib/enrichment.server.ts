@@ -142,7 +142,7 @@ async function reprioritize(supabaseAdmin: any): Promise<void> {
 }
 
 /** Background share of this month's allowance already consumed. */
-async function backgroundSpend(
+export async function backgroundSpend(
   supabaseAdmin: any,
 ): Promise<{ used: number; included: number; cacheOnly: boolean; allowed: number }> {
   const monthStart = new Date();

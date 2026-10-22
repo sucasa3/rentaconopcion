@@ -302,9 +302,12 @@ export function rankScore(i: RankInput): number {
   if (i.strength === "strong") n += 12;
   else if (i.strength === "moderate") n += 4;
   if (i.engagedRecently) n += 30;
-  if (i.daysSinceContact == null) n += 6;
-  else if (i.daysSinceContact < 7) n -= 25;
-  else if (i.daysSinceContact > 60) n += 8;
+  // No bonus for never-contacted: an untouched record is not evidence of
+  // opportunity, and the bonus inflated brand-new books to "Hot".
+  if (i.daysSinceContact != null) {
+    if (i.daysSinceContact < 7) n -= 25;
+    else if (i.daysSinceContact > 60) n += 8;
+  }
   if (i.worked) n -= 15;
   return Math.max(0, Math.round(n));
 }
@@ -321,4 +324,22 @@ export function temperatureFor(i: RankInput): Temperature {
 export function whyLine(reasons: string[] | null | undefined, fallback: string): string {
   const first = (reasons ?? []).find((r) => r && r.trim());
   return first ?? fallback;
+}
+
+/**
+ * Identity key for "the same person" across multiple property rows in a
+ * book: email first, then phone, then normalized name. Never a name-only
+ * match when contact details exist — two different people can share a name.
+ */
+export function contactKeyFor(c: {
+  client_email?: string | null;
+  client_phone?: string | null;
+  client_name?: string | null;
+}): string {
+  const email = c.client_email?.trim().toLowerCase();
+  if (email) return `email:${email}`;
+  const phone = c.client_phone?.replace(/\D/g, "");
+  if (phone && phone.length >= 7) return `phone:${phone}`;
+  const name = String(c.client_name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return `name:${name}`;
 }

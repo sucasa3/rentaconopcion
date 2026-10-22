@@ -31,7 +31,7 @@ export async function buildBusinessTasks(
   supabase: any,
   userId: string,
   orgType: "agent" | "lender",
-): Promise<{ tasks: BusinessTask[]; openCount: number }> {
+): Promise<{ tasks: BusinessTask[]; openCount: number; suggestedCount: number }> {
   const base = orgType === "agent" ? "/agent" : "/lender";
 
   // --- Which orgs and books this user can see -----------------------------
@@ -54,7 +54,7 @@ export async function buildBusinessTasks(
     orgIds = mine.map((m: any) => m.lender_org_id);
     isManager = mine.some((m: any) => m.role === "owner" || m.role === "admin" || m.role === "manager");
   }
-  if (!orgIds.length) return { tasks: [], openCount: 0 };
+  if (!orgIds.length) return { tasks: [], openCount: 0, suggestedCount: 0 };
 
   const { data: portfolios } = await supabase
     .from("lender_portfolios")
@@ -272,6 +272,15 @@ export async function buildBusinessTasks(
     (a, b) => Number(b.key.startsWith("branding:")) - Number(a.key.startsWith("branding:")),
   );
 
-  return { tasks: withState, openCount: withState.filter((t) => !t.done).length };
+  // "Follow-ups due" counts only genuine to-dos (introductions to decide,
+  // campaign approvals, setup, missing addresses, enrichment backlog).
+  // Opportunity-derived "reach out" rows are suggestions — they already live
+  // in the action queue and must not inflate the due count.
+  const isSuggestion = (t: BusinessTask) => t.key.startsWith("opp:");
+  return {
+    tasks: withState,
+    openCount: withState.filter((t) => !t.done && !isSuggestion(t)).length,
+    suggestedCount: withState.filter((t) => !t.done && isSuggestion(t)).length,
+  };
 
 }
