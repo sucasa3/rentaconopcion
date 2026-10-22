@@ -302,9 +302,12 @@ export function rankScore(i: RankInput): number {
   if (i.strength === "strong") n += 12;
   else if (i.strength === "moderate") n += 4;
   if (i.engagedRecently) n += 30;
-  if (i.daysSinceContact == null) n += 6;
-  else if (i.daysSinceContact < 7) n -= 25;
-  else if (i.daysSinceContact > 60) n += 8;
+  // No bonus for never-contacted: an untouched record is not evidence of
+  // opportunity, and the bonus inflated brand-new books to "Hot".
+  if (i.daysSinceContact != null) {
+    if (i.daysSinceContact < 7) n -= 25;
+    else if (i.daysSinceContact > 60) n += 8;
+  }
   if (i.worked) n -= 15;
   return Math.max(0, Math.round(n));
 }

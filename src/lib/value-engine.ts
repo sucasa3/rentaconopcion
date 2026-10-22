@@ -282,11 +282,23 @@ export function estimateHomeValue(input: ValueEngineInput): ValueEngineResult {
   const low = Math.round(Math.min(value * (1 - spread), ...pool.map((v) => Math.min(v, value))));
   const high = Math.round(Math.max(value * (1 + spread), ...pool.map((v) => Math.max(v, value))));
 
-  const reason = corroborated
-    ? `${primary.reason} Cross-checked against ${agreeing.map((c) => c.label.toLowerCase()).join(" and ")}.`
-    : disagreeing.length > 0
-      ? `${primary.reason} Other public-record signals differ, so the range is wider.`
-      : primary.reason;
+  // A strong independent signal far from the primary means the record
+  // disagrees with itself (e.g. a $105k recent sale against a $313k
+  // loan-implied value). The estimate stays visible, but drops to
+  // review-only confidence, which suppresses equity and offer claims on
+  // every downstream surface.
+  const wideDisagreement = disagreeing.some(
+    (c) => Math.abs(c.value - primary.value) / primary.value > WIDE_DISAGREEMENT_PCT,
+  );
+  if (wideDisagreement) confidence = "low";
+
+  const reason = wideDisagreement
+    ? `${primary.reason} Other public-record signals point to a very different value, so treat this as a rough estimate only.`
+    : corroborated
+      ? `${primary.reason} Cross-checked against ${agreeing.map((c) => c.label.toLowerCase()).join(" and ")}.`
+      : disagreeing.length > 0
+        ? `${primary.reason} Other public-record signals differ, so the range is wider.`
+        : primary.reason;
 
   return {
     value,
@@ -302,6 +314,13 @@ export function estimateHomeValue(input: ValueEngineInput): ValueEngineResult {
     corroborated,
   };
 }
+
+/**
+ * How far an independent candidate may sit from the primary before the whole
+ * estimate is treated as unreliable. 25%: normal method spread (assessor vs
+ * sale vs AVM) stays inside it; a genuinely contradictory record does not.
+ */
+export const WIDE_DISAGREEMENT_PCT = 0.25;
 
 /** Money-side features (equity offers, cash-out) require a trustworthy number. */
 export function isOfferGrade(result: ValueEngineResult): boolean {
