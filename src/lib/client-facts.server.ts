@@ -142,6 +142,12 @@ export function factsFromRecord(
 
   const lastSaleDate = sales?.lastSale?.date ?? client.close_date ?? null;
 
+  // If the record clearly names a different owner, the home may have been
+  // sold since this person was added to the list. Keep the raw facts visible
+  // but suppress equity claims until the association is verified.
+  const recordOwner = ownerNameOnRecord(row);
+  const mismatch = ownerNameMismatch(client.client_name, recordOwner);
+
   // Mortgage facts are only trusted when the same lien is the one the equity
   // read treats as current: not paid off, not "no active loan found".
   const lienUsable =
@@ -185,9 +191,13 @@ export function factsFromRecord(
     lastPermitDate: permits?.lastPermitDate ?? null,
     permitTotalValue: permits?.totalValue ?? null,
     ownerOccupied: ownerOccupied(row),
-    equityActionable: ribbon.equityActionable,
+    equityActionable: mismatch ? false : ribbon.equityActionable,
     equityInferredNoLien: ribbon.equityInferredNoLien,
-    suppressionReason: ribbon.equitySuppressionReason,
+    suppressionReason: mismatch
+      ? `Property records list a different owner (${recordOwner}) — verify this home still belongs to them before acting on value or equity.`
+      : ribbon.equitySuppressionReason,
+    ownerMismatch: mismatch,
+    ownerNameOnRecord: recordOwner,
     freeAndClear: ribbon.noMortgageOnRecord,
     lienStatus: ribbon.lienStatus,
     multiLien: ribbon.multiLien,
