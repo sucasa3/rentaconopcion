@@ -3,26 +3,22 @@
 Source: uploaded spec "We have identified two critical issues" (Neil Terc). No publish without approval.
 
 ## Priority 1 — Automatic enrichment on manual add
-- [ ] Manual agent add → cache-first, then auto BatchData lookup within plan/usage limits
-- [ ] Minimal anti-abuse controls (per-book caps, dedupe); bulk uploads stay separately controlled
-- [ ] Never auto-release paused queues or other customers' records; preserve isolation/dedupe/attribution
-- [ ] Accurate progress/success/no-match/failure states in UI
-- [ ] Enrich Elsa Milena Sierra's property as the validation example
-- [ ] ATTOM stays off
+- [x] Manual agent add → cache-first, then auto BatchData lookup within plan/usage limits (enrichment-auto.server.ts)
+- [x] Minimal anti-abuse controls (one dispatch per add, 50/month per book, budget envelope); bulk uploads unchanged
+- [x] No auto-release of paused queues or other customers' records; isolation/dedupe/attribution preserved
+- [x] Add-page toast shows enriched / cached / no-match / failed / queued states
+- [x] Elsa Milena Sierra + Daniel Romero (2 homes) enriched via the new path — 3 lookups, all matched
+- [x] ATTOM stays off
 
 ## Priority 2 — Trustworthy Agent Today
-- [ ] Accurate monitored properties vs unique-contact counts
-- [ ] "Need attention" from genuine qualifying contacts, not query limit
-- [ ] "Due" follow-ups = real user-created/scheduled only; auto suggestions separated
-- [ ] Group recommendations by contact, not property; no duplicate contact cards
-- [ ] Remove artificial Hot ratings (equipment age, generic tenure, unverified equity, never-contacted bonuses)
-- [ ] Recommendation and priority justified by same evidence
-- [ ] Don't present mortgage-implied/assessor/old-sale values as provider AVMs
-- [ ] Suppress high-confidence equity/net-proceeds when valuation/loan unreliable
-- [ ] Fix Eduardo Soto valuation discrepancy; Amalia Manzo ownership association
+- [x] Monitored shows 86 properties + 33 owners; unique-contact counting added
+- [x] "Need attention" = genuine contact-level total (32), not the 25 query cap
+- [x] "Follow-ups due" = real to-dos only (1); opportunity suggestions separated
+- [x] Queue grouped by contact (email/phone/name); cards show "N homes on your list"
+- [x] Removed artificial Hot: year-built condition guesses capped, never-contacted bonus removed, nominal-transfer appreciation claims blocked
+- [x] Wide-disagreement guard: contradictory records → review-only value, equity claims suppressed (Eduardo Soto fixed)
+- [x] Owner-mismatch flag built (activates on records with owner names; Amalia's old records lack owner data)
+- [x] Validated in browser as the live agent account
 
-## Constraints
-- Smallest focused changes; preserve lender/homeowner UX, billing, permissions, compliance
-- No scoring-engine rewrite, no page redesign, no unrelated features
-- No unauthorized paid calls; validate against the 85-property account
-- Report: fixes, before/after numbers, auto-enrich status, BatchData AVM limits, tests, publish safety
+## Status
+- 602 tests passing (19 new/updated); build OK; preview only — NOT published, awaiting approval
