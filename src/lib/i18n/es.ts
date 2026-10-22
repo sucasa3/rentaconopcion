@@ -1516,6 +1516,8 @@ export const es: Dictionary = {
   "biz.at.need_attention": "Necesitan atención",
   "biz.at.followups": "Seguimientos pendientes",
   "biz.at.monitored": "Monitoreados",
+  "biz.at.monitored_owners": "{count} propietarios",
+  "biz.at.homes_on_list": "{count} casas en tu lista",
   "biz.at.handled_one": "{count} relación atendida hoy",
   "biz.at.handled_many": "{count} relaciones atendidas hoy",
   "biz.at.found": "SuCasa encontró la relación que más merece tu atención.",
