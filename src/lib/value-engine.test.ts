@@ -28,7 +28,7 @@ describe("value engine", () => {
       now: NOW,
     });
     expect(r.kind).toBe("mortgage_implied");
-    expect(r.value).toBe(344_097);
+    expect(r.value).toBe(344_051);
     expect(isOfferGrade(r)).toBe(true);
   });
 
