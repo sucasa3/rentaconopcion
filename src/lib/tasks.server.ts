@@ -31,7 +31,7 @@ export async function buildBusinessTasks(
   supabase: any,
   userId: string,
   orgType: "agent" | "lender",
-): Promise<{ tasks: BusinessTask[]; openCount: number }> {
+): Promise<{ tasks: BusinessTask[]; openCount: number; suggestedCount: number }> {
   const base = orgType === "agent" ? "/agent" : "/lender";
 
   // --- Which orgs and books this user can see -----------------------------
