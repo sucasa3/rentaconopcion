@@ -280,7 +280,7 @@ export function AgentToday() {
         activated={overview?.counts?.activated ?? 0}
         opportunities={overview?.counts?.opportunities ?? 0}
         engaged={engagedCount}
-        worthAttention={items.length}
+        worthAttention={attentionTotal}
         tasksDue={tasksDue}
         bookId={book?.id ?? null}
       />
@@ -315,6 +315,11 @@ function NextRelationship({
         <button type="button" onClick={onFocus} className="min-w-0 flex-1 text-left">
           <p className="truncate text-[16px] font-semibold leading-tight">{item.name}</p>
           <p className="mt-0.5 text-xs font-medium text-status-opportunity">{item.categoryLabel}</p>
+          {item.propertyCount > 1 && (
+            <p className="mt-0.5 text-[11px] font-medium text-text-secondary">
+              {t("biz.at.homes_on_list", { count: item.propertyCount })}
+            </p>
+          )}
           <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-text-secondary">{item.why}</p>
         </button>
       </div>
@@ -385,6 +390,11 @@ function BestMove({
           <span className={cn("h-1.5 w-1.5 rounded-full", meta.dot)} aria-hidden />
           {t(`biz.temp.${item.temperature}` as const)}
         </p>
+        {item.propertyCount > 1 && (
+          <p className="mt-1 text-[11px] font-medium text-text-secondary">
+            {t("biz.at.homes_on_list", { count: item.propertyCount })}
+          </p>
+        )}
         {supportingFacts.length ? (
           <p className="mt-2 text-[13px] leading-snug text-text-secondary">
             {supportingFacts.join(" · ")}
