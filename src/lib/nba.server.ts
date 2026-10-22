@@ -7,6 +7,7 @@
  */
 
 import {
+  contactKeyFor,
   recipeFor,
   rankScore,
   temperatureFor,

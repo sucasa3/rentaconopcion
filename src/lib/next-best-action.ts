@@ -325,3 +325,21 @@ export function whyLine(reasons: string[] | null | undefined, fallback: string):
   const first = (reasons ?? []).find((r) => r && r.trim());
   return first ?? fallback;
 }
+
+/**
+ * Identity key for "the same person" across multiple property rows in a
+ * book: email first, then phone, then normalized name. Never a name-only
+ * match when contact details exist — two different people can share a name.
+ */
+export function contactKeyFor(c: {
+  client_email?: string | null;
+  client_phone?: string | null;
+  client_name?: string | null;
+}): string {
+  const email = c.client_email?.trim().toLowerCase();
+  if (email) return `email:${email}`;
+  const phone = c.client_phone?.replace(/\D/g, "");
+  if (phone && phone.length >= 7) return `phone:${phone}`;
+  const name = String(c.client_name ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  return `name:${name}`;
+}
