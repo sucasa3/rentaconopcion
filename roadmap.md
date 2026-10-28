@@ -22,3 +22,7 @@ Source: uploaded spec "We have identified two critical issues" (Neil Terc). No p
 
 ## Status
 - 602 tests passing (19 new/updated); build OK; preview only — NOT published, awaiting approval
+
+## Explore Your Mortgage Options (/money) — Oct 28
+- [x] Agent-confirmed lending contact, homeowner card, consent modal, LO book + opportunity + email
+- [ ] Legal review (RESPA) and NMLS verification — awaiting attorney/user
