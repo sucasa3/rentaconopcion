@@ -32,13 +32,15 @@ async function officerIdentity(admin: Admin, lenderOrgId: string, userId: string
     const { data: p } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();
     name = (p?.full_name as string | null) ?? null;
   }
+  const nmlsId = (v: unknown) =>
+    typeof v === "string" && v.trim() ? v.trim().replace(/^NMLS\s*#?\s*/i, "") : null;
   return {
     name,
     title: (profile?.contact_title as string | null) ?? null,
     company: (org?.name as string | null) ?? null,
     // Individual NMLS first; the company NMLS is labeled separately.
-    nmls: (profile?.license_number as string | null) ?? null,
-    companyNmls: (org?.license_number as string | null) ?? null,
+    nmls: nmlsId(profile?.license_number),
+    companyNmls: nmlsId(org?.license_number),
   };
 }
 
