@@ -1,8 +1,8 @@
 /**
  * Connected Lending Partner — server authority.
  *
- * Economically inert by construction: no reads or writes of plans, prices,
- * capacity, credits, sponsorships or rankings. The only path to a lender being
+ * Placement is independent of plans, prices, capacity or sponsorship. Intake
+ * respects the ordinary capacity controls. The only path to a lender being
  * shown is an agent's own designation over a live connection, to a homeowner
  * who linked their own account to that agent.
  */
@@ -180,24 +180,25 @@ export async function requestLendingConversation(
   if (error) throw new Error(error.message);
   if (!result?.requestId) throw new Error("Your request could not be recorded");
   const req = { id: result.requestId as string };
-  const { data: recorded } = await admin.from("homeowner_lending_requests").select("notified, contact_name").eq("id", req.id).single();
+  const { data: recorded } = await admin.from("homeowner_lending_requests").select("notified, contact_name, lo_user_id, preferred_channel").eq("id", req.id).single();
+  if (!recorded) throw new Error("Your request was recorded but could not be read back");
   if (recorded?.notified) return { ok: true as const, ...result };
 
   // Notify the assigned officer (transactional: about a request they must act on).
   let notified = false;
   try {
-    const { data: u } = await admin.auth.admin.getUserById(d.lo_user_id);
+    const { data: u } = await admin.auth.admin.getUserById(recorded.lo_user_id);
     const to = u?.user?.email as string | undefined;
     if (to) {
       const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
       const res = await sendTemplateEmail("lending-conversation-request", to, {
         purpose: "transactional",
-        recipientUserId: d.lo_user_id,
+        recipientUserId: recorded.lo_user_id,
         idempotencyKey: `lending-request-${req.id}`,
         templateData: {
           officerName: contact.officer.name,
           homeownerName: recorded?.contact_name ?? "A homeowner",
-          channel: args.channel,
+          channel: recorded.preferred_channel,
           agentName: contact.agentName,
         },
       });

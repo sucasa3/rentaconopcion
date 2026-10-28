@@ -93,6 +93,7 @@ export interface LenderClientRow {
   engagedRecently: boolean;
   engagementLine: string | null;
   askedToConnect: boolean;
+  inquirySnapshot: { estimatedValue: number | null; estimatedEquity: number | null; capturedAt: string | null } | null;
   annualReviewDue: boolean;
   reviews: ReviewCard[];
   priority: number;
@@ -233,7 +234,7 @@ export async function readLenderWorkspace(
         .limit(500),
     ]);
 
-  const { data: inboundRequests, error: inboundError } = scope.bookIds.length
+  const { data: inboundRequests, error: inboundError } = (clients ?? []).length
     ? await admin().from("homeowner_lending_requests").select("*").in("lender_client_id", (clients ?? []).map((c: any) => c.id)).order("created_at", { ascending: false })
     : { data: [], error: null };
   if (inboundError) throw new Error(inboundError.message);
@@ -247,6 +248,7 @@ export async function readLenderWorkspace(
 
   // Consent, sponsorship and agent-relationship lookups.
   const requestByHomeowner = new Map<string, any>();
+  const grantedConsentIds = new Set((consents ?? []).map((c: any) => c.id));
   const intelByHomeowner = new Map<string, any>();
   for (const c of (consents ?? []) as any[]) {
     if (c.consent_type === "connection_request" && !requestByHomeowner.has(c.homeowner_id))
@@ -407,7 +409,7 @@ export async function readLenderWorkspace(
 
   for (const c of rows) {
     const inbound = inboundByClient.get(c.id);
-    const activeInbound = inbound?.status === "open" ? inbound : null;
+    const activeInbound = inbound?.status === "open" && grantedConsentIds.has(inbound.consent_record_id) ? inbound : null;
     const consentRequest = c.homeowner_id ? requestByHomeowner.get(c.homeowner_id) : null;
     const request = activeInbound ? { scope: activeInbound.shared_fields } :
       consentRequest?.context?.via === "money_lending_contact" ? null : consentRequest;
@@ -583,6 +585,11 @@ export async function readLenderWorkspace(
         ? [c.address_line1, c.city, c.state].filter(Boolean).join(", ") || null
         : null,
       homeownerId: c.homeowner_id ?? null,
+      inquirySnapshot: inbound?.shared_fields?.includes("value_equity") && grantedConsentIds.has(inbound.consent_record_id) && inbound.shared_value_equity ? {
+        estimatedValue: inbound.shared_value_equity.estimated_value ?? null,
+        estimatedEquity: inbound.shared_value_equity.estimated_equity ?? null,
+        capturedAt: inbound.shared_value_equity.captured_at ?? null,
+      } : null,
       access,
       permissions: perm,
       channels: {
