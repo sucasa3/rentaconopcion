@@ -25,4 +25,6 @@ Source: uploaded spec "We have identified two critical issues" (Neil Terc). No p
 
 ## Explore Your Mortgage Options (/money) — Oct 28
 - [x] Agent-confirmed lending contact, homeowner card, consent modal, LO book + opportunity + email
+- [ ] Refine atomic inbound inquiry delivery, capacity handling and public-record intelligence access without widening private sharing
+- [ ] Verify consent, duplicates/resolution, revocation, LO Today/Opportunities/book, notifications and Spanish/mobile
 - [ ] Legal review (RESPA) and NMLS verification — awaiting attorney/user
