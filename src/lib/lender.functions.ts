@@ -1031,26 +1031,19 @@ export const getMatchedLenderForMe = createServerFn({ method: "GET" })
 
     const { data: portfolioMatch } = await supabaseAdmin
       .from("lender_portfolio_clients")
-      .select("portfolio_id, lender_portfolios(lender_org_id)")
+      .select("portfolio_id, lender_portfolios!inner(lender_org_id, lender_orgs!inner(org_type))")
       .eq("homeowner_id", context.userId)
+      .eq("lender_portfolios.lender_orgs.org_type", "lender")
+      .is("archived_at", null)
       .limit(1)
       .maybeSingle();
     const matchedOrgId =
       (portfolioMatch as any)?.lender_portfolios?.lender_org_id ?? null;
 
-    let orgId: string | null = matchedOrgId;
-    let matchType: "portfolio" | "roundrobin" = "portfolio";
-    if (!orgId) {
-      const { data: fallback } = await supabaseAdmin
-        .from("lender_orgs")
-        .select("id")
-        .eq("active", true)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      orgId = fallback?.id ?? null;
-      matchType = "roundrobin";
-    }
+    // No fallback lender: a lender is never shown just because it has a
+    // SuCasa account (see lending-partner.ts for the agent-designated path).
+    const orgId: string | null = matchedOrgId;
+    const matchType = "portfolio" as "portfolio" | "roundrobin";
     if (!orgId) return null;
 
     const { data: org } = await supabaseAdmin

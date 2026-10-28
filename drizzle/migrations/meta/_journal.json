@@ -309,6 +309,13 @@
       "when": 1792706363186,
       "tag": "0043_enrichment_worker_claims_and_release_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793229129214,
+      "tag": "0044_migration",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { HomeownerShell } from "@/components/homeowner-shell";
 import { HomeIntelPanel } from "@/components/home-intel-panel";
 import { EquityMortgagePanel } from "@/components/equity-mortgage-panel";
 import { SellerIntentCard } from "@/components/seller-intent-card";
+import { MortgageOptionsCard } from "@/components/mortgage-options-card";
 
 export const Route = createFileRoute("/_authenticated/money")({
   ssr: false,
@@ -44,6 +45,7 @@ function MoneyPage() {
 
           <HomeIntelPanel />
           <EquityMortgagePanel />
+          <MortgageOptionsCard />
 
           <SellerIntentCard />
         </div>

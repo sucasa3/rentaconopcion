@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { BusinessShell } from "@/components/business-shell";
 import { AgentCreditsCard } from "@/components/agent-credits-card";
+import { LendingContactDesignation } from "@/components/lending-contact-designation";
 import {
   endSponsorship,
   getAgentNetwork,
@@ -540,6 +541,7 @@ function Connections({ agentOrgId }: { agentOrgId: string }) {
     onSuccess: (r: any) => {
       toast.success(r.status === "connected" ? "Lender connected" : "Invitation declined");
       qc.invalidateQueries({ queryKey: key });
+      qc.invalidateQueries({ queryKey: ["lending-designation", agentOrgId] });
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -549,6 +551,7 @@ function Connections({ agentOrgId }: { agentOrgId: string }) {
 
   return (
     <div className="space-y-4">
+      <LendingContactDesignation agentOrgId={agentOrgId} />
       {invites.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
