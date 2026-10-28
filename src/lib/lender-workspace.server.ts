@@ -211,7 +211,7 @@ export async function readLenderWorkspace(
         ? admin()
             .from("lender_portfolio_clients")
             .select(
-              "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, zip, homeowner_id, archived_at, relationship_basis, contact_marketing_permission, intelligence_access_scope, loan_amount_at_close_cents, rate_at_close, notes, term_months, close_date, created_at",
+              "id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, zip, homeowner_id, archived_at, archived_reason, relationship_basis, contact_marketing_permission, intelligence_access_scope, loan_amount_at_close_cents, rate_at_close, notes, term_months, close_date, created_at",
             )
             .in("portfolio_id", scope.bookIds)
         : Promise.resolve({ data: [] }),
@@ -233,7 +233,15 @@ export async function readLenderWorkspace(
         .limit(500),
     ]);
 
-  const rows = ((clients ?? []) as any[]).filter((c) => !c.archived_at);
+  const { data: inboundRequests, error: inboundError } = scope.bookIds.length
+    ? await admin().from("homeowner_lending_requests").select("*").in("lender_org_id", scope.orgIds).order("created_at", { ascending: false })
+    : { data: [], error: null };
+  if (inboundError) throw new Error(inboundError.message);
+  const inboundByClient = new Map<string, any>();
+  for (const r of inboundRequests ?? []) {
+    if (r.lender_client_id && !inboundByClient.has(r.lender_client_id)) inboundByClient.set(r.lender_client_id, r);
+  }
+  const rows = ((clients ?? []) as any[]).filter((c) => !c.archived_at || (c.archived_reason === "inbound_capacity_pending" && inboundByClient.has(c.id)));
   const archivedCount = ((clients ?? []) as any[]).length - rows.length;
   const clientIds = rows.map((c) => c.id);
 
@@ -398,7 +406,11 @@ export async function readLenderWorkspace(
   const aggregate = { sponsoredOnly: 0, agentConnectedOnly: 0, noBasis: 0 };
 
   for (const c of rows) {
-    const request = c.homeowner_id ? requestByHomeowner.get(c.homeowner_id) : null;
+    const inbound = inboundByClient.get(c.id);
+    const activeInbound = inbound?.status === "open" ? inbound : null;
+    const consentRequest = c.homeowner_id ? requestByHomeowner.get(c.homeowner_id) : null;
+    const request = activeInbound ? { scope: activeInbound.shared_fields } :
+      consentRequest?.context?.via === "money_lending_contact" ? null : consentRequest;
     const intel = c.homeowner_id ? intelByHomeowner.get(c.homeowner_id) : null;
     const access = classifyLenderAccess({
       relationshipBasis: c.relationship_basis,
@@ -508,10 +520,16 @@ export async function readLenderWorkspace(
       daysSinceContact: facts.days_since_contact as number | null,
     });
 
-    const priority = reviews[0]?.priority ?? (access.category === "asked_to_connect" ? 95 : 20);
+    if (activeInbound) {
+      const meta = REVIEW_TYPES.mortgage_checkup;
+      reviews.unshift({ id: `${c.id}:inbound`, type: "mortgage_checkup", label: meta.label,
+        blurb: meta.blurb, action: "Respond to their financing request", reasonCodes: ["homeowner_requested"],
+        sourceFields: [], why: ["Homeowner requested a financing conversation"], priority: 95 });
+    }
+    const priority = activeInbound ? 95 : reviews[0]?.priority ?? (access.category === "asked_to_connect" ? 95 : 20);
     const contactDetail = {
-      hasPhone: Boolean((c.client_phone ?? "").trim()),
-      hasEmail: Boolean((c.client_email ?? "").trim()),
+      hasPhone: Boolean((activeInbound ? activeInbound.contact_phone : c.client_phone ?? "")?.trim()),
+      hasEmail: Boolean((activeInbound ? activeInbound.contact_email : c.client_email ?? "")?.trim()),
     };
     const channels = allowedChannels(perm, access, contactDetail);
     const channelReasons: Record<string, string> = {};
@@ -559,8 +577,8 @@ export async function readLenderWorkspace(
       id: c.id,
       portfolioId: c.portfolio_id,
       name: c.client_name ?? "Homeowner",
-      email: hasScope(access, "contact") ? (c.client_email ?? null) : null,
-      phone: hasScope(access, "contact") ? (c.client_phone ?? null) : null,
+      email: hasScope(access, "contact") ? (activeInbound ? activeInbound.contact_email : c.client_email ?? null) : null,
+      phone: hasScope(access, "contact") ? (activeInbound ? activeInbound.contact_phone : c.client_phone ?? null) : null,
       address: hasScope(access, "property_snapshot")
         ? [c.address_line1, c.city, c.state].filter(Boolean).join(", ") || null
         : null,
@@ -632,7 +650,7 @@ export async function readLenderWorkspace(
         clientId: v.id,
         portfolioId: v.portfolioId,
         name: v.name,
-        askedAbout: (req?.context as any)?.topic ?? "Asked to connect",
+        askedAbout: inboundByClient.has(v.id) ? "financing" : (req?.context as any)?.topic ?? "Asked to connect",
         note: (req?.context as any)?.note ?? null,
         requestedAt: req?.granted_at ?? null,
         authorized: (req?.scope ?? []) as string[],
@@ -678,9 +696,9 @@ export async function readLenderWorkspace(
   const queue = visible.filter(
     (v) =>
       v.access.inQueue &&
-      !closedOrDeclined.has(v.id) &&
+      (v.askedToConnect || !closedOrDeclined.has(v.id)) &&
       (v.reviews.length > 0 || v.openNextStep) &&
-      (!prospectingSuppressed(v) || dueNow(v)),
+      (v.askedToConnect || !prospectingSuppressed(v) || dueNow(v)),
   );
   const daily = queue.slice(0, 10);
   const followUpsDue = visible.filter(dueNow).length;
@@ -690,7 +708,7 @@ export async function readLenderWorkspace(
     lender: { firstName: lenderFirstName },
     books: scope.books,
     metrics: {
-      homeownersMonitored: rows.length,
+      homeownersMonitored: rows.filter((c) => !c.archived_at).length,
       /** Number of signals/review opportunities — NOT a count of people. */
       changesDetected: visible.reduce((n, v) => n + v.reviews.length, 0),
       /** Distinct homeowners carrying at least one signal. */

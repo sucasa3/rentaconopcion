@@ -8,10 +8,11 @@
  */
 import {
   LENDING_DISCLOSURE_VERSION,
+  LENDING_CONSENT_LANGUAGE,
+  displayedNmls,
   authorizedAgentOrg,
   contactPayload,
   designationIsLive,
-  sharedFieldsFor,
   suggestedOfficer,
 } from "./lending-partner";
 
@@ -32,15 +33,14 @@ async function officerIdentity(admin: Admin, lenderOrgId: string, userId: string
     const { data: p } = await admin.from("profiles").select("full_name").eq("id", userId).maybeSingle();
     name = (p?.full_name as string | null) ?? null;
   }
-  const nmlsId = (v: unknown) =>
-    typeof v === "string" && v.trim() ? v.trim().replace(/^NMLS\s*#?\s*/i, "") : null;
+
   return {
     name,
     title: (profile?.contact_title as string | null) ?? null,
     company: (org?.name as string | null) ?? null,
     // Individual NMLS first; the company NMLS is labeled separately.
-    nmls: nmlsId(profile?.license_number),
-    companyNmls: nmlsId(org?.license_number),
+    nmls: displayedNmls(profile?.license_number),
+    companyNmls: displayedNmls(org?.license_number),
   };
 }
 
@@ -159,141 +159,27 @@ export async function requestLendingConversation(
     .eq("id", args.designationId)
     .single();
 
-  const { data: existing } = await admin
-    .from("homeowner_lending_requests")
-    .select("id")
-    .eq("homeowner_id", args.homeownerId)
-    .eq("lo_user_id", d.lo_user_id)
-    .eq("status", "open")
-    .maybeSingle();
-  if (existing) return { ok: true as const, requestId: existing.id as string, duplicate: true };
-
   const picked = contactPayload({ channel: args.channel, email: args.email, phone: args.phone });
-  const fields = sharedFieldsFor(args.includeValueEquity);
-
-  const { data: me } = await admin
-    .from("profiles")
-    .select("full_name, address, city, state, zip")
-    .eq("id", args.homeownerId)
-    .maybeSingle();
-  if (!me?.address) throw new Error("Add your home address before requesting a conversation");
-
-  // Consent evidence: scoped to this one officer and conversation only.
-  const { data: consent, error: cErr } = await admin
-    .from("consent_records")
-    .insert({
-      homeowner_id: args.homeownerId,
-      recipient_org_id: d.lender_org_id,
-      recipient_kind: "lender",
-      consent_type: "connection_request",
-      scope: fields,
-      source: "homeowner_action",
-      disclosure_version: LENDING_DISCLOSURE_VERSION,
-      context: {
-        via: "money_lending_contact",
-        lo_user_id: d.lo_user_id,
-        agent_org_id: d.agent_org_id,
-        channel: args.channel,
-        marketing: false,
-      },
-    })
-    .select("id")
-    .single();
-  if (cErr) throw new Error(cErr.message);
-
-  // The officer's own book — reuse an existing row for this homeowner.
-  const { data: book } = await admin
-    .from("lender_portfolios")
-    .select("id")
-    .eq("lender_org_id", d.lender_org_id)
-    .eq("assigned_user_id", d.lo_user_id)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (!book) throw new Error("This lending contact can't receive requests right now");
-
-  let clientId: string | null = null;
-  const { data: prior } = await admin
-    .from("lender_portfolio_clients")
-    .select("id")
-    .eq("portfolio_id", book.id)
-    .eq("homeowner_id", args.homeownerId)
-    .is("archived_at", null)
-    .maybeSingle();
-  if (prior) clientId = prior.id;
-  else {
-    const { data: row, error } = await admin
-      .from("lender_portfolio_clients")
-      .insert({
-        portfolio_id: book.id,
-        homeowner_id: args.homeownerId,
-        client_name: me.full_name ?? null,
-        client_email: picked.email,
-        client_phone: picked.phone,
-        address_line1: me.address,
-        city: me.city ?? null,
-        state: me.state ?? null,
-        zip: me.zip ?? null,
-        relationship_basis: "homeowner_requested",
-        // A conversation request is not marketing consent.
-        contact_marketing_permission: "false",
-        intelligence_access_scope: args.includeValueEquity ? ["value", "equity"] : [],
-        notes: "Homeowner requested a mortgage conversation on SuCasa.",
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    clientId = row.id;
+  let financial: Record<string, unknown> | null = null;
+  if (args.includeValueEquity) {
+    // Only the shared cached Home Record, never private agent notes or documents.
+    const { data: me } = await admin.from("profiles").select("address, city, state, zip").eq("id", args.homeownerId).single();
+    const { clientFactsFor } = await import("./client-facts.server");
+    const facts = await clientFactsFor(admin, [{ id: args.homeownerId, address_line1: me?.address, city: me?.city, state: me?.state, zip: me?.zip }]);
+    const f = facts.get(args.homeownerId);
+    financial = { estimated_value: f?.value ?? null, estimated_equity: f?.equityDollars ?? null, source: "shared_home_record", captured_at: new Date().toISOString() };
   }
-
-  const { data: opp } = await admin
-    .from("homeowner_opportunities")
-    .upsert(
-      {
-        portfolio_client_id: clientId,
-        org_id: d.lender_org_id,
-        category: "mortgage_review",
-        strength: "strong",
-        state: "open",
-        signal_key: "homeowner_requested_conversation",
-        reasons: ["Homeowner asked for a conversation"],
-        reason_codes: ["homeowner_requested"],
-        computed_at: new Date().toISOString(),
-      },
-      { onConflict: "portfolio_client_id,category" },
-    )
-    .select("id")
-    .single();
-
-  const { data: req, error: rErr } = await admin
-    .from("homeowner_lending_requests")
-    .insert({
-      homeowner_id: args.homeownerId,
-      designation_id: d.id,
-      agent_org_id: d.agent_org_id,
-      lender_org_id: d.lender_org_id,
-      lo_user_id: d.lo_user_id,
-      lender_client_id: clientId,
-      opportunity_id: opp?.id ?? null,
-      consent_record_id: consent.id,
-      contact_name: me.full_name ?? null,
-      contact_email: picked.email,
-      contact_phone: picked.phone,
-      preferred_channel: args.channel,
-      shared_fields: fields,
-      disclosure_version: LENDING_DISCLOSURE_VERSION,
-    })
-    .select("id")
-    .single();
-  if (rErr) throw new Error(rErr.message);
-
-  await admin.from("lender_activity").insert({
-    lender_org_id: d.lender_org_id,
-    portfolio_client_id: clientId,
-    actor_user_id: args.homeownerId,
-    action: "homeowner_conversation_request",
-    detail: "Homeowner asked for a mortgage conversation",
+  const { data: result, error } = await admin.rpc("record_homeowner_lending_inquiry", {
+    p_homeowner: args.homeownerId, p_designation: args.designationId,
+    p_channel: args.channel, p_email: picked.email, p_phone: picked.phone,
+    p_include_financial: args.includeValueEquity, p_financial: financial,
+    p_version: LENDING_DISCLOSURE_VERSION, p_language: LENDING_CONSENT_LANGUAGE,
   });
+  if (error) throw new Error(error.message);
+  if (!result?.requestId) throw new Error("Your request could not be recorded");
+  const req = { id: result.requestId as string };
+  const { data: recorded } = await admin.from("homeowner_lending_requests").select("notified, contact_name").eq("id", req.id).single();
+  if (recorded?.notified) return { ok: true as const, ...result };
 
   // Notify the assigned officer (transactional: about a request they must act on).
   let notified = false;
@@ -308,7 +194,7 @@ export async function requestLendingConversation(
         idempotencyKey: `lending-request-${req.id}`,
         templateData: {
           officerName: contact.officer.name,
-          homeownerName: me.full_name ?? "A homeowner",
+          homeownerName: recorded?.contact_name ?? "A homeowner",
           channel: args.channel,
           agentName: contact.agentName,
         },
@@ -321,7 +207,7 @@ export async function requestLendingConversation(
   if (notified) {
     await admin.from("homeowner_lending_requests").update({ notified: true }).eq("id", req.id);
   }
-  return { ok: true as const, requestId: req.id as string, duplicate: false };
+  return { ok: true as const, requestId: req.id, duplicate: Boolean(result.duplicate), capacityPending: Boolean(result.capacityPending) };
 }
 
 // ------------------------------------------------------------------- agent
