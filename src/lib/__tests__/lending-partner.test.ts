@@ -6,6 +6,7 @@ import {
   sharedFieldsFor,
   suggestedOfficer,
   displayedNmls,
+  inquiryConsentLanguage,
 } from "../lending-partner";
 
 const H = "home-1";
@@ -71,6 +72,10 @@ describe("designation liveness", () => {
 });
 
 describe("what is shared", () => {
+  it("records the selected language and explicit optional sharing decision", () => {
+    expect(inquiryConsentLanguage("en", false)).toContain("I do not authorize sharing my estimated home value or equity");
+    expect(inquiryConsentLanguage("es", true)).toContain("También autorizo compartir el valor estimado de mi casa y mi equity");
+  });
   it("defaults to name, contact and address only", () => {
     expect(sharedFieldsFor(false)).toEqual(["name", "contact", "address"]);
   });
