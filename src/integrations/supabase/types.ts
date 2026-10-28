@@ -3484,6 +3484,7 @@ export type Database = {
       homeowner_lending_requests: {
         Row: {
           agent_org_id: string
+          capacity_pending: boolean
           consent_record_id: string | null
           contact_email: string | null
           contact_name: string | null
@@ -3499,12 +3500,16 @@ export type Database = {
           notified: boolean
           opportunity_id: string | null
           preferred_channel: string
+          property_address: Json
           shared_fields: string[]
+          shared_value_equity: Json | null
+          source_path: string
           status: string
           updated_at: string
         }
         Insert: {
           agent_org_id: string
+          capacity_pending?: boolean
           consent_record_id?: string | null
           contact_email?: string | null
           contact_name?: string | null
@@ -3520,12 +3525,16 @@ export type Database = {
           notified?: boolean
           opportunity_id?: string | null
           preferred_channel?: string
+          property_address?: Json
           shared_fields?: string[]
+          shared_value_equity?: Json | null
+          source_path?: string
           status?: string
           updated_at?: string
         }
         Update: {
           agent_org_id?: string
+          capacity_pending?: boolean
           consent_record_id?: string | null
           contact_email?: string | null
           contact_name?: string | null
@@ -3541,7 +3550,10 @@ export type Database = {
           notified?: boolean
           opportunity_id?: string | null
           preferred_channel?: string
+          property_address?: Json
           shared_fields?: string[]
+          shared_value_equity?: Json | null
+          source_path?: string
           status?: string
           updated_at?: string
         }
@@ -7459,6 +7471,20 @@ export type Database = {
       record_enrichment_response: {
         Args: { p_dispatch: string; p_response: Json; p_token: string }
         Returns: boolean
+      }
+      record_homeowner_lending_inquiry: {
+        Args: {
+          p_channel: string
+          p_designation: string
+          p_email: string
+          p_financial: Json
+          p_homeowner: string
+          p_include_financial: boolean
+          p_language: string
+          p_phone: string
+          p_version: string
+        }
+        Returns: Json
       }
       record_post_call_save: {
         Args: {
