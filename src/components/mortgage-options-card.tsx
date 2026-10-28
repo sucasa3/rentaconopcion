@@ -64,7 +64,7 @@ export function MortgageOptionsCard() {
             {t("lend.disclosure")}
           </p>
           {data.requestedAt ? (
-            <div className="mt-4 flex items-center gap-2 text-sm font-medium text-success">
+            <div className="mt-4 flex items-center gap-2 text-sm font-medium text-primary">
               <Check className="h-4 w-4" />
               <span>
                 {t("lend.requested")} — {t("lend.requested_line", { name: data.officer.name ?? "" })}
