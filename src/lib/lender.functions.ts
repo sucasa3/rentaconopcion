@@ -1031,8 +1031,10 @@ export const getMatchedLenderForMe = createServerFn({ method: "GET" })
 
     const { data: portfolioMatch } = await supabaseAdmin
       .from("lender_portfolio_clients")
-      .select("portfolio_id, lender_portfolios(lender_org_id)")
+      .select("portfolio_id, lender_portfolios!inner(lender_org_id, lender_orgs!inner(org_type))")
       .eq("homeowner_id", context.userId)
+      .eq("lender_portfolios.lender_orgs.org_type", "lender")
+      .is("archived_at", null)
       .limit(1)
       .maybeSingle();
     const matchedOrgId =
