@@ -323,6 +323,13 @@
       "when": 1793231359354,
       "tag": "0045_mortgage_inquiry_atomic_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793231707087,
+      "tag": "0046_inquiry_capacity_pool_alignment",
+      "breakpoints": true
     }
   ]
 }

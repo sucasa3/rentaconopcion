@@ -7391,6 +7391,10 @@ export type Database = {
         }
         Returns: Json
       }
+      inquiry_profile_slot_available: {
+        Args: { p_org: string }
+        Returns: boolean
+      }
       is_lender_manager: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
