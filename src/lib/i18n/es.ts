@@ -2495,7 +2495,7 @@ export const es: Dictionary = {
   "lend.share_name": "Tu nombre",
   "lend.share_contact": "El medio de contacto que elijas abajo",
   "lend.share_address": "La dirección de tu propiedad",
-  "lend.modal_not_shared": "No compartiremos el valor de tu casa, tu equity, el saldo del préstamo, la tasa de interés, documentos ni resúmenes financieros.",
+  "lend.modal_not_shared": "El valor de tu casa y tu equity solo se comparten si eliges la opción separada abajo. No compartiremos información privada de tu préstamo, documentos ni resúmenes financieros.",
   "lend.nmls_unverified": "Información NMLS proporcionada por el profesional; verificación pendiente.",
   "lend.modal_optin": "También compartir el valor estimado de mi casa y mi equity",
   "lend.modal_channel": "¿Cómo prefieres que te contacten?",

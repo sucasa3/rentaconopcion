@@ -6,8 +6,13 @@
  * homeowner only because the homeowner's own agent chose them.
  */
 
-export const LENDING_DISCLOSURE_VERSION = "lending-contact-v1";
+export const LENDING_DISCLOSURE_VERSION = "lending-contact-v2";
 export const LENDING_CONSENT_LANGUAGE = "Send my name, selected contact information, property address and request to discuss financing to my agent's designated loan officer. Estimated home value and equity are shared only if I select the separate option. This does not authorize unrelated marketing, automated promotional messages or access to private records.";
+
+export function inquiryConsentLanguage(language: "en" | "es", includeValueEquity: boolean) {
+  if (language === "es") return "Autorizo enviar mi nombre, el contacto seleccionado, la dirección de mi propiedad y mi solicitud para hablar sobre financiamiento al oficial de préstamos designado por mi agente. " + (includeValueEquity ? "También autorizo compartir el valor estimado de mi casa y mi equity. " : "No autorizo compartir el valor estimado de mi casa ni mi equity. ") + "No autorizo marketing no relacionado, mensajes promocionales automáticos ni acceso a documentos o información privada.";
+  return "I authorize sending my name, selected contact information, property address and financing conversation request to my agent's designated loan officer. " + (includeValueEquity ? "I also authorize sharing my estimated home value and equity. " : "I do not authorize sharing my estimated home value or equity. ") + "This does not authorize unrelated marketing, automated promotional messages or access to private documents or information.";
+}
 
 /** Recorded identifiers are not registry-verified credentials. Drop obvious placeholders. */
 export function displayedNmls(value: unknown): string | null {

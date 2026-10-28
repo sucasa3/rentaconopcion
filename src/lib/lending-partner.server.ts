@@ -8,7 +8,7 @@
  */
 import {
   LENDING_DISCLOSURE_VERSION,
-  LENDING_CONSENT_LANGUAGE,
+  inquiryConsentLanguage,
   displayedNmls,
   authorizedAgentOrg,
   contactPayload,
@@ -146,6 +146,7 @@ export async function requestLendingConversation(
     email: string | null;
     phone: string | null;
     includeValueEquity: boolean;
+    language?: "en" | "es";
   },
 ) {
   const contact = await lendingContactForHomeowner(admin, args.homeownerId);
@@ -159,6 +160,7 @@ export async function requestLendingConversation(
     .eq("id", args.designationId)
     .single();
 
+  if (!d) throw new Error("This lending contact is no longer available");
   const picked = contactPayload({ channel: args.channel, email: args.email, phone: args.phone });
   let financial: Record<string, unknown> | null = null;
   if (args.includeValueEquity) {
@@ -173,7 +175,7 @@ export async function requestLendingConversation(
     p_homeowner: args.homeownerId, p_designation: args.designationId,
     p_channel: args.channel, p_email: picked.email, p_phone: picked.phone,
     p_include_financial: args.includeValueEquity, p_financial: financial,
-    p_version: LENDING_DISCLOSURE_VERSION, p_language: LENDING_CONSENT_LANGUAGE,
+    p_version: LENDING_DISCLOSURE_VERSION, p_language: inquiryConsentLanguage(args.language ?? "en", args.includeValueEquity),
   });
   if (error) throw new Error(error.message);
   if (!result?.requestId) throw new Error("Your request could not be recorded");

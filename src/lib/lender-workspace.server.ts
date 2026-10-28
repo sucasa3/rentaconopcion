@@ -234,7 +234,7 @@ export async function readLenderWorkspace(
     ]);
 
   const { data: inboundRequests, error: inboundError } = scope.bookIds.length
-    ? await admin().from("homeowner_lending_requests").select("*").in("lender_org_id", scope.orgIds).order("created_at", { ascending: false })
+    ? await admin().from("homeowner_lending_requests").select("*").in("lender_client_id", (clients ?? []).map((c: any) => c.id)).order("created_at", { ascending: false })
     : { data: [], error: null };
   if (inboundError) throw new Error(inboundError.message);
   const inboundByClient = new Map<string, any>();
@@ -524,7 +524,7 @@ export async function readLenderWorkspace(
       const meta = REVIEW_TYPES.mortgage_checkup;
       reviews.unshift({ id: `${c.id}:inbound`, type: "mortgage_checkup", label: meta.label,
         blurb: meta.blurb, action: "Respond to their financing request", reasonCodes: ["homeowner_requested"],
-        sourceFields: [], why: ["Homeowner requested a financing conversation"], priority: 95 });
+        sourceFields: [], why: [activeInbound.capacity_pending && c.archived_at ? "Homeowner requested financing; profile activation is waiting for available capacity." : "Homeowner requested a financing conversation"], priority: 95 });
     }
     const priority = activeInbound ? 95 : reviews[0]?.priority ?? (access.category === "asked_to_connect" ? 95 : 20);
     const contactDetail = {
@@ -570,7 +570,7 @@ export async function readLenderWorkspace(
 
     const topReview = reviews[0] ?? null;
     const whyToday = askedToConnect
-      ? "They asked to connect through SuCasa."
+      ? (activeInbound?.capacity_pending && c.archived_at ? "Financing inquiry received — profile activation waiting for capacity." : "They asked to connect through SuCasa.")
       : (topReview?.why?.[0] ?? urgencyReason);
 
     visible.push({

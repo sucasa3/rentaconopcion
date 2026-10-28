@@ -22,6 +22,7 @@ export const requestMortgageConversation = createServerFn({ method: "POST" })
         phone: z.string().trim().min(7).max(30).nullable(),
         includeValueEquity: z.boolean(),
         confirmed: z.literal(true),
+        language: z.enum(["en", "es"]).default("en"),
       })
       .parse(i),
   )
@@ -35,6 +36,7 @@ export const requestMortgageConversation = createServerFn({ method: "POST" })
       email: data.email,
       phone: data.phone,
       includeValueEquity: data.includeValueEquity,
+      language: data.language,
     });
   });
 

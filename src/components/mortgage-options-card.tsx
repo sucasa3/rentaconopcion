@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useT } from "@/lib/i18n";
+import { useT, useLanguage } from "@/lib/i18n";
+import { inquiryConsentLanguage } from "@/lib/lending-partner";
 import { getMyLendingContact, requestMortgageConversation } from "@/lib/lending-partner.functions";
 
 const CFPB_URL = "https://www.consumerfinance.gov/owning-a-home/";
@@ -115,6 +116,7 @@ function RequestDialog({
 }) {
   const t = useT();
   const qc = useQueryClient();
+  const { language } = useLanguage();
   const sendFn = useServerFn(requestMortgageConversation);
   const [channel, setChannel] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
@@ -140,6 +142,7 @@ function RequestDialog({
           phone: channel === "phone" ? phone.trim() || null : null,
           includeValueEquity: optIn,
           confirmed: true,
+          language,
         },
       }),
     onSuccess: () => {
@@ -182,6 +185,7 @@ function RequestDialog({
                 <Button
                   key={c}
                   type="button"
+                  variant="outline"
                   onClick={() => setChannel(c)}
                   className={`flex-1 rounded-full border px-3 py-2 text-xs font-semibold ${
                     channel === c ? "border-primary bg-primary/10 text-primary" : "border-border"
@@ -206,11 +210,13 @@ function RequestDialog({
           </label>
 
           <p className="text-xs text-muted-foreground">{t("lend.modal_not_marketing")}</p>
+          <p className="text-xs text-muted-foreground">{inquiryConsentLanguage(language, optIn)}</p>
 
           <div className="flex gap-2">
             <Button
               type="button"
               onClick={() => onOpenChange(false)}
+              variant="outline"
               className="flex-1 rounded-full border border-border py-2.5 text-xs font-semibold hover:bg-secondary"
             >
               {t("lend.cancel")}
