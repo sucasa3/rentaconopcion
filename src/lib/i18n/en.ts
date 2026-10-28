@@ -2455,6 +2455,7 @@ export const en = {
   "lend.share_contact": "The contact method you choose below",
   "lend.share_address": "Your property address",
   "lend.modal_not_shared": "We won't share your home value, equity, loan balance, interest rate, documents or financial summaries.",
+  "lend.nmls_unverified": "NMLS information supplied by the professional; verification is pending.",
   "lend.modal_optin": "Also share my estimated home value and equity",
   "lend.modal_channel": "How should they contact you?",
   "lend.channel_email": "Email",
