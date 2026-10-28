@@ -180,6 +180,19 @@ describe("outreach channel gate", () => {
 
 
 describe("importer relationship labels", () => {
+  it("inbound financing prospects retain public-record intelligence without optional sharing", () => {
+    const a = classifyLenderAccess({ relationshipBasis: "homeowner_requested", intelligenceAccessScope: [], hasConnectionRequest: true, connectionRequestScope: ["name", "contact", "address"] });
+    expect(a.category).toBe("asked_to_connect");
+    expect(a.scopes).toEqual(["contact", "property_snapshot", "valuation", "mortgage", "equity"]);
+    expect(a.scopes).not.toContain("engagement");
+    expect(a.scopes).not.toContain("home_projects");
+    expect(channelDecision("email", null, a).automatedAllowed).toBe(false);
+  });
+  it("historical inbound ownership survives removal of the placement connection", () => {
+    const a = classifyLenderAccess({ relationshipBasis: "homeowner_requested", isAgentConnected: false });
+    expect(a.category).toBe("own_relationship");
+    expect(a.scopes).toContain("mortgage");
+  });
   it("treats org_uploaded as the lender's own relationship with baseline scopes", () => {
     const a = classifyLenderAccess({ relationshipBasis: "org_uploaded", intelligenceAccessScope: [] });
     expect(a.category).toBe("own_relationship");

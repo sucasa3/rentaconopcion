@@ -5,9 +5,18 @@ import {
   designationIsLive,
   sharedFieldsFor,
   suggestedOfficer,
+  displayedNmls,
 } from "../lending-partner";
 
 const H = "home-1";
+
+describe("NMLS identifiers", () => {
+  it("does not show placeholder zeros as a credential", () => {
+    expect(displayedNmls("NMLS 000000")).toBeNull();
+    expect(displayedNmls("pending")).toBeNull();
+    expect(displayedNmls("NMLS #123456")).toBe("123456");
+  });
+});
 
 describe("suggested officer", () => {
   it("suggests the LO who invited the agent", () => {

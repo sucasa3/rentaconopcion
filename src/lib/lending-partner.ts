@@ -7,6 +7,14 @@
  */
 
 export const LENDING_DISCLOSURE_VERSION = "lending-contact-v1";
+export const LENDING_CONSENT_LANGUAGE = "Send my name, selected contact information, property address and request to discuss financing to my agent's designated loan officer. Estimated home value and equity are shared only if I select the separate option. This does not authorize unrelated marketing, automated promotional messages or access to private records.";
+
+/** Recorded identifiers are not registry-verified credentials. Drop obvious placeholders. */
+export function displayedNmls(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const id = value.trim().replace(/^#?\s*NMLS\s*#?\s*/i, "").replace(/^#/, "").trim();
+  return /^\d+$/.test(id) && !/^0+$/.test(id) ? id : null;
+}
 
 /** Shared by default after explicit confirmation — nothing financial. */
 export const DEFAULT_SHARED_FIELDS = ["name", "contact", "address"] as const;

@@ -85,6 +85,7 @@ const OWN_RELATIONSHIP_BASES = new Set([
   "borrower",
   "client",
   "import",
+  "homeowner_requested",
 ]);
 
 
@@ -112,10 +113,12 @@ function normaliseScopes(input: (string | null | undefined)[] | null | undefined
 
 export function classifyLenderAccess(input: AccessInput): LenderAccess {
   const own = OWN_RELATIONSHIP_BASES.has((input.relationshipBasis ?? "").trim());
+  const inbound = input.relationshipBasis === "homeowner_requested";
 
   if (input.hasConnectionRequest) {
     const scopes = normaliseScopes([
       "contact",
+      ...(inbound ? BASELINE_OWN_RELATIONSHIP_SCOPE : []),
       ...(input.connectionRequestScope ?? []),
       ...(input.hasIntelligenceConsent ? (input.intelligenceConsentScope ?? []) : []),
       ...(own ? (input.intelligenceAccessScope ?? BASELINE_OWN_RELATIONSHIP_SCOPE) : []),
