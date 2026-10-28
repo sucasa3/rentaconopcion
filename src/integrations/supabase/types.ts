@@ -560,6 +560,67 @@ export type Database = {
           },
         ]
       }
+      agent_lending_designations: {
+        Row: {
+          agent_org_id: string
+          connection_id: string
+          created_at: string
+          designated_at: string
+          designated_by: string
+          id: string
+          lender_org_id: string
+          lo_user_id: string
+          removed_at: string | null
+          removed_by: string | null
+        }
+        Insert: {
+          agent_org_id: string
+          connection_id: string
+          created_at?: string
+          designated_at?: string
+          designated_by: string
+          id?: string
+          lender_org_id: string
+          lo_user_id: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Update: {
+          agent_org_id?: string
+          connection_id?: string
+          created_at?: string
+          designated_at?: string
+          designated_by?: string
+          id?: string
+          lender_org_id?: string
+          lo_user_id?: string
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_lending_designations_agent_org_id_fkey"
+            columns: ["agent_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_lending_designations_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "agent_lender_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_lending_designations_lender_org_id_fkey"
+            columns: ["lender_org_id"]
+            isOneToOne: false
+            referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_messages: {
         Row: {
           content: string
@@ -3416,6 +3477,87 @@ export type Database = {
             columns: ["lender_org_id"]
             isOneToOne: false
             referencedRelation: "lender_orgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      homeowner_lending_requests: {
+        Row: {
+          agent_org_id: string
+          consent_record_id: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          designation_id: string | null
+          disclosure_version: string
+          homeowner_id: string
+          id: string
+          lender_client_id: string | null
+          lender_org_id: string
+          lo_user_id: string
+          notified: boolean
+          opportunity_id: string | null
+          preferred_channel: string
+          shared_fields: string[]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_org_id: string
+          consent_record_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          designation_id?: string | null
+          disclosure_version: string
+          homeowner_id: string
+          id?: string
+          lender_client_id?: string | null
+          lender_org_id: string
+          lo_user_id: string
+          notified?: boolean
+          opportunity_id?: string | null
+          preferred_channel?: string
+          shared_fields?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_org_id?: string
+          consent_record_id?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          designation_id?: string | null
+          disclosure_version?: string
+          homeowner_id?: string
+          id?: string
+          lender_client_id?: string | null
+          lender_org_id?: string
+          lo_user_id?: string
+          notified?: boolean
+          opportunity_id?: string | null
+          preferred_channel?: string
+          shared_fields?: string[]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_lending_requests_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_lending_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homeowner_lending_requests_lender_client_id_fkey"
+            columns: ["lender_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
             referencedColumns: ["id"]
           },
         ]
