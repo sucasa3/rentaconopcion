@@ -424,6 +424,26 @@ export const ingestPortfolioCsv = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertLenderAccess(context.supabase, context.userId);
     await assertPersonalBook(context.supabase, context.userId, data.portfolioId);
+    {
+      const mixed = await import("./mixed-upload.server");
+      if (mixed.mixedUploadEnabled(context.userId)) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const result = await mixed.runMixedUpload({ admin: supabaseAdmin, portfolioId: data.portfolioId, actorId: context.userId, role: "lender", csv: data.csv });
+        const c = result.counts;
+        return {
+          inserted: (c.added_cached ?? 0) + (c.added_needs_lookup ?? 0),
+          suppressed: c.suppressed ?? 0,
+          existing: c.already_uploaded ?? 0,
+          review: 0,
+          waitingForCapacity: c.waiting_capacity ?? 0,
+          duplicates: c.duplicate_in_file ?? 0,
+          invalid: c.unusable ?? 0,
+          contactOnly: c.contact_only ?? 0,
+          batchId: result.batchId,
+          mixed: result,
+        };
+      }
+    }
     const parsedRows = parseClientCsv(data.csv);
     if (parsedRows.length === 0) return { inserted: 0, suppressed: 0, existing: 0 };
 

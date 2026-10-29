@@ -252,3 +252,42 @@ export function parseUploadCsv(csv: string): { rows: UploadRow[]; blankLines: nu
   }
   return { rows, blankLines: blank };
 }
+
+// ---------------------------------------------------------------- feature flag
+
+/**
+ * Off by default. Enabled only for user ids listed in the server secret
+ * MIXED_UPLOAD_USER_IDS (comma-separated). "off"/blank/unset = nobody.
+ */
+export function mixedUploadEnabledFor(userId: string, raw: string | undefined | null): boolean {
+  const v = (raw ?? "").trim().toLowerCase();
+  if (!v || v === "off") return false;
+  return v.split(/[\s,]+/).includes(userId.toLowerCase());
+}
+
+/** Rows sent to stage_mixed_upload: only planner proposals, never approvals. */
+export function stagePayload(
+  plan: UploadPlan,
+  rows: UploadRow[],
+  legacyAddressKey: (r: UploadRow) => string,
+  suppressedRowNumbers: Set<number> = new Set(),
+) {
+  const byNum = new Map(rows.map((r) => [r.rowNumber, r]));
+  return plan.results.map((res) => {
+    const r = byNum.get(res.rowNumber)!;
+    const outcome = suppressedRowNumbers.has(res.rowNumber)
+      ? "suppressed"
+      : res.outcome === "added_lookup_approved" ? "added_needs_lookup" : res.outcome;
+    return {
+      row_number: res.rowNumber,
+      outcome,
+      identity_key: outcome === "suppressed" ? null : res.key,
+      cached: res.outcome === "added_cached",
+      payload: outcome === "suppressed" ? {} : {
+        name: r.name || null, address: r.address || null, city: r.city, state: r.state, zip: r.zip,
+        email: r.email, phone: r.phone, loan_balance_cents: r.loanBalanceCents,
+        interest_rate_bps: r.interestRateBps, address_key: r.address ? legacyAddressKey(r) : null,
+      },
+    };
+  });
+}

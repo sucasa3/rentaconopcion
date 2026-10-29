@@ -1514,6 +1514,26 @@ export const ingestAgentPortfolioCsv = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { logNetworkEventOnce, logNetworkEvent } = await import("./network-events.server");
     const orgId = access.ids[0] ?? null;
+    {
+      const mixed = await import("./mixed-upload.server");
+      if (mixed.mixedUploadEnabled(context.userId)) {
+        const result = await mixed.runMixedUpload({ admin: supabaseAdmin, portfolioId: data.portfolioId, actorId: context.userId, role: "agent", csv: data.csv });
+        await logNetworkEvent(supabaseAdmin, {
+          action: "agent_import_completed", actorUserId: context.userId, orgId,
+          entityType: "agent_portfolio", entityId: data.portfolioId,
+          metadata: { method: "csv_mixed", batchId: result.batchId, counts: result.counts, replayed: result.replayed },
+        });
+        const c = result.counts;
+        return {
+          inserted: (c.added_cached ?? 0) + (c.added_needs_lookup ?? 0),
+          skipped: c.waiting_capacity ?? 0,
+          duplicates: (c.duplicate_in_file ?? 0) + (c.already_uploaded ?? 0),
+          suppressed: c.suppressed ?? 0,
+          remaining: null,
+          mixed: result,
+        };
+      }
+    }
     await logNetworkEvent(supabaseAdmin, {
       action: "agent_import_started",
       actorUserId: context.userId,
