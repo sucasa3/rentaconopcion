@@ -29,6 +29,10 @@ export const requestMortgageConversation = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { requestLendingConversation } = await import("./lending-partner.server");
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const { isPreviewHost } = await import("./stripe-mode");
+    const host = getRequestHeader("x-forwarded-host") ?? getRequestHeader("host");
+    const site = host && isPreviewHost(host) ? `${host.startsWith("localhost") ? "http" : "https"}://${host}` : process.env["SITE_URL"] ?? "https://sucasa.com";
     return requestLendingConversation(supabaseAdmin, {
       homeownerId: context.userId,
       designationId: data.designationId,
@@ -37,6 +41,7 @@ export const requestMortgageConversation = createServerFn({ method: "POST" })
       phone: data.phone,
       includeValueEquity: data.includeValueEquity,
       language: data.language,
+      workspaceUrl: `${site}/lender`,
     });
   });
 

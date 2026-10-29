@@ -25,6 +25,8 @@ Source: uploaded spec "We have identified two critical issues" (Neil Terc). No p
 
 ## Explore Your Mortgage Options (/money) — Oct 28
 - [x] Agent-confirmed lending contact, homeowner card, consent modal, LO book + opportunity + email
-- [ ] Refine atomic inbound inquiry delivery, capacity handling and public-record intelligence access without widening private sharing
-- [ ] Verify consent, duplicates/resolution, revocation, LO Today/Opportunities/book, notifications and Spanish/mobile
+- [x] Atomic inbound inquiry delivery, capacity-safe staging, public-record access, selected contact and optional snapshots; marketing off, enrichment held
+- [x] 50 focused checks passed, including 9 real PostgreSQL transaction tests on an isolated local fixture; build OK; signed-in neutral /money desktop/mobile verified
+- [ ] Confirm designated-homeowner → LO Today/book in live sessions and notification receipt — no active designations/requests; prior synthetic LO email bounced; full linked-account flow remains unverified
+- [ ] Spanish live-session confirmation — saved profile language overrides device setting; translations and recorded consent are covered by focused tests
 - [ ] Legal review (RESPA) and NMLS verification — awaiting attorney/user

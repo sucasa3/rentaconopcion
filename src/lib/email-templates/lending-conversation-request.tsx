@@ -11,9 +11,10 @@ interface Props {
   homeownerName?: string
   channel?: 'email' | 'phone'
   agentName?: string | null
+  workspaceUrl?: string
 }
 
-const Email = ({ officerName, homeownerName, channel, agentName }: Props) => (
+const Email = ({ officerName, homeownerName, channel, agentName, workspaceUrl }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>{homeownerName ?? 'A homeowner'} asked to talk with you</Preview>
@@ -32,7 +33,7 @@ const Email = ({ officerName, homeownerName, channel, agentName }: Props) => (
         </Text>
         <Section style={{ textAlign: 'center', margin: '24px 0' }}>
           <Button
-            href="https://sucasa.com/lender"
+            href={workspaceUrl ?? "https://sucasa.com/lender"}
             style={{ backgroundColor: ORANGE, color: '#ffffff', borderRadius: '999px', padding: '12px 24px', fontWeight: 600, textDecoration: 'none' }}
           >
             Open SuCasa

@@ -147,6 +147,7 @@ export async function requestLendingConversation(
     phone: string | null;
     includeValueEquity: boolean;
     language?: "en" | "es";
+    workspaceUrl?: string;
   },
 ) {
   const contact = await lendingContactForHomeowner(admin, args.homeownerId);
@@ -200,6 +201,7 @@ export async function requestLendingConversation(
           homeownerName: recorded?.contact_name ?? "A homeowner",
           channel: recorded.preferred_channel,
           agentName: contact.agentName,
+          workspaceUrl: args.workspaceUrl,
         },
       });
       notified = res.sent;
