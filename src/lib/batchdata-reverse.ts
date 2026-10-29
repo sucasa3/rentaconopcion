@@ -62,7 +62,7 @@ export function normalizeReversePhone(raw: string | null | undefined):
     return { ok: false, reason: "US phone numbers need 10 digits" };
   }
   // Area code and exchange cannot start with 0 or 1 in the NANP.
-  if (/^[01]/.test(national) || /^... [01]/.test(national.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3"))) {
+  if ("01".includes(national[0]) || "01".includes(national[3])) {
     return { ok: false, reason: "not a valid US phone number" };
   }
   return { ok: true, phone: national };
