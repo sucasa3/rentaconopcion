@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { PhoneSearch, CheckCircle2, AlertTriangle, XCircle, Clock } from "lucide-react";
+import { Search, CheckCircle2, AlertTriangle, XCircle, Clock } from "lucide-react";
 import { isPreviewHost } from "@/lib/stripe-mode";
 import {
   approveReverseLookupProperty,
@@ -92,7 +92,7 @@ function ReverseLookupLab() {
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-5 px-4 py-6">
         <header className="space-y-1">
           <div className="flex items-center gap-2">
-            <PhoneSearch className="h-5 w-5 text-primary" />
+            <Search className="h-5 w-5 text-primary" />
             <h1 className="text-xl font-semibold tracking-tight">Reverse Lookup Test Lab</h1>
           </div>
           <p className="text-sm text-muted-foreground">
