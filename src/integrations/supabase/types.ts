@@ -999,6 +999,86 @@ export type Database = {
         }
         Relationships: []
       }
+      batchdata_reverse_lookups: {
+        Row: {
+          approved_property: Json | null
+          billing_basis: string
+          created_at: string
+          error_message: string | null
+          estimated_cost_cents: number
+          handed_off_at: string | null
+          http_status: number | null
+          id: string
+          input_email: string | null
+          input_phone: string | null
+          multi_person_flag: boolean
+          name_evidence: string | null
+          org_id: string
+          person_count: number
+          persons: Json
+          portfolio_client_id: string
+          provider_request_id: string | null
+          requested_by: string
+          review_state: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_property?: Json | null
+          billing_basis?: string
+          created_at?: string
+          error_message?: string | null
+          estimated_cost_cents?: number
+          handed_off_at?: string | null
+          http_status?: number | null
+          id?: string
+          input_email?: string | null
+          input_phone?: string | null
+          multi_person_flag?: boolean
+          name_evidence?: string | null
+          org_id: string
+          person_count?: number
+          persons?: Json
+          portfolio_client_id: string
+          provider_request_id?: string | null
+          requested_by: string
+          review_state?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_property?: Json | null
+          billing_basis?: string
+          created_at?: string
+          error_message?: string | null
+          estimated_cost_cents?: number
+          handed_off_at?: string | null
+          http_status?: number | null
+          id?: string
+          input_email?: string | null
+          input_phone?: string | null
+          multi_person_flag?: boolean
+          name_evidence?: string | null
+          org_id?: string
+          person_count?: number
+          persons?: Json
+          portfolio_client_id?: string
+          provider_request_id?: string | null
+          requested_by?: string
+          review_state?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batchdata_reverse_lookups_portfolio_client_id_fkey"
+            columns: ["portfolio_client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batchdata_test_results: {
         Row: {
           address_normalized: string | null

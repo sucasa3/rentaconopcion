@@ -309,5 +309,3 @@ function PreviewGate() {
     </ClientOnly>
   );
 }
-
-export default PreviewGate;
