@@ -41,6 +41,7 @@ import { Route as AuthenticatedHomePlanRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHouseholdLabRouteImport } from './routes/_authenticated/household-lab'
 import { Route as AuthenticatedLenderRouteRouteImport } from './routes/_authenticated/lender/route'
 import { Route as AuthenticatedMoneyRouteImport } from './routes/_authenticated/money'
+import { Route as AuthenticatedReverseLookupTestRouteImport } from './routes/_authenticated/reverse-lookup-test'
 import { Route as AuthenticatedTimelineRouteImport } from './routes/_authenticated/timeline'
 import { Route as AgentsIndexRouteImport } from './routes/agents.index'
 import { Route as AgentsDeckRouteImport } from './routes/agents.deck'
@@ -258,6 +259,12 @@ const AuthenticatedMoneyRoute = AuthenticatedMoneyRouteImport.update({
   path: '/money',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedReverseLookupTestRoute =
+  AuthenticatedReverseLookupTestRouteImport.update({
+    id: '/reverse-lookup-test',
+    path: '/reverse-lookup-test',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTimelineRoute = AuthenticatedTimelineRouteImport.update({
   id: '/timeline',
   path: '/timeline',
@@ -588,6 +595,7 @@ export interface FileRoutesByFullPath {
   '/home-plan': typeof AuthenticatedHomePlanRoute
   '/household-lab': typeof AuthenticatedHouseholdLabRoute
   '/money': typeof AuthenticatedMoneyRoute
+  '/reverse-lookup-test': typeof AuthenticatedReverseLookupTestRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
   '/agents/pricing': typeof AgentsPricingRoute
@@ -671,6 +679,7 @@ export interface FileRoutesByTo {
   '/home-plan': typeof AuthenticatedHomePlanRoute
   '/household-lab': typeof AuthenticatedHouseholdLabRoute
   '/money': typeof AuthenticatedMoneyRoute
+  '/reverse-lookup-test': typeof AuthenticatedReverseLookupTestRoute
   '/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
   '/agents/pricing': typeof AgentsPricingRoute
@@ -759,6 +768,7 @@ export interface FileRoutesById {
   '/_authenticated/home-plan': typeof AuthenticatedHomePlanRoute
   '/_authenticated/household-lab': typeof AuthenticatedHouseholdLabRoute
   '/_authenticated/money': typeof AuthenticatedMoneyRoute
+  '/_authenticated/reverse-lookup-test': typeof AuthenticatedReverseLookupTestRoute
   '/_authenticated/timeline': typeof AuthenticatedTimelineRoute
   '/agents/deck': typeof AgentsDeckRoute
   '/agents/pricing': typeof AgentsPricingRoute
@@ -848,6 +858,7 @@ export interface FileRouteTypes {
     | '/home-plan'
     | '/household-lab'
     | '/money'
+    | '/reverse-lookup-test'
     | '/timeline'
     | '/agents/deck'
     | '/agents/pricing'
@@ -931,6 +942,7 @@ export interface FileRouteTypes {
     | '/home-plan'
     | '/household-lab'
     | '/money'
+    | '/reverse-lookup-test'
     | '/timeline'
     | '/agents/deck'
     | '/agents/pricing'
@@ -1018,6 +1030,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home-plan'
     | '/_authenticated/household-lab'
     | '/_authenticated/money'
+    | '/_authenticated/reverse-lookup-test'
     | '/_authenticated/timeline'
     | '/agents/deck'
     | '/agents/pricing'
@@ -1339,6 +1352,13 @@ declare module '@tanstack/react-router' {
       path: '/money'
       fullPath: '/money'
       preLoaderRoute: typeof AuthenticatedMoneyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reverse-lookup-test': {
+      id: '/_authenticated/reverse-lookup-test'
+      path: '/reverse-lookup-test'
+      fullPath: '/reverse-lookup-test'
+      preLoaderRoute: typeof AuthenticatedReverseLookupTestRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/timeline': {
@@ -1833,6 +1853,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomePlanRoute: typeof AuthenticatedHomePlanRoute
   AuthenticatedHouseholdLabRoute: typeof AuthenticatedHouseholdLabRoute
   AuthenticatedMoneyRoute: typeof AuthenticatedMoneyRoute
+  AuthenticatedReverseLookupTestRoute: typeof AuthenticatedReverseLookupTestRoute
   AuthenticatedTimelineRoute: typeof AuthenticatedTimelineRoute
   AuthenticatedRequestsIdRoute: typeof AuthenticatedRequestsIdRoute
 }
@@ -1850,6 +1871,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomePlanRoute: AuthenticatedHomePlanRoute,
   AuthenticatedHouseholdLabRoute: AuthenticatedHouseholdLabRoute,
   AuthenticatedMoneyRoute: AuthenticatedMoneyRoute,
+  AuthenticatedReverseLookupTestRoute: AuthenticatedReverseLookupTestRoute,
   AuthenticatedTimelineRoute: AuthenticatedTimelineRoute,
   AuthenticatedRequestsIdRoute: AuthenticatedRequestsIdRoute,
 }
