@@ -41,3 +41,9 @@ Source: uploaded spec "Implement Phase 1 of SuCasa's BatchData Reverse Lookup" (
 - [x] Separate cost tracking: estimated vs provider-confirmed, $700 wallet as unverified starting estimate
 - [x] Offline fixture tests — 20 passed, no paid calls; live test proposal: 3 known contacts, max est. $0.90 (3 items × up to 3 results × $0.10)
 - [x] Approved live test (Oct 29): 3 lookups, no retries — Elsa Milena Sierra no_match, Eduardo Soto no_match, Amalia Manzo matched (1 person, owner at 3683 Maple Forge Ln; book address 4063 Poplar Springs Rd appeared rank 2). Est. spend $0.10 of $0.90 budget; billing_basis estimated, not provider-confirmed. No approvals, handoffs, enrichment, or publish.
+
+## Mixed-list upload workflow — Oct 29
+Source: uploaded spec "Your findings identify the gap. Implement the mixed-list upload workflow".
+- [ ] Implement lossless agent/lender mixed-list staging and routing, cache-first execution, bounded batch authorization, capacity disclosure and truthful upload-scoped completion reporting.
+- [ ] Verify both upload paths with offline fixtures and isolated database acceptance; reconcile original 1,948 vs 1,322 only with identifiable source; propose bounded live test without executing it.
+- Blocker: main and newly created "Mixed-list upload — isolated preview" draft both explicitly share the live database. Existing household-storage isolation requirement prohibits changing real import/storage behavior here; no importer edits, schema changes, original-upload replay, queue release, provider calls, Amalia approval, outreach, subscription changes or publication performed. Draft instructed to stop on shared database and report read-only/offline findings only.
