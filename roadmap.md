@@ -40,3 +40,4 @@ Source: uploaded spec "Implement Phase 1 of SuCasa's BatchData Reverse Lookup" (
 - [x] Explicit handoff action: approved property → contact address (never overwrite) + enrichment queue only (no grant, no paid property lookup)
 - [x] Separate cost tracking: estimated vs provider-confirmed, $700 wallet as unverified starting estimate
 - [x] Offline fixture tests — 20 passed, no paid calls; live test proposal: 3 known contacts, max est. $0.90 (3 items × up to 3 results × $0.10)
+- [x] Approved live test (Oct 29): 3 lookups, no retries — Elsa Milena Sierra no_match, Eduardo Soto no_match, Amalia Manzo matched (1 person, owner at 3683 Maple Forge Ln; book address 4063 Poplar Springs Rd appeared rank 2). Est. spend $0.10 of $0.90 budget; billing_basis estimated, not provider-confirmed. No approvals, handoffs, enrichment, or publish.
