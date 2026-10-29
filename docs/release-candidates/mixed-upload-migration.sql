@@ -113,53 +113,75 @@ BEGIN
     'counts', (SELECT counts FROM contact_import_batches WHERE id = _batch));
 END $$;
 
--- Batch spending approval → lookup release. Releases saved-record homes first (they reuse the
--- cache), then at most p_max_lookups homes needing a paid lookup, and creates ONE book-scoped
--- release grant listing exactly those jobs. Repeat calls only release what is still held.
+-- Batch spending approval → lookup release. Saved-record homes are released under their own
+-- grant with max_dispatches = 0, so reusing a saved record can never trigger or consume a paid
+-- lookup (a stale record finishes as "cache_partial", never a provider call). At most
+-- p_max_lookups homes needing a paid lookup are released under a second grant whose
+-- max_dispatches equals exactly the number released. The confirmed dollar ceiling is checked
+-- here against a fixed 10¢-per-lookup estimate. Repeat calls only release what is still held.
 CREATE OR REPLACE FUNCTION public.approve_upload_spend(
-  p_batch uuid, p_actor uuid, p_max_lookups integer, p_note text DEFAULT NULL
+  p_batch uuid, p_actor uuid, p_max_lookups integer, p_max_cost_cents integer, p_note text DEFAULT NULL
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE _book uuid; _ids uuid[]; _jobs uuid[]; _grant uuid; _paid int;
+DECLARE _book uuid; _cached uuid[]; _paid_ids uuid[]; _cjobs uuid[]; _pjobs uuid[];
+  _cgrant uuid; _pgrant uuid; _unit constant int := 10;
 BEGIN
   SELECT b.book_id INTO _book FROM contact_import_batches b JOIN lender_portfolios p ON p.id = b.book_id
-   WHERE b.id = p_batch AND b.upload_flow = 'mixed' AND p.assigned_user_id = p_actor;
+   WHERE b.id = p_batch AND b.upload_flow = 'mixed' AND p.assigned_user_id = p_actor
+   FOR UPDATE OF b;
   IF _book IS NULL THEN RAISE EXCEPTION 'Not allowed to approve this upload' USING ERRCODE = '42501'; END IF;
   IF p_max_lookups IS NULL OR p_max_lookups < 0 OR p_max_lookups > 500 THEN
     RAISE EXCEPTION 'Approved lookups must be between 0 and 500';
+  END IF;
+  IF p_max_cost_cents IS NULL OR p_max_cost_cents < 0 OR p_max_lookups * _unit > p_max_cost_cents THEN
+    RAISE EXCEPTION 'Approved lookups exceed the confirmed spending limit';
   END IF;
 
   WITH held AS (
     SELECT h.client_id, s.cached, s.row_number FROM enrichment_intake_holds h
       JOIN upload_staged_rows s ON s.client_id = h.client_id AND s.batch_id = p_batch
      WHERE h.batch_id = p_batch AND h.released_at IS NULL
-  ), pick AS (
-    SELECT client_id FROM held WHERE cached
-    UNION ALL
-    SELECT client_id FROM (SELECT client_id FROM held WHERE NOT cached ORDER BY row_number LIMIT p_max_lookups) x
   ), rel AS (
     UPDATE enrichment_intake_holds SET released_at = now(), released_by = p_actor
-     WHERE client_id IN (SELECT client_id FROM pick) AND released_at IS NULL RETURNING client_id
-  ) SELECT coalesce(array_agg(client_id), '{}') INTO _ids FROM rel;
+     WHERE released_at IS NULL AND client_id IN (SELECT client_id FROM held WHERE cached)
+     RETURNING client_id
+  ) SELECT coalesce(array_agg(client_id), '{}') INTO _cached FROM rel;
+
+  WITH pick AS (
+    SELECT h.client_id FROM enrichment_intake_holds h
+      JOIN upload_staged_rows s ON s.client_id = h.client_id AND s.batch_id = p_batch
+     WHERE h.batch_id = p_batch AND h.released_at IS NULL AND NOT s.cached
+     ORDER BY s.row_number LIMIT p_max_lookups
+  ), rel AS (
+    UPDATE enrichment_intake_holds SET released_at = now(), released_by = p_actor
+     WHERE released_at IS NULL AND client_id IN (SELECT client_id FROM pick) RETURNING client_id
+  ) SELECT coalesce(array_agg(client_id), '{}') INTO _paid_ids FROM rel;
 
   INSERT INTO property_enrichment_queue (portfolio_client_id, portfolio_id, priority)
-  SELECT c.id, c.portfolio_id, 50 FROM lender_portfolio_clients c WHERE c.id = ANY(_ids) AND c.archived_at IS NULL
+  SELECT c.id, c.portfolio_id, 50 FROM lender_portfolio_clients c
+   WHERE c.id = ANY(_cached || _paid_ids) AND c.archived_at IS NULL
   ON CONFLICT (portfolio_client_id) DO NOTHING;
-  SELECT coalesce(array_agg(q.id), '{}') INTO _jobs FROM property_enrichment_queue q WHERE q.portfolio_client_id = ANY(_ids);
-  SELECT count(*) INTO _paid FROM upload_staged_rows WHERE batch_id = p_batch AND client_id = ANY(_ids) AND NOT cached;
+  SELECT coalesce(array_agg(q.id), '{}') INTO _cjobs FROM property_enrichment_queue q WHERE q.portfolio_client_id = ANY(_cached);
+  SELECT coalesce(array_agg(q.id), '{}') INTO _pjobs FROM property_enrichment_queue q WHERE q.portfolio_client_id = ANY(_paid_ids);
 
-  IF cardinality(_jobs) > 0 THEN
+  IF cardinality(_cjobs) > 0 THEN
     INSERT INTO enrichment_release_grants (portfolio_id, job_ids, max_dispatches, approved_by, approval_note, expires_at)
-    VALUES (_book, _jobs, cardinality(_jobs), p_actor::text,
-            coalesce(p_note, 'Upload batch ' || p_batch::text), now() + interval '7 days')
-    RETURNING id INTO _grant;
+    VALUES (_book, _cjobs, 0, p_actor::text, 'Saved records only · upload ' || p_batch::text, now() + interval '7 days')
+    RETURNING id INTO _cgrant;
   END IF;
-  UPDATE contact_import_batches SET spend_approved_lookups = spend_approved_lookups + _paid,
+  IF cardinality(_pjobs) > 0 THEN
+    INSERT INTO enrichment_release_grants (portfolio_id, job_ids, max_dispatches, approved_by, approval_note, expires_at)
+    VALUES (_book, _pjobs, cardinality(_pjobs), p_actor::text,
+            coalesce(p_note, 'Upload ' || p_batch::text) || ' · max ' || p_max_cost_cents || '¢', now() + interval '7 days')
+    RETURNING id INTO _pgrant;
+  END IF;
+  UPDATE contact_import_batches SET spend_approved_lookups = spend_approved_lookups + cardinality(_pjobs),
     spend_approved_by = p_actor, spend_approved_at = now() WHERE id = p_batch;
-  RETURN jsonb_build_object('released', cardinality(_ids), 'paid_lookups', _paid,
-                            'cached_reuse', cardinality(_ids) - _paid, 'grant_id', _grant);
+  RETURN jsonb_build_object('released', cardinality(_cjobs) + cardinality(_pjobs), 'paid_lookups', cardinality(_pjobs),
+    'cached_reuse', cardinality(_cjobs), 'max_cost_cents', cardinality(_pjobs) * _unit,
+    'cached_grant_id', _cgrant, 'grant_id', _pgrant);
 END $$;
 
 REVOKE EXECUTE ON FUNCTION public.stage_mixed_upload(uuid, uuid, text, text, jsonb) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.approve_upload_spend(uuid, uuid, integer, text) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.approve_upload_spend(uuid, uuid, integer, integer, text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.stage_mixed_upload(uuid, uuid, text, text, jsonb) TO service_role;
-GRANT EXECUTE ON FUNCTION public.approve_upload_spend(uuid, uuid, integer, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.approve_upload_spend(uuid, uuid, integer, integer, text) TO service_role;

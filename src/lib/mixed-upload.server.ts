@@ -35,7 +35,7 @@ export async function runMixedUpload(opts: {
   const { addressKey: legacyKey } = await import("./agent-discovery");
   const { partitionSuppressed } = await import("./suppression.server");
   const { suppressed } = await partitionSuppressed(admin, rows, (r) => ({
-    email: r.email ?? null, street: r.address, zip: r.zip ?? null,
+    email: r.email ?? null, phone: r.phone ?? null, street: r.address, zip: r.zip ?? null,
   }));
   const suppressedNums = new Set(suppressed.map((r) => r.rowNumber));
 
@@ -99,12 +99,57 @@ export async function runMixedUpload(opts: {
   };
 }
 
+/** Upload results for the uploader: every row's outcome plus what still waits for spending approval. */
+export async function getMixedUploadSummary(admin: any, batchId: string, actorId: string) {
+  const { data: batch } = await admin.from("contact_import_batches")
+    .select("id, book_id, total_rows, counts, created_at, upload_flow, spend_approved_lookups, spend_approved_at")
+    .eq("id", batchId).eq("upload_flow", "mixed").maybeSingle();
+  if (!batch) throw new Error("Upload not found.");
+  const { data: book } = await admin.from("lender_portfolios").select("assigned_user_id").eq("id", batch.book_id).maybeSingle();
+  if (!book || book.assigned_user_id !== actorId) throw new Error("Upload not found.");
+  const [{ data: rows }, { data: holds }] = await Promise.all([
+    admin.from("upload_staged_rows").select("row_number, outcome, cached, payload, client_id")
+      .eq("batch_id", batchId).order("row_number").limit(5000),
+    admin.from("enrichment_intake_holds").select("client_id").eq("batch_id", batchId).is("released_at", null).limit(5000),
+  ]);
+  const held = new Set(((holds ?? []) as any[]).map((h) => h.client_id));
+  let paidHeld = 0, cachedHeld = 0;
+  const list = ((rows ?? []) as any[]).map((r) => {
+    const waiting = r.client_id && held.has(r.client_id);
+    if (waiting) { if (r.cached) cachedHeld++; else paidHeld++; }
+    const p = r.payload ?? {};
+    return {
+      row: r.row_number as number,
+      outcome: r.outcome as string,
+      name: (p.name as string) ?? null,
+      address: [p.address, p.city, p.state].filter(Boolean).join(", ") || null,
+      waitingForApproval: !!waiting && !r.cached,
+      waitingForSavedRecord: !!waiting && !!r.cached,
+    };
+  });
+  return {
+    batchId,
+    createdAt: batch.created_at as string,
+    totalRows: batch.total_rows as number,
+    counts: (batch.counts ?? {}) as Record<string, number>,
+    approvedLookups: (batch.spend_approved_lookups ?? 0) as number,
+    approvedAt: (batch.spend_approved_at ?? null) as string | null,
+    spend: { paidLookupsWaiting: paidHeld, savedRecordsWaiting: cachedHeld, unitCents: LOOKUP_ESTIMATE_CENTS,
+      maxCents: paidHeld * LOOKUP_ESTIMATE_CENTS },
+    rows: list,
+  };
+}
+
 export async function approveMixedUploadSpend(opts: {
-  admin: any; batchId: string; actorId: string; maxLookups: number; note?: string;
+  admin: any; batchId: string; actorId: string; maxLookups: number; maxCostCents: number; note?: string;
 }) {
+  if (opts.maxLookups * LOOKUP_ESTIMATE_CENTS > opts.maxCostCents) {
+    throw new Error("Approved lookups exceed the confirmed spending limit.");
+  }
   const { data, error } = await opts.admin.rpc("approve_upload_spend", {
-    p_batch: opts.batchId, p_actor: opts.actorId, p_max_lookups: opts.maxLookups, p_note: opts.note ?? null,
+    p_batch: opts.batchId, p_actor: opts.actorId, p_max_lookups: opts.maxLookups,
+    p_max_cost_cents: opts.maxCostCents, p_note: opts.note ?? null,
   });
   if (error) throw new Error(error.message);
-  return data as { released: number; paid_lookups: number; cached_reuse: number; grant_id: string | null };
+  return data as { released: number; paid_lookups: number; cached_reuse: number; max_cost_cents: number; grant_id: string | null };
 }

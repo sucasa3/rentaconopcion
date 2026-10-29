@@ -7,6 +7,7 @@ import { ArrowLeft, UserPlus } from "lucide-react";
 import { BusinessShell } from "@/components/business-shell";
 import { addAgentPortfolioClient, ingestAgentPortfolioCsv } from "@/lib/agent.functions";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
+import { UploadResultsPanel } from "@/components/upload-results-panel";
 
 export const Route = createFileRoute("/_authenticated/agent/add-client/$id")({
   head: () => ({
@@ -36,6 +37,7 @@ function AddAgentClient() {
   const addFn = useServerFn(addAgentPortfolioClient);
   const ingestFn = useServerFn(ingestAgentPortfolioCsv);
   const [form, setForm] = useState({ ...EMPTY });
+  const [batchId, setBatchId] = useState<string | null>(null);
 
   const add = useMutation({
     mutationFn: () =>
@@ -74,6 +76,12 @@ function AddAgentClient() {
   const ingest = useMutation({
     mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
     onSuccess: (r: any) => {
+      if (r?.mixed?.batchId) {
+        qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
+        qc.invalidateQueries({ queryKey: ["agent-credits"] });
+        setBatchId(r.mixed.batchId);
+        return;
+      }
       toast.success(`Imported ${r.inserted} homeowner${r.inserted === 1 ? "" : "s"}`, {
         description:
           r.skipped > 0
@@ -144,6 +152,7 @@ function AddAgentClient() {
             busy={ingest.isPending}
             title="Add many at once"
           />
+          {batchId && <UploadResultsPanel batchId={batchId} onDone={() => navigate({ to: "/agent/reveal/$id", params: { id } })} />}
         </div>
       </main>
     </BusinessShell>

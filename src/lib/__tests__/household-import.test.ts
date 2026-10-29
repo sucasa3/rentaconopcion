@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { planHouseholdImport, type ImportSourceRow } from "../household-import";
 
 const row = (n: number, r: Partial<ImportSourceRow>): ImportSourceRow => ({
@@ -92,11 +92,23 @@ describe("household import planner", () => {
 
 describe("hold filter ignores the feature flag", () => {
   it("still removes held homes while the multi-home import is switched off", async () => {
+    // Multi-home import is intentionally ON now (migration 0042 applied). The rule under test is
+    // that the hold filter never consults the flag, so check it in both flag states.
+    vi.resetModules();
+    vi.doMock("../household-import", async (orig) => ({ ...(await orig<any>()), HOUSEHOLD_IMPORT_ENABLED: false }));
     const { withoutHeldClients, HOUSEHOLD_IMPORT_ENABLED } = await import("../household-import.server");
     expect(HOUSEHOLD_IMPORT_ENABLED).toBe(false);
+    vi.doUnmock("../household-import");
+    vi.resetModules();
     const q: any = { select: () => q, is: () => q, in: async () => ({ data: [{ client_id: "h" }], error: null }) };
     const admin: any = { from: () => q };
     expect((await withoutHeldClients(admin, [{ id: "h" }, { id: "x" }])).map((r) => r.id)).toEqual(["x"]);
+  });
+  it("removes held homes while the multi-home import is switched on (current setting)", async () => {
+    const { withoutHeldClients, HOUSEHOLD_IMPORT_ENABLED } = await import("../household-import.server");
+    expect(HOUSEHOLD_IMPORT_ENABLED).toBe(true);
+    const q: any = { select: () => q, is: () => q, in: async () => ({ data: [{ client_id: "h" }], error: null }) };
+    expect((await withoutHeldClients({ from: () => q } as any, [{ id: "h" }, { id: "x" }])).map((r) => r.id)).toEqual(["x"]);
   });
   it("fails closed on a lookup error", async () => {
     const { withoutHeldClients } = await import("../household-import.server");

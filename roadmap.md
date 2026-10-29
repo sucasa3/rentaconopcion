@@ -47,7 +47,9 @@ Source: uploaded spec "Your findings identify the gap. Implement the mixed-list 
 - [x] Offline planner (src/lib/upload-intake.ts): per-row outcomes, contact-only kept, waiting-for-capacity, re-upload dedupe, cache reuse, batch spend approval — 15 tests pass for agent + lender (Oct 29)
 - [x] Wired into agent + lender importers behind MIXED_UPLOAD_USER_IDS (off); staging + spend-approval SQL prepared unapplied; 15 local-database + 17 offline checks pass
 - [ ] Apply migration, enable for Neil's test accounts, end-to-end check, then bounded live test — awaiting approval
-- [ ] Upload screens: show contact-only/waiting counts and an approve-spend button (not built)
+- [x] Upload screens: per-upload results (every row), batch approval showing paid lookups + max $ before confirm; limits enforced server-side; saved records use a zero-dispatch grant (Oct 29)
+- [x] Older multi-home test aligned with the feature being on (checks both flag states)
+- [x] Opt-out check now includes phone numbers for uploads
 - [ ] Implement lossless agent/lender mixed-list staging and routing, cache-first execution, bounded batch authorization, capacity disclosure and truthful upload-scoped completion reporting.
 - [ ] Verify both upload paths with offline fixtures and isolated database acceptance; reconcile original 1,948 vs 1,322 only with identifiable source; propose bounded live test without executing it.
 - Blocker: main and newly created "Mixed-list upload — isolated preview" draft both explicitly share the live database. Existing household-storage isolation requirement prohibits changing real import/storage behavior here; no importer edits, schema changes, original-upload replay, queue release, provider calls, Amalia approval, outreach, subscription changes or publication performed. Draft instructed to stop on shared database and report read-only/offline findings only.
