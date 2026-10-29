@@ -50,7 +50,7 @@ export const getLenderQuickBrief = createServerFn({ method: "POST" })
         brief: null,
       };
 
-    const { formatMoney } = await import("./money");
+    const { formatMoney, centsFromDollars } = await import("./money");
     const facts: string[] = [];
     if (person.estimatedValueCents != null)
       facts.push(`Estimated home value ${formatMoney(person.estimatedValueCents)}`);
@@ -62,6 +62,8 @@ export const getLenderQuickBrief = createServerFn({ method: "POST" })
       );
     if (person.loanAgeYears != null) facts.push(`Mortgage is about ${person.loanAgeYears} years old`);
     if (person.dataGap) facts.push(person.dataGap);
+    if (person.inquirySnapshot?.estimatedValue != null) facts.push(`Homeowner-authorized request snapshot: estimated value ${formatMoney(centsFromDollars(person.inquirySnapshot.estimatedValue))}`);
+    if (person.inquirySnapshot?.estimatedEquity != null) facts.push(`Homeowner-authorized request snapshot: estimated equity ${formatMoney(centsFromDollars(person.inquirySnapshot.estimatedEquity))}`);
 
     const relationship = person.lastContactAt
       ? `Last contact ${new Date(person.lastContactAt).toLocaleDateString()}`
@@ -74,7 +76,7 @@ export const getLenderQuickBrief = createServerFn({ method: "POST" })
         name: person.name,
         whyHere: person.whyToday,
         whyToday: person.urgencyReason,
-        facts: facts.slice(0, 3),
+        facts: facts.slice(0, person.inquirySnapshot ? 6 : 3),
         relationship: person.engagementLine
           ? `${relationship} · ${person.engagementLine}`
           : relationship,

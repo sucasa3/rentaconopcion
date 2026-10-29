@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { useT } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
+import { useT, useLanguage } from "@/lib/i18n";
+import { inquiryConsentLanguage } from "@/lib/lending-partner";
 import { getMyLendingContact, requestMortgageConversation } from "@/lib/lending-partner.functions";
 
 const CFPB_URL = "https://www.consumerfinance.gov/owning-a-home/";
@@ -56,6 +58,7 @@ export function MortgageOptionsCard() {
               .filter(Boolean)
               .join(" · ")}
           </p>
+          {(data.officer.nmls || data.officer.companyNmls) && <p className="mt-1 text-xs text-muted-foreground">{t("lend.nmls_unverified")}</p>}
           <p className="mt-2 text-xs text-muted-foreground">
             {data.agentName ? t("lend.via", { agent: data.agentName }) : t("lend.via_generic")}
           </p>
@@ -71,13 +74,13 @@ export function MortgageOptionsCard() {
               </span>
             </div>
           ) : (
-            <button
+            <Button
               type="button"
               onClick={() => setOpen(true)}
               className="mt-4 w-full rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 sm:w-auto"
             >
               {t("lend.request")}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -113,6 +116,7 @@ function RequestDialog({
 }) {
   const t = useT();
   const qc = useQueryClient();
+  const { language } = useLanguage();
   const sendFn = useServerFn(requestMortgageConversation);
   const [channel, setChannel] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
@@ -138,6 +142,7 @@ function RequestDialog({
           phone: channel === "phone" ? phone.trim() || null : null,
           includeValueEquity: optIn,
           confirmed: true,
+          language,
         },
       }),
     onSuccess: () => {
@@ -177,16 +182,17 @@ function RequestDialog({
             <p className="font-semibold">{t("lend.modal_channel")}</p>
             <div className="mt-2 flex gap-2">
               {(["email", "phone"] as const).map((c) => (
-                <button
+                <Button
                   key={c}
                   type="button"
+                  variant="outline"
                   onClick={() => setChannel(c)}
                   className={`flex-1 rounded-full border px-3 py-2 text-xs font-semibold ${
                     channel === c ? "border-primary bg-primary/10 text-primary" : "border-border"
                   }`}
                 >
                   {t(c === "email" ? "lend.channel_email" : "lend.channel_phone")}
-                </button>
+                </Button>
               ))}
             </div>
             <Input
@@ -204,16 +210,18 @@ function RequestDialog({
           </label>
 
           <p className="text-xs text-muted-foreground">{t("lend.modal_not_marketing")}</p>
+          <p className="text-xs text-muted-foreground">{inquiryConsentLanguage(language, optIn)}</p>
 
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={() => onOpenChange(false)}
+              variant="outline"
               className="flex-1 rounded-full border border-border py-2.5 text-xs font-semibold hover:bg-secondary"
             >
               {t("lend.cancel")}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={send.isPending}
               onClick={() => send.mutate()}
@@ -221,7 +229,7 @@ function RequestDialog({
             >
               {send.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {t("lend.confirm")}
-            </button>
+            </Button>
           </div>
         </div>
       </DialogContent>

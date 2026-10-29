@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Landmark } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getLendingDesignation, setLendingDesignation } from "@/lib/lending-partner.functions";
 
 /**
@@ -64,22 +65,22 @@ export function LendingContactDesignation({ agentOrgId }: { agentOrgId: string }
                   <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                     Your lending contact
                   </span>
-                  <button
+                  <Button variant="outline"
                     onClick={() => save.mutate(null)}
                     disabled={save.isPending}
                     className="rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
                   >
                     Remove
-                  </button>
+                  </Button>
                 </div>
               ) : (
-                <button
+                <Button variant="outline"
                   onClick={() => save.mutate(o.connectionId)}
                   disabled={save.isPending || !o.name}
                   className="rounded-full border border-border px-4 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-60"
                 >
                   {current ? "Switch to this contact" : "Confirm as my lending contact"}
-                </button>
+                </Button>
               )}
             </div>
           );

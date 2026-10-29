@@ -5,9 +5,19 @@ import {
   designationIsLive,
   sharedFieldsFor,
   suggestedOfficer,
+  displayedNmls,
+  inquiryConsentLanguage,
 } from "../lending-partner";
 
 const H = "home-1";
+
+describe("NMLS identifiers", () => {
+  it("does not show placeholder zeros as a credential", () => {
+    expect(displayedNmls("NMLS 000000")).toBeNull();
+    expect(displayedNmls("pending")).toBeNull();
+    expect(displayedNmls("NMLS #123456")).toBe("123456");
+  });
+});
 
 describe("suggested officer", () => {
   it("suggests the LO who invited the agent", () => {
@@ -62,6 +72,10 @@ describe("designation liveness", () => {
 });
 
 describe("what is shared", () => {
+  it("records the selected language and explicit optional sharing decision", () => {
+    expect(inquiryConsentLanguage("en", false)).toContain("I do not authorize sharing my estimated home value or equity");
+    expect(inquiryConsentLanguage("es", true)).toContain("También autorizo compartir el valor estimado de mi casa y mi equity");
+  });
   it("defaults to name, contact and address only", () => {
     expect(sharedFieldsFor(false)).toEqual(["name", "contact", "address"]);
   });
