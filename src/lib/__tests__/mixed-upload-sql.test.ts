@@ -116,19 +116,23 @@ for (const [role, book, actor] of [["agent", AGENT_BOOK, AGENT], ["lender", LEND
     it("only the book owner can upload or approve", () => {
       expect(fails(`SELECT stage_mixed_upload('${book}','${OTHER}','x','${role}','[]'::jsonb)`)).toMatch(/own book/);
       const b = sql(`SELECT batch_id FROM upload_staged_rows WHERE book_id='${book}' LIMIT 1`);
-      expect(fails(`SELECT approve_upload_spend('${b}','${OTHER}',1)`)).toMatch(/Not allowed/);
+      expect(fails(`SELECT approve_upload_spend('${b}','${OTHER}',1,10)`)).toMatch(/Not allowed/);
     });
     it("approval of 0 paid lookups releases only the saved-record home", () => {
       const b = sql(`SELECT batch_id FROM upload_staged_rows WHERE book_id='${book}' AND row_number=1 AND outcome='added_cached'`);
-      const r = JSON.parse(sql(`SELECT approve_upload_spend('${b}','${actor}',0)`));
-      expect(r).toMatchObject({ released: 1, paid_lookups: 0, cached_reuse: 1 });
-      const g = sql(`SELECT max_dispatches || '|' || cardinality(job_ids) FROM enrichment_release_grants WHERE id='${r.grant_id}'`);
-      expect(g).toBe("1|1");
+      const r = JSON.parse(sql(`SELECT approve_upload_spend('${b}','${actor}',0,0)`));
+      expect(r).toMatchObject({ released: 1, paid_lookups: 0, cached_reuse: 1, grant_id: null });
+      // Saved-record reuse gets a zero-dispatch grant: it can never trigger or use a paid lookup.
+      const g = sql(`SELECT max_dispatches || '|' || cardinality(job_ids) FROM enrichment_release_grants WHERE id='${r.cached_grant_id}'`);
+      expect(g).toBe("0|1");
     });
     it("approval of 1 paid lookup releases exactly one more, then nothing", () => {
       const b = sql(`SELECT batch_id FROM upload_staged_rows WHERE book_id='${book}' AND row_number=1 AND outcome='added_cached'`);
-      expect(JSON.parse(sql(`SELECT approve_upload_spend('${b}','${actor}',1)`))).toMatchObject({ released: 1, paid_lookups: 1 });
-      expect(JSON.parse(sql(`SELECT approve_upload_spend('${b}','${actor}',5)`))).toMatchObject({ released: 0, grant_id: null });
+      expect(fails(`SELECT approve_upload_spend('${b}','${actor}',1,9)`)).toMatch(/spending limit/);
+      const r = JSON.parse(sql(`SELECT approve_upload_spend('${b}','${actor}',1,10)`));
+      expect(r).toMatchObject({ released: 1, paid_lookups: 1, cached_reuse: 0, max_cost_cents: 10 });
+      expect(sql(`SELECT max_dispatches FROM enrichment_release_grants WHERE id='${r.grant_id}'`)).toBe("1");
+      expect(JSON.parse(sql(`SELECT approve_upload_spend('${b}','${actor}',5,50)`))).toMatchObject({ released: 0, grant_id: null });
       expect(count(`SELECT spend_approved_lookups FROM contact_import_batches WHERE id='${b}'`)).toBe(1);
     });
   });
