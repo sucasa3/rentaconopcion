@@ -78,16 +78,15 @@ BEGIN
     _outcome := _r->>'outcome'; _p := coalesce(_r->'payload', '{}'::jsonb); _client := NULL;
     IF _outcome IN ('added_cached','added_needs_lookup') THEN
       IF EXISTS (SELECT 1 FROM lender_portfolio_clients WHERE portfolio_id = p_book AND archived_at IS NULL
-                 AND address_key = _r->>'identity_key') THEN
+                 AND address_key = _p->>'address_key') THEN
         _outcome := 'already_uploaded';
       ELSIF _cap <= 0 THEN
         _outcome := 'waiting_capacity';
       ELSE
         INSERT INTO lender_portfolio_clients (portfolio_id, client_name, client_email, client_phone,
-          address_line1, city, state, zip, address_key, loan_balance_cents, interest_rate_bps)
+          address_line1, city, state, zip, address_key)
         VALUES (p_book, _p->>'name', _p->>'email', _p->>'phone', _p->>'address', _p->>'city',
-          _p->>'state', _p->>'zip', _r->>'identity_key',
-          nullif(_p->>'loan_balance_cents','')::bigint, nullif(_p->>'interest_rate_bps','')::int)
+          _p->>'state', _p->>'zip', _p->>'address_key')
         RETURNING id INTO _client;
         _cap := _cap - 1;
       END IF;
