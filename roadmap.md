@@ -30,3 +30,13 @@ Source: uploaded spec "We have identified two critical issues" (Neil Terc). No p
 - [ ] Confirm designated-homeowner → LO Today/book in live sessions and notification receipt — no active designations/requests; prior synthetic LO email bounced; full linked-account flow remains unverified
 - [ ] Spanish live-session confirmation — saved profile language overrides device setting; translations and recorded consent are covered by focused tests
 - [ ] Legal review (RESPA) and NMLS verification — awaiting attorney/user
+
+## BatchData Reverse Lookup — Phase 1 (Oct 29, 2026)
+Source: uploaded spec "Implement Phase 1 of SuCasa's BatchData Reverse Lookup" (Neil Terc). Preview only, no publish, no paid calls without approval.
+- [ ] Secure secret entry for separate reverse-lookup token (BATCHDATA_REVERSE_API_KEY); property-lookup key untouched
+- [ ] Verified docs: endpoint /api/v3/property/reverse-skip-trace, option spelling propertyOwnersOnly; DISCREPANCY: docs say owner-only filters BEFORE the 3-person limit (up to 3 billed results/item), not 1 result/$0.10 max as Ricky stated
+- [ ] Controlled single-contact lookup: workspace-scoped, validated inputs, cache/dedupe, monthly spend cap, durable pre-call record, no auto-retry
+- [ ] Review states: matched / needs_review / no_match / invalid_input / provider_error; multi-person responses flagged and held
+- [ ] Explicit handoff action: approved property → contact address (never overwrite) + enrichment queue only (no grant, no paid property lookup)
+- [ ] Separate cost tracking: estimated vs provider-confirmed, $700 wallet as unverified starting estimate
+- [ ] Offline fixture tests (no paid calls); live test proposal: 3 known contacts, max est. $0.90 (3 items × up to 3 results × $0.10)
