@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { getUploadResults, approveUploadSpend } from "@/lib/mixed-upload.functions";
 import { useLanguage } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { UploadReversePanel } from "@/components/upload-reverse-panel";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -110,6 +111,7 @@ export function UploadResultsPanel({ batchId, onDone }: { batchId: string; onDon
         </ol>
       )}
 
+      <UploadReversePanel batchId={batchId} />
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent>
           <AlertDialogHeader>
