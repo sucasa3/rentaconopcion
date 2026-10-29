@@ -2151,7 +2151,11 @@ export type Database = {
           enrichment_hold: boolean
           file_sha256: string
           id: string
+          spend_approved_at: string | null
+          spend_approved_by: string | null
+          spend_approved_lookups: number
           total_rows: number
+          upload_flow: string | null
         }
         Insert: {
           book_id: string
@@ -2161,7 +2165,11 @@ export type Database = {
           enrichment_hold?: boolean
           file_sha256: string
           id?: string
+          spend_approved_at?: string | null
+          spend_approved_by?: string | null
+          spend_approved_lookups?: number
           total_rows: number
+          upload_flow?: string | null
         }
         Update: {
           book_id?: string
@@ -2171,7 +2179,11 @@ export type Database = {
           enrichment_hold?: boolean
           file_sha256?: string
           id?: string
+          spend_approved_at?: string | null
+          spend_approved_by?: string | null
+          spend_approved_lookups?: number
           total_rows?: number
+          upload_flow?: string | null
         }
         Relationships: [
           {
@@ -7265,6 +7277,70 @@ export type Database = {
         }
         Relationships: []
       }
+      upload_staged_rows: {
+        Row: {
+          batch_id: string
+          book_id: string
+          cached: boolean
+          client_id: string | null
+          created_at: string
+          id: string
+          identity_key: string | null
+          outcome: string
+          payload: Json
+          promoted_at: string | null
+          row_number: number
+        }
+        Insert: {
+          batch_id: string
+          book_id: string
+          cached?: boolean
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          identity_key?: string | null
+          outcome: string
+          payload?: Json
+          promoted_at?: string | null
+          row_number: number
+        }
+        Update: {
+          batch_id?: string
+          book_id?: string
+          cached?: boolean
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          identity_key?: string | null
+          outcome?: string
+          payload?: Json
+          promoted_at?: string | null
+          row_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_staged_rows_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "contact_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_staged_rows_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_staged_rows_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -7357,6 +7433,16 @@ export type Database = {
       apply_lender_seat_allowance: {
         Args: { _org_id: string }
         Returns: number
+      }
+      approve_upload_spend: {
+        Args: {
+          p_actor: string
+          p_batch: string
+          p_max_cost_cents: number
+          p_max_lookups: number
+          p_note?: string
+        }
+        Returns: Json
       }
       assign_homeowners_to_member: {
         Args: {
@@ -7644,6 +7730,16 @@ export type Database = {
       set_lender_retained_members: {
         Args: { _org_id: string; _user_ids: string[] }
         Returns: undefined
+      }
+      stage_mixed_upload: {
+        Args: {
+          p_actor: string
+          p_book: string
+          p_file_sha256: string
+          p_flow: string
+          p_rows: Json
+        }
+        Returns: Json
       }
       write_enrichment_claim: {
         Args: {
