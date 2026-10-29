@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { planHouseholdImport, type ImportSourceRow } from "../household-import";
 
 const row = (n: number, r: Partial<ImportSourceRow>): ImportSourceRow => ({
