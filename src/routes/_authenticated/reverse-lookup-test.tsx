@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/reverse-lookup-test")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ReverseLookupLab,
+  component: PreviewGate,
 });
 
 const STATUS_STYLE: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
