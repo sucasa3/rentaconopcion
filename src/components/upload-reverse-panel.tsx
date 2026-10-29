@@ -56,7 +56,7 @@ export function UploadReversePanel({ batchId }: { batchId: string }) {
                 <ul className="text-muted-foreground">{[p.property?.fullAddress, ...(p.addresses ?? []).map((a: any) => a.fullAddress)]
                   .filter((a, index, all) => a && all.indexOf(a) === index).map((a) => <li key={a}>{a}</li>)}</ul>
               </div>)}
-              {c.search.properties.map((p) => <div key={p.id} className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
+              {c.search.properties.map((p: { id: string; address: string; status: string }) => <div key={p.id} className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
                 <span className="min-w-0 break-words">{p.address}<span className="block text-xs text-muted-foreground">{status(p.status)}</span></span>
                 {["needs_review", "waiting_capacity"].includes(p.status) && <Button size="sm" variant="outline" disabled={match.isPending}
                   onClick={() => setProperty({ id: p.id, address: p.address })}>{p.status === "waiting_capacity" ? L("Check capacity", "Ver capacidad") : L("Review match", "Revisar coincidencia")}</Button>}

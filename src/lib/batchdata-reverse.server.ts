@@ -218,7 +218,7 @@ export async function runContactReverseLookup(opts: {
   const { dispatchReverseItem } = await import("./reverse-provider.server");
   const classified = await dispatchReverseItem({ apiKey, requestId, phone: input.phone, email: input.email, name: client.client_name });
   await supabaseAdmin.from("batchdata_reverse_lookups").update({
-    status: classified.status, person_count: classified.persons.length, persons: classified.persons,
+    status: classified.status, person_count: classified.persons.length, persons: JSON.parse(JSON.stringify(classified.persons)),
     multi_person_flag: classified.multiPerson, name_evidence: classified.nameEvidence,
     provider_request_id: classified.providerRequestId, http_status: classified.httpStatus,
     error_message: classified.errorMessage ?? classified.reviewReason,
