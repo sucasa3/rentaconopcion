@@ -11,6 +11,7 @@ import { useLanguage } from "@/lib/i18n";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { Button } from "@/components/ui/button";
 import { UploadResultsPanel } from "@/components/upload-results-panel";
+import { UploadResultsHistory } from "@/components/upload-results-history";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   head: () => ({ meta: [
@@ -143,6 +144,7 @@ function PortfolioImport() {
 
       <div id="csv" className="scroll-mt-20" />
       <BulkClientUpload onCsv={(csv) => ingest.mutate(csv)} busy={ingest.isPending} />
+      <UploadResultsHistory bookId={id} onSelect={setBatchId} />
       {batchId && <UploadResultsPanel batchId={batchId} onDone={() => navigate({ to: "/lender/portfolio/$id", params: { id } })} />}
     </div>
   );

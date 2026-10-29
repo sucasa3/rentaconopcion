@@ -4,6 +4,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { uploadReverseEnabled } from "./upload-reverse";
 
 const batch = z.object({ batchId: z.string().uuid() });
+export const listReverseUploadBatches = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ bookId: z.string().uuid() }).parse(i)).handler(async ({ data, context }) => {
+    if (!uploadReverseEnabled(context.userId, process.env["UPLOAD_REVERSE_ENABLED"], process.env["MIXED_UPLOAD_USER_IDS"])) return [];
+    const { data: book } = await context.supabase.from("lender_portfolios").select("assigned_user_id").eq("id", data.bookId).maybeSingle();
+    if (book?.assigned_user_id !== context.userId) throw new Error("Book not found.");
+    const { data: batches, error } = await context.supabase.from("contact_import_batches")
+      .select("id,created_at,total_rows").eq("book_id", data.bookId).eq("upload_flow", "mixed").order("created_at", { ascending: false }).limit(20);
+    if (error) throw new Error("Couldn't load previous uploads.");
+    return batches ?? [];
+  });
 export const getUploadReverseResults = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => batch.parse(i)).handler(async ({ data, context }) => {
     if (!uploadReverseEnabled(context.userId, process.env["UPLOAD_REVERSE_ENABLED"], process.env["MIXED_UPLOAD_USER_IDS"])) return { enabled: false as const };

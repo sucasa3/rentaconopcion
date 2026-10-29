@@ -8,11 +8,17 @@ import { BusinessShell } from "@/components/business-shell";
 import { addAgentPortfolioClient, ingestAgentPortfolioCsv } from "@/lib/agent.functions";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { UploadResultsPanel } from "@/components/upload-results-panel";
+import { UploadResultsHistory } from "@/components/upload-results-history";
 
 export const Route = createFileRoute("/_authenticated/agent/add-client/$id")({
   head: () => ({
     meta: [
       { title: "Add a homeowner — SuCasa Agent" },
+      { name: "description", content: "Add homeowners or review retained contacts and upload results in your SuCasa sphere." },
+      { property: "og:title", content: "Add a homeowner — SuCasa Agent" },
+      { property: "og:description", content: "Manage your personal homeowner uploads and review retained contacts." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -152,6 +158,7 @@ function AddAgentClient() {
             busy={ingest.isPending}
             title="Add many at once"
           />
+          <UploadResultsHistory bookId={id} onSelect={setBatchId} />
           {batchId && <UploadResultsPanel batchId={batchId} onDone={() => navigate({ to: "/agent/reveal/$id", params: { id } })} />}
         </div>
       </main>
