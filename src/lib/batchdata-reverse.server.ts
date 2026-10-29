@@ -189,7 +189,7 @@ export async function runContactReverseLookup(opts: {
   // 4. Monthly spending cap, checked BEFORE dispatch.
   const usage = await reverseUsageThisMonth(supabaseAdmin);
   const spend = reverseSpendDecision({ usedCentsThisMonth: usage.usedCents, capCents: usage.capCents });
-  if (!spend.allowed) return { outcome: "blocked", reason: spend.reason! };
+  if (!spend.allowed) return { outcome: "blocked", reason: spend.reason ?? "Spending limit reached." };
 
   // 5. Credential — separate reverse-lookup token, server-side only.
   const apiKey = process.env["BATCHDATA_REVERSE_API_KEY"];
@@ -214,68 +214,17 @@ export async function runContactReverseLookup(opts: {
     return { outcome: "blocked", reason: "Could not record the lookup. Nothing was sent." };
   }
 
-  // 7. One call, no automatic retry — an uncertain billing outcome is held.
-  const body = buildReverseRequestBody({ requestId, phone: input.phone, email: input.email });
-  let httpStatus = 0;
-  let raw: any = null;
-  let fetchError: string | null = null;
-  try {
-    const res = await fetch(REVERSE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-    httpStatus = res.status;
-    const text = await res.text();
-    try {
-      raw = JSON.parse(text);
-    } catch {
-      raw = null;
-    }
-    if (!res.ok) fetchError = `HTTP ${res.status}`;
-  } catch (err) {
-    fetchError = err instanceof Error ? err.message : String(err);
-  }
-
-  const providerRequestId = raw?.result?.meta?.requestId ?? null;
-
-  if (fetchError || !raw?.result?.data?.length) {
-    await supabaseAdmin
-      .from("batchdata_reverse_lookups")
-      .update({
-        status: "provider_error",
-        http_status: httpStatus || null,
-        provider_request_id: providerRequestId,
-        error_message: (fetchError ?? "Unexpected provider response").slice(0, 300),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", pending.id);
-    return { outcome: "ok", lookupId: pending.id, cached: false, status: "provider_error" };
-  }
-
-  const item = raw.result.data[0];
-  const classified = classifyReverseItem(item, client.client_name);
-
-  await supabaseAdmin
-    .from("batchdata_reverse_lookups")
-    .update({
-      status: classified.status,
-      person_count: classified.persons.length,
-      persons: classified.persons as any,
-      multi_person_flag: classified.multiPerson,
-      name_evidence: classified.nameEvidence,
-      provider_request_id: providerRequestId,
-      http_status: httpStatus,
-      error_message: classified.errorMessage ?? classified.reviewReason,
-      estimated_cost_cents: estimateReverseCostCents(classified.billableResults),
-      billing_basis: "estimated",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", pending.id);
+  // Shared transport; this legacy Test Lab retains its own durable lookup record.
+  const { dispatchReverseItem } = await import("./reverse-provider.server");
+  const classified = await dispatchReverseItem({ apiKey, requestId, phone: input.phone, email: input.email, name: client.client_name });
+  await supabaseAdmin.from("batchdata_reverse_lookups").update({
+    status: classified.status, person_count: classified.persons.length, persons: classified.persons,
+    multi_person_flag: classified.multiPerson, name_evidence: classified.nameEvidence,
+    provider_request_id: classified.providerRequestId, http_status: classified.httpStatus,
+    error_message: classified.errorMessage ?? classified.reviewReason,
+    estimated_cost_cents: classified.estimatedCostCents ?? REVERSE_MAX_ITEM_COST_CENTS,
+    billing_basis: "estimated", updated_at: new Date().toISOString(),
+  }).eq("id", pending.id);
 
   return { outcome: "ok", lookupId: pending.id, cached: false, status: classified.status };
 }
