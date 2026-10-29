@@ -46,7 +46,7 @@ Source: uploaded spec "Implement Phase 1 of SuCasa's BatchData Reverse Lookup" (
 Source: uploaded spec "Your findings identify the gap. Implement the mixed-list upload workflow".
 - [x] Offline planner (src/lib/upload-intake.ts): per-row outcomes, contact-only kept, waiting-for-capacity, re-upload dedupe, cache reuse, batch spend approval — 15 tests pass for agent + lender (Oct 29)
 - [x] Wired into agent + lender importers behind MIXED_UPLOAD_USER_IDS (off); staging + spend-approval SQL prepared unapplied; 15 local-database + 17 offline checks pass
-- [ ] Apply migration, enable for Neil's test accounts, end-to-end check, then bounded live test — awaiting approval
+- [x] Migration 0048 applied, published with flow off, enabled only for neil+agent and neil+loanofficer; controlled test passed Oct 29 (1 paid lookup, $0.10 est., no match; saved record $0; agent rows waiting for capacity; re-uploads added nothing)
 - [x] Upload screens: per-upload results (every row), batch approval showing paid lookups + max $ before confirm; limits enforced server-side; saved records use a zero-dispatch grant (Oct 29)
 - [x] Older multi-home test aligned with the feature being on (checks both flag states)
 - [x] Opt-out check now includes phone numbers for uploads
