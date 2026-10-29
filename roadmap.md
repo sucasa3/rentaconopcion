@@ -44,6 +44,8 @@ Source: uploaded spec "Implement Phase 1 of SuCasa's BatchData Reverse Lookup" (
 
 ## Mixed-list upload workflow — Oct 29
 Source: uploaded spec "Your findings identify the gap. Implement the mixed-list upload workflow".
+- [x] Offline planner (src/lib/upload-intake.ts): per-row outcomes, contact-only kept, waiting-for-capacity, re-upload dedupe, cache reuse, batch spend approval — 15 tests pass for agent + lender (Oct 29)
+- [ ] Wire planner into both importers + staging table — blocked on isolated database
 - [ ] Implement lossless agent/lender mixed-list staging and routing, cache-first execution, bounded batch authorization, capacity disclosure and truthful upload-scoped completion reporting.
 - [ ] Verify both upload paths with offline fixtures and isolated database acceptance; reconcile original 1,948 vs 1,322 only with identifiable source; propose bounded live test without executing it.
 - Blocker: main and newly created "Mixed-list upload — isolated preview" draft both explicitly share the live database. Existing household-storage isolation requirement prohibits changing real import/storage behavior here; no importer edits, schema changes, original-upload replay, queue release, provider calls, Amalia approval, outreach, subscription changes or publication performed. Draft instructed to stop on shared database and report read-only/offline findings only.
