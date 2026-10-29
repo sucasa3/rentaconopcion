@@ -74,3 +74,15 @@ it("lender rows keep loan details", () => {
   const r = parseUploadCsv(LENDER_CSV).rows[0];
   expect(r).toMatchObject({ name: "Ana Ruiz", loanBalanceCents: 25000000, interestRateBps: 675 });
 });
+
+import { mixedUploadEnabledFor } from "../upload-intake";
+describe("mixed upload switch", () => {
+  const me = "4809cf48-c396-410d-8c54-ff617dacc91c";
+  it("is off when unset, blank or 'off'", () => {
+    for (const v of [undefined, "", "off", " OFF "]) expect(mixedUploadEnabledFor(me, v)).toBe(false);
+  });
+  it("is on only for listed accounts", () => {
+    expect(mixedUploadEnabledFor(me, `x, ${me}`)).toBe(true);
+    expect(mixedUploadEnabledFor("00000000-0000-4000-8000-000000000009", me)).toBe(false);
+  });
+});
