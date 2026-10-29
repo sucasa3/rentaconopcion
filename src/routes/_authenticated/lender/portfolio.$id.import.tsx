@@ -10,6 +10,7 @@ import { recordAuthenticatedAgentEvent } from "@/lib/agent-funnel.functions";
 import { useLanguage } from "@/lib/i18n";
 import { getBusinessOverview } from "@/lib/business.functions";
 import { Button } from "@/components/ui/button";
+import { UploadResultsPanel } from "@/components/upload-results-panel";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   head: () => ({ meta: [
@@ -46,6 +47,7 @@ function PortfolioImport() {
   const overviewFn = useServerFn(getBusinessOverview);
   const { data: overview } = useQuery({ queryKey: ["business-overview", "lender"], queryFn: () => overviewFn({ data: { orgType: "lender" } }) });
   const [form, setForm] = useState({ ...EMPTY });
+  const [batchId, setBatchId] = useState<string | null>(null);
   const track = useServerFn(recordAuthenticatedAgentEvent);
   const { language } = useLanguage();
   const L = (en: string, es: string) => (language === "es" ? es : en);
@@ -57,6 +59,11 @@ function PortfolioImport() {
     },
     onSuccess: (r: any) => {
       void track({ data: { action: "lender_full_upload_completed" } }).catch(() => undefined);
+      if (r?.mixed?.batchId) {
+        qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
+        setBatchId(r.mixed.batchId);
+        return;
+      }
       toast.success(
         r.existing
           ? L(`Imported ${r.inserted} clients · ${r.existing} already in this book were skipped`, `Se importaron ${r.inserted} clientes · se omitieron ${r.existing} que ya estaban en esta cartera`)
@@ -136,6 +143,7 @@ function PortfolioImport() {
 
       <div id="csv" className="scroll-mt-20" />
       <BulkClientUpload onCsv={(csv) => ingest.mutate(csv)} busy={ingest.isPending} />
+      {batchId && <UploadResultsPanel batchId={batchId} onDone={() => navigate({ to: "/lender/portfolio/$id", params: { id } })} />}
     </div>
   );
 }
