@@ -84,9 +84,11 @@ BEGIN
         _outcome := 'waiting_capacity';
       ELSE
         INSERT INTO lender_portfolio_clients (portfolio_id, client_name, client_email, client_phone,
-          address_line1, city, state, zip, address_key)
+          address_line1, city, state, zip, address_key, loan_amount_at_close_cents, interest_rate)
         VALUES (p_book, _p->>'name', _p->>'email', _p->>'phone', _p->>'address', _p->>'city',
-          _p->>'state', _p->>'zip', _p->>'address_key')
+          _p->>'state', _p->>'zip', _p->>'address_key',
+          CASE WHEN p_flow = 'lender' THEN nullif(_p->>'loan_balance_cents','')::bigint END,
+          CASE WHEN p_flow = 'lender' THEN nullif(_p->>'interest_rate_bps','')::numeric / 100 END)
         RETURNING id INTO _client;
         _cap := _cap - 1;
       END IF;
