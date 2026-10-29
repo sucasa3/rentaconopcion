@@ -42,11 +42,11 @@ export function reverseMonthlyCapCents(): number {
 
 /** Org ids the user belongs to (agent and lender workspaces share this model). */
 async function memberOrgIds(supabaseAdmin: any, userId: string): Promise<string[]> {
+  // Suspended members are moved out of this table, so presence = active.
   const { data } = await supabaseAdmin
     .from("lender_members")
     .select("lender_org_id")
-    .eq("user_id", userId)
-    .is("suspended_at", null);
+    .eq("user_id", userId);
   return (data ?? []).map((m: any) => m.lender_org_id).filter(Boolean);
 }
 
