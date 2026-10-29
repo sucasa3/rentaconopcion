@@ -30,6 +30,7 @@
 - Personal intake uses the server-designated personalBookId and validates active assigned ownership before writes; branch redistribution uses an atomic manager-only RPC that moves existing rows, preserves consent and record IDs, updates queue references, and logs assignments — prevents implicit team ownership and duplicate enrichment.
 - Recovery and household/import-review modules stay pure/offline or preview-host-only Test Lab until durable storage is authorized; confirmed edges never widen caller access or activate financial signals.
 - Read scripts/AGENTS.md and src/lib/AGENTS.md before changing files there.
+- Retained upload owner search is a separate default-off approval flow with a durable input-level spend reservation, shared reverse-service transport, and capacity-held property confirmation; preserve original upload outcomes and never combine reverse spending with property-enrichment authorization.
 - Lender property_snapshot is not home-care consent; filter physical-home evidence and narratives, preserving internal provenance.
 - Enrichment fences claims and records dispatch before IO; uncertain outcomes require audited reconciliation, not automatic resend. Review SQL stays unapplied; no exactly-once spend claim.
 - The worker claims only jobs listed in an active `enrichment_release_grants` row (book-scoped, dispatch-capped, one dispatch per address); no grant = nothing released — installing the repair can never drain other customers' queues.

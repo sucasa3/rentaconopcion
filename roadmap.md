@@ -1,5 +1,11 @@
 # Roadmap — Agent experience repair (Oct 22, 2026)
 
+## Contact-only reverse owner search — Oct 29
+- [x] Connect retained agent/lender upload contacts to selectable, separately bounded reverse-search approval; default off, restricted to Neil's two test accounts.
+- [x] Durable repeat/click protection, suppression, ambiguous-match review, book dedupe, capacity waiting, separate property-enrichment approval; review SQL prepared only.
+- [x] 69 focused local checks passed and fixture screen verified; retained four contacts have never been searched but are synthetic and blocked from paid searching. Local mock test proposed at $0; eventual two-real-contact test max estimated $0.60 requires eligible retained contacts and approval.
+- [ ] Controlled hosted integration and enablement — awaits Neil's approval; Amalia, earlier pending homes and rewards unchanged.
+
 Source: uploaded spec "We have identified two critical issues" (Neil Terc). No publish without approval.
 
 ## Priority 1 — Automatic enrichment on manual add

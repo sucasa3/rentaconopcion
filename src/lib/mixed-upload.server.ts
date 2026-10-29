@@ -136,7 +136,7 @@ export async function getMixedUploadSummary(admin: any, batchId: string, actorId
     approvedAt: (batch.spend_approved_at ?? null) as string | null,
     spend: { paidLookupsWaiting: paidHeld, savedRecordsWaiting: cachedHeld, unitCents: LOOKUP_ESTIMATE_CENTS,
       maxCents: paidHeld * LOOKUP_ESTIMATE_CENTS },
-    rows: list,
+    rows: list.filter((r) => r.row <= batch.total_rows),
   };
 }
 
