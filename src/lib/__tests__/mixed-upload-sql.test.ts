@@ -63,6 +63,11 @@ BEGIN
   VALUES (NEW.id, NEW.portfolio_id, 50) ON CONFLICT (portfolio_client_id) DO NOTHING;
   RETURN NEW;
 END $f$;
+-- Production spend rule (simplified): each agent-book insert spends one credit.
+CREATE FUNCTION tg_spend() RETURNS trigger LANGUAGE plpgsql AS $f$
+BEGIN INSERT INTO agent_credit_ledger SELECT p.lender_org_id, -1 FROM lender_portfolios p JOIN lender_orgs o ON o.id=p.lender_org_id
+  WHERE p.id=NEW.portfolio_id AND o.org_type='agent'; RETURN NEW; END $f$;
+CREATE TRIGGER trg_spend AFTER INSERT ON lender_portfolio_clients FOR EACH ROW EXECUTE FUNCTION tg_spend();
 CREATE TRIGGER trg_enqueue AFTER INSERT ON lender_portfolio_clients FOR EACH ROW EXECUTE FUNCTION tg_enqueue_property_enrichment();
 `;
 
@@ -130,6 +135,6 @@ for (const [role, book, actor] of [["agent", AGENT_BOOK, AGENT], ["lender", LEND
 }
 
 it("lender loan details carry into the lender book only", () => {
-  expect(sql(`SELECT loan_amount_at_close_cents || '|' || rate_at_close FROM lender_portfolio_clients WHERE portfolio_id='${LENDER_BOOK}' AND client_email='ana@example.invalid'`)).toBe("25000000|6.75");
+  expect(sql(`SELECT loan_amount_at_close_cents || '|' || rate_at_close::float FROM lender_portfolio_clients WHERE portfolio_id='${LENDER_BOOK}' AND client_email='ana@example.invalid'`)).toBe("25000000|6.75");
   expect(sql(`SELECT coalesce(loan_amount_at_close_cents::text,'none') FROM lender_portfolio_clients WHERE portfolio_id='${AGENT_BOOK}' AND client_email='ana@example.invalid'`)).toBe("none");
 });
