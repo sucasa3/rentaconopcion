@@ -281,7 +281,7 @@ export function stagePayload(
     return {
       row_number: res.rowNumber,
       outcome,
-      identity_key: res.key,
+      identity_key: outcome === "suppressed" ? null : res.key,
       cached: res.outcome === "added_cached",
       payload: outcome === "suppressed" ? {} : {
         name: r.name || null, address: r.address || null, city: r.city, state: r.state, zip: r.zip,
