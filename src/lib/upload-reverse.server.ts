@@ -1,4 +1,5 @@
-import { uploadReverseInput, reverseBatchCeiling, reversePropertyCandidates } from "./upload-reverse";
+import { uploadReverseInput, reverseBatchCeiling, reversePropertyCandidates, withConflictReview } from "./upload-reverse";
+import { findPriorReverseSearch } from "./reverse-prior.server";
 import { getMixedUploadSummary } from "./mixed-upload.server";
 import { isSuppressed } from "./suppression.server";
 import { buildReverseInput } from "./batchdata-reverse";
@@ -11,6 +12,12 @@ async function ownedRows(admin: any, actor: string, batchId: string) {
     .eq("batch_id", batchId).eq("outcome", "contact_only");
   if (error) throw new Error("Couldn't read retained contacts.");
   return (data ?? []) as { id: string; payload: any; book_id: string; row_number: number }[];
+}
+
+async function bookOrg(admin: any, bookId: string): Promise<string> {
+  const { data, error } = await admin.from("lender_portfolios").select("lender_org_id").eq("id", bookId).maybeSingle();
+  if (error || !data?.lender_org_id) throw new Error("Couldn't verify previous searches.");
+  return data.lender_org_id;
 }
 
 export async function reverseUploadSummary(admin: any, actor: string, batchId: string) {
@@ -27,14 +34,12 @@ export async function reverseUploadSummary(admin: any, actor: string, batchId: s
     const input = uploadReverseInput(r.payload);
     const suppressed = await isSuppressed(admin, r.payload);
     const search = (searches ?? []).find((s: any) => s.staged_id === r.id);
-    // Never re-search a result from the original Test Lab, including old/uncertain outcomes.
+    // Searches from the Test Lab AND from any upload (this account or workspace) block a paid repeat.
     let previouslySearched = false;
     if (input.ok && !search) {
-      const filters = [input.phone ? `input_phone.eq.${input.phone}` : null, input.email ? `input_email.eq.${input.email}` : null].filter(Boolean);
-      const { data: prior, error: priorError } = await admin.from("batchdata_reverse_lookups").select("id")
-        .eq("requested_by", actor).or(filters.join(",")).limit(1);
-      if (priorError) throw new Error("Couldn't verify previous searches.");
-      previouslySearched = !!prior?.length;
+      previouslySearched = !!await findPriorReverseSearch(admin, {
+        orgId: await bookOrg(admin, r.book_id), actor, phone: input.phone, email: input.email, excludeStagedId: r.id,
+      });
     }
     contacts.push({ id: r.id, row: r.row_number, name: r.payload.name ?? "—",
       eligible: input.ok && !suppressed && !search && !previouslySearched,
@@ -69,6 +74,10 @@ export async function approveReverseUpload(opts: {
     const input = uploadReverseInput(row.payload);
     if (!input.ok) throw new Error(input.reason);
     if (await isSuppressed(opts.admin, row.payload)) throw new Error("An opted-out contact was selected. Nothing sent.");
+    if (await findPriorReverseSearch(opts.admin, { orgId: await bookOrg(opts.admin, row.book_id), actor: opts.actor,
+      phone: input.phone, email: input.email, excludeStagedId: id })) {
+      throw new Error("A selected contact was already searched. Nothing sent; no repeat paid search.");
+    }
     items.push({ stagedId: id, phone: input.phone ?? null, email: input.email ?? null });
   }
   const { data: reserved, error } = await opts.admin.rpc("reserve_upload_reverse", {
@@ -94,7 +103,7 @@ export async function approveReverseUpload(opts: {
       .update({ status: "pending", dispatched_at: new Date().toISOString() }).eq("id", id).eq("status", "reserved").select("id");
     if (claimError) throw new Error("Couldn't record dispatch. Nothing sent; held.");
     if (!claimed?.length) continue;
-    const result = await dispatchReverseItem({ apiKey: opts.apiKey, requestId: id, phone: input.phone, email: input.email, name: row.payload.name, fetcher: opts.fetcher });
+    const result = withConflictReview(await dispatchReverseItem({ apiKey: opts.apiKey, requestId: id, phone: input.phone, email: input.email, name: row.payload.name, fetcher: opts.fetcher }), { phone: input.phone, email: input.email });
     sent++;
     const { error: saveError } = await opts.admin.from("upload_reverse_searches").update({
       status: result.status, persons: result.persons, estimated_cost_cents: result.estimatedCostCents,
@@ -103,7 +112,7 @@ export async function approveReverseUpload(opts: {
     if (saveError) throw new Error("Search sent, but result couldn't be saved. Held; do not retry.");
     const candidates = reversePropertyCandidates(result.persons).map((p) => ({
       search_id: id, person_index: p.personIndex, property_key: p.key,
-      payload: { ...p, name: row.payload.name, address_key: legacyAddressKey(p) }, status: "needs_review",
+      payload: { ...p, name: row.payload.name, address_key: legacyAddressKey(p), conflict: result.conflict }, status: "needs_review",
     }));
     if (candidates.length) {
       const { error: candidateError } = await opts.admin.from("upload_reverse_properties").upsert(candidates, { onConflict: "search_id,property_key", ignoreDuplicates: true });
@@ -117,8 +126,9 @@ export async function approveReverseUpload(opts: {
 export async function confirmReverseUploadProperty(admin: any, actor: string, propertyId: string) {
   const { data: property, error } = await admin.from("upload_reverse_properties").select("search_id,payload").eq("id", propertyId).maybeSingle();
   if (error || !property) throw new Error("Match not found.");
-  const { data: search } = await admin.from("upload_reverse_searches").select("batch_id,requested_by,input_email,input_phone").eq("id", property.search_id).maybeSingle();
+  const { data: search } = await admin.from("upload_reverse_searches").select("batch_id,requested_by,input_email,input_phone,status").eq("id", property.search_id).maybeSingle();
   if (!search || search.requested_by !== actor) throw new Error("Match not found.");
+  if (search.status !== "matched" && search.status !== "needs_review") throw new Error("This result can't be confirmed. It remains held.");
   await ownedRows(admin, actor, search.batch_id);
   if (await isSuppressed(admin, { email: search.input_email, phone: search.input_phone, street: property.payload.address, zip: property.payload.zip })) {
     throw new Error("This contact opted out. Match remains held.");

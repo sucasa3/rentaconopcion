@@ -186,6 +186,16 @@ export async function runContactReverseLookup(opts: {
     return { outcome: "ok", lookupId: (reusable as any).id, cached: true, status: reusable.status };
   }
 
+  // 3b. Same contact searched anywhere else (other contact rows, or the upload workflow)?
+  //     Never a second paid call — including after an uncertain outcome.
+  const { findPriorReverseSearch } = await import("./reverse-prior.server");
+  const crossPrior = await findPriorReverseSearch(supabaseAdmin, {
+    orgId: book.lender_org_id, actor: opts.userId, phone: input.phone, email: input.email,
+  });
+  if (crossPrior) {
+    return { outcome: "blocked", reason: "This contact was already searched. No repeat paid search." };
+  }
+
   // 4. Monthly spending cap, checked BEFORE dispatch.
   const usage = await reverseUsageThisMonth(supabaseAdmin);
   const spend = reverseSpendDecision({ usedCentsThisMonth: usage.usedCents, capCents: usage.capCents });
