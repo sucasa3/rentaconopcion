@@ -1,4 +1,5 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { readFileSync } from "node:fs";
 import { beforeAll, it, expect } from "vitest";
 
@@ -74,4 +75,36 @@ it("saved-record release gets zero paid allowance; reverse approval released not
   const r = JSON.parse(sql(`SELECT approve_upload_spend('${batch}','${actor}',0,0)`));
   expect(r).toMatchObject({ cached_reuse: 1, paid_lookups: 0, max_cost_cents: 0 });
   expect(sql(`SELECT max_dispatches FROM enrichment_release_grants WHERE id='${r.cached_grant_id}'`)).toBe("0");
+});
+
+it("two concurrent approvals reserve just one paid search", async () => {
+  sql(`INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(20)}','${batch}','${book}',20,'contact_only')`);
+  const q = `SELECT reserve_upload_reverse('${batch}','${actor}','[{"stagedId":"${U(20)}","phone":"6784442222"}]',1,30,1000)`;
+  const run = promisify(execFile);
+  const results = await Promise.all([run("psql",[...args,"-d","reverse_upload","-c",q]),run("psql",[...args,"-d","reverse_upload","-c",q])]);
+  expect(results.map((r) => JSON.parse(r.stdout.trim()).dispatchIds.length).sort()).toEqual([0,1]);
+  expect(sql("SELECT count(*) FROM upload_reverse_searches WHERE input_phone='6784442222'")).toBe("1");
+});
+
+it("concurrent confirmation of the same book address adds at most one home", async () => {
+  sql(`UPDATE lender_orgs SET profile_allowance=4 WHERE id='${org}';
+    INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
+      SELECT '${U(21)}',id,0,'new-1','{"name":"Ana","address":"9 Elm Ln","zip":"30518","address_key":"9elm|30518"}' FROM upload_reverse_searches WHERE input_phone='6784442222';
+    INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
+      SELECT '${U(22)}',id,1,'new-2','{"name":"Ana","address":"9 Elm Ln","zip":"30518","address_key":"9elm|30518"}' FROM upload_reverse_searches WHERE input_phone='6784442222';`);
+  const run = promisify(execFile);
+  const results = await Promise.all([21,22].map((n) => run("psql",[...args,"-d","reverse_upload","-c",`SELECT confirm_upload_reverse_property('${U(n)}','${actor}')`])));
+  expect(results.map((r) => JSON.parse(r.stdout.trim()).status).sort()).toEqual(["added","already_in_book"]);
+  expect(sql("SELECT count(*) FROM lender_portfolio_clients WHERE address_key='9elm|30518'")).toBe("1");
+});
+
+it("local authenticated RLS permits owner reads only and forbids direct write/RPC", () => {
+  sql(`CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.actor',true),'')::uuid $$;
+    GRANT USAGE ON SCHEMA auth TO authenticated; GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+    GRANT SELECT ON lender_portfolios TO authenticated;`);
+  const read = (u: string) => sql(`SET ROLE authenticated; SET test.actor='${u}'; SELECT count(*) FROM upload_reverse_searches`);
+  expect(Number(read(actor))).toBe(2);
+  expect(Number(read(U(99)))).toBe(0);
+  expect(fails(() => sql(`SET ROLE authenticated; INSERT INTO upload_reverse_searches(batch_id,staged_id,book_id,requested_by) VALUES('${batch}','${row}','${book}','${actor}')`))).toBe(true);
+  expect(fails(() => sql(`SET ROLE authenticated; SELECT confirm_upload_reverse_property('${U(21)}','${actor}')`))).toBe(true);
 });
