@@ -7277,6 +7277,143 @@ export type Database = {
         }
         Relationships: []
       }
+      upload_reverse_properties: {
+        Row: {
+          client_id: string | null
+          confirmed_at: string | null
+          id: string
+          payload: Json
+          person_index: number
+          property_key: string
+          search_id: string
+          staged_id: string | null
+          status: string
+        }
+        Insert: {
+          client_id?: string | null
+          confirmed_at?: string | null
+          id?: string
+          payload: Json
+          person_index: number
+          property_key: string
+          search_id: string
+          staged_id?: string | null
+          status?: string
+        }
+        Update: {
+          client_id?: string | null
+          confirmed_at?: string | null
+          id?: string
+          payload?: Json
+          person_index?: number
+          property_key?: string
+          search_id?: string
+          staged_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_reverse_properties_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_reverse_properties_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "upload_reverse_searches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_reverse_properties_staged_id_fkey"
+            columns: ["staged_id"]
+            isOneToOne: false
+            referencedRelation: "upload_staged_rows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upload_reverse_searches: {
+        Row: {
+          batch_id: string
+          billing_basis: string
+          book_id: string
+          created_at: string
+          dispatched_at: string | null
+          error_message: string | null
+          estimated_cost_cents: number | null
+          id: string
+          input_email: string | null
+          input_phone: string | null
+          persons: Json
+          provider_request_id: string | null
+          requested_by: string
+          reserved_cents: number
+          staged_id: string
+          status: string
+        }
+        Insert: {
+          batch_id: string
+          billing_basis?: string
+          book_id: string
+          created_at?: string
+          dispatched_at?: string | null
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          id?: string
+          input_email?: string | null
+          input_phone?: string | null
+          persons?: Json
+          provider_request_id?: string | null
+          requested_by: string
+          reserved_cents?: number
+          staged_id: string
+          status?: string
+        }
+        Update: {
+          batch_id?: string
+          billing_basis?: string
+          book_id?: string
+          created_at?: string
+          dispatched_at?: string | null
+          error_message?: string | null
+          estimated_cost_cents?: number | null
+          id?: string
+          input_email?: string | null
+          input_phone?: string | null
+          persons?: Json
+          provider_request_id?: string | null
+          requested_by?: string
+          reserved_cents?: number
+          staged_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_reverse_searches_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "contact_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_reverse_searches_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upload_reverse_searches_staged_id_fkey"
+            columns: ["staged_id"]
+            isOneToOne: true
+            referencedRelation: "upload_staged_rows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       upload_staged_rows: {
         Row: {
           batch_id: string
@@ -7517,6 +7654,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["lifecycle_stage"]
       }
+      confirm_upload_reverse_property: {
+        Args: { p_actor: string; p_property: string }
+        Returns: Json
+      }
       create_lender_team_invite: {
         Args: {
           _email: string
@@ -7697,6 +7838,17 @@ export type Database = {
       resend_lender_team_invite: {
         Args: { _invite_id: string; _token_hash: string }
         Returns: undefined
+      }
+      reserve_upload_reverse: {
+        Args: {
+          p_actor: string
+          p_batch: string
+          p_items: Json
+          p_max_cost_cents: number
+          p_max_lookups: number
+          p_month_cap: number
+        }
+        Returns: Json
       }
       save_home_system: {
         Args: {
