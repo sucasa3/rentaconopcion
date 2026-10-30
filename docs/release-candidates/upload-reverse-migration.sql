@@ -1,4 +1,4 @@
--- REVIEW ONLY: do not apply to the shared database without rollout approval.
+-- APPLIED Oct 30 2026 as drizzle migrations 0049 + tighten grants.
 CREATE TABLE public.upload_reverse_searches (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), batch_id uuid NOT NULL REFERENCES public.contact_import_batches(id),
  staged_id uuid NOT NULL REFERENCES public.upload_staged_rows(id), book_id uuid NOT NULL REFERENCES public.lender_portfolios(id),
@@ -114,4 +114,7 @@ END $$;
 REVOKE EXECUTE ON FUNCTION public.reserve_upload_reverse(uuid,uuid,jsonb,integer,integer,integer) FROM PUBLIC,anon,authenticated;
 REVOKE EXECUTE ON FUNCTION public.confirm_upload_reverse_property(uuid,uuid) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.reserve_upload_reverse(uuid,uuid,jsonb,integer,integer,integer) TO service_role;
-GRANT EXECUTE ON FUNCTION public.confirm_upload_reverse_property(uuid,uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.confirm_upload_reverse_property(uuid,uuid) TO service_role;REVOKE ALL ON public.upload_reverse_searches FROM anon, authenticated;
+REVOKE ALL ON public.upload_reverse_properties FROM anon, authenticated;
+GRANT SELECT ON public.upload_reverse_searches TO authenticated;
+GRANT SELECT ON public.upload_reverse_properties TO authenticated;
