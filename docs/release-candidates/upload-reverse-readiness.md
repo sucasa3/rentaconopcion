@@ -39,7 +39,7 @@ Upload a 2-row CSV on the loan officer account with no address column values (mi
 
 ## Hosted permission checks (read-only, after migration is applied)
 1. `has_table_privilege('anon', 'public.upload_reverse_searches','SELECT')` and for `upload_reverse_properties` = false; authenticated SELECT only; no INSERT/UPDATE/DELETE for authenticated.
-2. `has_function_privilege('authenticated'|'anon', reserve_upload_reverse / confirm_upload_reverse_property, 'EXECUTE')` = false; service_role = true (confirm grant to service_role must be verified — add if missing).
+2. `has_function_privilege('authenticated'|'anon', reserve_upload_reverse / confirm_upload_reverse_property, 'EXECUTE')` = false; service_role = true.
 3. RLS enabled on both tables; policies scoped to `requested_by = auth.uid()` plus assigned book.
 4. Signed in as each test account: own rows readable, the other account's rows not visible.
 5. Security scan shows no new findings.
