@@ -92,10 +92,10 @@ describe("input normalization", () => {
 });
 
 describe("request body", () => {
-  it("always sends propertyOwnersOnly: true with no way to disable it", () => {
+  it("always sends propertyOwnersOnly: false so non-owner matches are returned for review", () => {
     const body = buildReverseRequestBody({ requestId: "r1", phone: "6025550142" });
-    expect((body.options as any).propertyOwnersOnly).toBe(true);
-    expect(JSON.stringify(body)).toContain('"propertyOwnersOnly":true');
+    expect((body.options as any).propertyOwnersOnly).toBe(false);
+    expect(JSON.stringify(body)).toContain('"propertyOwnersOnly":false');
     expect(JSON.stringify(body)).not.toContain("propertyOwnerOnly");
   });
 
@@ -137,9 +137,10 @@ describe("classification", () => {
     expect(r.nameEvidence).toBe("mismatch");
   });
 
-  it("non-owner person (owner-only should filter these) → needs_review", () => {
+  it("non-owner person → needs_review with the ownership indicator preserved", () => {
     const r = classifyReverseItem(item([person({ propertyOwner: false })]), "John Doe");
     expect(r.status).toBe("needs_review");
+    expect(r.persons[0].propertyOwner).toBe(false);
   });
 
   it("match without any property association → needs_review", () => {

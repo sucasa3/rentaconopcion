@@ -41,3 +41,14 @@ export const confirmUploadReverseMatch = createServerFn({ method: "POST" }).midd
     const { confirmReverseUploadProperty } = await import("./upload-reverse.server");
     return confirmReverseUploadProperty(supabaseAdmin, context.userId, data.propertyId);
   });
+/** Explicit, one-time all-persons re-search of an owner-only "no match" (max 30¢, estimated). */
+export const approveUploadReverseRerun = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ searchId: z.string().uuid(), maxCostCents: z.literal(30) }).parse(i))
+  .handler(async ({ data, context }) => {
+    if (!uploadReverseEnabled(context.userId, process.env["UPLOAD_REVERSE_ENABLED"], process.env["MIXED_UPLOAD_USER_IDS"])) throw new Error("Reverse search is disabled.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { approveReverseRerun } = await import("./upload-reverse.server");
+    const rawCap = Number(process.env["BATCHDATA_REVERSE_MONTHLY_CAP_CENTS"]);
+    return approveReverseRerun({ admin: supabaseAdmin, actor: context.userId, ...data,
+      apiKey: process.env["BATCHDATA_REVERSE_API_KEY"], monthCap: Number.isInteger(rawCap) && rawCap > 0 ? rawCap : 1000 });
+  });

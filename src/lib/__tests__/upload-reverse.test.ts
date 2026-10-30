@@ -47,12 +47,12 @@ describe("agent and lender retained-contact reverse search", () => {
     expect(candidates[0].address).toBe("12 Oak St");
     expect(reversePropertyCandidates(classifyReverseItem({ persons: [{ ...person, property: null }] }, "Ana Ruiz").persons)).toEqual([]);
   });
-  it("returns no match at zero estimated cost using one owner-only request", async () => {
+  it("returns no match at zero estimated cost using one all-persons request", async () => {
     const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({ result: { data: [{ persons: [] }] } }), { status: 200 }));
     const result = await dispatchReverseItem({ apiKey: "fixture", requestId: "local", email: "fixture@example.com", fetcher: fetcher as typeof fetch });
     expect(result.status).toBe("no_match"); expect(result.estimatedCostCents).toBe(0); expect(fetcher).toHaveBeenCalledTimes(1);
     const body = JSON.parse(fetcher.mock.calls[0]?.[1]?.body as string);
-    expect(body.options.propertyOwnersOnly).toBe(true); expect(body.requests).toHaveLength(1);
+    expect(body.options.propertyOwnersOnly).toBe(false); expect(body.requests).toHaveLength(1);
   });
   it("uncertain transport holds the reservation and never retries", async () => {
     const fetcher = vi.fn().mockRejectedValue(new Error("timeout"));

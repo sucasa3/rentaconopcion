@@ -33,7 +33,9 @@ export async function reverseUploadSummary(admin: any, actor: string, batchId: s
   for (const r of rows) {
     const input = uploadReverseInput(r.payload);
     const suppressed = await isSuppressed(admin, r.payload);
-    const search = (searches ?? []).find((s: any) => s.staged_id === r.id);
+    const mine = (searches ?? []).filter((s: any) => s.staged_id === r.id)
+      .sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)));
+    const search = mine[mine.length - 1];
     // Searches from the Test Lab AND from any upload (this account or workspace) block a paid repeat.
     let previouslySearched = false;
     if (input.ok && !search) {
@@ -44,11 +46,12 @@ export async function reverseUploadSummary(admin: any, actor: string, batchId: s
     contacts.push({ id: r.id, row: r.row_number, name: r.payload.name ?? "—",
       eligible: input.ok && !suppressed && !search && !previouslySearched,
       reason: suppressed ? "Opted out" : !input.ok ? input.reason : previouslySearched ? "Previously searched — no repeat paid search" : null,
-      search: search ? { id: search.id, status: search.status, estimatedCents: search.estimated_cost_cents as number | null,
-        persons: search.persons, error: search.error_message,
+      rerunSearchId: search && mine.length === 1 && search.owner_filter === "owners_only" && search.status === "no_match" && !suppressed ? search.id as string : null,
+      searches: mine.map((search: any) => ({ id: search.id, status: search.status, ownerFilter: search.owner_filter as string,
+        estimatedCents: search.estimated_cost_cents as number | null, persons: search.persons, error: search.error_message,
         properties: (properties ?? []).filter((p: any) => p.search_id === search.id).map((p: any) => ({
           id: p.id, name: p.payload.name, address: [p.payload.address, p.payload.city, p.payload.state, p.payload.zip].filter(Boolean).join(", "), status: p.status,
-        })) } : null,
+        })) })),
     });
   }
   return { contacts, unitMaxCents: 30 };
@@ -103,24 +106,58 @@ export async function approveReverseUpload(opts: {
       .update({ status: "pending", dispatched_at: new Date().toISOString() }).eq("id", id).eq("status", "reserved").select("id");
     if (claimError) throw new Error("Couldn't record dispatch. Nothing sent; held.");
     if (!claimed?.length) continue;
-    const result = withConflictReview(await dispatchReverseItem({ apiKey: opts.apiKey, requestId: id, phone: input.phone, email: input.email, name: row.payload.name, fetcher: opts.fetcher }), { phone: input.phone, email: input.email });
+    const result = await dispatchAndSave(opts.admin, { id, apiKey: opts.apiKey, input, name: row.payload.name, fetcher: opts.fetcher });
     sent++;
-    const { error: saveError } = await opts.admin.from("upload_reverse_searches").update({
-      status: result.status, persons: result.persons, estimated_cost_cents: result.estimatedCostCents,
-      error_message: result.errorMessage ?? result.reviewReason, provider_request_id: result.providerRequestId,
-    }).eq("id", id);
-    if (saveError) throw new Error("Search sent, but result couldn't be saved. Held; do not retry.");
-    const candidates = reversePropertyCandidates(result.persons).map((p) => ({
-      search_id: id, person_index: p.personIndex, property_key: p.key,
-      payload: { ...p, name: row.payload.name, address_key: legacyAddressKey(p), conflict: result.conflict }, status: "needs_review",
-    }));
-    if (candidates.length) {
-      const { error: candidateError } = await opts.admin.from("upload_reverse_properties").upsert(candidates, { onConflict: "search_id,property_key", ignoreDuplicates: true });
-      if (candidateError) throw new Error("Match saved, but review details couldn't be saved. Do not retry search.");
-    }
     if (result.uncertain) break; // No subsequent batch calls after an uncertain outcome.
   }
   return { sent, maxCostCents: reserved.maxCostCents as number };
+}
+
+/** Dispatch one claimed search, save the outcome, and stage only provider-flagged owner properties for review. */
+async function dispatchAndSave(admin: any, o: { id: string; apiKey: string; input: { phone?: string; email?: string }; name: string | null; fetcher?: typeof fetch }) {
+  const result = withConflictReview(await dispatchReverseItem({ apiKey: o.apiKey, requestId: o.id, phone: o.input.phone, email: o.input.email, name: o.name, fetcher: o.fetcher }), { phone: o.input.phone, email: o.input.email });
+  const { error: saveError } = await admin.from("upload_reverse_searches").update({
+    status: result.status, persons: result.persons, estimated_cost_cents: result.estimatedCostCents,
+    error_message: result.errorMessage ?? result.reviewReason, provider_request_id: result.providerRequestId,
+  }).eq("id", o.id);
+  if (saveError) throw new Error("Search sent, but result couldn't be saved. Held; do not retry.");
+  const candidates = reversePropertyCandidates(result.persons).map((p) => ({
+    search_id: o.id, person_index: p.personIndex, property_key: p.key,
+    payload: { ...p, name: o.name, address_key: legacyAddressKey(p), conflict: result.conflict, ownership: "provider_flag_unverified" }, status: "needs_review",
+  }));
+  if (candidates.length) {
+    const { error: candidateError } = await admin.from("upload_reverse_properties").upsert(candidates, { onConflict: "search_id,property_key", ignoreDuplicates: true });
+    if (candidateError) throw new Error("Match saved, but review details couldn't be saved. Do not retry search.");
+  }
+  return result;
+}
+
+/**
+ * One explicitly approved re-search of an owner-only "no match" with the
+ * all-persons filter. The original result is kept; the RPC allows it once.
+ */
+export async function approveReverseRerun(opts: {
+  admin: any; actor: string; searchId: string; maxCostCents: number; apiKey?: string; monthCap: number; fetcher?: typeof fetch;
+}) {
+  if (opts.maxCostCents !== 30) throw new Error("The confirmed ceiling changed. Review again.");
+  if (!opts.apiKey) throw new Error("Reverse search isn't configured.");
+  const { data: original, error } = await opts.admin.from("upload_reverse_searches").select("*").eq("id", opts.searchId).maybeSingle();
+  if (error || !original || original.requested_by !== opts.actor) throw new Error("Search not found.");
+  const rows = await ownedRows(opts.admin, opts.actor, original.batch_id);
+  const row = rows.find((r) => r.id === original.staged_id);
+  if (!row) throw new Error("Retained contact missing. Nothing sent.");
+  if (await isSuppressed(opts.admin, row.payload)) throw new Error("This contact opted out. Nothing sent.");
+  const { data: id, error: reserveError } = await opts.admin.rpc("reserve_upload_reverse_rerun", {
+    p_search: opts.searchId, p_actor: opts.actor, p_max_cost_cents: opts.maxCostCents, p_month_cap: opts.monthCap,
+  });
+  if (reserveError || !id) throw new Error("Couldn't reserve this search. Nothing sent.");
+  const input = buildReverseInput({ phone: original.input_phone, email: original.input_email, requestId: id });
+  if (!input.ok) throw new Error("Reserved input isn't valid. Held.");
+  const { data: claimed, error: claimError } = await opts.admin.from("upload_reverse_searches")
+    .update({ status: "pending", dispatched_at: new Date().toISOString() }).eq("id", id).eq("status", "reserved").select("id");
+  if (claimError || !claimed?.length) throw new Error("Couldn't record dispatch. Nothing sent; held.");
+  const result = await dispatchAndSave(opts.admin, { id, apiKey: opts.apiKey, input, name: row.payload.name, fetcher: opts.fetcher });
+  return { status: result.status, maxCostCents: 30 };
 }
 
 export async function confirmReverseUploadProperty(admin: any, actor: string, propertyId: string) {
