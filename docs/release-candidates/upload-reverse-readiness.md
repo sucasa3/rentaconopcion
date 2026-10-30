@@ -53,3 +53,5 @@ Upload a 2-row CSV on the loan officer account with no address column values (mi
 6. Turn off with `UPLOAD_REVERSE_ENABLED=false` (and redeploy/publish the secret change for production). No migration rollback/purge needed; results, capacity-waiting matches and reservations remain preserved. Disabling cannot cancel a request already dispatched; uncertain/reserved work stays held.
 
 Do not mark production workflow verified until steps 1–5 succeed. Review-only SQL is intentionally unapplied.
+## Oct 30 rollout
+Migration applied (0049 + 0050 grant tightening: hosted defaults had given anon/authenticated write rights; now authenticated SELECT only, anon none, RPCs service-only). RLS on. UPLOAD_REVERSE_ENABLED=true; code limits access to the two test accounts. Publish requested; sucasa.com returns 200. Scan: no new findings. No paid searches run.
