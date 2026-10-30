@@ -66,7 +66,8 @@ it("an uncertain upload result cannot be confirmed", () => {
 });
 it("agent without capacity preserves confirmed match; no home, release or reward", () => {
   sql(`INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
-    SELECT '${U(7)}',id,0,'12oak|30518','{"name":"Ana Ruiz","address":"12 Oak St","zip":"30518","city":"Buford","state":"GA","address_key":"12oak|30518"}' FROM upload_reverse_searches;`);
+    SELECT '${U(7)}',id,0,'12oak|30518','{"name":"Ana Ruiz","address":"12 Oak St","zip":"30518","city":"Buford","state":"GA","address_key":"12oak|30518"}' FROM upload_reverse_searches WHERE staged_id='${row}';
+    UPDATE upload_reverse_searches SET status='matched' WHERE staged_id='${row}';`);
   expect(JSON.parse(sql(`SELECT confirm_upload_reverse_property('${U(7)}','${actor}')`)).status).toBe("waiting_capacity");
   expect(sql("SELECT count(*) FROM lender_portfolio_clients")).toBe("0");
   expect(sql("SELECT count(*) FROM enrichment_release_grants")).toBe("0");
