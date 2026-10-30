@@ -1,10 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 /** 1x1 transparent GIF. */
-const PIXEL = Buffer.from(
-  "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-  "base64",
-);
+// Decoded with atob (not Node Buffer) so this module is safe in every runtime.
+const PIXEL = Uint8Array.from(atob("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"), (c) => c.charCodeAt(0));
 
 export const Route = createFileRoute("/api/public/t/open")({
   server: {
