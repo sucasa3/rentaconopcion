@@ -7347,9 +7347,11 @@ export type Database = {
           id: string
           input_email: string | null
           input_phone: string | null
+          owner_filter: string
           persons: Json
           provider_request_id: string | null
           requested_by: string
+          rerun_of: string | null
           reserved_cents: number
           staged_id: string
           status: string
@@ -7365,9 +7367,11 @@ export type Database = {
           id?: string
           input_email?: string | null
           input_phone?: string | null
+          owner_filter?: string
           persons?: Json
           provider_request_id?: string | null
           requested_by: string
+          rerun_of?: string | null
           reserved_cents?: number
           staged_id: string
           status?: string
@@ -7383,9 +7387,11 @@ export type Database = {
           id?: string
           input_email?: string | null
           input_phone?: string | null
+          owner_filter?: string
           persons?: Json
           provider_request_id?: string | null
           requested_by?: string
+          rerun_of?: string | null
           reserved_cents?: number
           staged_id?: string
           status?: string
@@ -7406,9 +7412,16 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "upload_reverse_searches_rerun_of_fkey"
+            columns: ["rerun_of"]
+            isOneToOne: true
+            referencedRelation: "upload_reverse_searches"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "upload_reverse_searches_staged_id_fkey"
             columns: ["staged_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "upload_staged_rows"
             referencedColumns: ["id"]
           },
@@ -7849,6 +7862,15 @@ export type Database = {
           p_month_cap: number
         }
         Returns: Json
+      }
+      reserve_upload_reverse_rerun: {
+        Args: {
+          p_actor: string
+          p_max_cost_cents: number
+          p_month_cap: number
+          p_search: string
+        }
+        Returns: string
       }
       save_home_system: {
         Args: {
