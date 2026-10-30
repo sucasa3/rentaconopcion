@@ -121,9 +121,10 @@ export function buildReverseInput(opts: {
 }
 
 /**
- * The exact outgoing request body. `propertyOwnersOnly: true` is hard-coded
- * server-side for every request in this phase — there is no option to disable
- * it. Phone and email go in ONE combined item: persons matching both rank
+ * The exact outgoing request body. `propertyOwnersOnly: false` is fixed
+ * server-side (Oct 30 2026): non-owner matches are returned with their
+ * `propertyOwner` indicator preserved, and anything not flagged as an owner
+ * stays associated-only and held for review. Phone and email go in ONE combined item: persons matching both rank
  * first and the combined set bills at most 3 persons, which is cheaper than
  * two separate items (each of which could bill up to 3).
  */
@@ -138,7 +139,7 @@ export function buildReverseRequestBody(input: {
   return {
     requests: [item],
     options: {
-      propertyOwnersOnly: true,
+      propertyOwnersOnly: false,
       includeTCPABlacklistedPhones: true,
       dateFormat: "iso-date",
       showMeta: true,
@@ -328,7 +329,7 @@ export function classifyReverseItem(
       billableResults,
       errorMessage: null,
       reviewReason:
-        "More than one property owner matched this contact. Possible associations are preserved; none was selected automatically.",
+        "More than one person matched this contact. Possible associations are preserved; none was selected automatically.",
     };
   }
 
@@ -341,7 +342,7 @@ export function classifyReverseItem(
       billableResults,
       errorMessage: null,
       reviewReason:
-        "The matched person is not flagged as a property owner at the linked address. Held for review.",
+        "The matched person is not flagged as a property owner. Their addresses are associated only, not owned. Held for review.",
     };
   }
 
