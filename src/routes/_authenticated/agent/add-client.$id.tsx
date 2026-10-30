@@ -9,6 +9,7 @@ import { addAgentPortfolioClient, ingestAgentPortfolioCsv } from "@/lib/agent.fu
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { UploadResultsPanel } from "@/components/upload-results-panel";
 import { UploadResultsHistory } from "@/components/upload-results-history";
+import { singleContactCsv, singleContactMode } from "@/lib/single-contact";
 
 export const Route = createFileRoute("/_authenticated/agent/add-client/$id")({
   head: () => ({
@@ -80,14 +81,16 @@ function AddAgentClient() {
   });
 
   const ingest = useMutation({
-    mutationFn: (csv: string) => ingestFn({ data: { portfolioId: id, csv } }),
-    onSuccess: (r: any) => {
+    mutationFn: (v: { csv: string; single?: boolean }) => ingestFn({ data: { portfolioId: id, csv: v.csv } }),
+    onSuccess: (r: any, v) => {
       if (r?.mixed?.batchId) {
         qc.invalidateQueries({ queryKey: ["agent-portfolio", id] });
         qc.invalidateQueries({ queryKey: ["agent-credits"] });
         setBatchId(r.mixed.batchId);
+        if (v.single) { toast.success("Contact saved", { description: "Saved as a contact only — see results below." }); setForm({ ...EMPTY }); }
         return;
       }
+      if (v.single) { toast.error("Contacts without an address aren't available on your account yet. Please add an address."); return; }
       toast.success(`Imported ${r.inserted} homeowner${r.inserted === 1 ? "" : "s"}`, {
         description:
           r.skipped > 0
@@ -100,6 +103,12 @@ function AddAgentClient() {
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const mode = singleContactMode(form);
+  const submit = () => {
+    if (mode === "address") add.mutate();
+    else if (mode === "contact_only") ingest.mutate({ csv: singleContactCsv(form), single: true });
+  };
 
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
@@ -134,14 +143,21 @@ function AddAgentClient() {
               <Field label="Phone" value={form.phone} onChange={set("phone")} />
               <Field label="Note" value={form.notes} onChange={set("notes")} />
             </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              {mode === "contact_only"
+                ? "No address — this will be saved as a contact only. It won't use a homeowner credit or run any search; you can approve an owner search below."
+                : mode === "invalid" && form.fullName.trim() && (form.phone || form.email)
+                  ? "Enter a valid 10-digit phone or email, or add an address."
+                  : "Required: full name, plus an address, phone or email."}
+            </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
               <button
-                disabled={!form.fullName || !form.address || add.isPending}
-                onClick={() => add.mutate()}
+                disabled={mode === "invalid" || add.isPending || ingest.isPending}
+                onClick={submit}
                 className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
               >
-                <UserPlus className="h-4 w-4" /> {add.isPending ? "Adding…" : "Add homeowner"}
+                <UserPlus className="h-4 w-4" /> {add.isPending || ingest.isPending ? "Adding…" : mode === "contact_only" ? "Save contact" : "Add homeowner"}
               </button>
               <button
                 onClick={() => navigate({ to: "/agent/portfolio/$id", params: { id } })}
