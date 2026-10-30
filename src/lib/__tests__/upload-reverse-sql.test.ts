@@ -49,7 +49,8 @@ it("a prior Test Lab result blocks paid replay including uncertain outcomes", ()
 });
 it("agent without capacity preserves confirmed match; no home, release or reward", () => {
   sql(`INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
-    SELECT '${U(7)}',id,0,'12oak|30518','{"name":"Ana Ruiz","address":"12 Oak St","zip":"30518","city":"Buford","state":"GA","address_key":"12oak|30518"}' FROM upload_reverse_searches;`);
+    SELECT '${U(7)}',id,0,'12oak|30518','{"name":"Ana Ruiz","address":"12 Oak St","zip":"30518","city":"Buford","state":"GA","address_key":"12oak|30518"}' FROM upload_reverse_searches WHERE staged_id='${row}';
+    UPDATE upload_reverse_searches SET status='matched' WHERE staged_id='${row}';`);
   expect(JSON.parse(sql(`SELECT confirm_upload_reverse_property('${U(7)}','${actor}')`)).status).toBe("waiting_capacity");
   expect(sql("SELECT count(*) FROM lender_portfolio_clients")).toBe("0");
   expect(sql("SELECT count(*) FROM enrichment_release_grants")).toBe("0");
@@ -88,6 +89,7 @@ it("two concurrent approvals reserve just one paid search", async () => {
 
 it("concurrent confirmation of the same book address adds at most one home", async () => {
   sql(`UPDATE lender_orgs SET profile_allowance=4 WHERE id='${org}';
+    UPDATE upload_reverse_searches SET status='matched' WHERE input_phone='6784442222';
     INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
       SELECT '${U(21)}',id,0,'new-1','{"name":"Ana","address":"9 Elm Ln","zip":"30518","address_key":"9elm|30518"}' FROM upload_reverse_searches WHERE input_phone='6784442222';
     INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
@@ -107,4 +109,21 @@ it("local authenticated RLS permits owner reads only and forbids direct write/RP
   expect(Number(read(U(99)))).toBe(0);
   expect(fails(() => sql(`SET ROLE authenticated; INSERT INTO upload_reverse_searches(batch_id,staged_id,book_id,requested_by) VALUES('${batch}','${row}','${book}','${actor}')`))).toBe(true);
   expect(fails(() => sql(`SET ROLE authenticated; SELECT confirm_upload_reverse_property('${U(21)}','${actor}')`))).toBe(true);
+});
+it("an upload search in another workspace book, or a Test Lab search by the same person elsewhere, blocks paid replay", () => {
+  sql(`INSERT INTO lender_portfolios VALUES('${U(40)}','${org}','${U(41)}'); INSERT INTO lender_members VALUES('${U(41)}','${org}');
+    INSERT INTO contact_import_batches(id,book_id,created_by,upload_flow,total_rows) VALUES('${U(42)}','${U(40)}','${U(41)}','mixed',1);
+    INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(43)}','${U(42)}','${U(40)}',1,'contact_only');
+    INSERT INTO upload_reverse_searches(batch_id,staged_id,book_id,requested_by,input_phone,status) VALUES('${U(42)}','${U(43)}','${U(40)}','${U(41)}','6784447777','no_match');
+    INSERT INTO batchdata_reverse_lookups(org_id,requested_by,input_phone,status,estimated_cost_cents) VALUES('${U(98)}','${actor}','6784448888','matched',10);`);
+  sql(`INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(44)}','${batch}','${book}',44,'contact_only')`);
+  expect(fails(() => reserve(U(44), "6784447777"))).toBe(true);
+  expect(fails(() => reserve(U(44), "6784448888"))).toBe(true);
+  expect(sql(`SELECT count(*) FROM upload_reverse_searches WHERE staged_id='${U(44)}'`)).toBe("0");
+});
+it("an uncertain upload result cannot be confirmed", () => {
+  sql(`INSERT INTO upload_reverse_properties(id,search_id,person_index,property_key,payload)
+    SELECT '${U(45)}',id,0,'9x|30518','{"address":"9 X St","zip":"30518","address_key":"9x|30518"}' FROM upload_reverse_searches WHERE staged_id='${U(43)}';
+    UPDATE upload_reverse_searches SET status='provider_error' WHERE staged_id='${U(43)}';`);
+  expect(fails(() => sql(`SELECT confirm_upload_reverse_property('${U(45)}','${U(41)}')`))).toBe(true);
 });
