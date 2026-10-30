@@ -1,7 +1,7 @@
 # Roadmap — Agent experience repair (Oct 22, 2026)
 
 ## Contact-only reverse owner search — Oct 29
-- [ ] Demonstrate complete $0 local mock orchestration plus PostgreSQL flow, including multiple properties and separate enrichment approval; read-only real-contact proposal.
+- [x] Complete $0 local mock orchestration + PostgreSQL flow demonstrated for agent/lender: 84 tests pass including multi-property review, capacity recovery, duplicate/concurrent checks, owner RLS and separate enrichment grants. Read-only inspection found no eligible phone-only or never-searched phone+email contacts; Elsa is the only real phone contact and was already searched.
 - [x] Connect retained agent/lender upload contacts to selectable, separately bounded reverse-search approval; default off, restricted to Neil's two test accounts.
 - [x] Durable repeat/click protection, suppression, ambiguous-match review, book dedupe, capacity waiting, separate property-enrichment approval; review SQL prepared only.
 - [x] 69 focused local checks passed and fixture screen verified; retained four contacts have never been searched but are synthetic and blocked from paid searching. Local mock test proposed at $0; eventual two-real-contact test max estimated $0.60 requires eligible retained contacts and approval.

@@ -52,6 +52,8 @@ export async function reverseUploadSummary(admin: any, actor: string, batchId: s
 export async function approveReverseUpload(opts: {
   admin: any; actor: string; batchId: string; selectedIds: string[]; maxLookups: number; maxCostCents: number;
   apiKey?: string; monthCap: number;
+  /** Server/test dependency only; never accepted from RPC input. */
+  fetcher?: typeof fetch;
 }) {
   const ids = [...new Set(opts.selectedIds)];
   const ceiling = reverseBatchCeiling(ids.length);
@@ -92,7 +94,7 @@ export async function approveReverseUpload(opts: {
       .update({ status: "pending", dispatched_at: new Date().toISOString() }).eq("id", id).eq("status", "reserved").select("id");
     if (claimError) throw new Error("Couldn't record dispatch. Nothing sent; held.");
     if (!claimed?.length) continue;
-    const result = await dispatchReverseItem({ apiKey: opts.apiKey, requestId: id, phone: input.phone, email: input.email, name: row.payload.name });
+    const result = await dispatchReverseItem({ apiKey: opts.apiKey, requestId: id, phone: input.phone, email: input.email, name: row.payload.name, fetcher: opts.fetcher });
     sent++;
     const { error: saveError } = await opts.admin.from("upload_reverse_searches").update({
       status: result.status, persons: result.persons, estimated_cost_cents: result.estimatedCostCents,
