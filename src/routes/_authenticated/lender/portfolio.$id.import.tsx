@@ -105,6 +105,7 @@ function PortfolioImport() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const mode = singleContactMode(form);
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
