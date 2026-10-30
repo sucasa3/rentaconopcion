@@ -51,8 +51,13 @@ BEGIN
    SELECT id INTO _existing FROM upload_reverse_searches WHERE book_id=_book AND (staged_id=_s.id
      OR input_phone=nullif(_r->>'phone','') OR input_email=nullif(_r->>'email','')) LIMIT 1;
    IF _existing IS NULL THEN
-     IF EXISTS(SELECT 1 FROM batchdata_reverse_lookups WHERE org_id=_org AND
-       (input_phone=nullif(_r->>'phone','') OR input_email=nullif(_r->>'email',''))) THEN RAISE EXCEPTION 'Previously searched contact — no repeat paid search'; END IF;
+     -- Prior searches from EITHER workflow, anywhere in this workspace or by this person, block a paid repeat.
+     IF EXISTS(SELECT 1 FROM batchdata_reverse_lookups WHERE (org_id=_org OR requested_by=p_actor) AND
+       (input_phone=nullif(_r->>'phone','') OR input_email=nullif(_r->>'email','')))
+     OR EXISTS(SELECT 1 FROM upload_reverse_searches s JOIN lender_portfolios bp ON bp.id=s.book_id
+       WHERE (bp.lender_org_id=_org OR s.requested_by=p_actor) AND
+       (s.input_phone=nullif(_r->>'phone','') OR s.input_email=nullif(_r->>'email','')))
+     THEN RAISE EXCEPTION 'Previously searched contact — no repeat paid search'; END IF;
      IF p_month_cap IS NULL OR _used+30>p_month_cap THEN RAISE EXCEPTION 'Monthly reverse spending limit'; END IF;
      INSERT INTO upload_reverse_searches(batch_id,staged_id,book_id,requested_by,input_phone,input_email)
      VALUES(p_batch,_s.id,_book,p_actor,nullif(_r->>'phone',''),nullif(_r->>'email','')) RETURNING id INTO _existing;
@@ -75,6 +80,8 @@ BEGIN
  AND EXISTS(SELECT 1 FROM lender_members m WHERE m.user_id=p_actor AND m.lender_org_id=p.lender_org_id);
  IF _org IS NULL THEN RAISE EXCEPTION 'Match not found' USING ERRCODE='42501'; END IF;
  IF _p.status IN ('added','already_in_book') THEN RETURN jsonb_build_object('status',_p.status); END IF;
+ -- Only explicit human review of a completed result can confirm; uncertain/suppressed results stay held.
+ IF _s.status NOT IN ('matched','needs_review') THEN RAISE EXCEPTION 'Result cannot be confirmed'; END IF;
  PERFORM pg_advisory_xact_lock(hashtext('org_capacity:'||_org::text));
  PERFORM 1 FROM contact_import_batches WHERE id=_s.batch_id FOR UPDATE;
  SELECT id INTO _client FROM lender_portfolio_clients WHERE portfolio_id=_s.book_id AND archived_at IS NULL AND address_key=_p.payload->>'address_key' LIMIT 1;
