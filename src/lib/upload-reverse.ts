@@ -38,3 +38,41 @@ export function reversePropertyCandidates(persons: ReversePersonSummary[]) {
     return [{ personIndex, personName: p.fullName, key, address: prop.street, city: prop.city, state: prop.state, zip: prop.zip }];
   });
 }
+
+const digits10 = (v: string) => v.replace(/\D/g, "").slice(-10);
+
+/**
+ * When a contact supplied both phone and email, a returned person whose own
+ * listed contact details contradict either one (or two people split the phone
+ * and the email) is a conflict: hold for review, never auto-confirm.
+ */
+export function reverseContactConflict(
+  persons: ReversePersonSummary[],
+  input: { phone?: string | null; email?: string | null },
+): string | null {
+  if (!input.phone || !input.email || !persons.length) return null;
+  const phone = digits10(input.phone);
+  const email = input.email.trim().toLowerCase();
+  const hasPhone = (p: ReversePersonSummary) => p.phones.some((x) => digits10(x.number) === phone);
+  const hasEmail = (p: ReversePersonSummary) => p.emails.some((x) => x.trim().toLowerCase() === email);
+  const phoneOwners = persons.filter(hasPhone);
+  const emailOwners = persons.filter(hasEmail);
+  if (phoneOwners.length && emailOwners.length && !persons.some((p) => hasPhone(p) && hasEmail(p))) {
+    return "The phone and the email point to different people. Held for review; nothing was confirmed.";
+  }
+  const contradicts = persons.some((p) => (p.phones.length > 0 && !hasPhone(p) && hasEmail(p))
+    || (p.emails.length > 0 && !hasEmail(p) && hasPhone(p)));
+  if (contradicts) {
+    return "Only one of the phone or email belongs to the matched person. Held for review; nothing was confirmed.";
+  }
+  return null;
+}
+
+/** Apply conflict review on top of the provider classification. */
+export function withConflictReview<T extends { status: string; persons: ReversePersonSummary[]; reviewReason: string | null }>(
+  result: T, input: { phone?: string | null; email?: string | null },
+): T & { conflict: boolean } {
+  const reason = result.status === "matched" || result.status === "needs_review" ? reverseContactConflict(result.persons, input) : null;
+  if (!reason) return { ...result, conflict: false };
+  return { ...result, status: "needs_review", reviewReason: reason, conflict: true };
+}
