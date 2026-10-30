@@ -116,7 +116,7 @@ it("an upload search in another workspace book, or a Test Lab search by the same
     INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(43)}','${U(42)}','${U(40)}',1,'contact_only');
     INSERT INTO upload_reverse_searches(batch_id,staged_id,book_id,requested_by,input_phone,status) VALUES('${U(42)}','${U(43)}','${U(40)}','${U(41)}','6784447777','no_match');
     INSERT INTO batchdata_reverse_lookups(org_id,requested_by,input_phone,status,estimated_cost_cents) VALUES('${U(98)}','${actor}','6784448888','matched',10);`);
-  sql(`INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(44)}','${batch}','${book}',3,'contact_only')`);
+  sql(`INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(44)}','${batch}','${book}',44,'contact_only')`);
   expect(fails(() => reserve(U(44), "6784447777"))).toBe(true);
   expect(fails(() => reserve(U(44), "6784448888"))).toBe(true);
   expect(sql(`SELECT count(*) FROM upload_reverse_searches WHERE staged_id='${U(44)}'`)).toBe("0");
