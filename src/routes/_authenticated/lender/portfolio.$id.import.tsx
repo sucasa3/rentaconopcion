@@ -12,6 +12,7 @@ import { getBusinessOverview } from "@/lib/business.functions";
 import { Button } from "@/components/ui/button";
 import { UploadResultsPanel } from "@/components/upload-results-panel";
 import { UploadResultsHistory } from "@/components/upload-results-history";
+import { singleContactCsv, singleContactMode } from "@/lib/single-contact";
 
 export const Route = createFileRoute("/_authenticated/lender/portfolio/$id/import")({
   head: () => ({ meta: [
@@ -54,17 +55,19 @@ function PortfolioImport() {
   const L = (en: string, es: string) => (language === "es" ? es : en);
 
   const ingest = useMutation({
-    mutationFn: (csv: string) => {
-      void track({ data: { action: "lender_full_upload_started" } }).catch(() => undefined);
-      return ingestFn({ data: { portfolioId: id, csv } });
+    mutationFn: (v: { csv: string; single?: boolean }) => {
+      if (!v.single) void track({ data: { action: "lender_full_upload_started" } }).catch(() => undefined);
+      return ingestFn({ data: { portfolioId: id, csv: v.csv } });
     },
-    onSuccess: (r: any) => {
-      void track({ data: { action: "lender_full_upload_completed" } }).catch(() => undefined);
+    onSuccess: (r: any, v) => {
+      if (!v.single) void track({ data: { action: "lender_full_upload_completed" } }).catch(() => undefined);
       if (r?.mixed?.batchId) {
         qc.invalidateQueries({ queryKey: ["lender-portfolio", id] });
         setBatchId(r.mixed.batchId);
+        if (v.single) { toast.success(L("Contact saved", "Contacto guardado"), { description: L("Saved as a contact only — see results below.", "Guardado solo como contacto — mira los resultados abajo.") }); setForm({ ...EMPTY }); }
         return;
       }
+      if (v.single) { toast.error(L("Contacts without an address aren't available on your account yet. Please add an address.", "Los contactos sin dirección aún no están disponibles en tu cuenta. Agrega una dirección.")); return; }
       toast.success(
         r.existing
           ? L(`Imported ${r.inserted} clients · ${r.existing} already in this book were skipped`, `Se importaron ${r.inserted} clientes · se omitieron ${r.existing} que ya estaban en esta cartera`)
@@ -119,7 +122,7 @@ function PortfolioImport() {
           <h2 id="one" className="scroll-mt-20 text-base font-semibold">{L("Add one client", "Agregar un cliente")}</h2>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {L("Name and address are required — everything else fills in from property records.", "El nombre y la dirección son obligatorios — lo demás se completa con los registros de la propiedad.")}
+          {L("Required: full name, plus an address, phone or email. With an address, the rest fills in from property records.", "Obligatorio: nombre completo, más una dirección, teléfono o correo. Con dirección, lo demás se completa con los registros de la propiedad.")}
         </p>
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <Field label={L("Full name", "Nombre completo")} value={form.fullName} onChange={set("fullName")} />
@@ -133,17 +136,23 @@ function PortfolioImport() {
           <Field label={L("Rate (%)", "Tasa (%)")} value={form.rate} onChange={set("rate")} />
           <Field label={L("Close date", "Fecha de cierre")} value={form.closeDate} onChange={set("closeDate")} placeholder={L("YYYY-MM-DD", "AAAA-MM-DD")} />
         </div>
+        {mode === "contact_only" && (
+          <p className="mt-3 text-xs text-muted-foreground">{L("No address — this will be saved as a contact only. It won't use a Home Profile or run any search; you can approve an owner search below.", "Sin dirección — se guardará solo como contacto. No usa un perfil de hogar ni hace búsquedas; puedes aprobar una búsqueda de propietario abajo.")}</p>
+        )}
+        {mode === "invalid" && form.fullName.trim() && (form.phone || form.email) && (
+          <p className="mt-3 text-xs text-destructive">{L("Enter a valid 10-digit phone or email, or add an address.", "Ingresa un teléfono de 10 dígitos o un correo válido, o agrega una dirección.")}</p>
+        )}
         <button
-          disabled={!form.fullName || !form.address || add.isPending}
-          onClick={() => add.mutate()}
+          disabled={mode === "invalid" || add.isPending || ingest.isPending}
+          onClick={() => { if (mode === "address") add.mutate(); else if (mode === "contact_only") ingest.mutate({ csv: singleContactCsv(form), single: true }); }}
           className="mt-4 inline-flex items-center gap-1 rounded-full gradient-brand px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
-          <UserPlus className="h-3 w-3" /> {add.isPending ? L("Adding…", "Agregando…") : L("Add client", "Agregar cliente")}
+          <UserPlus className="h-3 w-3" /> {add.isPending || ingest.isPending ? L("Adding…", "Agregando…") : mode === "contact_only" ? L("Save contact", "Guardar contacto") : L("Add client", "Agregar cliente")}
         </button>
       </div>
 
       <div id="csv" className="scroll-mt-20" />
-      <BulkClientUpload onCsv={(csv) => ingest.mutate(csv)} busy={ingest.isPending} />
+      <BulkClientUpload onCsv={(csv) => ingest.mutate({ csv })} busy={ingest.isPending} />
       <UploadResultsHistory bookId={id} onSelect={setBatchId} />
       {batchId && <UploadResultsPanel batchId={batchId} onDone={() => navigate({ to: "/lender/portfolio/$id", params: { id } })} />}
     </div>
