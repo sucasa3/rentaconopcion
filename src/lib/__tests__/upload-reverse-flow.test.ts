@@ -85,10 +85,10 @@ for (const [role, offset] of [["agent",100],["lender",200]] as const) {
     it("approval reserves 90 cents, mock returns matched/no-match/multiple properties held for review", async () => {
       const r = await approve(); expect(r).toEqual({ sent:3,maxCostCents:90 });
       const summary = await reverseUploadSummary(admin,actor,batch);
-      expect(summary.contacts.map((c) => c.search?.status)).toEqual(["matched","no_match","needs_review"]);
-      expect(summary.contacts[2].search?.properties).toHaveLength(2);
-      expect(summary.contacts[2].search?.properties.every((p: any) => p.status==="needs_review")).toBe(true);
-      expect(summary.contacts[1].search?.estimatedCents).toBe(0);
+      expect(summary.contacts.map((c) => c.searches.at(-1)?.status)).toEqual(["matched","no_match","needs_review"]);
+      expect(summary.contacts[2].searches.at(-1)?.properties).toHaveLength(2);
+      expect(summary.contacts[2].searches.at(-1)?.properties.every((p: any) => p.status==="needs_review")).toBe(true);
+      expect(summary.contacts[1].searches.at(-1)?.estimatedCents).toBe(0);
       expect(sql(`SELECT count(*) FROM lender_portfolio_clients WHERE portfolio_id='${book}'`)).toBe("0");
       expect(sql(`SELECT count(*) FROM enrichment_release_grants WHERE portfolio_id='${book}'`)).toBe("0");
     });
@@ -99,7 +99,7 @@ for (const [role, offset] of [["agent",100],["lender",200]] as const) {
     });
     it("confirmed property waits with zero agent capacity; lender adds with hold", async () => {
       const summary = await reverseUploadSummary(admin,actor,batch);
-      const property = summary.contacts[0].search?.properties[0];
+      const property = summary.contacts[0].searches.at(-1)?.properties[0];
       expect(property).toBeDefined(); if (!property) throw new Error("Missing property");
       const r = await confirmReverseUploadProperty(admin,actor,property.id);
       expect(r.status).toBe(role==="agent"?"waiting_capacity":"added");
@@ -110,7 +110,7 @@ for (const [role, offset] of [["agent",100],["lender",200]] as const) {
     it("confirms two properties separately: one saved home added, other waits for capacity", async () => {
       sql("INSERT INTO property_intel VALUES('40 Pine Rd','30518','{}',null)");
       const summary = await reverseUploadSummary(admin,actor,batch);
-      const properties = summary.contacts[2].search?.properties;
+      const properties = summary.contacts[2].searches.at(-1)?.properties;
       expect(properties).toHaveLength(2); if(!properties) throw new Error("Missing properties");
       const pine = properties.find((p: any) => p.address.startsWith("40 Pine"));
       const elm = properties.find((p: any) => p.address.startsWith("70 Elm"));
