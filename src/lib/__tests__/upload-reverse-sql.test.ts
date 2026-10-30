@@ -48,7 +48,7 @@ it("a prior Test Lab result blocks paid replay including uncertain outcomes", ()
   expect(fails(() => reserve(U(6), "6784449999"))).toBe(true);
 });
 it("an upload search in another workspace book, or a Test Lab search by the same person elsewhere, blocks paid replay", () => {
-  sql(`INSERT INTO lender_portfolios VALUES('${U(40)}','${org}','${U(41)}');
+  sql(`INSERT INTO lender_portfolios VALUES('${U(40)}','${org}','${U(41)}'); INSERT INTO lender_members VALUES('${U(41)}','${org}');
     INSERT INTO contact_import_batches(id,book_id,created_by,upload_flow,total_rows) VALUES('${U(42)}','${U(40)}','${U(41)}','mixed',1);
     INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome) VALUES('${U(43)}','${U(42)}','${U(40)}',1,'contact_only');
     INSERT INTO upload_reverse_searches(batch_id,staged_id,book_id,requested_by,input_phone,status) VALUES('${U(42)}','${U(43)}','${U(40)}','${U(41)}','6784447777','no_match');
