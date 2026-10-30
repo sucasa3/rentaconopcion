@@ -77,7 +77,7 @@ for (const [role, offset] of [["agent",100],["lender",200]] as const) {
       sql(`INSERT INTO lender_orgs(id,org_type,profile_allowance) VALUES('${org}','${role}',2);
         INSERT INTO lender_portfolios VALUES('${book}','${org}','${actor}'); INSERT INTO lender_members VALUES('${actor}','${org}');
         INSERT INTO contact_import_batches(id,book_id,created_by,upload_flow,total_rows,counts) VALUES('${batch}','${book}','${actor}','mixed',3,'{"contact_only":3}');`);
-      for (let i=0;i<3;i++) sql(`INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome,payload) VALUES('${ids[i]}','${batch}','${book}',${i+1},'contact_only',${literal({ name: ["Matched Owner","No Match","Multi Owner"][i],phone:`67844${offset}000${i+1}`.slice(-10), email:i===2 ? `multi${role}@example.com`:null })})`);
+      for (let i=0;i<3;i++) sql(`INSERT INTO upload_staged_rows(id,batch_id,book_id,row_number,outcome,payload) VALUES('${ids[i]}','${batch}','${book}',${i+1},'contact_only',${literal({ name: ["Matched Owner","No Match","Multi Owner"][i],phone:`678${offset+200}000${i+1}`, email:i===2 ? `multi${role}@example.com`:null })})`);
       expect((await reverseUploadSummary(admin,actor,batch)).contacts.filter((c) => c.eligible)).toHaveLength(3);
       expect(sql(`SELECT count(*) FROM lender_portfolio_clients WHERE portfolio_id='${book}'`)).toBe("0");
       expect(sql(`SELECT count(*) FROM upload_reverse_searches WHERE batch_id='${batch}'`)).toBe("0");
