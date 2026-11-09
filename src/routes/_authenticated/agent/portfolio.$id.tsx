@@ -1,3 +1,4 @@
+import { HomeownerInviteCard } from "@/components/homeowner-invite-card";
 import { useMemo, useState, useRef, useEffect, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AddHomeownersActions } from "@/components/agent-today";
@@ -1559,6 +1560,7 @@ function ClientDrawer({
         />
 
         <AgentHomeSystemsButton portfolioId={portfolioIdParam} clientId={client.id} />
+        <HomeownerInviteCard clientId={client.id} />
 
         <SignalsPanel audience="agent" clientId={client.id} />
 

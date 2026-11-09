@@ -111,11 +111,15 @@ export function emailMatchesInvite(
  */
 export const INVITE_TOKEN_VERSION = 1;
 
-export type InvitationContext = "agent_invites_professional" | "homeowner_introduction";
+export type InvitationContext =
+  | "agent_invites_professional"
+  | "homeowner_introduction"
+  | "homeowner_claim";
 
 const SUPPORTED_CONTEXTS = new Set<string>([
   "agent_invites_professional",
   "homeowner_introduction",
+  "homeowner_claim",
 ]);
 
 export interface TypedInviteClaims {
