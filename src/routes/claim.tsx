@@ -106,7 +106,7 @@ function ClaimPage() {
             <Button variant={connect === "decline" ? "default" : "outline"} onClick={() => setConnect("decline")}>Not now</Button>
           </div>
         </div>
-        {claim.data && !claim.data.ok && <p className="text-sm text-destructive">{REASONS[claim.data.reason] ?? REASONS.invalid}</p>}
+        {claim.data && !claim.data.ok && <p className="text-sm text-destructive">{REASONS[claim.data.reason ?? "invalid"] ?? REASONS.invalid}</p>}
         <Button className="w-full" disabled={!ready || claim.isPending} onClick={() => claim.mutate()}>
           {claim.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Claim my Home Record"}
         </Button>
