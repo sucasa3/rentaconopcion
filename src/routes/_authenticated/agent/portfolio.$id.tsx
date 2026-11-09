@@ -1559,6 +1559,7 @@ function ClientDrawer({
         />
 
         <AgentHomeSystemsButton portfolioId={portfolioIdParam} clientId={client.id} />
+        <HomeownerInviteCard clientId={client.id} />
 
         <SignalsPanel audience="agent" clientId={client.id} />
 
