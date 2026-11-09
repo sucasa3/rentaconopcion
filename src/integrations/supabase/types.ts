@@ -3490,6 +3490,74 @@ export type Database = {
         }
         Relationships: []
       }
+      homeowner_claim_invites: {
+        Row: {
+          activated_at: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          client_id: string
+          connection_outcome: string | null
+          corrected_address: string | null
+          created_at: string
+          created_by: string
+          email: string
+          expires_at: string
+          home_confirmed_at: string | null
+          home_corrected: boolean
+          id: string
+          link_copied_at: string | null
+          nonce: string
+          org_id: string
+          revoked_at: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          client_id: string
+          connection_outcome?: string | null
+          corrected_address?: string | null
+          created_at?: string
+          created_by: string
+          email: string
+          expires_at: string
+          home_confirmed_at?: string | null
+          home_corrected?: boolean
+          id?: string
+          link_copied_at?: string | null
+          nonce: string
+          org_id: string
+          revoked_at?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          client_id?: string
+          connection_outcome?: string | null
+          corrected_address?: string | null
+          created_at?: string
+          created_by?: string
+          email?: string
+          expires_at?: string
+          home_confirmed_at?: string | null
+          home_corrected?: boolean
+          id?: string
+          link_copied_at?: string | null
+          nonce?: string
+          org_id?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homeowner_claim_invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "lender_portfolio_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homeowner_intents: {
         Row: {
           confidence: number
