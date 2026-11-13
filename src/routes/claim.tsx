@@ -9,7 +9,7 @@ import { lovable } from "@/integrations/lovable";
 import { SiteHeader, SiteFooter } from "@/components/site-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { claimHomeowner, getClaimPreview } from "@/lib/homeowner-claim.functions";
+import { claimHomeowner, getClaimAddress, getClaimPreview } from "@/lib/homeowner-claim.functions";
 
 export const Route = createFileRoute("/claim")({
   validateSearch: z.object({ t: z.string().optional() }),
@@ -57,9 +57,16 @@ function ClaimPage() {
     queryFn: () => previewFn({ data: { token: token! } }),
   });
 
+  const addressFn = useServerFn(getClaimAddress);
+  const { data: addr } = useQuery({
+    queryKey: ["claim-address", token, userEmail],
+    enabled: Boolean(token && userEmail && data?.ok),
+    queryFn: () => addressFn({ data: { token: token! } }),
+  });
+
   const claim = useMutation({
     mutationFn: () => claimFn({ data: { token: token!, homeCorrect: homeCorrect!, correctedAddress: corrected || undefined, connect: connect! } }),
-    onSuccess: (r) => { if (r.ok) navigate({ to: "/home-care" }); },
+    onSuccess: (r) => { if (r.ok) navigate({ to: "/home-care", search: { onboarding: r.homeConfirmed ? "claim" : "review" } }); },
   });
 
   const here = typeof window !== "undefined" ? window.location.href : "";
@@ -77,21 +84,23 @@ function ClaimPage() {
     body = (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold">Hi {data.firstName}, claim your Home Record</h1>
-        <p className="text-muted-foreground">{data.agentName} prepared this for {data.address}. Sign in with {data.maskedEmail} to continue.</p>
+        <p className="text-muted-foreground">{data.agentName} prepared a free Home Record for you. Sign in with {data.maskedEmail} to continue.</p>
         {sent ? <p className="text-sm">Check your email for a sign-in link.</p> : (
           <Button className="w-full" onClick={() => sendLink(data.email)}>Email me a sign-in link</Button>
         )}
         <Button variant="outline" className="w-full" onClick={() => { sessionStorage.setItem("sucasa.claim_return", here); lovable.auth.signInWithOAuth("google", { redirect_uri: here }); }}>Continue with Google</Button>
       </div>
     );
-  } else {
+  } else if (!addr) body = <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />;
+  else if (!addr.ok) body = <p>{REASONS[addr.reason ?? "invalid"] ?? REASONS.invalid}</p>;
+  else {
     const ready = homeCorrect !== null && connect !== null && (homeCorrect || corrected.trim().length > 4);
     body = (
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold">Confirm your home</h1>
         <div className="space-y-2">
           <p className="font-medium">Is this your home?</p>
-          <p className="rounded-lg border border-border p-3">{data.address}</p>
+          <p className="rounded-lg border border-border p-3">{addr.address}</p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant={homeCorrect === true ? "default" : "outline"} onClick={() => setHomeCorrect(true)}>Yes, that's it</Button>
             <Button variant={homeCorrect === false ? "default" : "outline"} onClick={() => setHomeCorrect(false)}>No, fix it</Button>

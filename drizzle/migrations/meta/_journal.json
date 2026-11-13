@@ -372,6 +372,13 @@
       "when": 1794266510440,
       "tag": "0052_homeowner_claim_invites",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1794602591141,
+      "tag": "0053_claim_activation_homeowner_only",
+      "breakpoints": true
     }
   ]
 }

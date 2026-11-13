@@ -87,22 +87,33 @@ function maskEmail(e: string) {
   return `${(u ?? "").slice(0, 2)}•••@${d ?? ""}`;
 }
 
-/** Public: what the link is for. Shows only first name, masked email and the address on file. */
+/** Public: generic preview only — first name, agent, masked email. No street address before the recipient is verified. */
 export const getClaimPreview = createServerFn({ method: "POST" })
   .inputValidator((i: { token: string }) => z.object({ token: z.string().min(10).max(2000) }).parse(i))
   .handler(async ({ data }) => {
     const r = await loadInvite(data.token);
     if ("error" in r) return { ok: false as const, reason: r.error };
-    const addr = [r.client.address_line1, r.client.city, r.client.state, r.client.zip].filter(Boolean).join(", ");
     return {
       ok: true as const,
       firstName: (r.client.client_name ?? "").split(" ")[0] ?? "",
       agentName: r.agentName,
       email: r.inv.email,
       maskedEmail: maskEmail(r.inv.email),
-      address: addr,
       claimed: Boolean(r.inv.claimed_at),
     };
+  });
+
+/** Homeowner: address on file, only for the verified intended recipient. */
+export const getClaimAddress = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { token: string }) => z.object({ token: z.string().min(10).max(2000) }).parse(i))
+  .handler(async ({ data, context }) => {
+    const r = await loadInvite(data.token);
+    if ("error" in r) return { ok: false as const, reason: r.error };
+    const { data: u } = await r.admin.auth.admin.getUserById(context.userId);
+    if (!u?.user?.email_confirmed_at || u.user.email?.toLowerCase() !== r.inv.email) return { ok: false as const, reason: "email_mismatch" };
+    if (r.inv.claimed_by && r.inv.claimed_by !== context.userId) return { ok: false as const, reason: "already_claimed" };
+    return { ok: true as const, address: [r.client.address_line1, r.client.city, r.client.state, r.client.zip].filter(Boolean).join(", ") };
   });
 
 /** Homeowner: claim with a verified session whose email matches the invitation. */

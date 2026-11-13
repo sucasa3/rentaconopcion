@@ -56,7 +56,10 @@ function seasonalKey(key: string, part: "label" | "hint"): TranslationKey | null
 export function HomeCarePanel({
   onGoToDocuments,
   focusSystem,
+  openLogRequest = 0,
 }: {
+  /** Increment to open the existing service-log dialog (onboarding). Presentation only. */
+  openLogRequest?: number;
   onGoToDocuments?: () => void;
   /** Optional system key from ?system= — that system is expanded and highlighted. */
   focusSystem?: string;
@@ -90,6 +93,18 @@ export function HomeCarePanel({
     const timer = window.setTimeout(() => setFocusFlash(false), 2600);
     return () => window.clearTimeout(timer);
   }, [focusSystem, isLoading]);
+
+  useEffect(() => {
+    if (!openLogRequest || isLoading) return;
+    const yb = okIntel?.detail?.yearBuilt ?? null;
+    const pe = okIntel?.permits?.events ?? [];
+    const list = yb || pe.length ? buildMaintenanceTimeline(yb, pe, new Date(), serviceLog ?? []) : [];
+    const pick = list.find((i) => i.status === "overdue") ?? list.find((i) => i.status === "due_soon") ?? list[0];
+    if (pick) { setMarkNeedsYear(false); setMarkItem(pick); return; }
+    const synthetic = buildUnknownSystemItem("hvac");
+    if (synthetic) { setMarkNeedsYear(true); setMarkItem(synthetic); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openLogRequest, isLoading]);
 
   const { data: findings } = useQuery({
     queryKey: ["inspection-findings"],
