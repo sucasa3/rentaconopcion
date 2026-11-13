@@ -24,7 +24,7 @@ export function HomeownerInviteCard({ clientId }: { clientId: string }) {
   const [copied, setCopied] = useState<string | null>(null);
   const { data: s } = useQuery({ queryKey: ["claim-status", clientId], queryFn: () => statusFn({ data: { clientId } }) });
   const create = useMutation({
-    mutationFn: () => createFn({ data: { clientId } }),
+    mutationFn: () => createFn({ data: { clientId, origin: window.location.origin } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["claim-status", clientId] }),
   });
   const copy = async (text: string, label: string) => { await navigator.clipboard.writeText(text); setCopied(label); };

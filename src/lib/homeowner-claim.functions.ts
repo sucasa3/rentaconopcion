@@ -2,22 +2,19 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveInviteOrigin } from "./invite-origin";
 import { claimMessages, claimStatus } from "./homeowner-claim";
 
 const TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
-function origin(): string {
-  const req = getRequest();
-  const host = new URL(req.url);
-  const isPreview = /lovable\.app$|lovableproject\.com$|localhost/.test(host.hostname) &&
-    !/rentaconopcion\.lovable\.app$/.test(host.hostname);
-  return isPreview ? host.origin : (process.env["SITE_URL"] ?? "https://sucasa.com");
+function origin(clientOrigin?: string): string {
+  return resolveInviteOrigin(getRequest().url, clientOrigin, process.env["SITE_URL"] ?? "https://sucasa.com");
 }
 
 /** Agent: create (or reuse) a claim link for a client in a book they can see. Never sends anything. */
 export const createClaimLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { clientId: string }) => z.object({ clientId: z.string().uuid() }).parse(i))
+  .inputValidator((i: { clientId: string; origin?: string }) => z.object({ clientId: z.string().uuid(), origin: z.string().max(200).optional() }).parse(i))
   .handler(async ({ data, context }) => {
     // RLS as the agent decides whether they may see this client at all.
     const { data: c } = await context.supabase
@@ -46,7 +43,7 @@ export const createClaimLink = createServerFn({ method: "POST" })
     }).select("id").single();
     if (error || !row) throw new Error("Couldn't create the link.");
     const token = signTypedInviteToken({ invitationId: row.id, context: "homeowner_claim", email: c.client_email, nonce, ttlMs: TTL_MS });
-    const url = `${origin()}/claim?t=${encodeURIComponent(token)}`;
+    const url = `${origin(data.origin)}/claim?t=${encodeURIComponent(token)}`;
     const { data: prof } = await supabaseAdmin.from("profiles").select("full_name").eq("id", context.userId).maybeSingle();
     return { url, expiresAt: expires.toISOString(), messages: claimMessages({ firstName: (c.client_name ?? "").split(" ")[0] ?? "", agentName: (prof as any)?.full_name ?? "", address: c.address_line1, url }) };
   });
