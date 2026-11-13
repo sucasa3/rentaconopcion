@@ -5,6 +5,7 @@
  * Server-only. Invoked by the daily cron route and by admin dry-run/test tools.
  */
 
+import { classifyEmailOutcome, type EmailOutcome } from "./campaign-email-outcome";
 import {
   loadCachedFacts,
   isDue,
@@ -254,8 +255,9 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
             phone: (c as any).client_phone ?? null,
             street: c.address_line1,
             zip: c.zip,
-          })
+          }, { channel: "email" })
         ) {
+          skip("suppressed");
           continue;
         }
       }
@@ -285,6 +287,7 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
       // 1) Email the homeowner. A CRM failure must never block this.
       let emailed = false;
       let emailError: string | null = null;
+      let outcome: EmailOutcome = { status: "queued", retryable: true, error: null };
       try {
         const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
         const res = await sendTemplateEmail("campaign-update", c.client_email, {
@@ -312,10 +315,38 @@ export async function runCampaignTick(opts: TickOptions = {}): Promise<TickResul
             equity: payload.equity,
           },
         });
-        emailed = res.sent;
-        if (!res.sent) emailError = "recipient suppressed";
+        outcome = classifyEmailOutcome(res);
       } catch (e) {
-        emailError = (e as Error).message.slice(0, 500);
+        outcome = classifyEmailOutcome(e);
+      }
+      emailed = outcome.status === "sent";
+      emailError = outcome.error;
+
+      if (outcome.status === "suppressed" || outcome.status === "blocked") {
+        // Non-retryable: record it, never push this person to the CRM.
+        if (outcome.status === "suppressed") {
+          const { recordSuppression } = await import("./suppression.server");
+          // Email only: no phone/address, so texting and imports are untouched
+          // and an SMS START reply can never lift it.
+          await recordSuppression(supabaseAdmin, {
+            email: c.client_email,
+            scope: "email",
+            eventType: "provider_suppressed",
+            source: "lovable_email",
+            reason: "recipient_suppressed",
+          }).catch(() => undefined);
+        }
+        if (sendRow?.id) {
+          await supabaseAdmin
+            .from("campaign_sends")
+            .update({ status: outcome.status, crm_status: "skipped", error_message: emailError })
+            .eq("id", sendRow.id);
+        }
+        result.skipped++;
+        monthCount.set(c.id, (monthCount.get(c.id) ?? 0) + 1);
+        if (result.samples.length < 20)
+          result.samples.push({ client: c.client_name ?? c.id, campaign: campaign.key, status: outcome.status, reason: emailError ?? undefined });
+        continue;
       }
 
       try {

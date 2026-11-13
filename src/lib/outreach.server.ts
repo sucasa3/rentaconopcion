@@ -45,7 +45,7 @@ export async function sendOutreachEmail(args: SendOutreachArgs): Promise<SendOut
       await isSuppressed(supabaseAdmin, {
         email: client.client_email,
         phone: client.client_phone,
-      })
+      }, { channel: "email" })
     ) {
       return {
         ok: false,

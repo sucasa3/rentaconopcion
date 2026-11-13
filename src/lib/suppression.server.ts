@@ -72,7 +72,11 @@ export function candidateFor(input: SuppressionInput): SuppressionCandidate {
  * never enough on its own, so a new occupant of the same property is not
  * suppressed.
  */
-export async function isSuppressed(admin: any, input: SuppressionInput): Promise<boolean> {
+export async function isSuppressed(
+  admin: any,
+  input: SuppressionInput,
+  opts: { channel?: "email" } = {},
+): Promise<boolean> {
   const candidate = candidateFor(input);
   if (!candidate.emailHmac && !candidate.phoneHmac) return false;
 
@@ -82,13 +86,18 @@ export async function isSuppressed(admin: any, input: SuppressionInput): Promise
 
   const { data, error } = await admin
     .from("deletion_suppressions")
-    .select("email_hmac, phone_hmac, address_hmac")
+    .select("email_hmac, phone_hmac, address_hmac, scope")
     .or(ors.join(","))
     .limit(10);
 
   if (error) throw new Error("Suppression lookup failed");
 
-  return suppressionMatches((data ?? []) as any[], candidate);
+  // Email-scoped entries (e.g. the email provider's own suppression) block
+  // only email sends; they never block imports, enrichment or texting.
+  const rows = ((data ?? []) as any[]).filter(
+    (r) => (r.scope ?? "all") !== "email" || opts.channel === "email",
+  );
+  return suppressionMatches(rows, candidate);
 }
 
 /**
