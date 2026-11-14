@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { personalBook } from "./personal-book";
+import { selectInChunks } from "./chunked-in";
 
 /**
  * Business-side reads for the agent and lender command centers.
@@ -11,15 +12,10 @@ import { personalBook } from "./personal-book";
  * happen here — the dashboard never triggers an external data pull.
  */
 
+// The normal dashboard is always scoped to the caller's own memberships —
+// including platform admins. Cross-organization views live on admin screens.
 async function myOrgs(supabase: any, userId: string, orgType: "agent" | "lender") {
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (isAdmin) {
-    const { data } = await supabase
-      .from("lender_orgs")
-      .select("id, name, org_type, plan")
-      .eq("org_type", orgType);
-    return { orgs: data ?? [], isAdmin: true, isManager: true };
-  }
   const { data: members } = await supabase
     .from("lender_members")
     .select("lender_org_id, role, lender_orgs(id, name, org_type, plan)")
@@ -27,8 +23,8 @@ async function myOrgs(supabase: any, userId: string, orgType: "agent" | "lender"
   const mine = (members ?? []).filter((m: any) => m.lender_orgs?.org_type === orgType);
   return {
     orgs: mine.map((m: any) => m.lender_orgs),
-    isAdmin: false,
-    isManager: mine.some((m: any) => ["owner", "admin", "manager"].includes(m.role)),
+    isAdmin: Boolean(isAdmin),
+    isManager: Boolean(isAdmin && mine.length) || mine.some((m: any) => ["owner", "admin", "manager"].includes(m.role)),
   };
 }
 
@@ -71,6 +67,8 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       opportunities: [] as any[],
       today: [] as any[],
       campaigns: [] as any[],
+      signalsError: null as string | null,
+      enrichmentProcessing: 0,
     };
     if (!orgIds.length) {
       // A member paused by a seat reduction gets an explicit message, not "no access yet".
@@ -127,18 +125,35 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       }),
     );
 
-    const { data: opps } = rows.length
-      ? await supabase
-          .from("homeowner_opportunities")
-          .select("id, portfolio_client_id, category, strength, score, reasons, state, network, confidence, signal_key")
-          .in(
-            "portfolio_client_id",
-            rows.map((r: any) => r.id),
-          )
-          .eq("state", "open")
-          .order("score", { ascending: false })
-          .limit(200)
-      : { data: [] as any[] };
+    // Signals: batched by scoped homeowner ids; a failed batch is reported
+    // to the client (signalsError) instead of looking like "no signals yet".
+    let opps: any[] = [];
+    let signalsError: string | null = null;
+    let processing = 0;
+    try {
+      const ids = rows.map((r: any) => r.id);
+      opps = (
+        await selectInChunks(ids, (b) =>
+          supabase
+            .from("homeowner_opportunities")
+            .select("id, portfolio_client_id, category, strength, score, reasons, state, network, confidence, signal_key")
+            .in("portfolio_client_id", b)
+            .eq("state", "open")
+            .order("score", { ascending: false })
+            .limit(200),
+        )
+      )
+        .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
+        .slice(0, 200);
+      // Only jobs a worker has actually claimed count as preparation.
+      const jobs = await selectInChunks(ids, (b) =>
+        supabase.from("property_enrichment_queue").select("id").in("portfolio_client_id", b).eq("status", "processing"),
+      );
+      processing = jobs.length;
+    } catch (e) {
+      console.error("[business-overview] signal fetch failed", e);
+      signalsError = "signals_unavailable";
+    }
 
     let opportunities = (opps ?? []).map((o: any) => {
       const c: any = clientById.get(o.portfolio_client_id);
@@ -244,5 +259,7 @@ export const getBusinessOverview = createServerFn({ method: "POST" })
       opportunities: opportunities.slice(0, 24),
       today,
       campaigns,
+      signalsError,
+      enrichmentProcessing: processing,
     };
   });

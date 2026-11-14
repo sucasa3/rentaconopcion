@@ -52,14 +52,14 @@ export function AgentToday() {
   const qc = useQueryClient();
 
   const overviewFn = useServerFn(getBusinessOverview);
-  const { data: overview, isLoading: overviewLoading } = useQuery({
+  const { data: overview, isLoading: overviewLoading, refetch: refetchOverview } = useQuery({
     queryKey: ["business-overview", "agent"],
     queryFn: () => overviewFn({ data: { orgType: "agent" } }),
     staleTime: 60_000,
   });
 
   const queueFn = useServerFn(getActionQueue);
-  const { data: queue, isLoading: queueLoading } = useQuery({
+  const { data: queue, isLoading: queueLoading, isError: queueFailed, refetch: refetchQueue } = useQuery({
     queryKey: ["action-queue", "agent"],
     queryFn: () => queueFn({ data: { audience: "agent", limit: 25 } }),
     staleTime: 30_000,
@@ -134,11 +134,26 @@ export function AgentToday() {
     return <EmptyBook bookId={book?.id ?? null} />;
   }
 
+  // A failed signal request is an error with a retry, never "preparing".
+  if (queueFailed || (overview as any)?.signalsError) {
+    return (
+      <SignalsFailed
+        count={clientCount}
+        bookId={book?.id ?? null}
+        onRetry={() => {
+          void refetchOverview();
+          void refetchQueue();
+        }}
+      />
+    );
+  }
+
   const mode = firstRunMode({
     seen,
     clientCount,
     queueCount: items.length,
-    enrichmentPending: (overview?.counts?.opportunities ?? 0) === 0,
+    // Preparation only while a worker has actually claimed jobs for this book.
+    enrichmentPending: ((overview as any)?.enrichmentProcessing ?? 0) > 0,
   });
 
   if (mode === "preparing") {
@@ -670,6 +685,31 @@ function EmptyBook({ bookId }: { bookId: string | null }) {
             </li>
           ))}
         </ol>
+      </div>
+    </div>
+  );
+}
+
+function SignalsFailed({ count, bookId, onRetry }: { count: number; bookId: string | null; onRetry: () => void }) {
+  const t = useT();
+  return (
+    <div className="px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-md space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("biz.at.signals_failed_title")}</h1>
+        <p className="text-sm text-muted-foreground">
+          {t("biz.at.signals_failed_body", { count: count.toLocaleString() })}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={onRetry}>{t("biz.at.signals_retry")}</Button>
+          {bookId && (
+            <Button asChild variant="outline">
+              <Link to="/agent/portfolio/$id" params={{ id: bookId }}>
+                {t("biz.at.signals_open_book")}
+              </Link>
+            </Button>
+          )}
+        </div>
+        {bookId && <AddHomeownersActions bookId={bookId} />}
       </div>
     </div>
   );

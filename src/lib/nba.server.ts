@@ -16,6 +16,7 @@ import {
   type Temperature,
   type OutcomeStage,
 } from "@/lib/next-best-action";
+import { selectInChunks } from "@/lib/chunked-in";
 import { categoryLabel } from "@/lib/opportunities";
 import { evaluateAgentChannels, type ChannelOption } from "@/lib/contact-channels";
 import { MODEL_LIGHT } from "@/lib/documents-ai.server";
@@ -47,22 +48,17 @@ export async function resolveScope(
   userId: string,
   orgType: Audience,
 ): Promise<Scope> {
+  // Scoped to the caller's own memberships, admins included; cross-org
+  // administration uses separate admin screens.
   const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-  let orgIds: string[] = [];
-  let isManager = Boolean(isAdmin);
-
-  if (isAdmin) {
-    const { data } = await supabase.from("lender_orgs").select("id").eq("org_type", orgType);
-    orgIds = (data ?? []).map((o: any) => o.id);
-  } else {
-    const { data: members } = await supabase
-      .from("lender_members")
-      .select("lender_org_id, role, lender_orgs(id, org_type)")
-      .eq("user_id", userId);
-    const mine = (members ?? []).filter((m: any) => m.lender_orgs?.org_type === orgType);
-    orgIds = mine.map((m: any) => m.lender_org_id);
-    isManager = mine.some((m: any) => ["owner", "admin", "manager"].includes(m.role));
-  }
+  const { data: members } = await supabase
+    .from("lender_members")
+    .select("lender_org_id, role, lender_orgs(id, org_type)")
+    .eq("user_id", userId);
+  const mine = (members ?? []).filter((m: any) => m.lender_orgs?.org_type === orgType);
+  const orgIds: string[] = mine.map((m: any) => m.lender_org_id);
+  const isManager =
+    Boolean(isAdmin && mine.length) || mine.some((m: any) => ["owner", "admin", "manager"].includes(m.role));
   if (!orgIds.length) {
     return { orgIds: [], bookIds: [], orgByBook: new Map(), isManager };
   }
@@ -217,12 +213,14 @@ export async function buildActionQueue(
 
   // Channel permission + suppression records. Consent metadata stays on the
   // server; only the resulting decision is sent to the client.
-  const { data: channelPerms } = await supabase
-    .from("outreach_channel_permissions")
-    .select(
-      "portfolio_client_id, email_allowed, sms_allowed, phone_allowed, automated_contact_allowed, do_not_call, do_not_text, do_not_email, consent_source, consent_basis, consent_at",
-    )
-    .in("portfolio_client_id", clientIds);
+  const channelPerms = await selectInChunks(clientIds, (b) =>
+    supabase
+      .from("outreach_channel_permissions")
+      .select(
+        "portfolio_client_id, email_allowed, sms_allowed, phone_allowed, automated_contact_allowed, do_not_call, do_not_text, do_not_email, consent_source, consent_basis, consent_at",
+      )
+      .in("portfolio_client_id", b),
+  );
   const permByClient = new Map<string, any>(
     (channelPerms ?? []).map((p: any) => [p.portfolio_client_id, p]),
   );
@@ -250,39 +248,50 @@ export async function buildActionQueue(
     }
   }
 
-  const { data: opps } = await supabase
-    .from("homeowner_opportunities")
-    .select("id, portfolio_client_id, org_id, category, strength, score, reasons")
-    .in("portfolio_client_id", clientIds)
-    .eq("state", "open")
-    .order("score", { ascending: false })
-    .limit(400);
+  const byDesc = (k: string) => (a: any, b: any) => String(b[k] ?? "").localeCompare(String(a[k] ?? ""));
+  const opps = (
+    await selectInChunks(clientIds, (b) =>
+      supabase
+        .from("homeowner_opportunities")
+        .select("id, portfolio_client_id, org_id, category, strength, score, reasons")
+        .in("portfolio_client_id", b)
+        .eq("state", "open")
+        .order("score", { ascending: false })
+        .limit(400),
+    )
+  )
+    .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 400);
 
   const since = new Date(Date.now() - 30 * DAY).toISOString();
-  const [{ data: events }, { data: messages }, { data: outcomes }, { data: shared }] =
-    await Promise.all([
+  const [events, messages, outcomes, shared] = await Promise.all([
+    selectInChunks(clientIds, (b) =>
       supabase
         .from("outreach_events")
         .select("portfolio_client_id, event, occurred_at")
-        .in("portfolio_client_id", clientIds)
+        .in("portfolio_client_id", b)
         .gte("occurred_at", since),
+    ),
+    selectInChunks(clientIds, (b) =>
       supabase
         .from("outreach_messages")
         .select("portfolio_client_id, sent_at, created_at")
-        .in("portfolio_client_id", clientIds)
+        .in("portfolio_client_id", b)
         .order("created_at", { ascending: false })
         .limit(500),
+    ).then((r) => r.sort(byDesc("created_at")).slice(0, 500)),
+    selectInChunks(clientIds, (b) =>
       supabase
         .from("opportunity_outcomes")
         .select("portfolio_client_id, opportunity_id, stage, occurred_at")
-        .in("portfolio_client_id", clientIds)
+        .in("portfolio_client_id", b)
         .order("occurred_at", { ascending: false })
         .limit(500),
-      supabase
-        .from("shared_opportunities")
-        .select("portfolio_client_id, status")
-        .in("portfolio_client_id", clientIds),
-    ]);
+    ).then((r) => r.sort(byDesc("occurred_at")).slice(0, 500)),
+    selectInChunks(clientIds, (b) =>
+      supabase.from("shared_opportunities").select("portfolio_client_id, status").in("portfolio_client_id", b),
+    ),
+  ]);
 
   const engaged = new Map<string, string>();
   for (const e of events ?? []) {
