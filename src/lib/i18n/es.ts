@@ -2107,7 +2107,6 @@ export const es: Dictionary = {
   "adisc.v2.empty_before_upload": "Suba su base de datos para descubrir sus primeras conversaciones.",
   "adisc.v2.processing_note": "{awaiting} hogares en espera de proceso o aprobación · {review} requieren revisión. Los resultados listos se muestran ya.",
   "adisc.v2.load_failed": "No pudimos cargar Discovery. No se perdió nada.",
-  "adisc.v2.retry": "Intentar de nuevo",
   "adisc.v2.no_results": "Su importación terminó. Ningún hogar muestra un motivo para reconectar por ahora; los mostraremos cuando cambien los registros de propiedad.",
   "adisc.v2.code_sent": "Ingrese el código de 6 dígitos enviado a {masked}.",
   "adisc.v2.verify_unlock": "Verificar y desbloquear mis 100 gratis",

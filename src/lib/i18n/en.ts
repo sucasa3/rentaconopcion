@@ -2066,7 +2066,6 @@ export const en = {
   "adisc.v2.empty_before_upload": "Upload your database to discover your first conversations.",
   "adisc.v2.processing_note": "{awaiting} homes awaiting processing or approval · {review} need review. Ready findings show now.",
   "adisc.v2.load_failed": "We couldn't load Discovery. Nothing was lost.",
-  "adisc.v2.retry": "Try again",
   "adisc.v2.no_results": "Your import finished. No homes show a reason to reconnect right now — we'll surface them as property records change.",
   "adisc.v2.code_sent": "Enter the 6-digit code sent to {masked}.",
   "adisc.v2.verify_unlock": "Verify & unlock my free 100",
