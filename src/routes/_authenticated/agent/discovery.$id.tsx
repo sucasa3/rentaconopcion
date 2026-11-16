@@ -1,3 +1,4 @@
+import { discoveryEmptyState } from "@/lib/discovery-status";
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -210,13 +211,25 @@ function AgentDiscovery() {
             </section>
           )}
 
+          {q.isError && !d && (
+            <section className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-5">
+              <p className="text-sm text-destructive">{t("adisc.v2.load_failed")}</p>
+              <Button variant="outline" className="mt-3 min-h-11" onClick={() => q.refetch()}>{t("adisc.v2.retry")}</Button>
+            </section>
+          )}
+
           {d && (
             <section className="rounded-3xl border border-border bg-card p-4 shadow-soft sm:p-5">
               <h2 className="text-base font-semibold">{t("adisc.top_title")}</h2>
               {d.top.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{t("adisc.top_note")}</p>}
+              {(d.processing.awaiting > 0 || d.processing.needsReview > 0) && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("adisc.v2.processing_note", { awaiting: d.processing.awaiting, review: d.processing.needsReview })}
+                </p>
+              )}
               {d.top.length === 0 ? (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  {d.hasRun || d.capacity.active > 0 ? t("adisc.v2.no_results") : t("adisc.v2.before_upload")}
+                  {t(`adisc.v2.empty_${discoveryEmptyState({ signalsFailed: d.signalsFailed, awaiting: d.processing.awaiting, hasRun: d.hasRun, active: d.capacity.active })}` as any)}
                 </p>
               ) : (
                 <ol className="mt-3 space-y-2">

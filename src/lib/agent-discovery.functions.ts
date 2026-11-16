@@ -34,6 +34,7 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
 
     const { buildActionQueue } = await import("./nba.server");
     let top: { clientId: string; name: string; categoryLabel: string; why: string; headline: string }[] = [];
+    let signalsFailed = false;
     try {
       const q = await buildActionQueue(context.supabase, context.userId, "agent", 60);
       top = q.items
@@ -42,7 +43,12 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
         .map((i) => ({ clientId: i.clientId, name: i.name, categoryLabel: i.categoryLabel, why: i.why, headline: i.headline }));
     } catch {
       top = [];
+      signalsFailed = true;
     }
+    // Homes still in the property-record pipeline for this book (read-only; never releases lookups).
+    const { data: qrows } = await db.from("property_enrichment_queue").select("status").eq("portfolio_id", data.portfolioId);
+    const { summarizeDiscoveryProcessing } = await import("./discovery-status");
+    const processing = summarizeDiscoveryProcessing((qrows ?? []) as { status: string }[]);
 
     const { priceIdColumn, currentStripeMode } = await import("./billing.server");
     const column = priceIdColumn(await currentStripeMode());
@@ -53,6 +59,8 @@ export const getAgentDiscovery = createServerFn({ method: "POST" })
       subscriptionStatus: org?.subscription_status ?? null,
       capacity: { total: Math.max(granted, 0), remaining, active: active ?? 0, hasFree, freeGranted: Math.max(freeGranted, 0) },
       hasRun: Boolean(run),
+      signalsFailed,
+      processing,
       report: (run as any)?.report ?? null,
       pendingCount: ((run as any)?.pending_rows ?? []).length,
       needsAddress: ((run as any)?.needs_address ?? []) as { full_name: string; email: string | null }[],
