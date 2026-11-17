@@ -288,7 +288,7 @@ function DiscoveryPage() {
                 {data.excluded.invalid ? ` · ${n(data.excluded.invalid, "unusable", "unusable", "no utilizable", "no utilizables")}` : ""}
                 {data.excluded.overAllowance ? L(` · ${data.excluded.overAllowance} beyond your ${data.allowance}`, ` · ${data.excluded.overAllowance} por encima de tus ${data.allowance}`) : ""}
               </p>
-              {lastRows ? <DiscoveryUploadRows rows={lastRows} /> : null}
+              {(lastRows ?? data.uploadRows)?.length ? <DiscoveryUploadRows rows={(lastRows ?? data.uploadRows)!} total={lastRows ? lastRows.length : (data.uploadTotalRows ?? data.excluded.submitted)} /> : null}
             </section>
           ) : null}
 

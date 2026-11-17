@@ -426,7 +426,7 @@ export async function intakeDiscoveryCsv(input: {
       over_allowance_rows: n.over_allowance,
       unique_properties: homeRows.length,
       property_set_hash: hash,
-      risk_flags: { ...risk, last_upload: { contacts_saved: n.contact_saved, suppressed: n.suppressed, failed: n.failed } },
+      risk_flags: { ...risk, last_upload: { contacts_saved: n.contact_saved, suppressed: n.suppressed, failed: n.failed, total_rows: results.length, rows: results.slice(0, 500) } },
       started_at: new Date().toISOString(),
     })
     .eq("id", input.discoveryId);

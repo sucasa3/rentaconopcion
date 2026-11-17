@@ -64,7 +64,7 @@ beforeAll(() => {
   sql(`CREATE TABLE lender_members(user_id uuid,lender_org_id uuid);
     CREATE TABLE property_intel(address_line1 text,zip text,avm jsonb,detail jsonb);
     CREATE TABLE batchdata_reverse_lookups(id uuid DEFAULT gen_random_uuid(),org_id uuid,requested_by uuid,input_phone text,input_email text,status text,estimated_cost_cents int,created_at timestamptz DEFAULT now());
-    CREATE TABLE deletion_suppressions(email_hmac text,phone_hmac text,address_hmac text);`);
+    CREATE TABLE deletion_suppressions(email_hmac text,phone_hmac text,address_hmac text,scope text DEFAULT 'all');`);
   sql(readFileSync("docs/release-candidates/upload-reverse-migration.sql","utf8"));
 });
 

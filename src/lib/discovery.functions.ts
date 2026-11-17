@@ -300,7 +300,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
       supabaseAdmin.from("upload_staged_rows").select("id", { count: "exact", head: true })
         .eq("book_id", bookId).eq("outcome", "contact_only").is("promoted_at", null),
     ]);
-    const lastUpload = ((run as any).risk_flags?.last_upload ?? {}) as Record<string, number>;
+    const lastUpload = ((run as any).risk_flags?.last_upload ?? {}) as Record<string, any>;
 
     return {
       discoveryId: (run as any).id,
@@ -308,6 +308,8 @@ export const getDiscovery = createServerFn({ method: "GET" })
       bookAnalyzed: bookAnalyzed ?? null,
       bookContacts: bookContacts ?? 0,
       uploadContacts: lastUpload.contacts_saved ?? 0,
+      uploadRows: Array.isArray(lastUpload.rows) ? lastUpload.rows : null,
+      uploadTotalRows: typeof lastUpload.total_rows === "number" ? lastUpload.total_rows : null,
       uploadedHomes: (run as any).unique_properties ?? 0,
       portfolioId: bookId,
       activated,

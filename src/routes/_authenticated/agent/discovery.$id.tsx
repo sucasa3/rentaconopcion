@@ -212,7 +212,7 @@ function AgentDiscovery() {
                 ))}
               </dl>
               {Array.isArray((d?.report as any)?.rows) && (d!.report as any).rows.length > 0 && (
-                <DiscoveryUploadRows rows={(d!.report as any).rows} />
+                <DiscoveryUploadRows rows={(d!.report as any).rows} total={(d!.report as any).submitted} />
               )}
               {/* Matchups: lists saved contacts only; every paid search needs an explicit approval with its maximum cost. */}
               {(d?.report as any)?.contactBatchId && <UploadReversePanel batchId={(d!.report as any).contactBatchId} />}
