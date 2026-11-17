@@ -274,9 +274,29 @@ export const getDiscovery = createServerFn({ method: "GET" })
       ((tiers ?? []) as any[]).find((t) => t.key === k)?.price_cents ?? null;
     const activated = ["active", "trialing"].includes((org as any)?.subscription_status ?? "");
 
+    // The run is one per org and may point at another officer's book; the
+    // caller's own assigned book is the one uploads and processing use.
+    const { data: ownBook } = await supabaseAdmin
+      .from("lender_portfolios")
+      .select("id")
+      .eq("lender_org_id", (run as any).org_id)
+      .eq("assigned_user_id", context.userId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const bookId: string = (ownBook as any)?.id ?? (run as any).portfolio_id;
+    // Results are computed over the whole book, not only the latest upload.
+    const { count: bookHomes } = await supabaseAdmin
+      .from("lender_portfolio_clients")
+      .select("id", { count: "exact", head: true })
+      .eq("portfolio_id", bookId)
+      .is("archived_at", null);
+
     return {
       discoveryId: (run as any).id,
-      portfolioId: (run as any).portfolio_id,
+      bookHomes: bookHomes ?? 0,
+      uploadedHomes: (run as any).unique_properties ?? 0,
+      portfolioId: bookId,
       activated,
       pricing: { pilotCents: priceOf("mlo_growth_launch"), growthCents: priceOf("mlo_growth_v2") },
       orgId: (run as any).org_id,

@@ -327,7 +327,15 @@ function DiscoveryPage() {
                 {L("Now let SuCasa analyze the rest of your book.", "Ahora deja que SuCasa analice el resto de tu cartera.")}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                {L(`You found opportunities in your Discovery sample. Upload your complete database and SuCasa will analyze it with the same intelligence. The ${data.summary?.analyzed ?? 0} homes already here stay in place — repeats aren't counted twice.`, `Encontraste oportunidades en tu muestra de Discovery. Sube tu base de datos completa y SuCasa la analizará con la misma inteligencia. Las ${data.summary?.analyzed ?? 0} casas que ya están aquí se quedan — las repetidas no se cuentan dos veces.`)}
+                {(() => {
+                  const book = data.bookHomes ?? 0;
+                  const up = data.uploadedHomes ?? 0;
+                  const found = data.summary?.clientsWithOpportunities ?? 0;
+                  return L(
+                    `Your latest upload added ${up} ${up === 1 ? "home" : "homes"}. Your book now holds ${book} homes, and the ${found} worth reviewing come from the whole book${data.status === "complete" ? "" : " (analysis still in progress)"}. Upload your complete database to analyze the rest — homes already in your book stay in place and repeats aren't counted twice.`,
+                    `Tu última carga agregó ${up} ${up === 1 ? "casa" : "casas"}. Tu cartera ahora tiene ${book} casas, y los ${found} que vale la pena revisar provienen de toda la cartera${data.status === "complete" ? "" : " (análisis aún en curso)"}. Sube tu base de datos completa para analizar el resto — las casas que ya están en tu cartera se quedan y las repetidas no se cuentan dos veces.`,
+                  );
+                })()}
               </p>
               <Button asChild className="mt-5">
                 <Link to="/lender/portfolio/$id/import" params={{ id: data.portfolioId }}>

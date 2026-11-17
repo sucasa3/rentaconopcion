@@ -47,7 +47,7 @@ function PortfolioImport() {
   const ingestFn = useServerFn(ingestPortfolioCsv);
   const addFn = useServerFn(addPortfolioClient);
   const overviewFn = useServerFn(getBusinessOverview);
-  const { data: overview } = useQuery({ queryKey: ["business-overview", "lender"], queryFn: () => overviewFn({ data: { orgType: "lender" } }) });
+  const { data: overview, isError: overviewFailed, error: overviewError, refetch: retryOverview } = useQuery({ queryKey: ["business-overview", "lender"], queryFn: () => overviewFn({ data: { orgType: "lender" } }) });
   const [form, setForm] = useState({ ...EMPTY });
   const [batchId, setBatchId] = useState<string | null>(null);
   const track = useServerFn(recordAuthenticatedAgentEvent);
@@ -109,6 +109,11 @@ function PortfolioImport() {
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((p) => ({ ...p, [k]: e.target.value }));
 
+  if (overviewFailed) return <div role="alert" className="space-y-3">
+    <p className="text-sm">{L("We couldn't open your book. Nothing was uploaded.", "No pudimos abrir tu cartera. No se subió nada.")}</p>
+    <p className="text-xs text-muted-foreground">{(overviewError as any)?.message}</p>
+    <Button onClick={() => void retryOverview()}>{L("Try again", "Reintentar")}</Button>
+  </div>;
   if (!overview) return <p className="text-sm text-muted-foreground">{L("Loading your book…", "Cargando tu cartera…")}</p>;
   if (overview.personalBookId !== id) return <div className="space-y-3">
     <p className="text-sm">{L("New homeowners belong to your own book. You can assign them to your team afterward.", "Los nuevos propietarios pertenecen a tu propia cartera. Después puedes asignarlos a tu equipo.")}</p>
