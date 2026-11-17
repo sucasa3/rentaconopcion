@@ -58,3 +58,20 @@ describe("Fello five-row file through Discovery", () => {
     expect(book.rpcCalls).toHaveLength(1);
   });
 });
+
+describe("Neil's actual discovery-test-5-rows-fello.csv", () => {
+  const REAL = readFileSync(join(__dirname, "fixtures/discovery-test-5-rows-fello.csv"), "utf8");
+  it("with its two homes already in the book: 3 duplicates, 1 contact saved, 1 named unusable", async () => {
+    const first = fakeBook();
+    await saveDiscoveryRows(first.db, { userId: "u1", portfolioId: "p1", csv: REAL });
+    expect(first.clients).toHaveLength(2);
+    const book = fakeBook(first.clients);
+    const { results } = await saveDiscoveryRows(book.db, { userId: "u1", portfolioId: "p1", csv: REAL });
+    expect(results.map((r) => [r.row, r.outcome])).toEqual([
+      [1, "duplicate"], [2, "duplicate"], [3, "duplicate"], [4, "contact_saved"], [5, "unusable"],
+    ]);
+    expect(results[3].name).toBe("Marlene Lara");
+    expect(results[4].name).toBe("Test Incomplete");
+    expect(book.clients).toHaveLength(2);
+  });
+});
