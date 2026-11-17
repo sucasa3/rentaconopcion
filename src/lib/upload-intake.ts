@@ -199,20 +199,22 @@ function splitLine(line: string): string[] {
   return out.map((s) => s.trim());
 }
 
+// Header aliases shared with the portfolio importer (lender.server.ts) so CRM
+// exports such as Fello ("Contact First Name", "Contact Phone") map the same way.
 const COLS: Record<string, string[]> = {
-  name: ["full_name", "name", "client_name", "contact", "homeowner"],
-  first: ["first_name", "first"],
-  last: ["last_name", "last"],
-  address: ["address", "street", "address_line1", "property_address", "street_address"],
-  city: ["city"],
-  state: ["state", "st"],
-  zip: ["zip", "zipcode", "postal_code", "zip_code"],
-  email: ["email", "email_address", "e_mail"],
-  phone: ["phone", "mobile", "cell", "phone_number", "telephone"],
-  loan: ["loan_balance", "loan_balance_cents", "balance"],
-  rate: ["interest_rate", "interest_rate_bps", "rate"],
+  name: ["full_name", "fullname", "name", "client", "client_name", "owner", "owner_name", "homeowner", "contact", "contact_name", "borrower", "borrower_name"],
+  first: ["first_name", "firstname", "first", "contact_first_name", "owner_first_name", "borrower_first_name"],
+  last: ["last_name", "lastname", "last", "surname", "contact_last_name", "owner_last_name", "borrower_last_name"],
+  address: ["address", "address_1", "address1", "street", "address_line1", "street_address", "property_address", "site_address", "mailing_address", "addr", "full_address", "property_full_address"],
+  city: ["city", "property_city", "town", "contact_city"],
+  state: ["state", "st", "property_state", "contact_state"],
+  zip: ["zip", "zipcode", "postal_code", "zip_code", "postalcode", "property_zip", "contact_zip"],
+  email: ["email", "email_address", "e_mail", "contact_email", "primary_email"],
+  phone: ["phone", "mobile", "cell", "phone_number", "telephone", "contact_phone", "mobile_phone", "cell_phone", "primary_phone"],
+  loan: ["loan_balance", "loan_balance_cents", "balance", "loan_amount", "current_balance", "unpaid_balance", "upb"],
+  rate: ["interest_rate", "interest_rate_bps", "rate", "note_rate", "apr"],
 };
-const normH = (h: string) => h.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+const normH = (h: string) => h.replace(/^\uFEFF/, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 
 /** Lenient parser: every non-blank data line becomes a row (none silently dropped). */
 export function parseUploadCsv(csv: string): { rows: UploadRow[]; blankLines: number } {
@@ -220,7 +222,7 @@ export function parseUploadCsv(csv: string): { rows: UploadRow[]; blankLines: nu
   const headerIdx = lines.findIndex((l) => l.trim().length > 0);
   if (headerIdx < 0) return { rows: [], blankLines: 0 };
   const header = splitLine(lines[headerIdx]).map(normH);
-  const col = (k: string) => header.findIndex((h) => COLS[k].includes(h));
+  const col = (k: string) => { for (const a of COLS[k]) { const i = header.indexOf(a); if (i >= 0) return i; } return -1; };
   const c = Object.fromEntries(Object.keys(COLS).map((k) => [k, col(k)])) as Record<string, number>;
   const rows: UploadRow[] = [];
   let blank = 0;
