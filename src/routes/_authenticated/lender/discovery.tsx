@@ -53,6 +53,7 @@ function DiscoveryPage() {
   const L = useL();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
+  const [processingError, setProcessingError] = useState<string | null>(null);
   const [brief, setBrief] = useState<any>(null);
   const [checkoutOk, setCheckoutOk] = useState(false);
   const syncFn = useServerFn(syncSubscription);
@@ -98,6 +99,7 @@ function DiscoveryPage() {
   async function runProcessing() {
     if (polling.current) return;
     polling.current = true;
+    setProcessingError(null);
     void track({ data: { action: "lender_discovery_processing_viewed" } });
     try {
       for (let i = 0; i < 400; i += 1) {
@@ -111,7 +113,10 @@ function DiscoveryPage() {
         await new Promise((r) => setTimeout(r, 1200));
       }
     } catch (e: any) {
-      toast.error(e?.message ?? L("Processing stopped", "El análisis se detuvo"));
+      // Leave the spinner: accepted homes stay saved, and retrying only
+      // re-reads saved records (lookups still require their own approval).
+      setProcessingError(e?.message || "Request failed");
+      toast.error(L("Processing stopped", "El análisis se detuvo"));
     } finally {
       polling.current = false;
       setProgress(null);
@@ -120,7 +125,7 @@ function DiscoveryPage() {
   }
 
   useEffect(() => {
-    if (status === "processing" && !polling.current) void runProcessing();
+    if (status === "processing" && !polling.current && !processingError) void runProcessing();
   }, [status]);
 
   useEffect(() => {
@@ -160,7 +165,8 @@ function DiscoveryPage() {
     }))
     .filter((g: any) => g.count > 0);
 
-  const busy = upload.isPending || progress !== null || status === "processing";
+  const busy =
+    upload.isPending || progress !== null || (status === "processing" && !processingError);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 pb-16">
@@ -198,7 +204,25 @@ function DiscoveryPage() {
         </section>
       ) : null}
 
-      {!busy && status !== "complete" ? (
+      {processingError && !busy ? (
+        <section role="alert" className="rounded-3xl border border-destructive/40 bg-card p-6 shadow-soft">
+          <p className="text-sm font-semibold text-foreground">
+            {L("We couldn't finish reading your results", "No pudimos terminar de leer tus resultados")}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {L(
+              "Your uploaded homes are saved. Trying again only re-reads what's already saved — it doesn't upload again or start new paid lookups.",
+              "Tus propiedades subidas están guardadas. Reintentar solo vuelve a leer lo guardado — no sube de nuevo ni inicia búsquedas pagadas.",
+            )}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{L("Details", "Detalles")}: {processingError}</p>
+          <Button className="mt-4" onClick={() => void runProcessing()}>
+            {L("Try again", "Reintentar")}
+          </Button>
+        </section>
+      ) : null}
+
+      {!busy && !processingError && status !== "complete" ? (
         <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
           <h2 className="text-base font-semibold text-foreground">
             {L(`Upload up to ${DISCOVERY_ALLOWANCE} past clients`, `Sube hasta ${DISCOVERY_ALLOWANCE} clientes anteriores`)}

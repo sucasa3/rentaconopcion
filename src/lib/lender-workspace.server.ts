@@ -6,6 +6,7 @@
  * runs once, produces an access map, and every downstream list is filtered by
  * that map before it leaves the server.
  */
+import { selectInChunks } from "./chunked-in";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { lenderLegacyAllowed, lenderSafeReasons } from "@/lib/lender-privacy";
 import {
@@ -235,7 +236,9 @@ export async function readLenderWorkspace(
     ]);
 
   const { data: inboundRequests, error: inboundError } = (clients ?? []).length
-    ? await admin().from("homeowner_lending_requests").select("*").in("lender_client_id", (clients ?? []).map((c: any) => c.id)).order("created_at", { ascending: false })
+    ? await selectInChunks<any>((clients ?? []).map((c: any) => c.id), (b) => admin().from("homeowner_lending_requests").select("*").in("lender_client_id", b))
+        .then((d) => ({ data: d.sort((x, y) => String(y.created_at).localeCompare(String(x.created_at))), error: null as any }))
+        .catch((e) => ({ data: [] as any[], error: e }))
     : { data: [], error: null };
   if (inboundError) throw new Error(inboundError.message);
   const inboundByClient = new Map<string, any>();
@@ -264,43 +267,44 @@ export async function readLenderWorkspace(
   );
   const agentConnected = ((agentLinks ?? []) as any[]).some((a) => a.status === "active");
 
+  // Batched per 100 ids: a single GET with hundreds of ids returns HTTP 400.
+  const inChunks = (run: (b: string[]) => any, sortKey?: string) =>
+    selectInChunks<any>(clientIds, run).then((d) => ({
+      data: sortKey ? d.sort((x, y) => (sortKey === "score" ? (y.score ?? 0) - (x.score ?? 0) : String(y[sortKey]).localeCompare(String(x[sortKey])))) : d,
+    }));
   const [{ data: perms }, { data: opps }, { data: events }, { data: messages }, { data: outcomes }, { data: delivery }] =
     await Promise.all([
-      clientIds.length
-        ? admin().from("outreach_channel_permissions").select("*").in("portfolio_client_id", clientIds)
-        : Promise.resolve({ data: [] }),
-      clientIds.length
-        ? admin()
+      inChunks((b) => admin().from("outreach_channel_permissions").select("*").in("portfolio_client_id", b)),
+      inChunks(
+        (b) =>
+          admin()
             .from("homeowner_opportunities")
             .select("id, portfolio_client_id, category, strength, score, reasons, reason_codes, source_fields, state")
-            .in("portfolio_client_id", clientIds)
+            .in("portfolio_client_id", b)
             .eq("state", "open")
-            .order("score", { ascending: false })
-            .limit(1000)
-        : Promise.resolve({ data: [] }),
-      clientIds.length
-        ? admin()
-            .from("outreach_events")
-            .select("portfolio_client_id, event, occurred_at")
-            .in("portfolio_client_id", clientIds)
-            .gte("occurred_at", new Date(Date.now() - 30 * DAY).toISOString())
-        : Promise.resolve({ data: [] }),
-      clientIds.length
-        ? admin()
-            .from("outreach_messages")
-            .select("portfolio_client_id, sent_at, created_at")
-            .in("portfolio_client_id", clientIds)
-            .order("created_at", { ascending: false })
-            .limit(1000)
-        : Promise.resolve({ data: [] }),
-      clientIds.length
-        ? admin()
+            .limit(1000),
+        "score",
+      ),
+      inChunks((b) =>
+        admin()
+          .from("outreach_events")
+          .select("portfolio_client_id, event, occurred_at")
+          .in("portfolio_client_id", b)
+          .gte("occurred_at", new Date(Date.now() - 30 * DAY).toISOString()),
+      ),
+      inChunks(
+        (b) => admin().from("outreach_messages").select("portfolio_client_id, sent_at, created_at").in("portfolio_client_id", b).limit(1000),
+        "created_at",
+      ),
+      inChunks(
+        (b) =>
+          admin()
             .from("opportunity_outcomes")
             .select("portfolio_client_id, stage, occurred_at, next_step, next_step_due_at")
-            .in("portfolio_client_id", clientIds)
-            .order("occurred_at", { ascending: false })
-            .limit(1000)
-        : Promise.resolve({ data: [] }),
+            .in("portfolio_client_id", b)
+            .limit(1000),
+        "occurred_at",
+      ),
       admin()
         .from("service_delivery_events")
         .select("event_type, quantity, created_at")

@@ -334,10 +334,14 @@ export async function persistPortfolioOpportunities(
   if (!computed.length) return { clients: 0, opportunities: 0 };
 
   const clientIds = computed.map((c) => c.client.id);
-  const { data: existing } = await supabase
-    .from("homeowner_opportunities")
-    .select("id, portfolio_client_id, category, state")
-    .in("portfolio_client_id", clientIds);
+  const { selectInChunks } = await import("./chunked-in");
+  // Batched: one GET with hundreds of ids overflows the URL limit (HTTP 400).
+  const existing = await selectInChunks<any>(clientIds, (b) =>
+    supabase
+      .from("homeowner_opportunities")
+      .select("id, portfolio_client_id, category, state")
+      .in("portfolio_client_id", b),
+  );
 
   const keep = new Set<string>();
   const rows: any[] = [];
@@ -409,7 +413,10 @@ export async function persistPortfolioOpportunities(
     )
     .map((e: any) => e.id);
   if (stale.length) {
-    await supabase.from("homeowner_opportunities").delete().in("id", stale);
+    const { chunk } = await import("./chunked-in");
+    for (const b of chunk(stale)) {
+      await supabase.from("homeowner_opportunities").delete().in("id", b);
+    }
   }
 
   return { clients: computed.length, opportunities: rows.length };
@@ -427,18 +434,19 @@ export async function listPortfolioOpportunityRows(supabase: any, portfolioId: s
   const rows = (clients ?? []) as PortfolioClientRow[];
   if (!rows.length) return { opportunities: [], counts: {} as Record<string, number> };
 
-  const { data: opps, error } = await supabase
-    .from("homeowner_opportunities")
-    .select(
-      "id, portfolio_client_id, category, strength, score, reasons, signals, state, computed_at, signal_key, network, confidence",
-    )
-
-    .in(
-      "portfolio_client_id",
+  const { selectInChunks } = await import("./chunked-in");
+  const opps = (
+    await selectInChunks<any>(
       rows.map((r) => r.id),
+      (b) =>
+        supabase
+          .from("homeowner_opportunities")
+          .select(
+            "id, portfolio_client_id, category, strength, score, reasons, signals, state, computed_at, signal_key, network, confidence",
+          )
+          .in("portfolio_client_id", b),
     )
-    .order("score", { ascending: false });
-  if (error) throw new Error(error.message);
+  ).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 
   const byId = new Map(rows.map((r) => [r.id, r]));
   const counts: Record<string, number> = {};
