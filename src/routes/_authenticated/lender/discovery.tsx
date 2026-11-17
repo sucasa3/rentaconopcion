@@ -52,6 +52,9 @@ function DiscoveryPage() {
   const track = useServerFn(recordAuthenticatedAgentEvent);
   const tr = useT();
   const L = useL();
+  // A count with the noun in the reader's language, singular when it is one.
+  const n = (count: number, enS: string, enP: string, esS: string, esP: string) =>
+    L(`${count} ${count === 1 ? enS : enP}`, `${count} ${count === 1 ? esS : esP}`);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
   const [showMore, setShowMore] = useState(false);
@@ -91,6 +94,9 @@ function DiscoveryPage() {
   const [lastRows, setLastRows] = useState<any[] | null>(null);
   const upload = useMutation({
     mutationFn: (csv: string) => uploadFn({ data: { csv } }),
+    // A new upload replaces the earlier result at once, so the previous
+    // summary is never shown as if it belonged to the file being read now.
+    onMutate: () => setLastRows(null),
     onSuccess: async (r: any) => {
       setLastRows(r.rows ?? null);
       toast.success(L(
@@ -264,7 +270,7 @@ function DiscoveryPage() {
               hint={L("Your current results and records stay in place. Repeats aren't added twice.", "Tus resultados y registros actuales se mantienen. Las repetidas no se agregan dos veces.")}
             />
           ) : (
-            <Button variant="outline" onClick={() => setShowMore(true)}>
+            <Button onClick={() => setShowMore(true)}>
               {L("Upload another list", "Subir otra lista")}
             </Button>
           )}
@@ -273,13 +279,13 @@ function DiscoveryPage() {
 
       {status === "complete" ? (
         <>
-          {data.excluded?.submitted ? (
+          {!busy && data.excluded?.submitted ? (
             <section className="rounded-2xl border border-border bg-card p-4 text-sm">
               <p className="font-semibold text-foreground">{L("This upload", "Esta carga")}</p>
               <p className="mt-1 text-muted-foreground">
-                {L(`${data.excluded.submitted} rows · ${data.uploadedHomes ?? 0} homes saved · ${data.uploadContacts ?? 0} contacts saved`, `${data.excluded.submitted} filas · ${data.uploadedHomes ?? 0} casas guardadas · ${data.uploadContacts ?? 0} contactos guardados`)}
+                {n(data.excluded.submitted, "row", "rows", "fila", "filas")} · {n(data.uploadedHomes ?? 0, "home saved", "homes saved", "casa guardada", "casas guardadas")} · {n(data.uploadContacts ?? 0, "contact saved", "contacts saved", "contacto guardado", "contactos guardados")}
                 {data.excluded.duplicate ? L(` · ${data.excluded.duplicate} already in your book`, ` · ${data.excluded.duplicate} ya en tu cartera`) : ""}
-                {data.excluded.invalid ? L(` · ${data.excluded.invalid} unusable`, ` · ${data.excluded.invalid} no utilizables`) : ""}
+                {data.excluded.invalid ? ` · ${n(data.excluded.invalid, "unusable", "unusable", "no utilizable", "no utilizables")}` : ""}
                 {data.excluded.overAllowance ? L(` · ${data.excluded.overAllowance} beyond your ${data.allowance}`, ` · ${data.excluded.overAllowance} por encima de tus ${data.allowance}`) : ""}
               </p>
               {lastRows ? <DiscoveryUploadRows rows={lastRows} /> : null}
@@ -294,10 +300,18 @@ function DiscoveryPage() {
               <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{L("Your book", "Tu cartera")}</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {analyzed == null
-                    ? L(`${book} homes saved · property records status unknown.`, `${book} casas guardadas · estado de registros desconocido.`)
-                    : L(`${book} homes saved · ${analyzed} with property records · ${Math.max(0, book - analyzed)} pending.`, `${book} casas guardadas · ${analyzed} con registros de propiedad · ${Math.max(0, book - analyzed)} pendientes.`)}
-                  {data.bookContacts ? L(` Plus ${data.bookContacts} contacts without an address.`, ` Además ${data.bookContacts} contactos sin dirección.`) : ""}
+                  {`${n(book, "home saved", "homes saved", "casa guardada", "casas guardadas")} · ${
+                    analyzed == null
+                      ? L("property records status unknown.", "estado de registros desconocido.")
+                      : L(
+                          `${analyzed} with property records · ${Math.max(0, book - analyzed)} pending.`,
+                          `${analyzed} con registros de propiedad · ${Math.max(0, book - analyzed)} pendientes.`,
+                        )
+                  }${
+                    data.bookContacts
+                      ? ` ${L("Plus", "Además")} ${n(data.bookContacts, "contact without an address", "contacts without an address", "contacto sin dirección", "contactos sin dirección")}.`
+                      : ""
+                  }`}
                 </p>
                 <p className="mt-1 text-xl font-semibold text-foreground">
                   {found === 0
@@ -365,8 +379,8 @@ function DiscoveryPage() {
                   const up = data.uploadedHomes ?? 0;
                   const found = data.summary?.clientsWithOpportunities ?? 0;
                   return L(
-                    `Your latest upload added ${up} ${up === 1 ? "home" : "homes"}. Your book now holds ${book} homes, and the ${found} worth reviewing come from the whole book${data.status === "complete" ? "" : " (analysis still in progress)"}. Upload your complete database to analyze the rest — homes already in your book stay in place and repeats aren't counted twice.`,
-                    `Tu última carga agregó ${up} ${up === 1 ? "casa" : "casas"}. Tu cartera ahora tiene ${book} casas, y los ${found} que vale la pena revisar provienen de toda la cartera${data.status === "complete" ? "" : " (análisis aún en curso)"}. Sube tu base de datos completa para analizar el resto — las casas que ya están en tu cartera se quedan y las repetidas no se cuentan dos veces.`,
+                    `Your latest upload added ${up} ${up === 1 ? "home" : "homes"}. Your book now holds ${n(book, "home", "homes", "casa", "casas")}, and the ${found} worth reviewing come from the whole book${data.status === "complete" ? "" : " (analysis still in progress)"}. Upload your complete database to analyze the rest — homes already in your book stay in place and repeats aren't counted twice.`,
+                    `Tu última carga agregó ${up} ${up === 1 ? "casa" : "casas"}. Tu cartera ahora tiene ${n(book, "casa", "casas", "casa", "casas")}, y los ${found} que vale la pena revisar provienen de toda la cartera${data.status === "complete" ? "" : " (análisis aún en curso)"}. Sube tu base de datos completa para analizar el resto — las casas que ya están en tu cartera se quedan y las repetidas no se cuentan dos veces.`,
                   );
                 })()}
               </p>
