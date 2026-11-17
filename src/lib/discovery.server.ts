@@ -414,7 +414,8 @@ export async function intakeDiscoveryCsv(input: {
   await db
     .from("lender_discoveries")
     .update({
-      status: homeRows.length ? "processing" : "awaiting_upload",
+      // A contact-only follow-up upload must not reset finished results.
+      ...(homeRows.length ? { status: "processing" } : {}),
       submitted_rows: results.length,
       invalid_rows: n.unusable,
       duplicate_rows: n.duplicate,

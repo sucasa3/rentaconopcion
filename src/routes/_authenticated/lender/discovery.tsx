@@ -54,6 +54,7 @@ function DiscoveryPage() {
   const L = useL();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const polling = useRef(false);
+  const [showMore, setShowMore] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [brief, setBrief] = useState<any>(null);
   const [checkoutOk, setCheckoutOk] = useState(false);
@@ -250,6 +251,23 @@ function DiscoveryPage() {
               {L("Your list stays inside your own workspace. Uploading creates no relationship, no permission and no access to any homeowner.", "Tu lista se queda dentro de tu propio espacio de trabajo. Subirla no crea ninguna relación, permiso ni acceso a ningún propietario.")}
             </span>
           </div>
+        </section>
+      ) : null}
+
+      {status === "complete" && !busy ? (
+        <section className="rounded-2xl border border-border bg-card p-4">
+          {showMore ? (
+            <BulkClientUpload
+              onCsv={(csv) => { setShowMore(false); upload.mutate(csv); }}
+              busy={upload.isPending}
+              title={L("Upload another list", "Subir otra lista")}
+              hint={L("Your current results and records stay in place. Repeats aren't added twice.", "Tus resultados y registros actuales se mantienen. Las repetidas no se agregan dos veces.")}
+            />
+          ) : (
+            <Button variant="outline" onClick={() => setShowMore(true)}>
+              {L("Upload another list", "Subir otra lista")}
+            </Button>
+          )}
         </section>
       ) : null}
 
