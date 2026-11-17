@@ -15,7 +15,6 @@
 
 import {
   DISCOVERY_ALLOWANCE,
-  planIntake,
   propertyKey,
   rankClients,
   reviewGroupOf,
@@ -276,14 +275,123 @@ export async function assessRisk(input: {
 export interface IntakeOutcome {
   discoveryId: string;
   accepted: number;
-  excluded: { invalid: number; duplicate: number; overAllowance: number };
+  contactsSaved: number;
+  excluded: { invalid: number; duplicate: number; overAllowance: number; suppressed: number; failed: number };
   submitted: number;
+  rows: import("./discovery-rows").DiscoveryRowResult[];
 }
 
 /**
- * Take a lender's export, spend the allowance on valid unique properties, and
- * hand the accepted addresses to the shared enrichment queue.
+ * Save one Discovery upload into the caller's own book. Every file row gets an
+ * outcome. Addressed rows become homes (existing enrichment path, free
+ * allowance); phone/email-only rows are kept as contacts through the shared
+ * stage_mixed_upload RPC (own-book check, no capacity, no lookup). Retries
+ * dedupe against the book, so nothing is saved or looked up twice.
  */
+export async function saveDiscoveryRows(
+  db: any,
+  input: { userId: string; portfolioId: string; csv: string; allowance?: number },
+) {
+  const { parseUploadCsv, addressKey } = await import("./upload-intake");
+  const { classifyDiscoveryRows, splitCombinedAddress, contactKey } = await import("./discovery-rows");
+  const { rows: rawRows } = parseUploadCsv(input.csv);
+  const rows = rawRows.map(splitCombinedAddress);
+
+  const pageAll = async (table: string, cols: string, build: (q: any) => any) => {
+    const out: any[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await build(db.from(table).select(cols)).range(from, from + 999);
+      if (error) throw new Error(error.message);
+      out.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+    return out;
+  };
+  const [clients, staged] = await Promise.all([
+    pageAll("lender_portfolio_clients", "address_line1, city, state, zip, client_email, client_phone",
+      (q) => q.eq("portfolio_id", input.portfolioId).is("archived_at", null)),
+    pageAll("upload_staged_rows", "identity_key",
+      (q) => q.eq("book_id", input.portfolioId).in("outcome", ["contact_only", "waiting_capacity"]).is("promoted_at", null)),
+  ]);
+  const existingPropertyKeys: string[] = [];
+  const existingContactKeys: string[] = [];
+  for (const c of clients) {
+    existingPropertyKeys.push(propertyKey({ full_name: "x", address: c.address_line1 ?? "", city: c.city, state: c.state, zip: c.zip }));
+    const ck = contactKey({ rowNumber: 0, name: "", address: "", city: null, state: null, zip: null,
+      email: c.client_email, phone: c.client_phone, loanBalanceCents: null, interestRateBps: null });
+    if (ck) existingContactKeys.push(ck);
+  }
+  for (const s of staged) if (s.identity_key) existingContactKeys.push(s.identity_key);
+
+  const { partitionSuppressed } = await import("./suppression.server");
+  const { suppressed } = await partitionSuppressed(db, rows, (r: any) => ({
+    email: r.email ?? null, phone: r.phone ?? null, street: r.address || null, zip: r.zip ?? null,
+  }));
+  const results = classifyDiscoveryRows({
+    rows, existingPropertyKeys, existingContactKeys,
+    suppressedRows: new Set(suppressed.map((r: any) => r.rowNumber)),
+    allowance: input.allowance ?? DISCOVERY_ALLOWANCE,
+  });
+  const byNum = new Map(rows.map((r) => [r.rowNumber, r]));
+  const homes = results.filter((r) => r.outcome === "property_saved");
+  const contacts = results.filter((r) => r.outcome === "contact_saved");
+  const fail = (list: typeof results, why: string) => {
+    for (const r of list) { r.outcome = "failed"; r.reason = why; }
+  };
+
+  if (homes.length) {
+    const payload = homes.map((h) => {
+      const r = byNum.get(h.row)!;
+      return {
+        portfolio_id: input.portfolioId,
+        client_name: r.name,
+        client_email: r.email ?? null,
+        client_phone: r.phone ?? null,
+        address_line1: r.address,
+        city: r.city ?? null,
+        state: r.state ?? null,
+        zip: r.zip ?? null,
+        loan_amount_at_close_cents: r.loanBalanceCents ?? null,
+        rate_at_close: r.interestRateBps != null ? Number((r.interestRateBps / 100).toFixed(3)) : null,
+      };
+    });
+    const { error } = await db.from("lender_portfolio_clients").insert(payload);
+    if (error) fail(homes, `Not saved: ${error.message}`);
+  }
+
+  if (contacts.length) {
+    const p_rows = contacts.map((c, i) => {
+      const r = byNum.get(c.row)!;
+      return {
+        row_number: i + 1,
+        outcome: "contact_only",
+        identity_key: contactKey(r),
+        cached: false,
+        payload: { name: r.name || null, address: null, city: r.city, state: r.state, zip: r.zip,
+          email: r.email, phone: r.phone, source_row: c.row, source: "lender_discovery",
+          address_key: addressKey(r) },
+      };
+    });
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`discovery-contacts\n${input.csv}`));
+    const sha = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const { data, error } = await db.rpc("stage_mixed_upload", {
+      p_book: input.portfolioId, p_actor: input.userId, p_file_sha256: sha, p_flow: "lender", p_rows,
+    });
+    if (error) fail(contacts, `Not saved: ${error.message}`);
+    else if ((data as any)?.counts?.already_uploaded) {
+      // The database found some already kept; never report them as new.
+      const { data: kept } = await db.from("upload_staged_rows").select("row_number, outcome")
+        .eq("batch_id", (data as any).batch_id);
+      const dupRows = new Set(((kept ?? []) as any[]).filter((k) => k.outcome === "already_uploaded").map((k) => k.row_number));
+      contacts.forEach((c, i) => {
+        if (dupRows.has(i + 1)) { c.outcome = "duplicate"; c.reason = "This contact is already in your book."; }
+      });
+    }
+  }
+
+  return { results, homeRows: homes.filter((h) => h.outcome === "property_saved").map((h) => byNum.get(h.row)!) };
+}
+
 export async function intakeDiscoveryCsv(input: {
   userId: string;
   discoveryId: string;
@@ -293,95 +401,42 @@ export async function intakeDiscoveryCsv(input: {
   csv: string;
 }): Promise<IntakeOutcome> {
   const db = await adminClient();
-  const { parseClientCsv } = await import("./lender.server");
-  const rows = parseClientCsv(input.csv);
-
-  const { data: existingClients } = await db
-    .from("lender_portfolio_clients")
-    .select("address_line1, city, state, zip")
-    .eq("portfolio_id", input.portfolioId);
-  const existingKeys = (existingClients ?? []).map((c: any) =>
-    propertyKey({
-      full_name: "x",
-      address: c.address_line1 ?? "",
-      city: c.city,
-      state: c.state,
-      zip: c.zip,
-    }),
-  );
-
-  const { accepted, accounting } = planIntake(rows as any[], {
-    allowance: DISCOVERY_ALLOWANCE,
-    existingKeys,
+  const { countOutcomes } = await import("./discovery-rows");
+  const { results, homeRows } = await saveDiscoveryRows(db, {
+    userId: input.userId, portfolioId: input.portfolioId, csv: input.csv,
   });
+  const n = countOutcomes(results);
+  const keys = homeRows.map((r) => propertyKey({ full_name: r.name, address: r.address, city: r.city, state: r.state, zip: r.zip }));
 
-  const { partitionSuppressed } = await import("./suppression.server");
-  const { allowed: importable } = await partitionSuppressed(db, accepted, (r: any) => ({
-    email: r.email ?? null,
-    phone: r.phone ?? null,
-    street: r.address,
-    zip: r.zip ?? null,
-  }));
-
-  if (importable.length) {
-    const payload = importable.map((r: any) => ({
-      portfolio_id: input.portfolioId,
-      client_name: r.full_name,
-      client_email: r.email ?? null,
-      client_phone: r.phone ?? null,
-      address_line1: r.address,
-      city: r.city ?? null,
-      state: r.state ?? null,
-      zip: r.zip ?? null,
-      loan_amount_at_close_cents: r.loan_balance_cents ?? null,
-      rate_at_close:
-        r.interest_rate_bps != null ? Number((r.interest_rate_bps / 100).toFixed(3)) : null,
-      close_date: r.close_date ?? null,
-      notes: r.note ?? null,
-    }));
-    const { error } = await db.from("lender_portfolio_clients").insert(payload);
-    if (error) throw new Error(error.message);
-  }
-
-  const hash = await propertySetHash(accepted.map((r: any) => propertyKey(r)));
-  const risk = await assessRisk({
-    orgId: input.orgId,
-    userId: input.userId,
-    email: input.email,
-    hash,
-  });
+  const hash = await propertySetHash(keys);
+  const risk = await assessRisk({ orgId: input.orgId, userId: input.userId, email: input.email, hash });
 
   await db
     .from("lender_discoveries")
     .update({
-      status: accepted.length ? "processing" : "awaiting_upload",
-      submitted_rows: accounting.submitted,
-      invalid_rows: accounting.invalid,
-      duplicate_rows: accounting.duplicate,
-      over_allowance_rows: accounting.overAllowance,
-      unique_properties: accepted.length,
+      status: homeRows.length ? "processing" : "awaiting_upload",
+      submitted_rows: results.length,
+      invalid_rows: n.unusable,
+      duplicate_rows: n.duplicate,
+      over_allowance_rows: n.over_allowance,
+      unique_properties: homeRows.length,
       property_set_hash: hash,
-      risk_flags: risk,
+      risk_flags: { ...risk, last_upload: { contacts_saved: n.contact_saved, suppressed: n.suppressed, failed: n.failed } },
       started_at: new Date().toISOString(),
     })
     .eq("id", input.discoveryId);
 
-  if (accepted.length) {
-    await db
-      .from("lender_orgs")
-      .update({ discovery_state: "discovery_processing" })
-      .eq("id", input.orgId);
+  if (homeRows.length) {
+    await db.from("lender_orgs").update({ discovery_state: "discovery_processing" }).eq("id", input.orgId);
   }
 
   return {
     discoveryId: input.discoveryId,
-    accepted: accepted.length,
-    submitted: accounting.submitted,
-    excluded: {
-      invalid: accounting.invalid,
-      duplicate: accounting.duplicate,
-      overAllowance: accounting.overAllowance,
-    },
+    accepted: homeRows.length,
+    contactsSaved: n.contact_saved,
+    submitted: results.length,
+    excluded: { invalid: n.unusable, duplicate: n.duplicate, overAllowance: n.over_allowance, suppressed: n.suppressed, failed: n.failed },
+    rows: results,
   };
 }
 

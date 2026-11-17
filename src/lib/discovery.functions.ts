@@ -184,7 +184,7 @@ export const getDiscovery = createServerFn({ method: "GET" })
     const { data: run } = await supabaseAdmin
       .from("lender_discoveries")
       .select(
-        "id, org_id, portfolio_id, status, allowance, submitted_rows, invalid_rows, duplicate_rows, over_allowance_rows, unique_properties, opportunity_clients, revealed_count, completed_at",
+        "id, org_id, portfolio_id, status, allowance, submitted_rows, invalid_rows, duplicate_rows, over_allowance_rows, unique_properties, opportunity_clients, revealed_count, completed_at, risk_flags",
       )
       .in("org_id", orgIds)
       .maybeSingle();
@@ -292,9 +292,22 @@ export const getDiscovery = createServerFn({ method: "GET" })
       .eq("portfolio_id", bookId)
       .is("archived_at", null);
 
+    // Saved is not analyzed: count homes with a property record on file, and
+    // contacts kept without an address, separately.
+    const [{ count: bookAnalyzed }, { count: bookContacts }] = await Promise.all([
+      supabaseAdmin.from("lender_portfolio_clients").select("id", { count: "exact", head: true })
+        .eq("portfolio_id", bookId).is("archived_at", null).not("last_intel_refreshed_at", "is", null),
+      supabaseAdmin.from("upload_staged_rows").select("id", { count: "exact", head: true })
+        .eq("book_id", bookId).eq("outcome", "contact_only").is("promoted_at", null),
+    ]);
+    const lastUpload = ((run as any).risk_flags?.last_upload ?? {}) as Record<string, number>;
+
     return {
       discoveryId: (run as any).id,
       bookHomes: bookHomes ?? 0,
+      bookAnalyzed: bookAnalyzed ?? null,
+      bookContacts: bookContacts ?? 0,
+      uploadContacts: lastUpload.contacts_saved ?? 0,
       uploadedHomes: (run as any).unique_properties ?? 0,
       portfolioId: bookId,
       activated,

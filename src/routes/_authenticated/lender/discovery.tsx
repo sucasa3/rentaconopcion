@@ -19,6 +19,7 @@ import { LenderBriefDialog } from "@/components/lender-brief";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { Button } from "@/components/ui/button";
 import { DISCOVERY_ALLOWANCE } from "@/lib/discovery";
+import { DiscoveryUploadRows } from "@/components/discovery-upload-rows";
 import {
   advanceDiscovery,
   getDiscovery,
@@ -86,10 +87,15 @@ function DiscoveryPage() {
   const data = snapshot.data as any;
   const status: string = data?.status ?? "awaiting_upload";
 
+  const [lastRows, setLastRows] = useState<any[] | null>(null);
   const upload = useMutation({
     mutationFn: (csv: string) => uploadFn({ data: { csv } }),
     onSuccess: async (r: any) => {
-      toast.success(L(`${r.accepted} properties accepted`, `${r.accepted} propiedades aceptadas`));
+      setLastRows(r.rows ?? null);
+      toast.success(L(
+        `${r.accepted} ${r.accepted === 1 ? "home" : "homes"} and ${r.contactsSaved ?? 0} ${r.contactsSaved === 1 ? "contact" : "contacts"} saved`,
+        `${r.accepted} ${r.accepted === 1 ? "casa" : "casas"} y ${r.contactsSaved ?? 0} ${r.contactsSaved === 1 ? "contacto" : "contactos"} guardados`,
+      ));
       await qc.invalidateQueries({ queryKey: ["lender-discovery"] });
       void runProcessing();
     },
@@ -250,26 +256,35 @@ function DiscoveryPage() {
       {status === "complete" ? (
         <>
           {data.excluded?.submitted ? (
-            <p className="text-xs text-muted-foreground">
-              {L(`${data.excluded.submitted} rows submitted · ${data.summary?.analyzed ?? 0} unique properties analyzed`, `${data.excluded.submitted} filas enviadas · ${data.summary?.analyzed ?? 0} propiedades únicas analizadas`)}
-              {data.excluded.invalid ? L(` · ${data.excluded.invalid} without a usable address`, ` · ${data.excluded.invalid} sin dirección válida`) : ""}
-              {data.excluded.duplicate ? L(` · ${data.excluded.duplicate} repeat properties`, ` · ${data.excluded.duplicate} propiedades repetidas`) : ""}
-              {data.excluded.overAllowance
-                ? L(` · ${data.excluded.overAllowance} beyond your ${data.allowance}`, ` · ${data.excluded.overAllowance} por encima de tus ${data.allowance}`)
-                : ""}
-            </p>
+            <section className="rounded-2xl border border-border bg-card p-4 text-sm">
+              <p className="font-semibold text-foreground">{L("This upload", "Esta carga")}</p>
+              <p className="mt-1 text-muted-foreground">
+                {L(`${data.excluded.submitted} rows · ${data.uploadedHomes ?? 0} homes saved · ${data.uploadContacts ?? 0} contacts saved`, `${data.excluded.submitted} filas · ${data.uploadedHomes ?? 0} casas guardadas · ${data.uploadContacts ?? 0} contactos guardados`)}
+                {data.excluded.duplicate ? L(` · ${data.excluded.duplicate} already in your book`, ` · ${data.excluded.duplicate} ya en tu cartera`) : ""}
+                {data.excluded.invalid ? L(` · ${data.excluded.invalid} unusable`, ` · ${data.excluded.invalid} no utilizables`) : ""}
+                {data.excluded.overAllowance ? L(` · ${data.excluded.overAllowance} beyond your ${data.allowance}`, ` · ${data.excluded.overAllowance} por encima de tus ${data.allowance}`) : ""}
+              </p>
+              {lastRows ? <DiscoveryUploadRows rows={lastRows} /> : null}
+            </section>
           ) : null}
 
           {(() => {
             const found = data.summary?.clientsWithOpportunities ?? 0;
-            const analyzed = data.summary?.analyzed ?? 0;
+            const book = data.bookHomes ?? 0;
+            const analyzed: number | null = data.bookAnalyzed ?? null;
             return (
               <section className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                <p className="text-sm text-muted-foreground">{L(`We analyzed ${analyzed} homeowners.`, `Analizamos ${analyzed} propietarios.`)}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{L("Your book", "Tu cartera")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {analyzed == null
+                    ? L(`${book} homes saved · property records status unknown.`, `${book} casas guardadas · estado de registros desconocido.`)
+                    : L(`${book} homes saved · ${analyzed} with property records · ${Math.max(0, book - analyzed)} pending.`, `${book} casas guardadas · ${analyzed} con registros de propiedad · ${Math.max(0, book - analyzed)} pendientes.`)}
+                  {data.bookContacts ? L(` Plus ${data.bookContacts} contacts without an address.`, ` Además ${data.bookContacts} contactos sin dirección.`) : ""}
+                </p>
                 <p className="mt-1 text-xl font-semibold text-foreground">
                   {found === 0
-                    ? L("None has a reason worth reviewing today.", "Ninguno tiene hoy un motivo que valga la pena revisar.")
-                    : L(`${found} ${found === 1 ? "has a reason" : "have a reason"} worth reviewing.`, `${found} ${found === 1 ? "tiene un motivo" : "tienen un motivo"} que vale la pena revisar.`)}
+                    ? L("Across your whole book, none has a reason worth reviewing today.", "En toda tu cartera, ninguno tiene hoy un motivo que valga la pena revisar.")
+                    : L(`Across your whole book, ${found} ${found === 1 ? "has a reason" : "have a reason"} worth reviewing.`, `En toda tu cartera, ${found} ${found === 1 ? "tiene un motivo" : "tienen un motivo"} que vale la pena revisar.`)}
                 </p>
                 {data.revealed.length ? (
                   <p className="mt-1 text-sm text-foreground">
