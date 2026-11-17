@@ -361,6 +361,7 @@ export async function saveDiscoveryRows(
     if (error) fail(homes, `Not saved: ${error.message}`);
   }
 
+  let contactBatchId: string | null = null;
   if (contacts.length) {
     const p_rows = contacts.map((c, i) => {
       const r = byNum.get(c.row)!;
@@ -379,6 +380,7 @@ export async function saveDiscoveryRows(
     const { data, error } = await db.rpc("stage_mixed_upload", {
       p_book: input.portfolioId, p_actor: input.userId, p_file_sha256: sha, p_flow: input.flow ?? "lender", p_rows,
     });
+    if (!error) contactBatchId = (data as any)?.batch_id ?? null;
     if (error) fail(contacts, `Not saved: ${error.message}`);
     else if ((data as any)?.counts?.already_uploaded) {
       // The database found some already kept; never report them as new.
@@ -391,7 +393,7 @@ export async function saveDiscoveryRows(
     }
   }
 
-  return { results, homeRows: homes.filter((h) => h.outcome === "property_saved").map((h) => byNum.get(h.row)!) };
+  return { results, contactBatchId, homeRows: homes.filter((h) => h.outcome === "property_saved").map((h) => byNum.get(h.row)!) };
 }
 
 export async function intakeDiscoveryCsv(input: {

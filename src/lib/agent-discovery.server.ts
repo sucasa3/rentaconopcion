@@ -94,6 +94,8 @@ export interface DiscoveryReport {
   needsAddress: number;
   /** Phone/email-only rows kept as contacts (for Matchups), never looked up automatically. */
   contactsSaved?: number;
+  rows?: import("./discovery-rows").DiscoveryRowResult[];
+  contactBatchId?: string | null;
   excluded: number;
   optedOut: number;
   overAllowance: number;
@@ -120,18 +122,21 @@ export async function runAgentDiscovery(input: {
     zip: r.zip ?? null,
   }));
 
+  const remaining = await remainingFor(input.orgId);
+  // Per-row accounting + contact staging BEFORE homes are inserted, so this
+  // upload's homes aren't reported as "already in book". Contacts go through
+  // the shared staging RPC (own-book check, dedupe, suppression); no lookups.
+  const { saveDiscoveryRows } = await import("./discovery.server");
+  const { results, contactBatchId } = await saveDiscoveryRows(db, {
+    userId: input.userId, portfolioId: input.portfolioId, csv: input.csv,
+    contactsOnly: true, flow: "agent", allowance: Math.max(remaining, 0),
+  });
   const plan = planAgentIntake(allowed as AgentIntakeRow[], {
     existingKeys: await existingKeys(input.portfolioId),
-    remaining: await remainingFor(input.orgId),
+    remaining,
   });
   const { inserted, raced } = await insertRows(input.portfolioId, plan.toImport);
-
-  // Keep phone/email-only rows as contacts through the shared staging RPC
-  // (own-book check, dedupe, suppression). No homes, holds, grants or lookups.
-  const { saveDiscoveryRows } = await import("./discovery.server");
-  const { results } = await saveDiscoveryRows(db, {
-    userId: input.userId, portfolioId: input.portfolioId, csv: input.csv, contactsOnly: true, flow: "agent",
-  });
+  const { data: prev } = await db.from("agent_discovery_runs").select("report").eq("portfolio_id", input.portfolioId).maybeSingle();
   const contactsSaved = results.filter((r) => r.outcome === "contact_saved").length;
 
   const report: DiscoveryReport = {
@@ -141,6 +146,9 @@ export async function runAgentDiscovery(input: {
     sharedContacts: plan.sharedContactRows,
     needsAddress: sink.addressless.length,
     contactsSaved,
+    rows: results.slice(0, 500),
+    // Latest staged-contact upload, for Matchups; a retry that saves nothing new keeps the earlier one.
+    contactBatchId: contactBatchId ?? (prev as any)?.report?.contactBatchId ?? null,
     excluded: sink.invalid,
     optedOut: suppressed.length,
     overAllowance: plan.overAllowance.length,

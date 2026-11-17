@@ -2048,6 +2048,7 @@ export const es: Dictionary = {
   "adisc.r.imported": "Encontrados y agregados",
   "adisc.r.duplicates": "Ya están en su cartera",
   "adisc.r.shared": "Comparten correo con otra casa (se mantienen separados)",
+  "adisc.r.contacts_saved": "Contactos guardados (sin dirección)",
   "adisc.r.needs_address": "Falta la dirección",
   "adisc.r.excluded": "No se pudieron leer",
   "adisc.r.opted_out": "Dados de baja o eliminados (omitidos)",

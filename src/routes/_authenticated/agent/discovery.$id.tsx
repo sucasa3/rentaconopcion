@@ -10,6 +10,8 @@ import { z } from "zod";
 import { BusinessShell } from "@/components/business-shell";
 import { BulkClientUpload } from "@/components/bulk-client-upload";
 import { Button } from "@/components/ui/button";
+import { DiscoveryUploadRows } from "@/components/discovery-upload-rows";
+import { UploadReversePanel } from "@/components/upload-reverse-panel";
 import { useT } from "@/lib/i18n";
 import {
   claimAgentFree,
@@ -195,6 +197,7 @@ function AgentDiscovery() {
                   [
                     ["imported", "adisc.r.imported"],
                     ["duplicates", "adisc.r.duplicates"],
+                    ["contactsSaved", "adisc.r.contacts_saved"],
                     ["sharedContacts", "adisc.r.shared"],
                     ["needsAddress", "adisc.r.needs_address"],
                     ["excluded", "adisc.r.excluded"],
@@ -208,6 +211,11 @@ function AgentDiscovery() {
                   </div>
                 ))}
               </dl>
+              {Array.isArray((d?.report as any)?.rows) && (d!.report as any).rows.length > 0 && (
+                <DiscoveryUploadRows rows={(d!.report as any).rows} />
+              )}
+              {/* Matchups: lists saved contacts only; every paid search needs an explicit approval with its maximum cost. */}
+              {(d?.report as any)?.contactBatchId && <UploadReversePanel batchId={(d!.report as any).contactBatchId} />}
             </section>
           )}
 

@@ -2007,6 +2007,7 @@ export const en = {
   "adisc.r.imported": "Matched and added",
   "adisc.r.duplicates": "Already in your book",
   "adisc.r.shared": "Share an email with another home (kept separate)",
+  "adisc.r.contacts_saved": "Contacts saved (no address)",
   "adisc.r.needs_address": "Needs an address",
   "adisc.r.excluded": "Couldn't be read",
   "adisc.r.opted_out": "Opted out or deleted (skipped)",

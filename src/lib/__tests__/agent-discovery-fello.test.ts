@@ -16,7 +16,7 @@ const fakeDb = {
   from(table: string) {
     const api: any = {
       select: () => api, eq: () => api, is: () => api, in: () => api,
-      maybeSingle: async () => ({ data: table === "lender_portfolios" ? state.book : table === "lender_members" ? { user_id: "neil" } : null, error: null }),
+      maybeSingle: async () => ({ data: table === "lender_portfolios" ? state.book : table === "lender_members" ? { user_id: "neil" } : table === "agent_discovery_runs" ? (state.runs.at(-1) ?? null) : null, error: null }),
       range: async () => ({ data: table === "lender_portfolio_clients" ? state.clients : state.staged, error: null }),
       insert: async (rows: any) => { state.clients.push(...[].concat(rows)); return { error: null }; },
       upsert: async (r: any) => { state.runs.push(r); return { error: null }; },
@@ -53,6 +53,11 @@ describe("Agent Discovery with Neil's five-row Fello file (mocked saves)", () =>
     expect(state.rpc[0].p_flow).toBe("agent");
     const names = state.runs[0].needs_address.map((n: any) => n.full_name);
     expect(names).toContain("Test Incomplete");
+    expect(r.rows!.map((x) => [x.row, x.outcome])).toEqual([
+      [1, "property_saved"], [2, "property_saved"], [3, "duplicate"], [4, "contact_saved"], [5, "unusable"],
+    ]);
+    expect(r.rows![4].name).toBe("Test Incomplete");
+    expect(r.contactBatchId).toBe("b");
   });
 
   it("a retry with the homes already present adds no homes and no second contact", async () => {
@@ -63,6 +68,11 @@ describe("Agent Discovery with Neil's five-row Fello file (mocked saves)", () =>
     expect(r.contactsSaved).toBe(0);
     expect(state.clients).toHaveLength(2);
     expect(state.staged).toHaveLength(1);
+    expect(r.rows!.map((x) => [x.row, x.outcome])).toEqual([
+      [1, "duplicate"], [2, "duplicate"], [3, "duplicate"], [4, "duplicate"], [5, "unusable"],
+    ]);
+    expect(state.rpc).toHaveLength(1); // no second staging, no search started
+    expect(r.contactBatchId).toBe("b"); // Matchups still reachable after the retry
   });
 
   it("refuses a book assigned to someone else (e.g. Sam's) before saving anything", async () => {
