@@ -92,6 +92,8 @@ export interface DiscoveryReport {
   duplicates: number;
   sharedContacts: number;
   needsAddress: number;
+  /** Phone/email-only rows kept as contacts (for Matchups), never looked up automatically. */
+  contactsSaved?: number;
   excluded: number;
   optedOut: number;
   overAllowance: number;
@@ -124,12 +126,21 @@ export async function runAgentDiscovery(input: {
   });
   const { inserted, raced } = await insertRows(input.portfolioId, plan.toImport);
 
+  // Keep phone/email-only rows as contacts through the shared staging RPC
+  // (own-book check, dedupe, suppression). No homes, holds, grants or lookups.
+  const { saveDiscoveryRows } = await import("./discovery.server");
+  const { results } = await saveDiscoveryRows(db, {
+    userId: input.userId, portfolioId: input.portfolioId, csv: input.csv, contactsOnly: true, flow: "agent",
+  });
+  const contactsSaved = results.filter((r) => r.outcome === "contact_saved").length;
+
   const report: DiscoveryReport = {
     submitted: parsed.length + sink.addressless.length + sink.invalid,
     imported: inserted,
     duplicates: plan.duplicateProperties + raced,
     sharedContacts: plan.sharedContactRows,
     needsAddress: sink.addressless.length,
+    contactsSaved,
     excluded: sink.invalid,
     optedOut: suppressed.length,
     overAllowance: plan.overAllowance.length,

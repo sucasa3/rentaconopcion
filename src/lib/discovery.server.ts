@@ -290,7 +290,9 @@ export interface IntakeOutcome {
  */
 export async function saveDiscoveryRows(
   db: any,
-  input: { userId: string; portfolioId: string; csv: string; allowance?: number },
+  input: { userId: string; portfolioId: string; csv: string; allowance?: number;
+    /** Agent Discovery: stage contacts only; homes stay on the agent intake path. */
+    contactsOnly?: boolean; flow?: "lender" | "agent" },
 ) {
   const { parseUploadCsv, addressKey } = await import("./upload-intake");
   const { classifyDiscoveryRows, splitCombinedAddress, contactKey } = await import("./discovery-rows");
@@ -339,7 +341,7 @@ export async function saveDiscoveryRows(
     for (const r of list) { r.outcome = "failed"; r.reason = why; }
   };
 
-  if (homes.length) {
+  if (homes.length && !input.contactsOnly) {
     const payload = homes.map((h) => {
       const r = byNum.get(h.row)!;
       return {
@@ -368,14 +370,14 @@ export async function saveDiscoveryRows(
         identity_key: contactKey(r),
         cached: false,
         payload: { name: r.name || null, address: null, city: r.city, state: r.state, zip: r.zip,
-          email: r.email, phone: r.phone, source_row: c.row, source: "lender_discovery",
+          email: r.email, phone: r.phone, source_row: c.row, source: input.flow === "agent" ? "agent_discovery" : "lender_discovery",
           address_key: addressKey(r) },
       };
     });
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`discovery-contacts\n${input.csv}`));
     const sha = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
     const { data, error } = await db.rpc("stage_mixed_upload", {
-      p_book: input.portfolioId, p_actor: input.userId, p_file_sha256: sha, p_flow: "lender", p_rows,
+      p_book: input.portfolioId, p_actor: input.userId, p_file_sha256: sha, p_flow: input.flow ?? "lender", p_rows,
     });
     if (error) fail(contacts, `Not saved: ${error.message}`);
     else if ((data as any)?.counts?.already_uploaded) {
