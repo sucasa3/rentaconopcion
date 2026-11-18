@@ -19,10 +19,13 @@ export const createClaimLink = createServerFn({ method: "POST" })
     // RLS as the agent decides whether they may see this client at all.
     const { data: c } = await context.supabase
       .from("lender_portfolio_clients")
-      .select("id, client_name, client_email, client_phone, address_line1, city, state, zip, archived_at, homeowner_id, lender_portfolios!inner(lender_org_id)")
+      .select("id, portfolio_id, client_name, client_email, client_phone, address_line1, city, state, zip, archived_at, homeowner_id, lender_portfolios!inner(lender_org_id)")
       .eq("id", data.clientId)
       .maybeSingle();
     if (!c || c.archived_at) throw new Error("Client not found.");
+    // Assigned-book ownership, checked before any token or revocation.
+    const { assertClaimInviteOwner } = await import("./claim-invite-guard");
+    await assertClaimInviteOwner(context.supabase, context.userId, (c as any).portfolio_id);
     if (!c.client_email) throw new Error("Add the client's email first — the link is tied to it.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { isSuppressed } = await import("./suppression.server");
