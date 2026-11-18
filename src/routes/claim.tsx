@@ -16,7 +16,7 @@ export const Route = createFileRoute("/claim")({
   head: () => ({
     meta: [
       { title: "Claim your SuCasa Home Record" },
-      { name: "description", content: "Confirm your home and claim the free Home Record your agent prepared." },
+      { name: "description", content: "Confirm your home and claim the free Home Record your agent or loan officer prepared." },
       { property: "og:title", content: "Claim your SuCasa Home Record" },
       { property: "og:description", content: "Confirm your home and start tracking value and upkeep." },
       { property: "og:type", content: "website" },
@@ -28,8 +28,8 @@ export const Route = createFileRoute("/claim")({
 });
 
 const REASONS: Record<string, string> = {
-  expired: "This link has expired. Ask your agent for a new one.",
-  replaced: "A newer link was created. Please use the latest link from your agent.",
+  expired: "This link has expired. Ask the person who shared it for a new one.",
+  replaced: "A newer link was created. Please use the latest link you received.",
   invalid: "This link isn't valid.",
   email_mismatch: "You're signed in with a different email than this invitation. Sign out and use the invited email.",
   already_claimed: "This home record was already claimed by another account.",
@@ -77,7 +77,7 @@ function ClaimPage() {
   };
 
   let body: React.ReactNode;
-  if (!token) body = <p>Open the link your agent shared with you.</p>;
+  if (!token) body = <p>Open the link that was shared with you.</p>;
   else if (isLoading || userEmail === undefined) body = <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />;
   else if (!data?.ok) body = <p>{REASONS[(data as any)?.reason] ?? REASONS.invalid}</p>;
   else if (!userEmail) {

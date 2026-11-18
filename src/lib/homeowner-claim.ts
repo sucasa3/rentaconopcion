@@ -2,12 +2,12 @@
 
 export function claimMessages(i: { firstName: string; agentName: string; address: string | null; url: string }) {
   const hi = i.firstName ? ` ${i.firstName}` : "";
-  const who = i.agentName || "your agent";
+  const who = i.agentName || "";
   const home = i.address ? ` for ${i.address}` : "";
   const casa = i.address ? ` de ${i.address}` : "";
   return {
-    en: `Hi${hi}, it's ${who}. I set up a free SuCasa Home Record${home} so you can track your home's value and upkeep. Claim it here (link is just for you, expires in 14 days): ${i.url}`,
-    es: `Hola${hi}, soy ${who}. Preparé un Registro de Hogar gratuito en SuCasa${casa} para que puedas seguir el valor y el mantenimiento de tu casa. Reclámalo aquí (el enlace es solo para ti y vence en 14 días): ${i.url}`,
+    en: `Hi${hi}${who ? `, it's ${who}` : ""}. I set up a free SuCasa Home Record${home} so you can track your home's value and upkeep. Claim it here (link is just for you, expires in 14 days): ${i.url}`,
+    es: `Hola${hi}${who ? `, soy ${who}` : ""}. Preparé un Registro de Hogar gratuito en SuCasa${casa} para que puedas seguir el valor y el mantenimiento de tu casa. Reclámalo aquí (el enlace es solo para ti y vence en 14 días): ${i.url}`,
   };
 }
 
