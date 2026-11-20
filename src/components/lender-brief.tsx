@@ -3,7 +3,7 @@ import { formatLtvPct } from "@/lib/format-loan";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ShieldCheck, Sparkles, Quote, Mail, Phone, Copy, MapPin, MessageSquare, House } from "lucide-react";
+import { ShieldCheck, Sparkles, Quote, Mail, Phone, Copy, MapPin, MessageSquare, House, X } from "lucide-react";
 import {
   generateHomeownerReviewBrief,
   getLenderQuickBrief,
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Drawer,
+  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
@@ -97,9 +98,10 @@ export function LenderBriefDialog({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={close}>
-        <DrawerContent className="professional-detail max-h-[94vh] overflow-hidden rounded-t-[28px] border-border/60 bg-background">
+        <DrawerContent className="professional-detail max-h-[94vh] max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] overflow-hidden rounded-t-[28px] border-border/60 bg-background">
           <DrawerHeader className="sr-only"><DrawerTitle>{title}</DrawerTitle><DrawerDescription>{subtitle}</DrawerDescription></DrawerHeader>
-          <div className="overflow-y-auto">{body}</div>
+          <DrawerClose aria-label="Close" className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-background/90 text-foreground shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="h-4 w-4" /></DrawerClose>
+          <div data-vaul-no-drag className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">{body}</div>
         </DrawerContent>
       </Drawer>
     );
@@ -107,7 +109,7 @@ export function LenderBriefDialog({
 
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="professional-detail max-h-[92vh] overflow-y-auto border-border/60 bg-background p-0 sm:max-w-2xl sm:rounded-xl">
+      <DialogContent className="professional-detail max-h-[92vh] max-h-[92dvh] overflow-y-auto overscroll-contain border-border/60 bg-background p-0 sm:max-w-2xl sm:rounded-xl">
         <DialogHeader className="sr-only"><DialogTitle>{title}</DialogTitle><DialogDescription>{subtitle}</DialogDescription></DialogHeader>
         {body}
       </DialogContent>

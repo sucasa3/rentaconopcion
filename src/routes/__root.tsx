@@ -65,7 +65,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "SuCasa — Own Your Home With Confidence" },
       { name: "description", content: "SuCasa is the trusted operating system for homeownership. Manage, protect, and grow the value of your home while connecting with trusted local professionals." },
       { name: "author", content: "SuCasa" },

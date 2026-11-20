@@ -1422,9 +1422,9 @@ function ClientDrawer({
     >
       <aside
         className={cn(
-          "professional-detail w-full overflow-y-auto bg-background shadow-soft",
+          "professional-detail w-full overflow-y-auto overscroll-contain bg-background shadow-soft",
           isMobile
-            ? "max-h-[94vh] rounded-t-3xl sm:max-w-2xl"
+            ? "max-h-[94vh] max-h-[calc(100dvh-env(safe-area-inset-top)-0.75rem)] rounded-t-3xl sm:max-w-2xl"
             : "h-full max-w-xl",
         )}
         onClick={(e) => e.stopPropagation()}
