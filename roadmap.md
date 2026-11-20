@@ -1,5 +1,8 @@
 # Roadmap — Agent experience repair (Oct 22, 2026)
 
+## Lender client panel — Nov 20
+- [x] Clarify connection badges, next action, property details and empty signals; verified activated fixture at 390px and desktop without writes; 19 invitation tests pass, preview build OK.
+
 ## Contact-only reverse owner search — Oct 29
 - [x] Complete $0 local mock orchestration + PostgreSQL flow demonstrated for agent/lender: 84 tests pass including multi-property review, capacity recovery, duplicate/concurrent checks, owner RLS and separate enrichment grants. Read-only inspection found no eligible phone-only or never-searched phone+email contacts; Elsa is the only real phone contact and was already searched.
 - [x] Connect retained agent/lender upload contacts to selectable, separately bounded reverse-search approval; default off, restricted to Neil's two test accounts.

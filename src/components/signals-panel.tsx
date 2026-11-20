@@ -68,7 +68,7 @@ const CONF_CLASS: Record<Confidence, string> = {
   low: "bg-muted text-muted-foreground",
 };
 
-export function SignalsPanel({ audience, clientId }: { audience: Audience; clientId: string }) {
+export function SignalsPanel({ audience, clientId, panel = false }: { audience: Audience; clientId: string; panel?: boolean }) {
   const t = useT();
   const qc = useQueryClient();
   const historyFn = useServerFn(getSignalHistory);
@@ -108,9 +108,9 @@ export function SignalsPanel({ audience, clientId }: { audience: Audience; clien
   const sel = "h-9 rounded-lg border border-border bg-card px-2 text-xs";
 
   return (
-    <section aria-label={t("sig.title")} className="rounded-2xl border border-border bg-card p-4">
+    <section aria-label={t("sig.title")} className={panel ? "border-t border-border pt-4" : "rounded-2xl border border-border bg-card p-4"}>
       <h3 className="text-base font-semibold">{t("sig.title")}</h3>
-      <p className="mt-0.5 text-xs text-muted-foreground">{t("sig.subtitle")}</p>
+      {!panel && <p className="mt-0.5 text-xs text-muted-foreground">{t("sig.subtitle")}</p>}
 
       {q.isLoading ? (
         <p className="mt-3 text-sm text-muted-foreground">{t("sig.loading")}</p>
@@ -118,7 +118,7 @@ export function SignalsPanel({ audience, clientId }: { audience: Audience; clien
         <p className="mt-3 text-sm text-muted-foreground">{t("sig.no_access")}</p>
       ) : (
         <>
-          <div className="mt-3 flex flex-wrap gap-2">
+          {(!panel || q.data.signals.length > 0) && <div className="mt-3 flex flex-wrap gap-2">
             <select aria-label="type" className={sel} value={type} onChange={(e) => setType(e.target.value as any)}>
               <option value="all">{t("sig.filter.all")}</option>
               {(["request", "conversation", "property_record", "value"] as const).map((k) => (
@@ -136,7 +136,7 @@ export function SignalsPanel({ audience, clientId }: { audience: Audience; clien
               <option value={30}>{t("sig.filter.30")}</option>
               <option value={90}>{t("sig.filter.90")}</option>
             </select>
-          </div>
+          </div>}
 
           {q.data.engagementSummary && (
             <p className="mt-3 rounded-xl bg-secondary/50 px-3 py-2 text-xs">
