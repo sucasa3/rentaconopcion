@@ -23,6 +23,18 @@ import { getBusinessOverview } from "@/lib/business.functions";
 
 export type BusinessKind = "agent" | "lender";
 
+// Only server-returned, workspace-visible books may become navigation targets.
+export function resolveNavigationBook(
+  kind: BusinessKind,
+  overview: { personalBookId: string | null; isManager: boolean; books: { id: string }[] } | undefined,
+  routeBookId: string | null = null,
+): string | null {
+  if (!overview) return null;
+  const accessible = (id: string | null) => overview.books.find((book) => book.id === id)?.id ?? null;
+  return accessible(overview.personalBookId) ?? accessible(routeBookId) ??
+    (kind === "agent" && overview.isManager ? overview.books[0]?.id ?? null : null);
+}
+
 interface NavItem {
   label: string;
   to: string;
@@ -105,7 +117,7 @@ export function BusinessShell({
     queryFn: () => overviewFn({ data: { orgType: kind } }),
     staleTime: 60_000,
   });
-  const resolvedBook = overview ? overview.personalBookId : bookId;
+  const resolvedBook = resolveNavigationBook(kind, overview, bookId);
   const resolvedManager = isManager || Boolean((overview as any)?.isManager);
   const items = navItems(kind, resolvedBook, resolvedManager, t);
 

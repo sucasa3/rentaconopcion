@@ -28,9 +28,10 @@ import {
 import { ActionQueue } from "@/components/action-queue";
 import { ChannelActions } from "@/components/channel-actions";
 import { CopilotSearch } from "@/components/copilot-search";
+import { resolveNavigationBook } from "@/components/business-shell";
 import { SectionHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
-import { useT } from "@/lib/i18n";
+import { useLanguage, useT } from "@/lib/i18n";
 import { SupportingFactsProvider, SupportingFactsFor } from "@/components/signals-panel";
 import { PostCallNoteDialog } from "@/components/post-call-note";
 import { markCallInitiated } from "@/lib/post-call";
@@ -92,7 +93,8 @@ export function AgentToday() {
   };
 
   const items = useMemo(() => queue?.items ?? [], [queue]);
-  const book = overview?.books?.find((b: any) => b.id === overview.personalBookId) ?? null;
+  const navigationBookId = resolveNavigationBook("agent", overview);
+  const book = overview?.books?.find((b: any) => b.id === navigationBookId) ?? null;
   const clientCount = overview?.counts?.people ?? 0;
   const contactCount = (overview?.counts as any)?.contacts ?? 0;
   // Genuine totals, never the display limit: the server counts every
@@ -298,6 +300,7 @@ export function AgentToday() {
         worthAttention={attentionTotal}
         tasksDue={tasksDue}
         bookId={book?.id ?? null}
+        agencyBook={Boolean(book && book.id !== overview?.personalBookId)}
       />
     </div>
     </SupportingFactsProvider>
@@ -582,6 +585,7 @@ function MetricStrip({
   worthAttention,
   tasksDue,
   bookId,
+  agencyBook = false,
 }: {
   people: number;
   activated: number;
@@ -590,8 +594,10 @@ function MetricStrip({
   worthAttention: number;
   tasksDue: number;
   bookId: string | null;
+  agencyBook?: boolean;
 }) {
   const t = useT();
+  const { language } = useLanguage();
   const tiles = [
     { label: t("biz.at.m_monitored"), value: people },
     { label: t("biz.at.m_activated"), value: activated },
@@ -631,7 +637,7 @@ function MetricStrip({
             params={{ id: bookId }}
             className="inline-flex items-center gap-1"
           >
-            {t("biz.at.my_book")} <ArrowRight className="h-4 w-4" />
+            {agencyBook ? (language === "es" ? "Cartera de la agencia" : "Agency book") : t("biz.at.my_book")} <ArrowRight className="h-4 w-4" />
           </Link>
         )}
       </div>
