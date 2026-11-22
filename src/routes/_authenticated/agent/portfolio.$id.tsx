@@ -586,6 +586,221 @@ function AgentPortfolio() {
               </div>
               <AddHomeownersActions bookId={id} />
 
+              {/* Client table */}
+              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold">
+                    {t("biz.apd.households_count", { count: filtered.length.toLocaleString() })}
+                  </h2>
+                  <div className="relative w-full sm:w-auto">
+                    <Search className="pointer-events-none absolute left-3 top-3 h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setPage(0);
+                      }}
+                      placeholder={t("biz.apd.search_ph")}
+                      className="w-full rounded-full border border-border bg-background py-2 pl-8 pr-3 text-sm outline-none focus:border-primary sm:w-64"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <SegChip
+                    label={t("biz.apd.all_chip", { count: data.summary.total })}
+                    active={band === "all"}
+                    tone="bg-foreground text-background border-foreground"
+                    onClick={() => {
+                      setBand("all");
+                      setPage(0);
+                    }}
+                  />
+                  {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
+                    <SegChip
+                      key={b}
+                      label={`${t(BAND_META[b].labelKey)} ${data.summary.bands[b] ?? 0}`}
+                      active={band === b}
+                      tone={BAND_META[b].tone}
+                      onClick={() => {
+                        setBand(b);
+                        setPage(0);
+                      }}
+                    />
+                  ))}
+                  <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
+                    <span className="inline-flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 text-growth" />
+                      {t("biz.apd.expired", { count: data.summary.expired })}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Link2 className="h-3 w-3" />
+                      {t("biz.apd.linked", { count: data.summary.linked })}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="mt-4 space-y-3 md:hidden">
+                  {pageRows.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-muted-foreground">
+                      {t("biz.apd.no_match")}
+                    </p>
+                  ) : (
+                    pageRows.map((c: any) => (
+                      <PersonCard
+                        key={c.id}
+                        name={c.name ?? "—"}
+                        subtitle={[c.address, c.city].filter(Boolean).join(", ")}
+                        pills={
+                          <>
+                            <BandPill band={c.band} score={c.move_score} />
+                            <StatusPill tone="muted">
+                              {c.listing
+                                ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
+                                : t("biz.apd.off_market")}
+                            </StatusPill>
+                          </>
+                        }
+                        metrics={[
+                          { label: t("biz.apd.th_est_value"), value: moneyCompact(c.estimated_value) },
+                          {
+                            label: t("biz.apd.th_intent"),
+                            value: c.move_score
+                              ? `${c.move_score} · ${BAND_META[c.band] ? t(BAND_META[c.band].labelKey) : c.band}`
+                              : "—",
+                          },
+                        ]}
+                        extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
+                        onAction={() => {
+                          setSelected(c);
+                          setBrief("");
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-4 hidden overflow-x-auto md:block">
+                  <table className="w-full min-w-[980px] text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_household")}</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            {t("biz.apd.th_intent")}
+                            <IntentInfo />
+                          </span>
+                        </th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            {t("biz.apd.th_readiness")}
+                            <ReadinessInfo />
+                          </span>
+                        </th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_value")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_equity")}</th>
+                        <th className="py-2 pr-3 font-medium">
+                          <span className="inline-flex items-center gap-1">
+                            {t("biz.apd.th_net_proceeds")}
+                            <NetProceedsInfo sellCostPct={sellCost} />
+                          </span>
+                        </th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_tenure")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_listing")}</th>
+                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_referrals")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((c: any) => (
+                        <tr
+                          key={c.id}
+                          onClick={() => {
+                            setSelected(c);
+                            setBrief("");
+                          }}
+                          className="cursor-pointer border-b border-border/60 hover:bg-secondary/40"
+                        >
+                          <td className="py-2.5 pr-3">
+                            <p className="font-medium text-primary">{c.name ?? "—"}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {[c.address, c.city].filter(Boolean).join(", ")}
+                            </p>
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <BandPill band={c.band} score={c.move_score} />
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
+                          </td>
+                          <td className="py-2.5 pr-3">{moneyCompact(c.estimated_value)}</td>
+                          <td className="py-2.5 pr-3">{moneyCompact(c.equity_dollars)}</td>
+                          <td
+                            className={`py-2.5 pr-3 font-semibold ${
+                              c.net_proceeds == null
+                                ? "text-muted-foreground"
+                                : c.net_proceeds > 0
+                                  ? "text-growth"
+                                  : "text-destructive"
+                            }`}
+                          >
+                            {moneyCompact(c.net_proceeds)}
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            {c.tenure_years ? t("biz.apd.yr", { count: c.tenure_years.toFixed(1) }) : "—"}
+                          </td>
+                          <td className="py-2.5 pr-3 text-xs capitalize text-muted-foreground">
+                            {c.listing
+                              ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
+                              : t("biz.apd.off_market")}
+                          </td>
+                          <td className="py-2.5 pr-3 text-xs text-muted-foreground">
+                            {c.referral_count || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                      {pageRows.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                            {t("biz.apd.no_match")}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {filtered.length > PAGE_SIZE && (
+                  <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {t("biz.lpd.showing", {
+                        from: page * PAGE_SIZE + 1,
+                        to: Math.min((page + 1) * PAGE_SIZE, filtered.length),
+                        total: filtered.length,
+                      })}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        disabled={page === 0}
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-3 w-3" />
+                      </button>
+                      <span className="px-2">
+                        {t("biz.lpd.page", { page: page + 1, pages: pageCount })}
+                      </span>
+                      <button
+                        disabled={page >= pageCount - 1}
+                        onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border disabled:opacity-40"
+                      >
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* 1. What to do now */}
               {priority && (
                 <PriorityCard
@@ -1008,7 +1223,6 @@ function AgentPortfolio() {
 
               </div>
 
-              {/* 3. Your book */}
               <CopilotSearch
                 portfolioId={id}
                 detailPath={(r) => ({
@@ -1017,6 +1231,8 @@ function AgentPortfolio() {
                   search: { client: r.id },
                 })}
               />
+
+              {/* 3. Your book */}
 
               <section className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-3">
@@ -1059,222 +1275,7 @@ function AgentPortfolio() {
 
                 <AgentCoveragePanel portfolioId={id} />
 
-                <div className="flex flex-wrap gap-2">
-                  <SegChip
-                    label={t("biz.apd.all_chip", { count: data.summary.total })}
-                    active={band === "all"}
-                    tone="bg-foreground text-background border-foreground"
-                    onClick={() => {
-                      setBand("all");
-                      setPage(0);
-                    }}
-                  />
-                  {(["high", "hot", "warm", "nurture", "hold"] as const).map((b) => (
-                    <SegChip
-                      key={b}
-                      label={`${t(BAND_META[b].labelKey)} ${data.summary.bands[b] ?? 0}`}
-                      active={band === b}
-                      tone={BAND_META[b].tone}
-                      onClick={() => {
-                        setBand(b);
-                        setPage(0);
-                      }}
-                    />
-                  ))}
-                  <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
-                    <span className="inline-flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3 text-growth" />
-                      {t("biz.apd.expired", { count: data.summary.expired })}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Link2 className="h-3 w-3" />
-                      {t("biz.apd.linked", { count: data.summary.linked })}
-                    </span>
-                  </span>
-                </div>
               </section>
-
-
-              {/* Client table */}
-              <div className="rounded-3xl border border-border bg-card p-6 shadow-soft">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold">
-                    {t("biz.apd.households_count", { count: filtered.length.toLocaleString() })}
-                  </h2>
-                  <div className="relative w-full sm:w-auto">
-                    <Search className="pointer-events-none absolute left-3 top-3 h-3.5 w-3.5 text-muted-foreground" />
-                    <input
-                      value={search}
-                      onChange={(e) => {
-                        setSearch(e.target.value);
-                        setPage(0);
-                      }}
-                      placeholder={t("biz.apd.search_ph")}
-                      className="w-full rounded-full border border-border bg-background py-2 pl-8 pr-3 text-sm outline-none focus:border-primary sm:w-64"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-3 md:hidden">
-                  {pageRows.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground">
-                      {t("biz.apd.no_match")}
-                    </p>
-                  ) : (
-                    pageRows.map((c: any) => (
-                      <PersonCard
-                        key={c.id}
-                        name={c.name ?? "—"}
-                        subtitle={[c.address, c.city].filter(Boolean).join(", ")}
-                        pills={
-                          <>
-                            <BandPill band={c.band} score={c.move_score} />
-                            <StatusPill tone="muted">
-                              {c.listing
-                                ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
-                                : t("biz.apd.off_market")}
-                            </StatusPill>
-                          </>
-                        }
-                        metrics={[
-                          { label: t("biz.apd.th_est_value"), value: moneyCompact(c.estimated_value) },
-                          {
-                            label: t("biz.apd.th_intent"),
-                            value: c.move_score
-                              ? `${c.move_score} · ${BAND_META[c.band] ? t(BAND_META[c.band].labelKey) : c.band}`
-                              : "—",
-                          },
-                        ]}
-                        extra={<ReadinessBar score={c.readiness_score} label={c.readiness_label} />}
-                        onAction={() => {
-                          setSelected(c);
-                          setBrief("");
-                        }}
-                      />
-                    ))
-                  )}
-                </div>
-
-                <div className="mt-4 hidden overflow-x-auto md:block">
-                  <table className="w-full min-w-[980px] text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_household")}</th>
-                        <th className="py-2 pr-3 font-medium">
-                          <span className="inline-flex items-center gap-1">
-                            {t("biz.apd.th_intent")}
-                            <IntentInfo />
-                          </span>
-                        </th>
-                        <th className="py-2 pr-3 font-medium">
-                          <span className="inline-flex items-center gap-1">
-                            {t("biz.apd.th_readiness")}
-                            <ReadinessInfo />
-                          </span>
-                        </th>
-                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_value")}</th>
-                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_equity")}</th>
-                        <th className="py-2 pr-3 font-medium">
-                          <span className="inline-flex items-center gap-1">
-                            {t("biz.apd.th_net_proceeds")}
-                            <NetProceedsInfo sellCostPct={sellCost} />
-                          </span>
-                        </th>
-                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_tenure")}</th>
-                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_listing")}</th>
-                        <th className="py-2 pr-3 font-medium">{t("biz.apd.th_referrals")}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pageRows.map((c: any) => (
-                        <tr
-                          key={c.id}
-                          onClick={() => {
-                            setSelected(c);
-                            setBrief("");
-                          }}
-                          className="cursor-pointer border-b border-border/60 hover:bg-secondary/40"
-                        >
-                          <td className="py-2.5 pr-3">
-                            <p className="font-medium text-primary">{c.name ?? "—"}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {[c.address, c.city].filter(Boolean).join(", ")}
-                            </p>
-                          </td>
-                          <td className="py-2.5 pr-3">
-                            <BandPill band={c.band} score={c.move_score} />
-                          </td>
-                          <td className="py-2.5 pr-3">
-                            <ReadinessBar score={c.readiness_score} label={c.readiness_label} />
-                          </td>
-                          <td className="py-2.5 pr-3">{moneyCompact(c.estimated_value)}</td>
-                          <td className="py-2.5 pr-3">{moneyCompact(c.equity_dollars)}</td>
-                          <td
-                            className={`py-2.5 pr-3 font-semibold ${
-                              c.net_proceeds == null
-                                ? "text-muted-foreground"
-                                : c.net_proceeds > 0
-                                  ? "text-growth"
-                                  : "text-destructive"
-                            }`}
-                          >
-                            {moneyCompact(c.net_proceeds)}
-                          </td>
-                          <td className="py-2.5 pr-3">
-                            {c.tenure_years ? t("biz.apd.yr", { count: c.tenure_years.toFixed(1) }) : "—"}
-                          </td>
-                          <td className="py-2.5 pr-3 text-xs capitalize text-muted-foreground">
-                            {c.listing
-                              ? t(`biz.apd.ls.${c.listing.status}` as TranslationKey)
-                              : t("biz.apd.off_market")}
-                          </td>
-                          <td className="py-2.5 pr-3 text-xs text-muted-foreground">
-                            {c.referral_count || "—"}
-                          </td>
-                        </tr>
-                      ))}
-                      {pageRows.length === 0 && (
-                        <tr>
-                          <td colSpan={9} className="py-8 text-center text-muted-foreground">
-                            {t("biz.apd.no_match")}
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {filtered.length > PAGE_SIZE && (
-                  <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>
-                      {t("biz.lpd.showing", {
-                        from: page * PAGE_SIZE + 1,
-                        to: Math.min((page + 1) * PAGE_SIZE, filtered.length),
-                        total: filtered.length,
-                      })}
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        disabled={page === 0}
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border disabled:opacity-40"
-                      >
-                        <ChevronLeft className="h-3 w-3" />
-                      </button>
-                      <span className="px-2">
-                        {t("biz.lpd.page", { page: page + 1, pages: pageCount })}
-                      </span>
-                      <button
-                        disabled={page >= pageCount - 1}
-                        onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border disabled:opacity-40"
-                      >
-                        <ChevronRight className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </>
           ) : null}
         </div>

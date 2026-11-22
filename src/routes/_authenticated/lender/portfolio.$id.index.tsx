@@ -226,179 +226,9 @@ function PortfolioDetail() {
         <p className="text-sm text-destructive">{(error as Error).message}</p>
       ) : data ? (
         <>
-              {/* 1. What to do now */}
-              {priority && (
-                <PriorityCard
-                  title={priority.title}
-                  subtitle={priority.subtitle}
-                  primaryAction={() => {
-                    if (priority.kind === "refi" && priority.client) setContact(priority.client);
-                    else if (priority.kind === "enrich") enrich.mutate();
-                  }}
-                  primaryActionLabel={
-                    priority.kind === "refi" ? t("biz.at.view_homeowner") : t("biz.lpd.enrich_records")
-                  }
-                  tone={priority.kind === "refi" ? "opportunity" : "attention"}
-                  secondaryActions={priority.next?.map((n: any) => ({
-                    label: n.label,
-                    onClick: () => setContact(n.client),
-                  }))}
-                />
-              )}
 
-              {/* 2. Opportunities */}
-              <section className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <TrendingDown className="h-4 w-4 text-primary" />
-                  <h2 className="text-base font-semibold">
-                    {t("biz.lpd.refi_title", { rate: data.summary.benchmark_rate?.toFixed(2) ?? "—" })}
-                  </h2>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("biz.lpd.refi_hint")}
-                </p>
-                <div className="space-y-3 md:hidden">
-                  {data.top_refi_opportunities.length === 0 ? (
-                      <p className="py-4 text-center text-sm text-muted-foreground">
-                      {t("biz.lpd.no_savings")}
-                    </p>
-                  ) : (
-                    data.top_refi_opportunities.map((c: any) => (
-                      <OpportunityCard
-                        key={c.id}
-                        pill={<StatusPill tone="attention">{t("biz.lpd.high_opportunity")}</StatusPill>}
-                        name={c.full_name}
-                        subtitle={[c.city, c.state].filter(Boolean).join(", ")}
-                        heroLabel={t("biz.lpd.est_savings")}
-                        heroValue={`$${c.savings_per_month_dollars.toLocaleString()}`}
-                        metrics={[
-                          { label: t("biz.lpd.balance"), value: moneyCompact(c.loan_balance_cents) },
-                          { label: t("biz.lpd.rate_ltv"), value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}` },
-                        ]}
-                        onAction={() => setContact(c)}
-                      />
-                    ))
-                  )}
-                </div>
-                <div className="hidden overflow-x-auto md:block">
-                  <div className="rounded-3xl border border-border bg-card p-4 shadow-soft">
-                    <table className="w-full min-w-[640px] text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-xs uppercase text-muted-foreground">
-                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_client")}</th>
-                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_rate")}</th>
-                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_balance")}</th>
-                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_ltv")}</th>
-                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.est_savings")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.top_refi_opportunities.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="py-6 text-center text-muted-foreground">
-                              {t("biz.lpd.no_savings")}
-                            </td>
-                          </tr>
-                        ) : (
-                          data.top_refi_opportunities.map((c: any) => (
-                            <tr key={c.id} className="border-b border-border/60">
-                              <td className="py-2.5 pr-3">
-                                <button
-                                  onClick={() => setContact(c)}
-                                  className="text-left font-medium text-primary hover:underline"
-                                >
-                                  {c.full_name}
-                                </button>
-                                <div className="text-xs text-muted-foreground">
-                                  {[c.city, c.state].filter(Boolean).join(", ")}
-                                </div>
-                              </td>
-                              <td className="py-2.5 pr-3">
-                                {c.rate_at_close ? `${c.rate_at_close}%` : "—"}
-                              </td>
-                              <td className="py-2.5 pr-3">{moneyCompact(c.loan_balance_cents)}</td>
-                              <td className="py-2.5 pr-3">
-                                {c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}
-                              </td>
-                              <td className="py-2.5 pr-3 font-semibold text-growth">
-                                ${c.savings_per_month_dollars.toLocaleString()}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </section>
 
-              {/* 3. Book header: rate, summary, filters */}
-              <CopilotSearch
-                portfolioId={id}
-                detailPath={(r) => ({
-                  to: "/lender/portfolio/$id",
-                  params: { id: r.portfolio_id },
-                  search: { client: r.id },
-                })}
-              />
 
-              <section className="space-y-3">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <h2 className="text-base font-semibold">{t("biz.lpd.your_book")}</h2>
-                  <ComparisonRate orgId={data.portfolio.orgId} summary={data.summary} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                  <SummaryTile label={t("biz.lpd.st_clients")} value={data.summary.total.toLocaleString()} />
-                  <SummaryTile
-                    label={t("biz.lpd.st_originated")}
-                    value={moneyCompact(data.summary.total_loan_cents)}
-                  />
-                  <SummaryTile
-                    label={t("biz.lpd.st_est_balance")}
-                    value={moneyCompact(data.summary.total_balance_cents)}
-                  />
-                  <SummaryTile
-                    label={t("biz.lb.est_equity")}
-                    value={moneyCompact(data.summary.total_equity_cents)}
-                  />
-                  <SummaryTile label={t("biz.lpd.st_avg_rate")} value={`${data.summary.avg_rate.toFixed(2)}%`} />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <SegChip
-                    label={t("biz.lpd.all_chip", { count: data.summary.total })}
-                    active={segment === "all"}
-                    tone="bg-foreground text-background border-foreground"
-                    onClick={() => {
-                      setSegment("all");
-                      setPage(0);
-                    }}
-                  />
-                  {(Object.keys(SEGMENT_TONE) as Array<keyof typeof SEGMENT_TONE>).map((s) => (
-                    <SegChip
-                      key={s}
-                      label={`${t(`biz.lpd.seg.${s}` as TranslationKey)} ${data.segments[s] ?? 0}`}
-                      active={segment === s}
-                      tone={SEGMENT_TONE[s]}
-                      onClick={() => {
-                        setSegment(s);
-                        setPage(0);
-                      }}
-                    />
-                  ))}
-                  <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
-                    <span className="inline-flex items-center gap-1">
-                      <CheckCircle2 className="h-3 w-3 text-growth" />
-                      {t("biz.lpd.consented", { count: data.consent_counts.granted ?? 0 })}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Lock className="h-3 w-3" />
-                      {t("biz.lpd.pending", { count: data.consent_counts.pending ?? 0 })}
-                    </span>
-                  </span>
-                </div>
-              </section>
 
 
               {/* Client table with search + pagination */}
@@ -448,6 +278,40 @@ function PortfolioDetail() {
                     )}
                   </div>
 
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <SegChip
+                    label={t("biz.lpd.all_chip", { count: data.summary.total })}
+                    active={segment === "all"}
+                    tone="bg-foreground text-background border-foreground"
+                    onClick={() => {
+                      setSegment("all");
+                      setPage(0);
+                    }}
+                  />
+                  {(Object.keys(SEGMENT_TONE) as Array<keyof typeof SEGMENT_TONE>).map((s) => (
+                    <SegChip
+                      key={s}
+                      label={`${t(`biz.lpd.seg.${s}` as TranslationKey)} ${data.segments[s] ?? 0}`}
+                      active={segment === s}
+                      tone={SEGMENT_TONE[s]}
+                      onClick={() => {
+                        setSegment(s);
+                        setPage(0);
+                      }}
+                    />
+                  ))}
+                  <span className="flex w-full items-center gap-3 text-xs text-muted-foreground sm:ml-auto sm:w-auto">
+                    <span className="inline-flex items-center gap-1">
+                      <CheckCircle2 className="h-3 w-3 text-growth" />
+                      {t("biz.lpd.consented", { count: data.consent_counts.granted ?? 0 })}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      {t("biz.lpd.pending", { count: data.consent_counts.pending ?? 0 })}
+                    </span>
+                  </span>
                 </div>
 
                 <div className="mt-4">
@@ -596,6 +460,148 @@ function PortfolioDetail() {
                   </div>
                 )}
               </div>
+
+              {/* 1. What to do now */}
+              {priority && (
+                <PriorityCard
+                  title={priority.title}
+                  subtitle={priority.subtitle}
+                  primaryAction={() => {
+                    if (priority.kind === "refi" && priority.client) setContact(priority.client);
+                    else if (priority.kind === "enrich") enrich.mutate();
+                  }}
+                  primaryActionLabel={
+                    priority.kind === "refi" ? t("biz.at.view_homeowner") : t("biz.lpd.enrich_records")
+                  }
+                  tone={priority.kind === "refi" ? "opportunity" : "attention"}
+                  secondaryActions={priority.next?.map((n: any) => ({
+                    label: n.label,
+                    onClick: () => setContact(n.client),
+                  }))}
+                />
+              )}
+
+              {/* 2. Opportunities */}
+              <section className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <TrendingDown className="h-4 w-4 text-primary" />
+                  <h2 className="text-base font-semibold">
+                    {t("biz.lpd.refi_title", { rate: data.summary.benchmark_rate?.toFixed(2) ?? "—" })}
+                  </h2>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {t("biz.lpd.refi_hint")}
+                </p>
+                <div className="space-y-3 md:hidden">
+                  {data.top_refi_opportunities.length === 0 ? (
+                      <p className="py-4 text-center text-sm text-muted-foreground">
+                      {t("biz.lpd.no_savings")}
+                    </p>
+                  ) : (
+                    data.top_refi_opportunities.map((c: any) => (
+                      <OpportunityCard
+                        key={c.id}
+                        pill={<StatusPill tone="attention">{t("biz.lpd.high_opportunity")}</StatusPill>}
+                        name={c.full_name}
+                        subtitle={[c.city, c.state].filter(Boolean).join(", ")}
+                        heroLabel={t("biz.lpd.est_savings")}
+                        heroValue={`$${c.savings_per_month_dollars.toLocaleString()}`}
+                        metrics={[
+                          { label: t("biz.lpd.balance"), value: moneyCompact(c.loan_balance_cents) },
+                          { label: t("biz.lpd.rate_ltv"), value: `${c.rate_at_close ? `${c.rate_at_close}%` : "—"} · ${c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}` },
+                        ]}
+                        onAction={() => setContact(c)}
+                      />
+                    ))
+                  )}
+                </div>
+                <div className="hidden overflow-x-auto md:block">
+                  <div className="rounded-3xl border border-border bg-card p-4 shadow-soft">
+                    <table className="w-full min-w-[640px] text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-xs uppercase text-muted-foreground">
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_client")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_rate")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_balance")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.th_ltv")}</th>
+                          <th className="py-2 pr-3 font-medium">{t("biz.lpd.est_savings")}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.top_refi_opportunities.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-muted-foreground">
+                              {t("biz.lpd.no_savings")}
+                            </td>
+                          </tr>
+                        ) : (
+                          data.top_refi_opportunities.map((c: any) => (
+                            <tr key={c.id} className="border-b border-border/60">
+                              <td className="py-2.5 pr-3">
+                                <button
+                                  onClick={() => setContact(c)}
+                                  className="text-left font-medium text-primary hover:underline"
+                                >
+                                  {c.full_name}
+                                </button>
+                                <div className="text-xs text-muted-foreground">
+                                  {[c.city, c.state].filter(Boolean).join(", ")}
+                                </div>
+                              </td>
+                              <td className="py-2.5 pr-3">
+                                {c.rate_at_close ? `${c.rate_at_close}%` : "—"}
+                              </td>
+                              <td className="py-2.5 pr-3">{moneyCompact(c.loan_balance_cents)}</td>
+                              <td className="py-2.5 pr-3">
+                                {c.ltv_pct != null ? `${c.ltv_pct}%` : "—"}
+                              </td>
+                              <td className="py-2.5 pr-3 font-semibold text-growth">
+                                ${c.savings_per_month_dollars.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+
+              <CopilotSearch
+                portfolioId={id}
+                detailPath={(r) => ({
+                  to: "/lender/portfolio/$id",
+                  params: { id: r.portfolio_id },
+                  search: { client: r.id },
+                })}
+              />
+
+              {/* 3. Book header: rate, summary, filters */}
+
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <h2 className="text-base font-semibold">{t("biz.lpd.your_book")}</h2>
+                  <ComparisonRate orgId={data.portfolio.orgId} summary={data.summary} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                  <SummaryTile label={t("biz.lpd.st_clients")} value={data.summary.total.toLocaleString()} />
+                  <SummaryTile
+                    label={t("biz.lpd.st_originated")}
+                    value={moneyCompact(data.summary.total_loan_cents)}
+                  />
+                  <SummaryTile
+                    label={t("biz.lpd.st_est_balance")}
+                    value={moneyCompact(data.summary.total_balance_cents)}
+                  />
+                  <SummaryTile
+                    label={t("biz.lb.est_equity")}
+                    value={moneyCompact(data.summary.total_equity_cents)}
+                  />
+                  <SummaryTile label={t("biz.lpd.st_avg_rate")} value={`${data.summary.avg_rate.toFixed(2)}%`} />
+                </div>
+
+              </section>
         </>
       ) : null}
       <LenderBriefDialog
