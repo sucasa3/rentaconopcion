@@ -175,7 +175,7 @@ export function BusinessShell({
               activeOptions={{ exact: i.to.endsWith("agent") || i.to.endsWith("lender") }}
               activeProps={{ className: "text-primary" }}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-2.5 text-[10px] font-medium text-muted-foreground",
+                "flex min-w-0 flex-1 flex-col items-center gap-1 px-0.5 py-2.5 text-center text-[10px] font-medium text-muted-foreground [overflow-wrap:anywhere]",
               )}
             >
               {i.icon}
